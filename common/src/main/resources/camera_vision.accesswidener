@@ -1,0 +1,7 @@
+accessWidener   v2  named
+
+accessible field net/minecraft/client/renderer/LevelRenderer weatherTarget Lcom/mojang/blaze3d/pipeline/RenderTarget;
+accessible field net/minecraft/client/renderer/LevelRenderer cloudsTarget Lcom/mojang/blaze3d/pipeline/RenderTarget;
+accessible field net/minecraft/client/renderer/LevelRenderer itemEntityTarget Lcom/mojang/blaze3d/pipeline/RenderTarget;
+accessible field net/minecraft/client/renderer/LevelRenderer translucentTarget Lcom/mojang/blaze3d/pipeline/RenderTarget;
+accessible field net/minecraft/client/renderer/LevelRenderer entityTarget Lcom/mojang/blaze3d/pipeline/RenderTarget;
