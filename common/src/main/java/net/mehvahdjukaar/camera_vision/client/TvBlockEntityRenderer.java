@@ -78,7 +78,6 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
         if (mc.isGameLoadFinished() && mc.level != null) {
             //render level
             renderLevel(mc.getTimer(), mc, mc.gameRenderer);
-            mc.levelRenderer.doEntityOutline();
         }
 
         //reset
@@ -87,7 +86,7 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
         CameraState.NO_OUTLINE = false;
     }
 
-    //game renderer render level
+    //same as game renderer render level
     public void renderLevel(DeltaTracker deltaTracker,  Minecraft mc, GameRenderer gr) {
         float partialTicks = deltaTracker.getGameTimeDeltaPartialTick(true);
 
@@ -98,9 +97,7 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
 
         Quaternionf cameraRotation = camera.rotation().conjugate(new Quaternionf());
         Matrix4f cameraMatrix = (new Matrix4f()).rotation(cameraRotation);
-       // mc.levelRenderer.prepareCullFrustum(camera.getPosition(), cameraMatrix, projMatrix);
-
-
+        mc.levelRenderer.prepareCullFrustum(camera.getPosition(), cameraMatrix, projMatrix);
         mc.levelRenderer.renderLevel(deltaTracker, true, camera, gr,
                        gr.lightTexture(), cameraMatrix, projMatrix);
 
