@@ -1,5 +1,5 @@
 plugins {
-    id "com.github.johnrengelman.shadow" version "7.1.2"
+    id 'com.gradleup.shadow'
 }
 
 architectury {
@@ -15,11 +15,19 @@ loom {
 }
 
 configurations {
-    common
+    common {
+        canBeResolved = true
+        canBeConsumed = false
+    }
     shadowCommon // Don't use shadow from the shadow plugin because we don't want IDEA to index this.
     compileClasspath.extendsFrom common
     runtimeClasspath.extendsFrom common
     developmentNeoForge.extendsFrom common
+
+    shadowBundle {
+        canBeResolved = true
+        canBeConsumed = false
+    }
 }
 
 
@@ -33,11 +41,12 @@ shadowJar {
     exclude "fabric.mod.json"
     exclude "architectury.common.json"
 
-    configurations = [project.configurations.shadowCommon]
+    configurations = [project.configurations.shadowBundle]
     archiveClassifier = "dev-shadow"
 }
 
 remapJar {
+    inputFile.set shadowJar.archiveFile
     input.set shadowJar.archiveFile
     dependsOn shadowJar
     archiveClassifier = "neoforge"
@@ -58,12 +67,6 @@ sourcesJar {
 
 remapSourcesJar{
     archiveClassifier = "neoforge-sources"
-}
-
-components.java {
-    withVariantsFromConfiguration(project.configurations.shadowRuntimeElements) {
-        skip()
-    }
 }
 
 publishing {
@@ -93,13 +96,14 @@ dependencies {
     neoForge "net.neoforged:neoforge:${neo_version}"
 
     common(project(path: ":common", configuration: "namedElements")) { transitive false }
-    shadowCommon(project(path: ":common", configuration: "transformProductionNeoForge")) { transitive = false }
 
    // modImplementation("net.mehvahdjukaar:moonlight-neoforge:${moonlight_version}")
     modCompileOnly("curse.maven:supplementaries-412082:5458843")
     modImplementation("curse.maven:selene-499980:7113115")
 
     implementation 'org.jetbrains:annotations:22.0.0'
+
+    shadowBundle project(path: ':common', configuration: 'transformProductionNeoForge')
 
 
 }
