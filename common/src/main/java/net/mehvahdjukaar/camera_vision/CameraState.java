@@ -6,7 +6,7 @@ import org.jetbrains.annotations.Nullable;
 public class CameraState {
     @Nullable
     public static RenderTarget TARGET = null;
-    public static boolean noOutline = false;
+    public static boolean NO_OUTLINE = false;
 
 
 }

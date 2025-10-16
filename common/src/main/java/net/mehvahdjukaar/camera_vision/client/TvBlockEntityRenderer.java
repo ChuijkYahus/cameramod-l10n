@@ -1,58 +1,23 @@
 package net.mehvahdjukaar.camera_vision.client;
 
 import com.mojang.blaze3d.pipeline.RenderTarget;
-import com.mojang.blaze3d.platform.GlStateManager;
-import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
-import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
-import it.unimi.dsi.fastutil.objects.ObjectIterator;
-import it.unimi.dsi.fastutil.objects.ObjectListIterator;
 import net.mehvahdjukaar.camera_vision.CameraState;
 import net.mehvahdjukaar.camera_vision.CameraVision;
 import net.mehvahdjukaar.camera_vision.common.TVBlockEntity;
 import net.mehvahdjukaar.moonlight.api.client.texture_renderer.FrameBufferBackedDynamicTexture;
 import net.mehvahdjukaar.moonlight.api.client.texture_renderer.RenderedTexturesManager;
-import net.mehvahdjukaar.moonlight.api.fluids.SoftFluid;
-import net.mehvahdjukaar.moonlight.api.fluids.SoftFluidStack;
 import net.minecraft.client.Camera;
-import net.minecraft.client.CloudStatus;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.*;
-import net.minecraft.client.renderer.blockentity.BlockEntityRenderDispatcher;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
-import net.minecraft.client.renderer.chunk.SectionRenderDispatcher;
-import net.minecraft.client.renderer.culling.Frustum;
-import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.client.renderer.texture.TextureAtlas;
-import net.minecraft.client.resources.model.ModelBakery;
-import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.level.BlockDestructionProgress;
-import net.minecraft.util.FastColor;
-import net.minecraft.util.Mth;
-import net.minecraft.util.profiling.ProfilerFiller;
-import net.minecraft.world.TickRateManager;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.world.phys.HitResult;
-import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
-import org.joml.Matrix4fStack;
 import org.joml.Quaternionf;
-import org.lwjgl.opengl.GL11;
-
-import java.util.Iterator;
-import java.util.List;
-import java.util.SortedSet;
 
 import static net.minecraft.client.Minecraft.ON_OSX;
 
@@ -108,7 +73,7 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
         RenderSystem.clear(16640, ON_OSX);
         FogRenderer.setupNoFog();
         RenderSystem.enableCull();
-        CameraState.noOutline = true;
+        CameraState.NO_OUTLINE = true;
 
         if (mc.isGameLoadFinished() && mc.level != null) {
             //render level
@@ -117,10 +82,9 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
         }
 
         //reset
-        CameraState.TARGET = null;
         Minecraft.getInstance().getMainRenderTarget().bindWrite(true);
-        CameraState.noOutline = false;
-
+        CameraState.TARGET = null;
+        CameraState.NO_OUTLINE = false;
     }
 
     //game renderer render level
