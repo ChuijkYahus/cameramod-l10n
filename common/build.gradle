@@ -12,11 +12,8 @@ dependencies {
     // Do NOT use other classes from fabric loader
     modImplementation "net.fabricmc:fabric-loader:${fabric_loader_version}"
 
-    modImplementation ("net.mehvahdjukaar:moonlight:${moonlight_version}")
-
-    modImplementation ("net.mehvahdjukaar:supplementaries:${supplementaries_version}")
-    //modImplementation ("net.mehvahdjukaar:suppsquared:${suppsquared_version}")
-    //modImplementation("curse.maven:supplementaries-412082:6905076")
+    //modImplementation ("net.mehvahdjukaar:moonlight:${moonlight_version}")
+    modImplementation("curse.maven:selene-499980:7113116")
 
 }
 

@@ -95,11 +95,9 @@ dependencies {
     common(project(path: ":common", configuration: "namedElements")) { transitive false }
     shadowCommon(project(path: ":common", configuration: "transformProductionNeoForge")) { transitive = false }
 
-    modImplementation("net.mehvahdjukaar:moonlight-neoforge:${moonlight_version}")
-
+   // modImplementation("net.mehvahdjukaar:moonlight-neoforge:${moonlight_version}")
     modCompileOnly("curse.maven:supplementaries-412082:5458843")
-
-    modCompileOnly("curse.maven:supplementaries-squared-838411:5130385")
+    modImplementation("curse.maven:selene-499980:7113115")
 
     implementation 'org.jetbrains:annotations:22.0.0'
 

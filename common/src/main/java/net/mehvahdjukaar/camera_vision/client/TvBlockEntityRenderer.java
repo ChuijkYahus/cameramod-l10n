@@ -73,6 +73,7 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
         RenderSystem.clear(16640, ON_OSX);
         FogRenderer.setupNoFog();
         RenderSystem.enableCull();
+
         CameraState.NO_OUTLINE = true;
 
         if (mc.isGameLoadFinished() && mc.level != null) {
