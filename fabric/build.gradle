@@ -116,7 +116,8 @@ dependencies {
     }
 
     modCompileOnly("curse.maven:supplementaries-412082:5147147")
-    modImplementation("curse.maven:selene-499980:7113116")
+    modImplementation ("net.mehvahdjukaar:moonlight-fabric:${moonlight_version}")
+    //modImplementation("curse.maven:selene-499980:7113116")
 
     shadowBundle project(path: ':common', configuration: 'transformProductionFabric')
 
