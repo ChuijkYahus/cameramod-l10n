@@ -3,7 +3,7 @@ package net.mehvahdjukaar.camera_vision.mixins;
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import com.llamalad7.mixinextras.sugar.Local;
-import net.mehvahdjukaar.camera_vision.client.CameraRendererManager;
+import net.mehvahdjukaar.camera_vision.client.LiveFeedRendererManager;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.world.entity.Entity;
@@ -15,7 +15,7 @@ public class LevelRendererMixin {
 
     @ModifyReturnValue(method = "shouldShowEntityOutlines", at = @At(value = "RETURN"))
     public boolean camera$disableEntityOutlines(boolean original) {
-        if (CameraRendererManager.CAMERA_CANVAS != null) {
+        if (LiveFeedRendererManager.LIVE_FEED_BEING_RENDERED != null) {
             return false;
         }
         return original;
@@ -24,7 +24,7 @@ public class LevelRendererMixin {
     @ModifyExpressionValue(method = "renderLevel", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Camera;isDetached()Z"),
     require = 1)
     public boolean camera$renderPlayer(boolean original) {
-        if (CameraRendererManager.CAMERA_CANVAS != null) {
+        if (LiveFeedRendererManager.LIVE_FEED_BEING_RENDERED != null) {
             return true;
         }
         return original;
@@ -34,7 +34,7 @@ public class LevelRendererMixin {
     ordinal = 3),
             require = 1)
     public Entity camera$renderPlayer2(Entity original, @Local(ordinal = 0) Entity entity) {
-        if (CameraRendererManager.CAMERA_CANVAS != null && entity instanceof LocalPlayer) {
+        if (LiveFeedRendererManager.LIVE_FEED_BEING_RENDERED != null && entity instanceof LocalPlayer) {
             return entity;
         }
         return original;

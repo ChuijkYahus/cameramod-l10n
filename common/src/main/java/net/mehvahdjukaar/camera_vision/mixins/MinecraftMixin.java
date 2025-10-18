@@ -2,7 +2,7 @@ package net.mehvahdjukaar.camera_vision.mixins;
 
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import com.mojang.blaze3d.pipeline.RenderTarget;
-import net.mehvahdjukaar.camera_vision.client.CameraRendererManager;
+import net.mehvahdjukaar.camera_vision.client.LiveFeedRendererManager;
 import net.minecraft.client.Minecraft;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -19,8 +19,8 @@ public class MinecraftMixin {
 
     @ModifyReturnValue(method = "getMainRenderTarget", at = @At(value = "RETURN"))
     public RenderTarget camera$setCameraTarget(RenderTarget original) {
-        if (CameraRendererManager.CAMERA_CANVAS != null) {
-            return CameraRendererManager.CAMERA_CANVAS;
+        if (LiveFeedRendererManager.LIVE_FEED_BEING_RENDERED != null) {
+            return LiveFeedRendererManager.LIVE_FEED_BEING_RENDERED;
         }
         return original;
     }

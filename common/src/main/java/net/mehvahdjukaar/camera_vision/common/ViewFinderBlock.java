@@ -1,7 +1,6 @@
 package net.mehvahdjukaar.camera_vision.common;
 
 import com.mojang.serialization.MapCodec;
-import net.minecraft.client.renderer.blockentity.ChestRenderer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.block.Block;
@@ -12,10 +11,11 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import org.jetbrains.annotations.Nullable;
 
-public class CameraBlock extends HorizontalDirectionalBlock implements EntityBlock {
+public class ViewFinderBlock extends HorizontalDirectionalBlock implements EntityBlock {
+
     public static final MapCodec<TVBlock> CODEC = simpleCodec(TVBlock::new);
 
-    public CameraBlock(Properties properties) {
+    public ViewFinderBlock(Properties properties) {
         super(properties);
     }
 
@@ -38,7 +38,7 @@ public class CameraBlock extends HorizontalDirectionalBlock implements EntityBlo
 
     @Override
     public @Nullable BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
-        return new CameraBlockEntity(pos, state);
+        return new ViewFinderBlockEntity(pos, state);
     }
 
 }
