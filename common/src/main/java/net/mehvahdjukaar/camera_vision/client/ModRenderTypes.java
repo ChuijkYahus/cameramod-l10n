@@ -1,6 +1,8 @@
 package net.mehvahdjukaar.camera_vision.client;
 
 import com.mojang.blaze3d.pipeline.RenderTarget;
+import com.mojang.blaze3d.pipeline.TextureTarget;
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormatElement;
@@ -34,7 +36,8 @@ public class ModRenderTypes extends RenderType {
         RenderType.CompositeState compositeState = RenderType.CompositeState.builder()
                 .setShaderState(CAMERA_SHADER_STATE)
                 .setTextureState(new RenderStateShard.TextureStateShard(resourceLocation.getTextureLocation(),
-                        false, true))
+                        //TODO: mipmap
+                        false, false))
                 .setTransparencyState(NO_TRANSPARENCY)
                 .setLightmapState(LIGHTMAP)
                 .createCompositeState(false);
@@ -42,19 +45,20 @@ public class ModRenderTypes extends RenderType {
                 1536, true, false, compositeState);
     });
 
-    public static final Function<FrameBufferBackedDynamicTexture, RenderType> POSTERIZE = Util.memoize((target) -> {
+    public static final Function<RenderTarget, RenderType> POSTERIZE = Util.memoize((target) -> {
         RenderType.CompositeState compositeState = RenderType.CompositeState.builder()
-                .setShaderState(POSITION_TEX_SHADER)
-                .setTextureState(new RenderStateShard.TextureStateShard(target.getTextureLocation(),
-                        false, false))
+                .setShaderState(POSTERIZE_SHADER_STATE)
+               // .setTextureState(new RenderStateShard.TextureStateShard(target.getTextureLocation(),
+                 //       false, false))
                 .setTransparencyState(NO_TRANSPARENCY)
                 .setCullState(NO_CULL)
                 .setTexturingState(new TexturingStateShard("set_uniforms",
                         () -> {
+                    RenderSystem.setShaderTexture(0, target.getColorTextureId());
                             CameraModClient.CAMERA_VIEW_SHADER.get()
                                     .safeGetUniform("TexelSize")
-                                    .set((float) 1 / target.getWidth(),
-                                            (float) 1 / target.getHeight());
+                                    .set((float) 1 / target.width,
+                                            (float) 1 / target.height);
                         },
                         () -> {}
 

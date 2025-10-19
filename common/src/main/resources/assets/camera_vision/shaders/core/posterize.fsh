@@ -16,16 +16,16 @@ out vec4 fragColor;
 // =============================================================
 
 // Edge detection sensitivity: lower = more aggressive smoothing
-const float FXAA_EDGE_THRESHOLD = 0.035;
+const float FXAA_EDGE_THRESHOLD = 0.15;
 
 // Blend factor between original and smoothed color (0 → none, 1 → full blur)
 const float FXAA_BLEND_FACTOR = 0.50;
 
 // Spread of sampling neighborhood (1.0 = 1 pixel; increase slightly to widen)
-const float FXAA_SPREAD = 0.75;
+const float FXAA_SPREAD = 1;
 
 // Weight of diagonal samples (0 disables diagonals, 1 uses them equally)
-const float FXAA_DIAGONAL_WEIGHT = 0.75;
+const float FXAA_DIAGONAL_WEIGHT = 1;
 
 // =============================================================
 //                     FXAA SAMPLER
@@ -70,9 +70,9 @@ vec3 fxaaSample(sampler2D tex, vec2 uv, vec2 invSz) {
 const int POSTERIZE_MODE = 0;
 
 // Quantization steps
-const float L_LEVELS = 10.0;    // more = smoother gradients
-const float A_LEVELS = 10.0;
-const float B_LEVELS = 10.0;
+const float L_LEVELS = 5.0;    // more = smoother gradients
+const float A_LEVELS = 5.0;
+const float B_LEVELS = 5.0;
 
 // For LCh mode
 const float C_LEVELS = 10.0;
@@ -171,8 +171,9 @@ vec3 posterize_oklab(vec3 srgb) {
 
 
 void main() {
-    vec3 sampled = fxaaSample(Sampler0, texCoord0, TexelSize);
-    vec3 posterized = posterize_oklab(sampled.rgb);
 
-    fragColor = vec4(posterized, 1);
+    vec3 sampled = fxaaSample(Sampler0, texCoord0, TexelSize);
+    //sampled = posterize_oklab(sampled.rgb);
+
+    fragColor = vec4(sampled, 1);
 }

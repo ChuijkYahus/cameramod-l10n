@@ -36,7 +36,7 @@ public class LiveFeedRendererManager {
 
     private static final float RENDER_DISTANCE = 32f;
     private static final DummyCamera DUMMY_CAMERA = new DummyCamera();
-    private static final Int2ObjectArrayMap<TextureTarget> CANVASES = new Int2ObjectArrayMap<>();
+    private static final Int2ObjectArrayMap<FrameBufferBackedDynamicTexture> CANVASES = new Int2ObjectArrayMap<>();
     private static final Map<UUID, ResourceLocation> LIVE_FEED_LOCATIONS = new java.util.HashMap<>();
 
     private static long feedCounter = 0;
@@ -66,11 +66,12 @@ public class LiveFeedRendererManager {
         return loc;
     }
 
-    public static TextureTarget getOrCreateCanvas(int size) {
-        TextureTarget canvas = CANVASES.get(size);
+    public static FrameBufferBackedDynamicTexture getOrCreateCanvas(int size) {
+        FrameBufferBackedDynamicTexture canvas = CANVASES.get(size);
         if (canvas == null) {
-            canvas = new TextureTarget(size, size, true, Minecraft.ON_OSX);
+            canvas = new FrameBufferBackedDynamicTexture(CameraVision.res("canvas_"+size), size, size, null);
             CANVASES.put(size, canvas);
+            canvas.initialize();
         }
         return canvas;
     }
@@ -88,8 +89,9 @@ public class LiveFeedRendererManager {
         RenderTarget mainTarget = mc.getMainRenderTarget();
 
         int size = text.getWidth();
-        TextureTarget canvas = getOrCreateCanvas(size);
+        FrameBufferBackedDynamicTexture canvasTexture = getOrCreateCanvas(size);
 
+        RenderTarget canvas = canvasTexture.getFrameBuffer();
         canvas.bindWrite(true);
         LIVE_FEED_BEING_RENDERED = canvas;
 
@@ -103,7 +105,7 @@ public class LiveFeedRendererManager {
         renderLevel(mc, canvas, DUMMY_CAMERA);
         mc.gameRenderer.renderDistance = oldRenderDistance;
 
-        copyWithShader(canvas, renderTarget, ModRenderTypes.POSTERIZE.apply(text));
+        copyWithShader(canvas, renderTarget, ModRenderTypes.POSTERIZE.apply(canvasTexture.getFrameBuffer()));
 
         LiveFeedRendererManager.LIVE_FEED_BEING_RENDERED = null;
         mainTarget.bindWrite(true);
@@ -184,22 +186,24 @@ public class LiveFeedRendererManager {
             // Bind destination framebuffer
             dst.clear(true);
 
+
+            dst.bindWrite(true);
+
             RenderSystem.getModelViewMatrix().set(new Matrix4f().identity());
             RenderSystem.getProjectionMatrix().set(new Matrix4f().identity());
-
-            GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, src.frameBufferId);
-            GL30.glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, dst.frameBufferId);
-
 
             var bufferSource = Minecraft.getInstance().renderBuffers().bufferSource();
 
             VertexConsumer vc = bufferSource.getBuffer(rt);
+            var p = new PoseStack().last();
 
-            vc.addVertex(-1, -1, 0).setUv(0f, 0f).setColor(255,0,0,255);
-            vc.addVertex(1, -1, 0).setUv(1f, 0f).setColor(255,0,0,255);
-            vc.addVertex(1, 1, 0).setUv(1f, 1f).setColor(255,0,0,255);
-            vc.addVertex(-1, 1, 0).setUv(0f, 1f).setColor(255,0,0,255);
+            vc.addVertex(p,-1, -1, 0).setUv(0f, 0f).setColor(255,0,0,255);
+            vc.addVertex(p,1, -1, 0).setUv(1f, 0f).setColor(255,0,0,255);
+            vc.addVertex(p,1, 1, 0).setUv(1f, 1f).setColor(255,0,0,255);
+            vc.addVertex(p,-1, 1, 0).setUv(0f, 1f).setColor(255,0,0,255);
             bufferSource.endBatch(rt);
+
+            GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, 0);
 
         }
 
