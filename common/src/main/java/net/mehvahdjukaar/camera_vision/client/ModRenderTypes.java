@@ -32,15 +32,25 @@ public class ModRenderTypes extends RenderType {
     private static final ShaderStateShard CAMERA_SHADER_STATE = new ShaderStateShard(CameraModClient.CAMERA_VIEW_SHADER);
     private static final ShaderStateShard POSTERIZE_SHADER_STATE = new ShaderStateShard(CameraModClient.POSTERIZE_SHADER);
 
-    public static final Function<FrameBufferBackedDynamicTexture, RenderType> CAMERA_DRAW = Util.memoize((resourceLocation) -> {
+    public static final Function<FrameBufferBackedDynamicTexture, RenderType> CAMERA_DRAW = Util.memoize((text) -> {
         RenderType.CompositeState compositeState = RenderType.CompositeState.builder()
                 .setShaderState(CAMERA_SHADER_STATE)
-                .setTextureState(new RenderStateShard.TextureStateShard(resourceLocation.getTextureLocation(),
+                .setTextureState(new RenderStateShard.TextureStateShard(text.getTextureLocation(),
                         //TODO: mipmap
                         false, false))
                 .setTransparencyState(NO_TRANSPARENCY)
                 .setLightmapState(LIGHTMAP)
-                .createCompositeState(false);
+                .setTexturingState(new TexturingStateShard("set_texel_size",
+                        () -> {
+                            ShaderInstance shader = CameraModClient.POSTERIZE_SHADER.get();
+                            shader.safeGetUniform("ScanDensity")
+                                    .set(2);
+
+                        },
+                        () -> {
+                        }))
+                        .createCompositeState(false);
+
         return create("camera_view", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS,
                 1536, true, false, compositeState);
     });
@@ -56,9 +66,6 @@ public class ModRenderTypes extends RenderType {
                         () -> {
                             RenderSystem.setShaderTexture(0, target.getColorTextureId());
                             ShaderInstance shader = CameraModClient.POSTERIZE_SHADER.get();
-                            shader.safeGetUniform("TexelSize")
-                                    .set((float) 1 / target.width,
-                                            (float) 1 / target.height);
 
                             shader.safeGetUniform("PostMode")
                                     .set(1.0f);
@@ -71,6 +78,11 @@ public class ModRenderTypes extends RenderType {
                                     .set(0.5f);
                             shader.safeGetUniform("FxaaSpread")
                                     .set(1.0f);
+
+                            shader.safeGetUniform("DitherScale")
+                                    .set(2f);
+                            shader.safeGetUniform("DitherStrength")
+                                    .set(1f);
                         },
                         () -> {
                         }
