@@ -7,6 +7,13 @@
   "uniforms": [
     { "name": "ModelViewMat", "type": "matrix4x4", "count": 16, "values": [ 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0 ] },
     { "name": "ProjMat", "type": "matrix4x4", "count": 16, "values": [ 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0 ] },
-    { "name": "TexelSize", "type": "float", "count": 2, "values": [ 0.0, 0.0 ] }
+    { "name": "TexelSize", "type": "float", "count": 2, "values": [ 0.0, 0.0 ] },
+    { "name": "PostMode", "type": "float", "count": 1, "values": [ 0.0 ] },
+    { "name": "PostLevels", "type": "float", "count": 3, "values": [ 36.0, 28.0, 28.0 ] },
+    { "name": "MaxChroma", "type": "float", "count": 1, "values": [ 0.4 ] },
+    { "name": "FxaaEdge", "type": "float", "count": 1, "values": [ 0.1 ] },
+    { "name": "FxaaBlend", "type": "float", "count": 1, "values": [ 0.85 ] },
+    { "name": "FxaaSpread", "type": "float", "count": 1, "values": [  1.10 ] },
+    { "name": "FxaaDiagonal", "type": "float", "count": 1, "values": [ 0.25 ] }
   ]
 }

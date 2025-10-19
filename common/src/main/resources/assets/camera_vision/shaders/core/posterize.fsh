@@ -5,58 +5,84 @@
 
 uniform sampler2D Sampler0;
 
+uniform float FxaaEdge;
+uniform float FxaaBlend;
+uniform float FxaaSpread;
+uniform float FxaaDiagonal;
+
 uniform vec2 TexelSize;
+uniform float PostMode;
+uniform vec3 PostLevels;
+
+
+const float MAX_CHROMA = 0.4;
 
 in vec2 texCoord0;
 
 out vec4 fragColor;
 
 // =============================================================
-//                 FXAA CONFIGURATION CONSTANTS
+//                      FXAA SAMPLER FUNCTION
 // =============================================================
 
-// Edge detection sensitivity: lower = more aggressive smoothing
-const float FXAA_EDGE_THRESHOLD = 0.15;
+float luma(vec3 c) {
+    // Perceptual luma, works fine for sRGB inputs
+    return dot(c, vec3(0.2126, 0.7152, 0.0722));
+}
 
-// Blend factor between original and smoothed color (0 → none, 1 → full blur)
-const float FXAA_BLEND_FACTOR = 0.50;
-
-// Spread of sampling neighborhood (1.0 = 1 pixel; increase slightly to widen)
-const float FXAA_SPREAD = 1;
-
-// Weight of diagonal samples (0 disables diagonals, 1 uses them equally)
-const float FXAA_DIAGONAL_WEIGHT = 1;
-
-// =============================================================
-//                     FXAA SAMPLER
-// =============================================================
 vec3 fxaaSample(sampler2D tex, vec2 uv, vec2 invSz) {
-    // Center and 4-neighbor luma (perceptual grayscale)
-    vec3 cM = texture(tex, uv).rgb;
-    float lM = dot(cM, vec3(0.299, 0.587, 0.114));
-    float lN = dot(texture(tex, uv + vec2(0.0, -invSz.y * FXAA_SPREAD)).rgb, vec3(0.299, 0.587, 0.114));
-    float lS = dot(texture(tex, uv + vec2(0.0,  invSz.y * FXAA_SPREAD)).rgb, vec3(0.299, 0.587, 0.114));
-    float lW = dot(texture(tex, uv + vec2(-invSz.x * FXAA_SPREAD, 0.0)).rgb, vec3(0.299, 0.587, 0.114));
-    float lE = dot(texture(tex, uv + vec2( invSz.x * FXAA_SPREAD, 0.0)).rgb, vec3(0.299, 0.587, 0.114));
 
+    // --- Fetch center pixel ---
+    vec3  cM = texture(tex, uv).rgb;
+    float lM = luma(cM);
+
+    // --- Fetch 4-neighbor luma values ---
+    float lN = luma(texture(tex, uv + vec2(0.0, -invSz.y)).rgb);
+    float lS = luma(texture(tex, uv + vec2(0.0,  invSz.y)).rgb);
+    float lW = luma(texture(tex, uv + vec2(-invSz.x, 0.0)).rgb);
+    float lE = luma(texture(tex, uv + vec2( invSz.x, 0.0)).rgb);
+
+    // --- Compute local contrast ---
     float lMin = min(lM, min(min(lN, lS), min(lW, lE)));
     float lMax = max(lM, max(max(lN, lS), max(lW, lE)));
     float contrast = lMax - lMin;
 
-    // Early exit: no strong edge → keep original
-    if (contrast < FXAA_EDGE_THRESHOLD) return cM;
+    // --- Adaptive threshold (relative + absolute floor) ---
+    float threshold = max(0.0312, FxaaEdge * lMax);
+    if (contrast < threshold)
+    return cM; // No strong edge → keep original
 
-    // Diagonal taps
-    vec3 cNW = texture(tex, uv + vec2(-invSz.x, -invSz.y) * FXAA_SPREAD).rgb;
-    vec3 cNE = texture(tex, uv + vec2( invSz.x, -invSz.y) * FXAA_SPREAD).rgb;
-    vec3 cSW = texture(tex, uv + vec2(-invSz.x,  invSz.y) * FXAA_SPREAD).rgb;
-    vec3 cSE = texture(tex, uv + vec2( invSz.x,  invSz.y) * FXAA_SPREAD).rgb;
+    // --- Estimate edge direction ---
+    float gx = lW - lE;  // horizontal gradient
+    float gy = lN - lS;  // vertical gradient
 
-    vec3 avg4 = (cNW + cNE + cSW + cSE) * (0.25 * FXAA_DIAGONAL_WEIGHT);
-    vec3 avg5 = (avg4 + cM) / (1.0 + FXAA_DIAGONAL_WEIGHT);
+    // Add a small diagonal bias (helps detect stair-step edges)
+    vec2 diagBias = vec2(sign(gx), sign(gy)) * FxaaDiagonal * 0.05;
+    vec2 dir = normalize(vec2(gx, gy) + diagBias + 1e-6);
 
-    // Blend between original and averaged
-    return mix(cM, avg5, FXAA_BLEND_FACTOR);
+    // --- Adjust step length based on gradient magnitude ---
+    float dirReduce = max((lW + lE + lN + lS) * 0.125, 1e-4);
+    float invMin = 1.0 / (min(abs(dir.x), abs(dir.y)) + dirReduce);
+
+    // Step direction scaled by texture size
+    vec2 stepUV = clamp(dir * invMin, -2.0, 2.0) * invSz * FxaaSpread;
+
+    // --- Sample two points along the edge direction ---
+    vec3 cA = texture(tex, uv + stepUV * (1.0/3.0 - 0.5)).rgb;
+    vec3 cB = texture(tex, uv + stepUV * (2.0/3.0 - 0.5)).rgb;
+    vec3 cEdge = 0.5 * (cA + cB);
+
+    // --- Compute subpixel aliasing amount (how uneven the luma is) ---
+    float subpix = clamp(
+    ((lN + lS + lW + lE) * 0.25 - lMin) / (contrast + 1e-5),
+    0.0, 1.0
+    );
+
+    // --- Blend amount: stronger on high aliasing areas ---
+    float blend = FxaaBlend * subpix;
+
+    // --- Final mix ---
+    return mix(cM, cEdge, blend);
 }
 
 
@@ -65,21 +91,6 @@ vec3 fxaaSample(sampler2D tex, vec2 uv, vec2 invSz) {
 // =============================================================
 //                 OKLab Posterization Settings
 // =============================================================
-
-// Posterization mode: 0 = L,a,b;  1 = LCh (lightness/chroma/hue)
-const int POSTERIZE_MODE = 0;
-
-// Quantization steps
-const float L_LEVELS = 5.0;    // more = smoother gradients
-const float A_LEVELS = 5.0;
-const float B_LEVELS = 5.0;
-
-// For LCh mode
-const float C_LEVELS = 10.0;
-const float H_LEVELS = 16.0;
-
-// Clip chroma range to prevent RGB out-of-gamut conversion
-const float MAX_CHROMA = 0.4;
 
 // =============================================================
 //                   Utility: sRGB <-> Linear
@@ -149,17 +160,17 @@ vec3 posterize_oklab(vec3 srgb) {
     vec3 lin = srgb_to_linear(srgb);
     vec3 lab = linear_rgb_to_oklab(lin);
 
-    if (POSTERIZE_MODE == 0) {
-        lab.x = quantize(clamp(lab.x, 0.0, 1.0), L_LEVELS);
-        lab.y = quantizeCentered(lab.y, 0.5, A_LEVELS);
-        lab.z = quantizeCentered(lab.z, 0.5, B_LEVELS);
+    if (PostMode == 0) {
+        lab.x = quantize(clamp(lab.x, 0.0, 1.0), PostLevels.x);
+        lab.y = quantizeCentered(lab.y, 0.5, PostLevels.y);
+        lab.z = quantizeCentered(lab.z, 0.5, PostLevels.z);
     } else {
-        float L = quantize(clamp(lab.x, 0.0, 1.0), L_LEVELS);
+        float L = quantize(clamp(lab.x, 0.0, 1.0), PostLevels.x);
         float C = min(length(lab.yz), MAX_CHROMA);
         float H = atan(lab.z, lab.y);
 
-        float Cq = quantize(C / MAX_CHROMA, C_LEVELS) * MAX_CHROMA;
-        float Hq = floor((H + 3.14159265) / (2.0 * 3.14159265) * H_LEVELS) / H_LEVELS;
+        float Cq = quantize(C / MAX_CHROMA, PostLevels.y) * MAX_CHROMA;
+        float Hq = floor((H + 3.14159265) / (2.0 * 3.14159265) * PostLevels.z) / PostLevels.z;
         Hq = Hq * (2.0 * 3.14159265) - 3.14159265;
 
         lab = vec3(L, Cq * cos(Hq), Cq * sin(Hq));
@@ -171,9 +182,9 @@ vec3 posterize_oklab(vec3 srgb) {
 
 
 void main() {
-
-    vec3 sampled = fxaaSample(Sampler0, texCoord0, TexelSize);
-    //sampled = posterize_oklab(sampled.rgb);
+    vec3 sampled = fxaaSample(Sampler0, texCoord0, vec2(1.0/60, 1.0/60.0));
+    //vec3 sampled = texture(Sampler0, texCoord0).rgb;
+    sampled = posterize_oklab(sampled);
 
     fragColor = vec4(sampled, 1);
 }

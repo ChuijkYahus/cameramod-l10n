@@ -24,9 +24,9 @@ import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL30;
 
+import java.awt.*;
 import java.util.Map;
 import java.util.UUID;
 
@@ -36,7 +36,7 @@ public class LiveFeedRendererManager {
 
     private static final float RENDER_DISTANCE = 32f;
     private static final DummyCamera DUMMY_CAMERA = new DummyCamera();
-    private static final Int2ObjectArrayMap<FrameBufferBackedDynamicTexture> CANVASES = new Int2ObjectArrayMap<>();
+    private static final Int2ObjectArrayMap<RenderTarget> CANVASES = new Int2ObjectArrayMap<>();
     private static final Map<UUID, ResourceLocation> LIVE_FEED_LOCATIONS = new java.util.HashMap<>();
 
     private static long feedCounter = 0;
@@ -66,12 +66,11 @@ public class LiveFeedRendererManager {
         return loc;
     }
 
-    public static FrameBufferBackedDynamicTexture getOrCreateCanvas(int size) {
-        FrameBufferBackedDynamicTexture canvas = CANVASES.get(size);
+    public static RenderTarget getOrCreateCanvas(int size) {
+        RenderTarget canvas = CANVASES.get(size);
         if (canvas == null) {
-            canvas = new FrameBufferBackedDynamicTexture(CameraVision.res("canvas_"+size), size, size, null);
+            canvas = new TextureTarget( size, size,true, ON_OSX);
             CANVASES.put(size, canvas);
-            canvas.initialize();
         }
         return canvas;
     }
@@ -89,9 +88,8 @@ public class LiveFeedRendererManager {
         RenderTarget mainTarget = mc.getMainRenderTarget();
 
         int size = text.getWidth();
-        FrameBufferBackedDynamicTexture canvasTexture = getOrCreateCanvas(size);
+        RenderTarget canvas = getOrCreateCanvas(size);
 
-        RenderTarget canvas = canvasTexture.getFrameBuffer();
         canvas.bindWrite(true);
         LIVE_FEED_BEING_RENDERED = canvas;
 
@@ -105,7 +103,7 @@ public class LiveFeedRendererManager {
         renderLevel(mc, canvas, DUMMY_CAMERA);
         mc.gameRenderer.renderDistance = oldRenderDistance;
 
-        copyWithShader(canvas, renderTarget, ModRenderTypes.POSTERIZE.apply(canvasTexture.getFrameBuffer()));
+        copyWithShader(canvas, renderTarget, ModRenderTypes.POSTERIZE.apply(canvas));
 
         LiveFeedRendererManager.LIVE_FEED_BEING_RENDERED = null;
         mainTarget.bindWrite(true);
@@ -186,7 +184,6 @@ public class LiveFeedRendererManager {
             // Bind destination framebuffer
             dst.clear(true);
 
-
             dst.bindWrite(true);
 
             RenderSystem.getModelViewMatrix().set(new Matrix4f().identity());
@@ -195,15 +192,12 @@ public class LiveFeedRendererManager {
             var bufferSource = Minecraft.getInstance().renderBuffers().bufferSource();
 
             VertexConsumer vc = bufferSource.getBuffer(rt);
-            var p = new PoseStack().last();
 
-            vc.addVertex(p,-1, -1, 0).setUv(0f, 0f).setColor(255,0,0,255);
-            vc.addVertex(p,1, -1, 0).setUv(1f, 0f).setColor(255,0,0,255);
-            vc.addVertex(p,1, 1, 0).setUv(1f, 1f).setColor(255,0,0,255);
-            vc.addVertex(p,-1, 1, 0).setUv(0f, 1f).setColor(255,0,0,255);
+            vc.addVertex(-1, -1, 0).setUv(0f, 0f);
+            vc.addVertex(1, -1, 0).setUv(1f, 0f);
+            vc.addVertex(1, 1, 0).setUv(1f, 1f);
+            vc.addVertex(-1, 1, 0).setUv(0f, 1f);
             bufferSource.endBatch(rt);
-
-            GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, 0);
 
         }
 

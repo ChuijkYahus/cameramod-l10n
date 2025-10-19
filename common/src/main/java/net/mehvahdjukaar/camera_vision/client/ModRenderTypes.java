@@ -1,7 +1,6 @@
 package net.mehvahdjukaar.camera_vision.client;
 
 import com.mojang.blaze3d.pipeline.RenderTarget;
-import com.mojang.blaze3d.pipeline.TextureTarget;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
@@ -11,6 +10,7 @@ import net.mehvahdjukaar.moonlight.api.client.texture_renderer.FrameBufferBacked
 import net.minecraft.Util;
 import net.minecraft.client.renderer.RenderStateShard;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.ShaderInstance;
 
 import java.util.function.Function;
 
@@ -48,19 +48,32 @@ public class ModRenderTypes extends RenderType {
     public static final Function<RenderTarget, RenderType> POSTERIZE = Util.memoize((target) -> {
         RenderType.CompositeState compositeState = RenderType.CompositeState.builder()
                 .setShaderState(POSTERIZE_SHADER_STATE)
-               // .setTextureState(new RenderStateShard.TextureStateShard(target.getTextureLocation(),
-                 //       false, false))
+                // .setTextureState(new RenderStateShard.TextureStateShard(target.getTextureLocation(),
+                //       false, false))
                 .setTransparencyState(NO_TRANSPARENCY)
                 .setCullState(NO_CULL)
                 .setTexturingState(new TexturingStateShard("set_uniforms",
                         () -> {
-                    RenderSystem.setShaderTexture(0, target.getColorTextureId());
-                            CameraModClient.CAMERA_VIEW_SHADER.get()
-                                    .safeGetUniform("TexelSize")
+                            RenderSystem.setShaderTexture(0, target.getColorTextureId());
+                            ShaderInstance shader = CameraModClient.POSTERIZE_SHADER.get();
+                            shader.safeGetUniform("TexelSize")
                                     .set((float) 1 / target.width,
                                             (float) 1 / target.height);
+
+                            shader.safeGetUniform("PostMode")
+                                    .set(1.0f);
+
+                            shader.safeGetUniform("FxaaEdge")
+                                    .set(0.1f);
+                            shader.safeGetUniform("FxaaBlend")
+                                    .set(0.5f);
+                            shader.safeGetUniform("FxaaDiagonal")
+                                    .set(0.5f);
+                            shader.safeGetUniform("FxaaSpread")
+                                    .set(1.0f);
                         },
-                        () -> {}
+                        () -> {
+                        }
 
                 ))
                 .createCompositeState(false);

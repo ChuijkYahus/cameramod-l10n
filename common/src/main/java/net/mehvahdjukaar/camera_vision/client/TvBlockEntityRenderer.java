@@ -19,7 +19,7 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
     public TvBlockEntityRenderer(BlockEntityRendererProvider.Context context) {
     }
 
-    private static final int SCREEN_RESOLUTION_SCALE = 4;
+    private static final int SCREEN_RESOLUTION_SCALE = 8;
 
     @Override
     public void render(TVBlockEntity blockEntity, float partialTick, PoseStack poseStack, MultiBufferSource buffer,
