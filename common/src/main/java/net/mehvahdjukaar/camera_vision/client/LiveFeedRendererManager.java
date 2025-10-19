@@ -4,7 +4,9 @@ import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.pipeline.TextureTarget;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
+import net.mehvahdjukaar.camera_vision.CameraModClient;
 import net.mehvahdjukaar.camera_vision.CameraVision;
 import net.mehvahdjukaar.moonlight.api.client.texture_renderer.FrameBufferBackedDynamicTexture;
 import net.mehvahdjukaar.moonlight.api.client.texture_renderer.RenderedTexturesManager;
@@ -15,6 +17,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.FogRenderer;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.LevelRenderer;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
@@ -22,6 +25,8 @@ import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL13;
+import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
 
 import java.util.Map;
@@ -100,7 +105,7 @@ public class LiveFeedRendererManager {
         renderLevel(mc, canvas, DUMMY_CAMERA);
         mc.gameRenderer.renderDistance = oldRenderDistance;
 
-        swapBuffers(canvas, renderTarget);
+        copyWithShader(canvas, renderTarget, CameraModClient.POST_SHADER);
 
         LiveFeedRendererManager.LIVE_FEED_BEING_RENDERED = null;
         mainTarget.bindWrite(true);
@@ -148,43 +153,42 @@ public class LiveFeedRendererManager {
                 (float) target.width / (float) target.height, 0.05F, depthFar);
     }
 
-    private static void swapBuffers(RenderTarget src, RenderTarget dst) {
-        // Must be on the render thread
+    public static void copyWithShader(RenderTarget src, RenderTarget dst, RenderType rt) {
         RenderSystem.assertOnRenderThreadOrInit();
 
-        if (src == null || dst == null) {
+        if (src == null || dst == null)
             throw new IllegalArgumentException("Source and destination RenderTargets cannot be null");
-        }
-        if (src.frameBufferId <= 0 || dst.frameBufferId <= 0) {
-            throw new IllegalStateException("Both RenderTargets must have a valid framebuffer");
-        }
-        if (src.getColorTextureId() <= 0 || dst.getColorTextureId() <= 0) {
-            throw new IllegalStateException("Both RenderTargets must have a valid color texture");
-        }
-        // You enforced equal sizes; fine (blit can scale if needed, but keep as-is)
-        if (src.width != dst.width || src.height != dst.height) {
-            throw new IllegalStateException("RenderTarget sizes must match for copyColor()");
-        }
+        if (src.frameBufferId <= 0 || dst.frameBufferId <= 0)
+            throw new IllegalStateException("Both RenderTargets must have valid framebuffers");
+        if (src.getColorTextureId() <= 0 || dst.getColorTextureId() <= 0)
+            throw new IllegalStateException("Both RenderTargets must have valid color textures");
+        if (src.width != dst.width || src.height != dst.height)
+            throw new IllegalStateException("RenderTarget sizes must match for shader copy");
 
-        // Scissor can clip blits; disable temporarily
-        boolean scissor = GL11.glIsEnabled(GL11.GL_SCISSOR_TEST);
-        if (scissor) GL11.glDisable(GL11.GL_SCISSOR_TEST);
+        // Bind destination framebuffer
+        GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, dst.frameBufferId);
+        GL11.glViewport(0, 0, dst.width, dst.height);
 
-        // Bind src as READ, dst as DRAW
-        GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, src.frameBufferId);
-        GL30.glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, dst.frameBufferId);
+        // Setup basic state
+        GL11.glDisable(GL11.GL_DEPTH_TEST);
+        GL11.glDisable(GL11.GL_CULL_FACE);
+        GL11.glDisable(GL11.GL_BLEND);
 
-        // Blit color buffer (use LINEAR or NEAREST; sizes match so either is fine)
-        GL30.glBlitFramebuffer(
-                0, 0, src.width, src.height,      // src rect
-                0, 0, dst.width, dst.height,      // dst rect
-                GL11.GL_COLOR_BUFFER_BIT,         // copy color
-                GL11.GL_NEAREST                   // filter (NEAREST is safe; LINEAR also fine for color)
-        );
 
-        // Unbind (bind 0 to GL_FRAMEBUFFER resets both READ/DRAW)
-        GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, 0);
+        // Bind the source texture to texture unit 0
+        GL13.glActiveTexture(GL13.GL_TEXTURE0);
+        GL11.glBindTexture(GL11.GL_TEXTURE_2D, src.getColorTextureId());
 
-        if (scissor) GL11.glEnable(GL11.GL_SCISSOR_TEST);
+        var bufferSource = Minecraft.getInstance().renderBuffers().bufferSource();
+
+        VertexConsumer vc = bufferSource.getBuffer(rt);
+
+        vc.addVertex(-1, -1, 0).setUv(0f, 0f);
+        vc.addVertex(1, -1, 0).setUv(1f, 0f);
+        vc.addVertex(1, 1, 0).setUv(1f, 1f);
+        vc.addVertex(-1, 1, 0).setUv(0f, 1f);
+        bufferSource.endBatch(rt);
+
     }
+
 }

@@ -43,7 +43,7 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
 
         int overlay = OverlayTexture.NO_OVERLAY;
         float s = screenPixelSize / 32f;
-        VertexConsumer vertexConsumer = buffer.getBuffer(RenderType.entitySolid(tex.getTextureLocation()));
+        VertexConsumer vertexConsumer = buffer.getBuffer(ModRenderTypes.CAMERA_VIEW.apply(tex));
         PoseStack.Pose pose = poseStack.last();
 
         poseStack.translate(0.5, 0.5, -0.001);
