@@ -174,7 +174,5 @@ void main() {
     vec3 sampled = fxaaSample(Sampler0, texCoord0, TexelSize);
     vec3 posterized = posterize_oklab(sampled.rgb);
 
-    vec4 color = vec4(posterized, 1) * vertexColor * ColorModulator;
-    color *= lightMapColor;
-    fragColor = linear_fog(color, vertexDistance, FogStart, FogEnd, FogColor);
+    fragColor = vec4(posterized, 1);
 }

@@ -9,7 +9,7 @@ import net.minecraft.client.renderer.GameRenderer;
 
 public class CameraModClient {
 
-    public static final CoreShaderContainer POST_SHADER = new CoreShaderContainer(GameRenderer::getPositionTexColorShader);
+    public static final CoreShaderContainer POSTERIZE_SHADER = new CoreShaderContainer(GameRenderer::getPositionTexColorShader);
     public static final CoreShaderContainer CAMERA_VIEW_SHADER = new CoreShaderContainer(GameRenderer::getRendertypeEntitySolidShader);
     public static final CoreShaderContainer NOISE_SHADER = new CoreShaderContainer(GameRenderer::getRendertypeEntitySolidShader);
 
@@ -27,6 +27,7 @@ public class CameraModClient {
     private static void registerShaders(ClientHelper.ShaderEvent event) {
         event.register(CameraVision.res("static_noise"), DefaultVertexFormat.NEW_ENTITY, NOISE_SHADER::assign);
         event.register(CameraVision.res("camera_view"), DefaultVertexFormat.NEW_ENTITY, CAMERA_VIEW_SHADER::assign);
+        event.register(CameraVision.res("posterize"), DefaultVertexFormat.POSITION_TEX, POSTERIZE_SHADER::assign);
     }
 
 }

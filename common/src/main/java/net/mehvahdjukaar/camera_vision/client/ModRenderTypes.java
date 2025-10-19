@@ -1,5 +1,6 @@
 package net.mehvahdjukaar.camera_vision.client;
 
+import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormatElement;
@@ -27,26 +28,39 @@ public class ModRenderTypes extends RenderType {
             .padding(1).build();
 
     private static final ShaderStateShard CAMERA_SHADER_STATE = new ShaderStateShard(CameraModClient.CAMERA_VIEW_SHADER);
+    private static final ShaderStateShard POSTERIZE_SHADER_STATE = new ShaderStateShard(CameraModClient.POSTERIZE_SHADER);
 
-    public static final Function<FrameBufferBackedDynamicTexture, RenderType> CAMERA_VIEW = Util.memoize((resourceLocation) -> {
+    public static final Function<FrameBufferBackedDynamicTexture, RenderType> CAMERA_DRAW = Util.memoize((resourceLocation) -> {
         RenderType.CompositeState compositeState = RenderType.CompositeState.builder()
                 .setShaderState(CAMERA_SHADER_STATE)
                 .setTextureState(new RenderStateShard.TextureStateShard(resourceLocation.getTextureLocation(),
-                        false, false))
+                        false, true))
                 .setTransparencyState(NO_TRANSPARENCY)
                 .setLightmapState(LIGHTMAP)
+                .createCompositeState(false);
+        return create("camera_view", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS,
+                1536, true, false, compositeState);
+    });
+
+    public static final Function<FrameBufferBackedDynamicTexture, RenderType> POSTERIZE = Util.memoize((target) -> {
+        RenderType.CompositeState compositeState = RenderType.CompositeState.builder()
+                .setShaderState(POSITION_TEX_SHADER)
+                .setTextureState(new RenderStateShard.TextureStateShard(target.getTextureLocation(),
+                        false, false))
+                .setTransparencyState(NO_TRANSPARENCY)
+                .setCullState(NO_CULL)
                 .setTexturingState(new TexturingStateShard("set_uniforms",
                         () -> {
                             CameraModClient.CAMERA_VIEW_SHADER.get()
                                     .safeGetUniform("TexelSize")
-                                    .set((float) 1 / resourceLocation.getWidth(),
-                                            (float) 1 / resourceLocation.getHeight());
+                                    .set((float) 1 / target.getWidth(),
+                                            (float) 1 / target.getHeight());
                         },
                         () -> {}
 
                 ))
                 .createCompositeState(false);
-        return create("camera_view", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS,
+        return create("posterize", DefaultVertexFormat.POSITION_TEX, VertexFormat.Mode.QUADS,
                 1536, true, false, compositeState);
     });
 

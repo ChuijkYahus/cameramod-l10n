@@ -7,7 +7,6 @@ import net.mehvahdjukaar.camera_vision.common.TVBlock;
 import net.mehvahdjukaar.camera_vision.common.TVBlockEntity;
 import net.mehvahdjukaar.moonlight.api.client.texture_renderer.FrameBufferBackedDynamicTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
@@ -43,7 +42,7 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
 
         int overlay = OverlayTexture.NO_OVERLAY;
         float s = screenPixelSize / 32f;
-        VertexConsumer vertexConsumer = buffer.getBuffer(ModRenderTypes.CAMERA_VIEW.apply(tex));
+        VertexConsumer vertexConsumer = buffer.getBuffer(ModRenderTypes.CAMERA_DRAW.apply(tex));
         PoseStack.Pose pose = poseStack.last();
 
         poseStack.translate(0.5, 0.5, -0.001);
