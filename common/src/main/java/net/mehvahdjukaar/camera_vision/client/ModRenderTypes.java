@@ -42,10 +42,13 @@ public class ModRenderTypes extends RenderType {
                 .setLightmapState(LIGHTMAP)
                 .setTexturingState(new TexturingStateShard("set_texel_size",
                         () -> {
-                            ShaderInstance shader = CameraModClient.POSTERIZE_SHADER.get();
-                            shader.safeGetUniform("ScanDensity")
-                                    .set(2);
-
+                            ShaderInstance shader = CameraModClient.CAMERA_VIEW_SHADER.get();
+                            shader.safeGetUniform("TriadsPerPixel")
+                                    .set(0.4f);
+                            shader.safeGetUniform("Smear")
+                                    .set(2f);
+                            shader.safeGetUniform("EnableEnergyNormalize")
+                                    .set(0f);
                         },
                         () -> {
                         }))
@@ -82,7 +85,7 @@ public class ModRenderTypes extends RenderType {
                             shader.safeGetUniform("DitherScale")
                                     .set(2f);
                             shader.safeGetUniform("DitherStrength")
-                                    .set(1f);
+                                    .set(0f);
                         },
                         () -> {
                         }
