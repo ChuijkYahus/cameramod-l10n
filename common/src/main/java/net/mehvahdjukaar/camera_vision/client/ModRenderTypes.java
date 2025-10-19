@@ -11,6 +11,7 @@ import net.minecraft.Util;
 import net.minecraft.client.renderer.RenderStateShard;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.ShaderInstance;
+import org.joml.Vector3f;
 
 import java.util.function.Function;
 
@@ -44,11 +45,11 @@ public class ModRenderTypes extends RenderType {
                         () -> {
                             ShaderInstance shader = CameraModClient.CAMERA_VIEW_SHADER.get();
                             shader.safeGetUniform("TriadsPerPixel")
-                                    .set(0.4f);
+                                    .set(0.25f);
                             shader.safeGetUniform("Smear")
-                                    .set(2f);
+                                    .set(3f);
                             shader.safeGetUniform("EnableEnergyNormalize")
-                                    .set(0f);
+                                    .set(1.0f);
                         },
                         () -> {
                         }))
@@ -72,20 +73,22 @@ public class ModRenderTypes extends RenderType {
 
                             shader.safeGetUniform("PostMode")
                                     .set(1.0f);
+                            shader.safeGetUniform("PostLevels")
+                                    .set(new Vector3f(20.0f, 20.0f, 20.0f));
 
                             shader.safeGetUniform("FxaaEdge")
-                                    .set(0.1f);
+                                    .set(0.01f);
                             shader.safeGetUniform("FxaaBlend")
-                                    .set(0.5f);
+                                    .set(1f);
                             shader.safeGetUniform("FxaaDiagonal")
                                     .set(0.5f);
                             shader.safeGetUniform("FxaaSpread")
                                     .set(1.0f);
 
                             shader.safeGetUniform("DitherScale")
-                                    .set(2f);
+                                    .set(1f);
                             shader.safeGetUniform("DitherStrength")
-                                    .set(0f);
+                                    .set(1f);
                         },
                         () -> {
                         }
