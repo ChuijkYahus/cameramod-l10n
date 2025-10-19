@@ -9,14 +9,16 @@ uniform float FogEnd;
 uniform vec4 FogColor;
 
 /* ===================== KNOBS ===================== */
-// Make them uniforms in your host if you want live tweaks.
-uniform float TriadsPerPixel;// 1.0 ≈ one triad per texel; >1 = denser triads; <1 = larger triads
-uniform float Smear;// Beam/spot width in TRIAD units; >1 = softer/smeared, <1 = sharper
-uniform float EnableEnergyNormalize;// 1.0 keeps average brightness stable across settings
+// 1.0 ≈ one triad per texel; >1 = denser triads; <1 = larger triads
+uniform float TriadsPerPixel;
+// Beam/spot width in TRIAD units; >1 = softer/smeared, <1 = sharper
+uniform float Smear;
+// 1.0 keeps average brightness stable across settings
+uniform float EnableEnergyNormalize;
 
-// Triad-kernel radius in MASK (triad) space: ±K triad cells around the current one.
-// Small is enough because beamFalloff() is applied in mask units.
-const int TriadKernelRadius = 1;// 1 => 3x3 triad neighborhood; 0 => fastest/sharpest (no neighbors)
+// Base kernel radius used if the dynamic one computes smaller.
+// (Dynamic radius grows with Smear; this is a floor.)
+const int TriadKernelRadius = 1; // 0 => fastest/sharpest (no neighbors)
 
 in float vertexDistance;
 in vec4 vertexColor;
@@ -30,7 +32,6 @@ out vec4 fragColor;
 /**
  * Phosphor/beam intensity falloff in TRIAD (mask) space.
  * Input d is a distance in triad units (after anisotropic scaling + smear).
- * Shape blends an exponential-like spot with a soft 1/r^3 tail.
  */
 float beamFalloff(float d) {
     float expLike   = exp2(-d * d * 2.5 - 0.3);
@@ -57,81 +58,91 @@ float triadDistance(vec2 triadA, vec2 triadB) {
     return mix(chebyshevCore, euclidBlend, 0.3);
 }
 
-/* ===================== Phosphor pass =====================
+/** TRIAD space -> UV helper */
+vec2 triadToUV(vec2 triadP, vec2 textureSizePx) {
+    vec2 pix = triadP / max(TriadsPerPixel, 1e-6);
+    return clamp(pix / textureSizePx, vec2(0.0), vec2(1.0));
+}
+
+/* ===================== Phosphor pass (true gather) =====================
 
 Spaces:
 - Texture UV space:    texCoord0 in [0,1].
-- Texture pixel space: pixelPos = texCoord0 * textureSizePx   (units = texels). Used ONCE to sample color.
-- Mask / triad space:  triadPos = pixelPos * TriadsPerPixel   (units = triads). All beam/smear math here.
+- Texture pixel space: pixelPos = texCoord0 * textureSizePx   (units = texels).
+- Mask / triad space:  triadPos = pixelPos * TriadsPerPixel   (units = triads).
 
-Key idea:
-We do NOT sample neighboring texels. We sample the source once (stabilized at texel center),
-then spread that same color across nearby triad cells using a beam kernel in TRIAD space.
-This simulates CRT-like subpixel triads/beam spread without cross-texel blending.
+Key change from your original:
+We DO NOT reuse one texel sample. We gather from the source texture at the
+R/G/B beam centers (in triad space), weighted by the beam kernel.
 */
 vec3 accumulateTriadResponse(vec2 pixelPos, sampler2D srcTexture, vec2 textureSizePx) {
-    // --- 1) Sample the source texture ONCE at the center of the covering texel (stabilizes against jitter) ---
-    vec2 centerPix  = floor(pixelPos) + 0.5;
-    vec2 sampleUV   = clamp(centerPix / textureSizePx, vec2(0.0), vec2(1.0));
-    vec3 srcColor   = texture(srcTexture, sampleUV).rgb;
-
-    // Gentle tonal tweak to taste (kept from original)
-    srcColor = pow(srcColor, vec3(1.18)) * 1.08;
-
-    // --- 2) Convert to TRIAD (mask) space: where the phosphor/beam math happens ---
+    // Convert to TRIAD (mask) space: where the phosphor/beam math happens
     vec2 triadPos = pixelPos * TriadsPerPixel - 0.25;
 
-    // --- 3) Add small scanline/beam jitter in TRIAD space (stable vs texture because derived from pixelPos) ---
+    // Small scanline/beam jitter in TRIAD space (stable vs texture)
     vec2 jitteredTriadPos = triadPos;
-    // amplitude scales inversely with triad density
-    float amp = 0.03 * clamp(1.0 / TriadsPerPixel, 0.25, 1.0);
-    // use primes to get long repeat periods (~15 triads here)
+    float amp = 0.03 * clamp(1.0 / max(TriadsPerPixel, 1e-6), 0.25, 1.0);
     float offset = 0.0;
     offset += (mod(floor(triadPos.x), 3.0) < 1.5 ? 1.0 : -1.0) * amp;
     offset += (mod(floor(triadPos.x), 5.0) < 2.5 ? 1.0 : -1.0) * (amp * 0.6);
     offset += (mod(floor(triadPos.x), 7.0) < 3.5 ? 1.0 : -1.0) * (amp * 0.4);
-
     jitteredTriadPos.y += offset;
 
-
-    // --- 4) Accumulate contributions from neighboring TRIAD CELLS (NOT texture pixels) ---
+    // Accumulators
     vec3 accumulatedRGB = vec3(0.0);
     float totalWeightR = 0.0;
     float totalWeightG = 0.0;
     float totalWeightB = 0.0;
 
-    // Neighborhood in triad units
-    for (int dy = -TriadKernelRadius; dy <= TriadKernelRadius; ++dy) {
-        for (int dx = -TriadKernelRadius; dx <= TriadKernelRadius; ++dx) {
+    // Dynamic neighborhood radius in triad units (grow with smear)
+    int dynRadius = max(TriadKernelRadius, int(ceil(2.5 * Smear)));
+
+    // Predefine subpixel layout (stripe-like)
+    const float lrPixelOffset = 0.25;
+    const float upPixelOffset = 0.2;
+
+    for (int dy = -dynRadius; dy <= dynRadius; ++dy) {
+        for (int dx = -dynRadius; dx <= dynRadius; ++dx) {
             // Center of this triad cell in mask space
             vec2 cellCenter = floor(triadPos) + 0.5 + vec2(dx, dy);
 
-            // RGB subpixel centers within the triad cell (stripe-like layout)
-            const float lrPixelOffset = 0.25;
-            const float upPixelOffset   = 0.2;
+            // R/G/B beam centers (in TRIAD space)
+            vec2 rTriadP = jitteredTriadPos + vec2(0.0,  upPixelOffset);
+            vec2 gTriadP = jitteredTriadPos + vec2( lrPixelOffset, 0.0);
+            vec2 bTriadP = jitteredTriadPos + vec2(-lrPixelOffset, 0.0);
 
-            // Distances from beam center (jitteredTriadPos) to each subpixel center
-            float distR = triadDistance(cellCenter, jitteredTriadPos + vec2(0.0, upPixelOffset));
-            float distG = triadDistance(cellCenter, jitteredTriadPos + vec2(lrPixelOffset, 0.0));
-            float distB = triadDistance(cellCenter, jitteredTriadPos + vec2(-lrPixelOffset, 0.0));
+            // Distances from beam centers to this triad cell center
+            float distR = triadDistance(cellCenter, rTriadP);
+            float distG = triadDistance(cellCenter, gTriadP);
+            float distB = triadDistance(cellCenter, bTriadP);
 
             // Beam falloff weights per subpixel
             float wR = beamFalloff(distR);
             float wG = beamFalloff(distG);
             float wB = beamFalloff(distB);
 
-            // Since source color is identical for all triads (no cross-texel sampling),
-            // just weight that same color by the triad-space beam distribution.
-            accumulatedRGB.r += srcColor.r * wR;  totalWeightR += wR;
-            accumulatedRGB.g += srcColor.g * wG;  totalWeightG += wG;
-            accumulatedRGB.b += srcColor.b * wB;  totalWeightB += wB;
+            // Sample the source at the *beam centers* (true gather)
+            vec3 sampleR = texture(srcTexture, triadToUV(rTriadP, textureSizePx)).rgb;
+            vec3 sampleG = texture(srcTexture, triadToUV(gTriadP, textureSizePx)).rgb;
+            vec3 sampleB = texture(srcTexture, triadToUV(bTriadP, textureSizePx)).rgb;
+
+            // Optional gentle tonal tweak (comment out while debugging)
+            sampleR = pow(sampleR, vec3(1.18)) * 1.08;
+            sampleG = pow(sampleG, vec3(1.18)) * 1.08;
+            sampleB = pow(sampleB, vec3(1.18)) * 1.08;
+
+            // Per-channel accumulation: each channel draws from the texture *at that position*
+            accumulatedRGB.r += sampleR.r * wR;  totalWeightR += wR;
+            accumulatedRGB.g += sampleG.g * wG;  totalWeightG += wG;
+            accumulatedRGB.b += sampleB.b * wB;  totalWeightB += wB;
         }
     }
 
-    // --- 5) Optional energy normalization so smear/density changes don't alter average brightness ---
+    // Optional energy normalization so smear/density changes don't alter average brightness
     if (EnableEnergyNormalize > 0.5) {
-        float avgW = (totalWeightR + totalWeightG + totalWeightB) / 3.0;
-        accumulatedRGB /= avgW;
+        accumulatedRGB.r /= max(totalWeightR, 1e-6);
+        accumulatedRGB.g /= max(totalWeightG, 1e-6);
+        accumulatedRGB.b /= max(totalWeightB, 1e-6);
     }
 
     return clamp(accumulatedRGB, 0.0, 1.0);
@@ -144,7 +155,7 @@ void main() {
     // Current fragment position in texture-pixel (texel) space
     vec2 pixelPos = texCoord0 * textureSizePx;
 
-    // Simulate CRT-like phosphor triads/beam spread in triad space
+    // Simulate CRT-like phosphor triads/beam spread in triad space (true gather)
     vec3 triadRGB = accumulateTriadResponse(pixelPos, Sampler0, textureSizePx);
 
     // Standard Minecraft pipeline bits (coloring, lights, fog)

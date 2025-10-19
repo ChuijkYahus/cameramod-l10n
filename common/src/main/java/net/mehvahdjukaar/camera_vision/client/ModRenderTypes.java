@@ -45,11 +45,11 @@ public class ModRenderTypes extends RenderType {
                         () -> {
                             ShaderInstance shader = CameraModClient.CAMERA_VIEW_SHADER.get();
                             shader.safeGetUniform("TriadsPerPixel")
-                                    .set(0.25f);
+                                    .set(1.37f);
                             shader.safeGetUniform("Smear")
-                                    .set(3f);
+                                    .set(1f);
                             shader.safeGetUniform("EnableEnergyNormalize")
-                                    .set(1.0f);
+                                    .set(0.0f);
                         },
                         () -> {
                         }))
@@ -74,16 +74,16 @@ public class ModRenderTypes extends RenderType {
                             shader.safeGetUniform("PostMode")
                                     .set(1.0f);
                             shader.safeGetUniform("PostLevels")
-                                    .set(new Vector3f(20.0f, 20.0f, 20.0f));
+                                    .set(new Vector3f(25.0f, 20.0f, 20.0f)); //LCH
 
                             shader.safeGetUniform("FxaaEdge")
-                                    .set(0.01f);
+                                    .set(0.0001f);
                             shader.safeGetUniform("FxaaBlend")
-                                    .set(1f);
+                                    .set(1.5f);
                             shader.safeGetUniform("FxaaDiagonal")
-                                    .set(0.5f);
+                                    .set(1.3f);
                             shader.safeGetUniform("FxaaSpread")
-                                    .set(1.0f);
+                                    .set(1.2f);
 
                             shader.safeGetUniform("DitherScale")
                                     .set(1f);
