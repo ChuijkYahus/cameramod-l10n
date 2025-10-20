@@ -3,6 +3,7 @@ package net.mehvahdjukaar.vista.common;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.VistaModClient;
+import net.minecraft.core.GlobalPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.Item;
@@ -49,13 +50,18 @@ public class EchoCassetteItem extends Item {
         UUID feedId = stack.get(VistaMod.LINKED_FEED_COMPONENT.get());
         if (feedId != null) {
             if (PlatHelper.getPhysicalSide().isClient()) {
-                var connection = ViewFinderConnection.get(VistaModClient.getLevel());
+                Level level = VistaModClient.getLevel();
+                var connection = ViewFinderConnection.get(level);
                 if (connection == null) return;
-                var pos = connection.getLinkedFeed(feedId);
-                if (pos == null) {
+                GlobalPos gp = connection.getLinkedFeedLocation(feedId);
+                if (gp == null) {
                     tooltipComponents.add(Component.translatable("tooltip.vista.hollow_cassette.linked_unknown"));
                 } else {
-                    tooltipComponents.add(Component.translatable("tooltip.vista.hollow_cassette.linked", pos));
+                    if (gp.dimension() == level.dimension()) {
+                        tooltipComponents.add(Component.translatable("tooltip.vista.hollow_cassette.linked", gp.pos()));
+                    } else {
+                        tooltipComponents.add(Component.translatable("tooltip.vista.hollow_cassette.linked_away", gp.dimension()));
+                    }
                 }
             }
         }

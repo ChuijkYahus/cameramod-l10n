@@ -11,6 +11,7 @@ import net.minecraft.Util;
 import net.minecraft.client.renderer.RenderStateShard;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.ShaderInstance;
+import net.minecraft.resources.ResourceLocation;
 import org.joml.Vector3f;
 
 import java.util.function.Function;
@@ -34,10 +35,10 @@ public class ModRenderTypes extends RenderType {
     private static final ShaderStateShard STATIC_SHADER_STATE = new ShaderStateShard(VistaModClient.STATIC_SHADER);
     private static final ShaderStateShard POSTERIZE_SHADER_STATE = new ShaderStateShard(VistaModClient.POSTERIZE_SHADER);
 
-    public static final Function<FrameBufferBackedDynamicTexture, RenderType> CAMERA_DRAW = Util.memoize((text) -> {
+    public static final Function<ResourceLocation, RenderType> CAMERA_DRAW = Util.memoize((text) -> {
         RenderType.CompositeState compositeState = RenderType.CompositeState.builder()
                 .setShaderState(CAMERA_SHADER_STATE)
-                .setTextureState(new RenderStateShard.TextureStateShard(text.getTextureLocation(),
+                .setTextureState(new RenderStateShard.TextureStateShard(text,
                         //TODO: mipmap
                         false, false))
                 .setTransparencyState(NO_TRANSPARENCY)

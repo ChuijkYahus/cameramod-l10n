@@ -13,10 +13,8 @@ import net.minecraft.core.UUIDUtil;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.decoration.Painting;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.item.Rarity;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -35,7 +33,7 @@ public class VistaMod {
         return ResourceLocation.fromNamespaceAndPath(MOD_ID, name);
     }
 
-    public static final WorldSavedDataType<ViewFinderConnection> VIEW_FINDER_LOCATOR =
+    public static final WorldSavedDataType<ViewFinderConnection> VIEWFINDER_CONNECTION =
             RegHelper.registerWorldSavedData(res("viewfinder_connection"), ViewFinderConnection::create,
                     ViewFinderConnection.CODEC, ViewFinderConnection.STREAM_CODEC);
 

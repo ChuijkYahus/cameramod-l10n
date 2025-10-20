@@ -1,18 +1,23 @@
 package net.mehvahdjukaar.vista.client;
 
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.pipeline.TextureTarget;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
-import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.moonlight.api.client.texture_renderer.FrameBufferBackedDynamicTexture;
 import net.mehvahdjukaar.moonlight.api.client.texture_renderer.RenderedTexturesManager;
 import net.mehvahdjukaar.moonlight.core.client.DummyCamera;
+import net.mehvahdjukaar.vista.VistaMod;
+import net.mehvahdjukaar.vista.common.ViewFinderBlockEntity;
+import net.mehvahdjukaar.vista.common.ViewFinderConnection;
 import net.minecraft.client.Camera;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.FogRenderer;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.LevelRenderer;
@@ -20,13 +25,13 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
+import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL30;
 
-import java.util.Map;
 import java.util.UUID;
 
 import static net.minecraft.client.Minecraft.ON_OSX;
@@ -36,7 +41,8 @@ public class LiveFeedRendererManager {
     private static final float RENDER_DISTANCE = 32f;
     private static final DummyCamera DUMMY_CAMERA = new DummyCamera();
     private static final Int2ObjectArrayMap<RenderTarget> CANVASES = new Int2ObjectArrayMap<>();
-    private static final Map<UUID, ResourceLocation> LIVE_FEED_LOCATIONS = new java.util.HashMap<>();
+    private static final BiMap<UUID, ResourceLocation> LIVE_FEED_LOCATIONS = HashBiMap.create();
+    private static final ResourceLocation INVALID_FEED_LOCATION = VistaMod.res("textures/block/invalid_live_feed.png");
 
     private static long feedCounter = 0;
 
@@ -44,19 +50,24 @@ public class LiveFeedRendererManager {
     public static RenderTarget LIVE_FEED_BEING_RENDERED = null;
 
 
-    public static FrameBufferBackedDynamicTexture requestLiveFeedTexture(UUID location, int size) {
-        BlockPos blockPos = new BlockPos(0, -62, 0);
-        float yaw = 0;
-        DUMMY_CAMERA.setPosition(blockPos);
-        DUMMY_CAMERA.setRotation(180 - yaw, 0);
-
-        ResourceLocation feedId = getOrCreateFeedId(location);
-        return RenderedTexturesManager.requestTexture(feedId, size,
-                LiveFeedRendererManager::refreshTexture,
-                true);
+    public static ResourceLocation requestLiveFeedTexture(Level level, UUID location, int size) {
+        ViewFinderConnection connection = ViewFinderConnection.get(level);
+        if (connection != null) {
+            ViewFinderBlockEntity tile = connection.getLinkedViewFinder(level, location);
+            if (tile != null) {
+                ResourceLocation feedId = getOrCreateFeedId(location);
+                var texture = RenderedTexturesManager.requestTexture(feedId, size,
+                        LiveFeedRendererManager::refreshTexture,
+                        true);
+                if (texture.isInitialized()) {
+                    return texture.getTextureLocation();
+                }
+            }
+        }
+        return INVALID_FEED_LOCATION;
     }
 
-    public static ResourceLocation getOrCreateFeedId(UUID uuid) {
+    private static ResourceLocation getOrCreateFeedId(UUID uuid) {
         var loc = LIVE_FEED_LOCATIONS.get(uuid);
         if (loc == null) {
             loc = VistaMod.res("live_feed_" + feedCounter++);
@@ -68,7 +79,7 @@ public class LiveFeedRendererManager {
     public static RenderTarget getOrCreateCanvas(int size) {
         RenderTarget canvas = CANVASES.get(size);
         if (canvas == null) {
-            canvas = new TextureTarget( size, size,true, ON_OSX);
+            canvas = new TextureTarget(size, size, true, ON_OSX);
             CANVASES.put(size, canvas);
         }
         return canvas;
@@ -78,10 +89,27 @@ public class LiveFeedRendererManager {
     private static void refreshTexture(FrameBufferBackedDynamicTexture text) {
         Minecraft mc = Minecraft.getInstance();
 
-        if (!mc.isGameLoadFinished() || mc.level == null) return;
+        ClientLevel level = mc.level;
+        if (!mc.isGameLoadFinished() || level == null) return;
 
-        long gameTime = mc.level.getGameTime();
+        long gameTime = level.getGameTime();
         if (gameTime % 5 != 0) return; //update every 5 ticks TODO: round robin between feeds
+        ViewFinderConnection connection = ViewFinderConnection.get(level);
+        if (connection == null) return;
+
+        UUID uuid = LIVE_FEED_LOCATIONS.inverse().get(text.getTextureLocation());
+        ViewFinderBlockEntity tile = connection.getLinkedViewFinder(level, uuid);
+        if (tile == null) return; //TODO: do something here
+
+        float partialTicks = mc.getTimer().getGameTimeDeltaTicks();
+
+        setupSceneCamera(tile, partialTicks);
+
+
+        BlockPos blockPos = new BlockPos(0, -62, 0);
+        float yaw = 0;
+        DUMMY_CAMERA.setPosition(blockPos);
+        DUMMY_CAMERA.setRotation(180 - yaw, 0);
 
         RenderTarget renderTarget = text.getFrameBuffer();
         RenderTarget mainTarget = mc.getMainRenderTarget();
@@ -106,6 +134,15 @@ public class LiveFeedRendererManager {
 
         LiveFeedRendererManager.LIVE_FEED_BEING_RENDERED = null;
         mainTarget.bindWrite(true);
+    }
+
+    private static void setupSceneCamera(ViewFinderBlockEntity tile, float partialTicks) {
+        float pitch = tile.getPitch(partialTicks);
+        float yaw = tile.getYaw(partialTicks);
+        BlockPos pos = tile.getBlockPos();
+        DUMMY_CAMERA.setPosition(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);
+        DUMMY_CAMERA.setRotation(yaw, pitch);
+
     }
 
     //same as game renderer render level but simplified

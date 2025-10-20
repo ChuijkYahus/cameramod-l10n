@@ -5,6 +5,7 @@ import net.mehvahdjukaar.moonlight.api.misc.TileOrEntityTarget;
 import net.mehvahdjukaar.moonlight.api.platform.network.NetworkHelper;
 import net.mehvahdjukaar.moonlight.api.util.math.MthUtils;
 import net.mehvahdjukaar.vista.VistaMod;
+import net.mehvahdjukaar.vista.network.ClientBoundControlViewFinderPacket;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.GlobalPos;
@@ -26,6 +27,8 @@ public class ViewFinderBlockEntity extends BlockEntity implements IOnePlayerInte
 
     public Object ccHack = null;
 
+    private final ViewFinderAccess selfAccess;
+
     private UUID myUUID;
 
     private float pitch = 0;
@@ -43,11 +46,13 @@ public class ViewFinderBlockEntity extends BlockEntity implements IOnePlayerInte
         super(VistaMod.VIEWFINDER_TILE.get(), pos, state);
 
         this.myUUID = UUID.randomUUID();
+
+        this.selfAccess = ViewFinderAccess.block(this);
     }
 
-    public void tick(ViewFinderAccess access) {
-        this.prevYaw = this.yaw;
-        this.prevPitch = this.pitch;
+    public static void tick(Level level, BlockPos pos, BlockState state, ViewFinderBlockEntity tile) {
+        tile.prevYaw = tile.yaw;
+        tile.prevPitch = tile.pitch;
     }
 
     @Override
@@ -98,13 +103,12 @@ public class ViewFinderBlockEntity extends BlockEntity implements IOnePlayerInte
     }
 
 
-    @Override
-    public boolean tryOpeningEditGui(ServerPlayer player, BlockPos pos, ItemStack stack, Direction face) {
+    public boolean tryInteracting(ServerPlayer player, BlockPos pos) {
         //same as super but sends custom packet
         if (!this.isOtherPlayerEditing(pos, player)) {
             // open gui (edit sign with empty hand)
             this.setPlayerWhoMayEdit(player.getUUID());
-            NetworkHelper.sendToClientPlayer(player, new ClientBoundControlCannonPacket(TileOrEntityTarget.of(this)));
+            NetworkHelper.sendToClientPlayer(player, new ClientBoundControlViewFinderPacket(TileOrEntityTarget.of(this)));
         }
         //always swing on fail
         return true;

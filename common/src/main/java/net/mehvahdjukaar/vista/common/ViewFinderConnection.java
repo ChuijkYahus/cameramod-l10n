@@ -19,7 +19,7 @@ import java.util.UUID;
 @SuppressWarnings("unchecked")
 public class ViewFinderConnection extends WorldSavedData {
 
-    public static final Codec<ViewFinderConnection> CODEC = Codec.unboundedMap(UUIDUtil.CODEC, GlobalPos.CODEC)
+    public static final Codec<ViewFinderConnection> CODEC = Codec.unboundedMap(UUIDUtil.STRING_CODEC, GlobalPos.CODEC)
             .xmap(map -> {
                 ViewFinderConnection storage = new ViewFinderConnection();
                 storage.linkedFeeds.putAll(map);
@@ -51,25 +51,39 @@ public class ViewFinderConnection extends WorldSavedData {
         if (projectorPos.equals(old)) return;
         linkedFeeds.put(viewFinderUUID, projectorPos);
         this.setDirty();
+        this.sync();
     }
 
     public void unlinkFeed(UUID viewFinderUUID) {
         if (linkedFeeds.remove(viewFinderUUID) != null) {
             this.setDirty();
+            this.sync();
         }
     }
 
     @Nullable
-    public GlobalPos getLinkedFeed(UUID viewFinderUUID) {
+    public GlobalPos getLinkedFeedLocation(UUID viewFinderUUID) {
         return linkedFeeds.get(viewFinderUUID);
+    }
+
+    @Nullable
+    public ViewFinderBlockEntity getLinkedViewFinder(Level level, UUID viewFinderUUID) {
+        GlobalPos pos = linkedFeeds.get(viewFinderUUID);
+
+        if (pos != null && pos.dimension() == level.dimension()) {
+            if (level.getBlockEntity(pos.pos()) instanceof ViewFinderBlockEntity be) {
+                return be;
+            }
+        }
+        return null;
     }
 
     @Override
     public WorldSavedDataType<ViewFinderConnection> getType() {
-        return VistaMod.VIEW_FINDER_LOCATOR;
+        return VistaMod.VIEWFINDER_CONNECTION;
     }
 
     public static ViewFinderConnection get(Level level) {
-        return VistaMod.VIEW_FINDER_LOCATOR.getData(level);
+        return VistaMod.VIEWFINDER_CONNECTION.getData(level);
     }
 }

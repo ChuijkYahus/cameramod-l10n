@@ -3,7 +3,6 @@ package net.mehvahdjukaar.vista.client;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
-import net.mehvahdjukaar.moonlight.api.client.texture_renderer.FrameBufferBackedDynamicTexture;
 import net.mehvahdjukaar.vista.common.TVBlock;
 import net.mehvahdjukaar.vista.common.TVBlockEntity;
 import net.minecraft.client.renderer.LightTexture;
@@ -13,6 +12,7 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.Direction;
+import net.minecraft.resources.ResourceLocation;
 
 import java.util.UUID;
 
@@ -35,13 +35,10 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
         int screenPixelSize = blockEntity.getScreenPixelSize();
 
         if (liveFeedId != null) {
-
-            FrameBufferBackedDynamicTexture tex = LiveFeedRendererManager.requestLiveFeedTexture(
+            ResourceLocation tex = LiveFeedRendererManager.requestLiveFeedTexture(blockEntity.getLevel(),
                     liveFeedId, screenPixelSize * SCREEN_RESOLUTION_SCALE);
 
-            if (tex.isInitialized()) {
-                renderType = ModRenderTypes.CAMERA_DRAW.apply(tex);
-            }
+            renderType = ModRenderTypes.CAMERA_DRAW.apply(tex);
         }
 
         if (renderType == null) {
