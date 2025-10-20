@@ -11,7 +11,7 @@ public class VistaModClient {
 
     public static final CoreShaderContainer POSTERIZE_SHADER = new CoreShaderContainer(GameRenderer::getPositionTexColorShader);
     public static final CoreShaderContainer CAMERA_VIEW_SHADER = new CoreShaderContainer(GameRenderer::getRendertypeEntitySolidShader);
-    public static final CoreShaderContainer NOISE_SHADER = new CoreShaderContainer(GameRenderer::getRendertypeEntitySolidShader);
+    public static final CoreShaderContainer STATIC_SHADER = new CoreShaderContainer(GameRenderer::getRendertypeEntitySolidShader);
 
 
     public static void init() {
@@ -25,7 +25,7 @@ public class VistaModClient {
 
     @EventCalled
     private static void registerShaders(ClientHelper.ShaderEvent event) {
-        event.register(VistaMod.res("static_noise"), DefaultVertexFormat.NEW_ENTITY, NOISE_SHADER::assign);
+        event.register(VistaMod.res("static_noise"), DefaultVertexFormat.NEW_ENTITY, STATIC_SHADER::assign);
         event.register(VistaMod.res("camera_view"), DefaultVertexFormat.NEW_ENTITY, CAMERA_VIEW_SHADER::assign);
         event.register(VistaMod.res("posterize"), DefaultVertexFormat.POSITION_TEX, POSTERIZE_SHADER::assign);
     }

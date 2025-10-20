@@ -3,11 +3,12 @@ package net.mehvahdjukaar.vista.client;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
+import net.mehvahdjukaar.moonlight.api.client.texture_renderer.FrameBufferBackedDynamicTexture;
 import net.mehvahdjukaar.vista.common.TVBlock;
 import net.mehvahdjukaar.vista.common.TVBlockEntity;
-import net.mehvahdjukaar.moonlight.api.client.texture_renderer.FrameBufferBackedDynamicTexture;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
@@ -26,16 +27,26 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
     public void render(TVBlockEntity blockEntity, float partialTick, PoseStack poseStack, MultiBufferSource buffer,
                        int light, int overlay) {
 
-        if (!blockEntity.getBlockState().getValue(TVBlock.LIT)) return;
+        if (!blockEntity.getBlockState().getValue(TVBlock.POWERED)) return;
 
         UUID liveFeedId = blockEntity.getLinkedFeedUUID();
+
+        RenderType renderType = null;
         int screenPixelSize = blockEntity.getScreenPixelSize();
-        if (liveFeedId == null) return;
 
-        FrameBufferBackedDynamicTexture tex = LiveFeedRendererManager.requestLiveFeedTexture(
-                liveFeedId, screenPixelSize * SCREEN_RESOLUTION_SCALE);
+        if (liveFeedId != null) {
 
-        if (!tex.isInitialized()) return;
+            FrameBufferBackedDynamicTexture tex = LiveFeedRendererManager.requestLiveFeedTexture(
+                    liveFeedId, screenPixelSize * SCREEN_RESOLUTION_SCALE);
+
+            if (tex.isInitialized()) {
+                renderType = ModRenderTypes.CAMERA_DRAW.apply(tex);
+            }
+        }
+
+        if (renderType == null) {
+            renderType = ModRenderTypes.CAMERA_DRAW_STATIC;
+        }
 
         Direction dir = blockEntity.getBlockState().getValue(TVBlock.FACING);
         float yaw = dir.toYRot();
@@ -47,7 +58,7 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
         overlay = OverlayTexture.NO_OVERLAY;
 
         float s = screenPixelSize / 32f;
-        VertexConsumer vertexConsumer = buffer.getBuffer(ModRenderTypes.CAMERA_DRAW.apply(tex));
+        VertexConsumer vertexConsumer = buffer.getBuffer(renderType);
         PoseStack.Pose pose = poseStack.last();
 
         poseStack.translate(0.5, 0.5, -0.001);

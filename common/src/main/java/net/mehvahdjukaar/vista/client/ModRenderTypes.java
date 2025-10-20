@@ -31,6 +31,7 @@ public class ModRenderTypes extends RenderType {
             .padding(1).build();
 
     private static final ShaderStateShard CAMERA_SHADER_STATE = new ShaderStateShard(VistaModClient.CAMERA_VIEW_SHADER);
+    private static final ShaderStateShard STATIC_SHADER_STATE = new ShaderStateShard(VistaModClient.STATIC_SHADER);
     private static final ShaderStateShard POSTERIZE_SHADER_STATE = new ShaderStateShard(VistaModClient.POSTERIZE_SHADER);
 
     public static final Function<FrameBufferBackedDynamicTexture, RenderType> CAMERA_DRAW = Util.memoize((text) -> {
@@ -53,11 +54,25 @@ public class ModRenderTypes extends RenderType {
                         },
                         () -> {
                         }))
-                        .createCompositeState(false);
+                .createCompositeState(false);
 
         return create("camera_view", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS,
                 1536, true, false, compositeState);
     });
+
+    public static final RenderType CAMERA_DRAW_STATIC =
+            create("noise", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS,
+                    1536, true, false,
+                    RenderType.CompositeState.builder()
+                            .setShaderState(STATIC_SHADER_STATE)
+                            .setTransparencyState(NO_TRANSPARENCY)
+                            .setLightmapState(LIGHTMAP)
+                            .setTexturingState(new TexturingStateShard("set_texel_size",
+                                    () -> {
+                                    },
+                                    () -> {
+                                    }))
+                            .createCompositeState(false));
 
     public static final Function<RenderTarget, RenderType> POSTERIZE = Util.memoize((target) -> {
         RenderType.CompositeState compositeState = RenderType.CompositeState.builder()

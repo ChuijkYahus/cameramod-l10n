@@ -1,12 +1,14 @@
 package net.mehvahdjukaar.vista;
 
-import net.mehvahdjukaar.vista.common.*;
-import net.mehvahdjukaar.vista.configs.CommonConfigs;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.platform.RegHelper;
 import net.mehvahdjukaar.moonlight.api.platform.network.NetworkHelper;
+import net.mehvahdjukaar.vista.common.*;
+import net.mehvahdjukaar.vista.configs.CommonConfigs;
+import net.minecraft.core.Registry;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.core.component.DataComponentType;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Rarity;
@@ -27,26 +29,34 @@ public class VistaMod {
         return ResourceLocation.fromNamespaceAndPath(MOD_ID, name);
     }
 
+    public static final ResourceKey<Registry<CassetteTape>> CASSETTE_TAPE_REGISTRY_KEY =
+            RegHelper.registerDataPackRegistry(VistaMod.res("cassette_tape"), CassetteTape.DIRECT_CODEC, CassetteTape.DIRECT_CODEC);
+
     public static final Supplier<Block> TV = RegHelper.registerBlockWithItem(res("television"),
             () -> new TVBlock(Block.Properties.of().strength(1.5f).noOcclusion()));
 
     public final static Supplier<BlockEntityType<TVBlockEntity>> TV_TILE = RegHelper.registerBlockEntityType(
             res("television"), TVBlockEntity::new, TV);
 
-
     public static final Supplier<Block> VIEW_FINDER = RegHelper.registerBlockWithItem(res("view_finder"),
             () -> new ViewFinderBlock(Block.Properties.of().strength(1.5f).noOcclusion()));
 
-    public  static final Supplier<BlockEntityType<ViewFinderBlockEntity>> VIEW_FINDER_TILE = RegHelper.registerBlockEntityType(
+    public static final Supplier<BlockEntityType<ViewFinderBlockEntity>> VIEW_FINDER_TILE = RegHelper.registerBlockEntityType(
             res("view_finder"), ViewFinderBlockEntity::new, VIEW_FINDER);
 
-    public static final Supplier<EchoCassetteItem> ECHO_CASSETTE_ITEM = RegHelper.registerItem(res("echo_cassette"),
+    public static final Supplier<CassetteItem> CASSETTE = RegHelper.registerItem(res("cassette"),
+            () -> new CassetteItem(new Item.Properties()
+                    .rarity(Rarity.UNCOMMON)
+                    .stacksTo(1)));
+
+    public static final Supplier<EchoCassetteItem> HOLLOW_CASSETTE = RegHelper.registerItem(res("hollow_cassette"),
             () -> new EchoCassetteItem(new Item.Properties()
                     .rarity(Rarity.RARE)
                     .stacksTo(1)));
 
+
     public static final Supplier<DataComponentType<UUID>> LINKED_FEED_COMPONENT = RegHelper.registerDataComponent(
-            res("linked_feed"), ()->
+            res("linked_feed"), () ->
                     DataComponentType.<UUID>builder()
                             .persistent(UUIDUtil.CODEC)
                             .networkSynchronized(UUIDUtil.STREAM_CODEC)

@@ -2,7 +2,7 @@
   "parent": "minecraft:block/cube",
   "textures": {
     "particle": "vista:block/tv_front",
-    "north": "vista:block/tv_side",
+    "north": "vista:block/tv_front",
     "south": "vista:block/tv_side",
     "east": "vista:block/tv_side",
     "west": "vista:block/tv_side",

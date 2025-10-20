@@ -24,13 +24,11 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock {
 
     public static final MapCodec<TVBlock> CODEC = simpleCodec(TVBlock::new);
     public static final BooleanProperty POWERED = BlockStateProperties.POWERED;
-    public static final BooleanProperty LIT = BlockStateProperties.LIT;
 
     public TVBlock(Properties properties) {
-        super(properties.lightLevel(state -> state.getValue(LIT) ? 3 : 0));
+        super(properties.lightLevel(state -> state.getValue(POWERED) ? 3 : 0));
         this.registerDefaultState(this.stateDefinition.any()
                 .setValue(POWERED, false)
-                .setValue(LIT, false)
                 .setValue(FACING, Direction.NORTH));
     }
 
@@ -39,14 +37,10 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock {
         super.neighborChanged(state, level, pos, neighborBlock, neighborPos, movedByPiston);
         boolean powered = level.hasNeighborSignal(pos);
         if (powered != state.getValue(POWERED)) {
-            var be = this.getMasterBlockEntity(level, pos);
-            boolean lit = be != null && be.hasVideo();
             if (powered) {
-                level.setBlockAndUpdate(pos, state.setValue(POWERED, true)
-                        .setValue(LIT, lit));
+                level.setBlockAndUpdate(pos, state.setValue(POWERED, true));
             } else {
-                level.setBlockAndUpdate(pos, state.setValue(POWERED, false)
-                        .setValue(LIT, false));
+                level.setBlockAndUpdate(pos, state.setValue(POWERED, false));
             }
         }
     }
@@ -70,7 +64,6 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock {
         super.createBlockStateDefinition(builder);
         builder.add(FACING);
         builder.add(POWERED);
-        builder.add(LIT);
     }
 
     @Override

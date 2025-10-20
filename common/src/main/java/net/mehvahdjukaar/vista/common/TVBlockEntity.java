@@ -39,15 +39,20 @@ public class TVBlockEntity extends ItemDisplayTile {
     }
 
     @Override
+    public boolean canPlaceItem(int index, ItemStack stack) {
+        return stack.is(VistaMod.CASSETTE.get()) || stack.is(VistaMod.HOLLOW_CASSETTE.get());
+    }
+
+    @Override
     public void updateTileOnInventoryChanged() {
         super.updateTileOnInventoryChanged();
-        ItemStack stack = this.getDisplayedItem();
-        linkedFeedUuid = stack.get(VistaMod.LINKED_FEED_COMPONENT.get());
+        linkedFeedUuid = this.getDisplayedItem().get(VistaMod.LINKED_FEED_COMPONENT.get());
+    }
 
-        if (level != null && hasVideo() != this.getBlockState().getValue(TVBlock.LIT)) {
-            level.setBlockAndUpdate(worldPosition, this.getBlockState()
-                    .setValue(TVBlock.LIT, hasVideo()));
-        }
+    @Override
+    public void updateClientVisualsOnLoad() {
+        super.updateClientVisualsOnLoad();
+        linkedFeedUuid = this.getDisplayedItem().get(VistaMod.LINKED_FEED_COMPONENT.get());
     }
 
     @Override

@@ -1,18 +1,18 @@
 {
   "variants": {
     "facing=north": {
-      "model": "vista:block/blackboard"
+      "model": "vista:block/television"
     },
     "facing=east": {
-      "model": "vista:block/blackboard",
+      "model": "vista:block/television",
       "y": 90
     },
     "facing=south": {
-      "model": "vista:block/blackboard",
+      "model": "vista:block/television",
       "y": 180
     },
     "facing=west": {
-      "model": "vista:block/blackboard",
+      "model": "vista:block/television",
       "y": 270
     }
   }
