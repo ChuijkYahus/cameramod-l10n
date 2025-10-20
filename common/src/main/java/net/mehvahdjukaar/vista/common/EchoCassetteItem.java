@@ -43,7 +43,8 @@ public class EchoCassetteItem extends Item {
         super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
         UUID feedId = stack.get(VistaMod.LINKED_FEED_COMPONENT.get());
         if (feedId != null) {
-            tooltipComponents.add(Component.translatable("vista.tooltip.echo_cassette.linked"));
+            tooltipComponents.add(Component.translatable("tooltip.vista.hollow_cassette.linked",
+                    feedId));
         }
     }
 }

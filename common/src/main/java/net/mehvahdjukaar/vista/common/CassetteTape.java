@@ -23,8 +23,8 @@ public record CassetteTape(ResourceLocation assetId, int color) {
                     ByteBufCodecs.VAR_INT, CassetteTape::color, CassetteTape::new);
 
 
-    public static final Codec<Holder<CassetteTape>> CODEC = RegistryFileCodec.create(VistaMod.CASSETTE_TAPE_REGISTRY.key(), DIRECT_CODEC);
+    public static final Codec<Holder<CassetteTape>> CODEC = RegistryFileCodec.create(VistaMod.CASSETTE_TAPE_REGISTRY_KEY, DIRECT_CODEC);
 
     public static final StreamCodec<RegistryFriendlyByteBuf, Holder<CassetteTape>> STREAM_CODEC = ByteBufCodecs.holder(
-            VistaMod.CASSETTE_TAPE_REGISTRY.key(), DIRECT_STREAM_CODEC);
+            VistaMod.CASSETTE_TAPE_REGISTRY_KEY, DIRECT_STREAM_CODEC);
 }

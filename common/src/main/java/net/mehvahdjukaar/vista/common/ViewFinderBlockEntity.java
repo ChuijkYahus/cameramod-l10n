@@ -8,6 +8,14 @@ import net.minecraft.world.level.block.state.BlockState;
 public class ViewFinderBlockEntity extends BlockEntity {
 
     public ViewFinderBlockEntity(BlockPos pos, BlockState state) {
-        super(VistaMod.VIEW_FINDER_TILE.get(), pos, state);
+        super(VistaMod.VIEWFINDER_TILE.get(), pos, state);
+    }
+
+    public float getPitch(float partialTick) {
+        return 0;
+    }
+
+    public float getYaw(float partialTick) {
+        return 0;
     }
 }

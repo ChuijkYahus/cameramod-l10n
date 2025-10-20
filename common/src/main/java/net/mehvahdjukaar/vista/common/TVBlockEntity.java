@@ -5,6 +5,7 @@ import net.mehvahdjukaar.moonlight.api.block.ItemDisplayTile;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
@@ -59,15 +60,16 @@ public class TVBlockEntity extends ItemDisplayTile {
     public ItemInteractionResult interactWithPlayerItem(Player player, InteractionHand handIn, ItemStack stack, int slot) {
 
         ItemStack current = this.getDisplayedItem();
-        if (current.isEmpty()) {
+        if (!current.isEmpty()) {
             //pop pop current
-            Vec3 vec3 = Vec3.atLowerCornerWithOffset(this.worldPosition, 0.5, 1.01, 0.5)
+            Vec3 vec3 = Vec3.atLowerCornerWithOffset(this.worldPosition, 0.5, 1.05, 0.5)
                     .offsetRandom(this.level.random, 0.7F);
             ItemStack itemStack2 = current.copy();
             ItemEntity itemEntity = new ItemEntity(this.level, vec3.x(), vec3.y(), vec3.z(), itemStack2);
             itemEntity.setDefaultPickUpDelay();
             this.level.addFreshEntity(itemEntity);
             this.clearContent();
+            return ItemInteractionResult.sidedSuccess(this.level.isClientSide);
         }
 
         return super.interactWithPlayerItem(player, handIn, stack, slot);
