@@ -14,7 +14,7 @@ import org.spongepowered.asm.mixin.injection.At;
 public class LevelRendererMixin {
 
     @ModifyReturnValue(method = "shouldShowEntityOutlines", at = @At(value = "RETURN"))
-    public boolean camera$disableEntityOutlines(boolean original) {
+    public boolean vista$disableEntityOutlines(boolean original) {
         if (LiveFeedRendererManager.LIVE_FEED_BEING_RENDERED != null) {
             return false;
         }
@@ -23,7 +23,7 @@ public class LevelRendererMixin {
 
     @ModifyExpressionValue(method = "renderLevel", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Camera;isDetached()Z"),
     require = 1)
-    public boolean camera$renderPlayer(boolean original) {
+    public boolean vista$renderPlayer(boolean original) {
         if (LiveFeedRendererManager.LIVE_FEED_BEING_RENDERED != null) {
             return true;
         }
@@ -33,7 +33,7 @@ public class LevelRendererMixin {
     @ModifyExpressionValue(method = "renderLevel", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Camera;getEntity()Lnet/minecraft/world/entity/Entity;",
     ordinal = 3),
             require = 1)
-    public Entity camera$renderPlayer2(Entity original, @Local(ordinal = 0) Entity entity) {
+    public Entity vista$renderPlayer2(Entity original, @Local(ordinal = 0) Entity entity) {
         if (LiveFeedRendererManager.LIVE_FEED_BEING_RENDERED != null && entity instanceof LocalPlayer) {
             return entity;
         }

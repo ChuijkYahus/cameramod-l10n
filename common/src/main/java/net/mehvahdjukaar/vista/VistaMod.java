@@ -6,6 +6,7 @@ import net.mehvahdjukaar.moonlight.api.platform.RegHelper;
 import net.mehvahdjukaar.moonlight.api.platform.network.NetworkHelper;
 import net.mehvahdjukaar.vista.common.*;
 import net.mehvahdjukaar.vista.configs.CommonConfigs;
+import net.mehvahdjukaar.vista.network.ModNetwork;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.UUIDUtil;
@@ -81,7 +82,7 @@ public class VistaMod {
     public static void init() {
         CommonConfigs.init();
 
-        NetworkHelper.addNetworkRegistration(VistaMod::registerMessages, 2);
+        ModNetwork.init();
 
         RegHelper.addItemsToTabsRegistration(VistaMod::addItemsToTabs);
 

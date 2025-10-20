@@ -25,12 +25,14 @@ public class EchoCassetteItem extends Item {
     @Override
     public InteractionResult useOn(UseOnContext context) {
         Level level = context.getLevel();
-        if (!level.isClientSide) {
-            BlockEntity be = level.getBlockEntity(context.getClickedPos());
-            if (be instanceof ViewFinderBlockEntity feed) {
+        BlockEntity be = level.getBlockEntity(context.getClickedPos());
+        if (be instanceof ViewFinderBlockEntity feed) {
+            if (!level.isClientSide) {
+
                 ItemStack stack = context.getItemInHand();
                 stack.set(VistaMod.LINKED_FEED_COMPONENT.get(), feed.getUUID());
             }
+            return InteractionResult.sidedSuccess(level.isClientSide);
         }
         return super.useOn(context);
     }
@@ -48,6 +50,7 @@ public class EchoCassetteItem extends Item {
         if (feedId != null) {
             if (PlatHelper.getPhysicalSide().isClient()) {
                 var connection = ViewFinderConnection.get(VistaModClient.getLevel());
+                if (connection == null) return;
                 var pos = connection.getLinkedFeed(feedId);
                 if (pos == null) {
                     tooltipComponents.add(Component.translatable("tooltip.vista.hollow_cassette.linked_unknown"));

@@ -8,4 +8,9 @@ accessible field net/minecraft/client/renderer/LevelRenderer entityTarget Lcom/m
 
 accessible field net/minecraft/client/renderer/GameRenderer renderDistance F
 
+accessible method net/minecraft/client/Camera setPosition (Lnet/minecraft/world/phys/Vec3;)V
+accessible method net/minecraft/client/Camera setRotation (FF)V
+accessible method net/minecraft/client/Camera getMaxZoom (F)F
+accessible method net/minecraft/client/Camera move (FFF)V
+
 

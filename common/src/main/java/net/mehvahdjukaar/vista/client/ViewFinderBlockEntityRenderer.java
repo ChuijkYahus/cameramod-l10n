@@ -45,12 +45,15 @@ public class ViewFinderBlockEntityRenderer implements BlockEntityRenderer<ViewFi
 
         poseStack.pushPose();
         poseStack.translate(0.5, 0.5, 0.5);
-        this.renderCannonModel(tile, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
+        this.renderModel(tile, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
         poseStack.popPose();
     }
 
-    public void renderCannonModel(ViewFinderBlockEntity tile, float partialTick, PoseStack poseStack,
-                                  MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
+    public void renderModel(ViewFinderBlockEntity tile, float partialTick, PoseStack poseStack,
+                            MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
+
+        boolean isControlledByLocalInstance = ViewFinderController.isActive() &&
+                ViewFinderController.access.getInternalTile() == tile;
 
         poseStack.pushPose();
         Quaternionf rotation = tile.getBlockState().getValue(ViewFinderBlock.FACING).getOpposite().getRotation();
@@ -77,6 +80,9 @@ public class ViewFinderBlockEntityRenderer implements BlockEntityRenderer<ViewFi
         this.legs.yRot = yawRad;
         this.pivot.xRot = pitchRad;
         this.pivot.zRot = 0;
+
+        this.legs.visible = !isControlledByLocalInstance;
+        this.head.visible = !isControlledByLocalInstance;
 
         this.model.render(poseStack, builder, packedLight, packedOverlay);
         poseStack.popPose();
