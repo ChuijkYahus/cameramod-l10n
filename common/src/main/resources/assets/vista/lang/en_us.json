@@ -6,6 +6,7 @@
   "block.vista.viewfinder": "Viewfinder",
   "tooltip.vista.cassette.tape": "Tape: %s",
   "tooltip.vista.hollow_cassette.linked": "Linked to: %s",
+  "tooltip.vista.hollow_cassette.linked_unknown": "Linked to invalid location",
   "cassette_tape.vista.vhs.author": "Plantkillable",
   "cassette_tape.vista.vhs.title": "Test"
 }

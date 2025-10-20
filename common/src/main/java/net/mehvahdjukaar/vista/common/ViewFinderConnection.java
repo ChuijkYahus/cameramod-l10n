@@ -10,6 +10,8 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.Level;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.UUID;
@@ -20,9 +22,9 @@ public class ViewFinderConnection extends WorldSavedData {
     public static final Codec<ViewFinderConnection> CODEC = Codec.unboundedMap(UUIDUtil.CODEC, GlobalPos.CODEC)
             .xmap(map -> {
                 ViewFinderConnection storage = new ViewFinderConnection();
-                storage.projectorMap.putAll(map);
+                storage.linkedFeeds.putAll(map);
                 return storage;
-            }, storage -> storage.projectorMap);
+            }, storage -> storage.linkedFeeds);
 
     public static final StreamCodec<RegistryFriendlyByteBuf, ViewFinderConnection> STREAM_CODEC =
             (StreamCodec) ByteBufCodecs.map(
@@ -31,9 +33,9 @@ public class ViewFinderConnection extends WorldSavedData {
                     GlobalPos.STREAM_CODEC
             ).map(map -> {
                 ViewFinderConnection storage = new ViewFinderConnection();
-                storage.projectorMap.putAll(map);
+                storage.linkedFeeds.putAll(map);
                 return storage;
-            }, storage -> storage.projectorMap);
+            }, storage -> storage.linkedFeeds);
 
     private ViewFinderConnection() {
     }
@@ -42,10 +44,32 @@ public class ViewFinderConnection extends WorldSavedData {
         return new ViewFinderConnection();
     }
 
-    private final HashMap<UUID, GlobalPos> projectorMap = new HashMap<>();
+    private final HashMap<UUID, GlobalPos> linkedFeeds = new HashMap<>();
+
+    public void linkFeed(UUID viewFinderUUID, GlobalPos projectorPos) {
+        GlobalPos old = linkedFeeds.get(viewFinderUUID);
+        if (projectorPos.equals(old)) return;
+        linkedFeeds.put(viewFinderUUID, projectorPos);
+        this.setDirty();
+    }
+
+    public void unlinkFeed(UUID viewFinderUUID) {
+        if (linkedFeeds.remove(viewFinderUUID) != null) {
+            this.setDirty();
+        }
+    }
+
+    @Nullable
+    public GlobalPos getLinkedFeed(UUID viewFinderUUID) {
+        return linkedFeeds.get(viewFinderUUID);
+    }
 
     @Override
     public WorldSavedDataType<ViewFinderConnection> getType() {
         return VistaMod.VIEW_FINDER_LOCATOR;
+    }
+
+    public static ViewFinderConnection get(Level level) {
+        return VistaMod.VIEW_FINDER_LOCATOR.getData(level);
     }
 }

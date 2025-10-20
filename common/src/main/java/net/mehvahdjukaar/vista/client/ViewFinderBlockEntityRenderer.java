@@ -88,15 +88,15 @@ public class ViewFinderBlockEntityRenderer implements BlockEntityRenderer<ViewFi
         PartDefinition partdefinition = meshdefinition.getRoot();
 
         PartDefinition legs = partdefinition.addOrReplaceChild("legs", CubeListBuilder.create()
-                        .texOffs(0, 0).addBox(6.0F, -4.0F, -3.0F, 2.0F, 10.0F, 6.0F)
-                        .texOffs(48, 0).addBox(-8.0F, -4.0F, -3.0F, 2.0F, 10.0F, 6.0F),
+                        .texOffs(0, 36).addBox(5.0F, -4.0F, -2.0F, 2.0F, 10.0F, 4.0F)
+                        .texOffs(12, 36).addBox(-7.0F, -4.0F, -2.0F, 2.0F, 10.0F, 4.0F),
                 PartPose.ZERO);
 
         PartDefinition head = legs.addOrReplaceChild("head_pivot", CubeListBuilder.create(),
                 PartPose.offsetAndRotation(0.0F, -1.0F, 0.0F, -0.1745F, 0.0F, 0.0F));
 
         PartDefinition bone = head.addOrReplaceChild("head", CubeListBuilder.create()
-                        .texOffs(0, 46).addBox(-6.0F, -6.0F, -6.5F, 12.0F, 12.0F, 6.0F),
+                        .texOffs(0, 16).addBox(-5.0F, -6.0F, -4F, 10.0F, 12.0F, 8.0F),
                 PartPose.ZERO);
 
         PartDefinition base = partdefinition.addOrReplaceChild("base", CubeListBuilder.create()

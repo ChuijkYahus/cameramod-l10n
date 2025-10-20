@@ -6,11 +6,13 @@ import net.mehvahdjukaar.moonlight.api.misc.EventCalled;
 import net.mehvahdjukaar.moonlight.api.platform.ClientHelper;
 import net.mehvahdjukaar.vista.client.TvBlockEntityRenderer;
 import net.mehvahdjukaar.vista.client.ViewFinderBlockEntityRenderer;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.color.item.ItemColor;
 import net.minecraft.client.model.geom.ModelLayerLocation;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.resources.model.Material;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 
 import static net.minecraft.client.renderer.texture.TextureAtlas.LOCATION_BLOCKS;
 
@@ -39,19 +41,13 @@ public class VistaModClient {
 
     @EventCalled
     private static void registerItemColors(ClientHelper.ItemColorEvent event) {
-        event.register(new ItemColor() {
-            @Override
-            public int getColor(ItemStack itemStack, int i) {
-                if(i == 1){
-                    itemStack.get(VistaMod.CASSETTE_TAPE_COMPONENT.get()).ifPresent(tape -> {
-                        int color = tape.getColor().getColorValue();
-                        //make sure it's not white
-                        if (color == 0xFFFFFF) color = 0xAAAAAA;
-                        return color;
-                    });
-                }
-                return 0;
+        event.register((itemStack, i) -> {
+            if (i == 1) {
+                var tape = itemStack.get(VistaMod.CASSETTE_TAPE_COMPONENT.get());
+                if (tape == null) return 0;
+                return tape.value().color();
             }
+            return 0;
         }, VistaMod.CASSETTE.get());
     }
 
@@ -72,5 +68,9 @@ public class VistaModClient {
     @EventCalled
     private static void registerModelLayers(ClientHelper.ModelLayerEvent event) {
         event.register(VIEWFINDER_MODEL, ViewFinderBlockEntityRenderer::createMesh);
+    }
+
+    public static Level getLevel() {
+        return Minecraft.getInstance().level;
     }
 }
