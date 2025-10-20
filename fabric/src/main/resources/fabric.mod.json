@@ -16,7 +16,7 @@
   "environment": "*",
   "entrypoints": {
     "main": [
-      "net.mehvahdjukaar.camera_vision.fabric.CameraVisionFabric"
+      "net.mehvahdjukaar.vista.fabric.VistaFabric"
     ]
   },
   "mixins": [

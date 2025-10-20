@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "vista:block/blackboard"
+    },
+    "facing=east": {
+      "model": "vista:block/blackboard",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "vista:block/blackboard",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "vista:block/blackboard",
+      "y": 270
+    }
+  }
+}
