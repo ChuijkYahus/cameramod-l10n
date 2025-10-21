@@ -10,7 +10,10 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
+import net.minecraft.client.renderer.blockentity.DecoratedPotRenderer;
+import net.minecraft.client.renderer.entity.PaintingRenderer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.client.resources.model.Material;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 
@@ -37,7 +40,6 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
         if (liveFeedId != null) {
             ResourceLocation tex = LiveFeedRendererManager.requestLiveFeedTexture(blockEntity.getLevel(),
                     liveFeedId, screenPixelSize * SCREEN_RESOLUTION_SCALE);
-
             renderType = ModRenderTypes.CAMERA_DRAW.apply(tex);
         }
 

@@ -4,17 +4,20 @@ import net.mehvahdjukaar.moonlight.api.misc.WorldSavedDataType;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.platform.RegHelper;
 import net.mehvahdjukaar.moonlight.api.platform.network.NetworkHelper;
+import net.mehvahdjukaar.moonlight.api.util.Utils;
 import net.mehvahdjukaar.vista.common.*;
 import net.mehvahdjukaar.vista.configs.CommonConfigs;
 import net.mehvahdjukaar.vista.network.ModNetwork;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
+import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Rarity;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -92,7 +95,16 @@ public class VistaMod {
     private static void addItemsToTabs(RegHelper.ItemToTabEvent event) {
         event.add(CreativeModeTabs.REDSTONE_BLOCKS, TV.get());
         event.add(CreativeModeTabs.REDSTONE_BLOCKS, VIEWFINDER.get());
-        event.add(CreativeModeTabs.TOOLS_AND_UTILITIES, CASSETTE.get());
+        RegistryAccess ra = Utils.hackyGetRegistryAccess();
+        if (ra != null) {
+            for(var v : ra.registryOrThrow(CASSETTE_TAPE_REGISTRY_KEY).holders().toList()) {
+                ItemStack stack = CASSETTE.get().getDefaultInstance();
+                stack.set(CASSETTE_TAPE_COMPONENT.get(), v);
+                event.add(CreativeModeTabs.TOOLS_AND_UTILITIES, stack);
+            }
+        } else {
+            event.add(CreativeModeTabs.TOOLS_AND_UTILITIES, CASSETTE.get());
+        }
         event.add(CreativeModeTabs.TOOLS_AND_UTILITIES, HOLLOW_CASSETTE.get());
     }
 

@@ -2,9 +2,12 @@ package net.mehvahdjukaar.vista.neoforge;
 
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.VistaModClient;
+import net.mehvahdjukaar.vista.client.GifPathSpriteSource;
+import net.mehvahdjukaar.vista.client.TapeTextureManager;
 import net.mehvahdjukaar.vista.client.ViewFinderController;
 import net.mehvahdjukaar.vista.client.ViewFinderHud;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.texture.atlas.SpriteSourceType;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -51,6 +54,16 @@ public class VistaForgeClient {
         if (ViewFinderController.onMouseScrolled(event.getScrollDeltaY())) {
             event.setCanceled(true);
         }
+    }
+
+    @SubscribeEvent
+    public static void registerAtlases(RegisterMaterialAtlasesEvent event) {
+        event.register(TapeTextureManager.ATLAS_LOCATION, TapeTextureManager.ATLAS_INFO_LOCATION);
+    }
+
+    @SubscribeEvent
+    public static void registerSpriteSources(RegisterSpriteSourceTypesEvent event) {
+        event.register(VistaMod.res("directory_gifs"), GifPathSpriteSource.TYPE);
     }
 
 }

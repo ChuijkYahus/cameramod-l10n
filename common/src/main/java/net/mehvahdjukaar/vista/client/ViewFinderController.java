@@ -1,5 +1,6 @@
 package net.mehvahdjukaar.vista.client;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import net.mehvahdjukaar.vista.common.ViewFinderAccess;
 import net.mehvahdjukaar.vista.common.ViewFinderBlockEntity;
 import net.minecraft.client.Camera;
@@ -124,7 +125,7 @@ public class ViewFinderController {
     public static boolean onPlayerRotated(double yawAdd, double pitchAdd) {
         //TODO: lock with restraints here
         if (isActive()) {
-            float scale = 0.2f;
+            float scale = 0.2f * getNormalizedZoomFactor();
             yawIncrease += (float) (yawAdd * scale);
             pitchIncrease += (float) (pitchAdd * scale);
             if (yawAdd != 0 || pitchAdd != 0) needsToUpdateServer = true;
@@ -219,11 +220,16 @@ public class ViewFinderController {
         if (isActive()) {
             float spyglassZoom = 0.1f;
             float maxZoom = spyglassZoom / 5;
-            float normalizedZoom = (access.getInternalTile().getZoomLevel() - 1f) / (MAX_ZOOM - 1f);
-            normalizedZoom = 1 - ((1 - normalizedZoom) * (1 - normalizedZoom)); //easing
+            float normalizedZoom = getNormalizedZoomFactor();
             return Mth.lerp(normalizedZoom, 1, maxZoom);
         }
         return modFov;
+    }
+
+    private static float getNormalizedZoomFactor() {
+        float normalizedZoom = (access.getInternalTile().getZoomLevel() - 1f) / (MAX_ZOOM - 1f);
+        normalizedZoom = 1 - ((1 - normalizedZoom) * (1 - normalizedZoom)); //easing
+        return normalizedZoom;
     }
 }
 

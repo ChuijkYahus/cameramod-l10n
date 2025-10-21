@@ -42,7 +42,7 @@ public class LiveFeedRendererManager {
     private static final DummyCamera DUMMY_CAMERA = new DummyCamera();
     private static final Int2ObjectArrayMap<RenderTarget> CANVASES = new Int2ObjectArrayMap<>();
     private static final BiMap<UUID, ResourceLocation> LIVE_FEED_LOCATIONS = HashBiMap.create();
-    private static final ResourceLocation INVALID_FEED_LOCATION = VistaMod.res("textures/entity/color_bars.png");
+    public static final ResourceLocation BARS_LOCATION = VistaMod.res("cassette_tape/color_bars");
 
     private static long feedCounter = 0;
 
@@ -64,7 +64,7 @@ public class LiveFeedRendererManager {
                 }
             }
         }
-        return INVALID_FEED_LOCATION;
+        return BARS_LOCATION;
     }
 
     private static ResourceLocation getOrCreateFeedId(UUID uuid) {

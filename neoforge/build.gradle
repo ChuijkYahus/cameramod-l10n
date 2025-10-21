@@ -97,9 +97,12 @@ dependencies {
 
     common(project(path: ":common", configuration: "namedElements")) { transitive false }
 
-   // modImplementation("net.mehvahdjukaar:moonlight-neoforge:${moonlight_version}")
+    compileOnly(annotationProcessor("io.github.llamalad7:mixinextras-common:0.5.0"))
+    implementation(include("io.github.llamalad7:mixinextras-neoforge:0.5.0"))
+
+    modImplementation("net.mehvahdjukaar:moonlight-neoforge:${moonlight_version}")
    // modCompileOnly("curse.maven:supplementaries-412082:5458843")
-    modImplementation("curse.maven:selene-499980:7113115")
+    //modImplementation("curse.maven:selene-499980:7113115")
 
     implementation 'org.jetbrains:annotations:22.0.0'
 

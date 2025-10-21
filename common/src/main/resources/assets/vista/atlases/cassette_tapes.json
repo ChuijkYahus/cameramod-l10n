@@ -1,0 +1,14 @@
+{
+    "sources": [
+        {
+            "type": "minecraft:directory",
+            "source": "cassette_tape",
+            "prefix": ""
+        },
+        {
+            "type": "vista:directory_gifs",
+            "source": "cassette_tape",
+            "prefix": ""
+        }
+    ]
+}
