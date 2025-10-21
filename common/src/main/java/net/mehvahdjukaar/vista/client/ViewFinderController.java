@@ -47,7 +47,7 @@ public class ViewFinderController {
             lastCameraType = mc.options.getCameraType();
         } //if not it means we entered from manouver mode gui
         mc.options.setCameraType(CameraType.THIRD_PERSON_BACK);
-        MutableComponent message = Component.translatable("message.supplementaries.cannon_maneuver",
+        MutableComponent message = Component.translatable("message.vista.viewfinder_control",
                 mc.options.keyShift.getTranslatedKeyMessage(),
                 mc.options.keyAttack.getTranslatedKeyMessage());
         mc.gui.setOverlayMessage(message, false);
@@ -125,7 +125,7 @@ public class ViewFinderController {
     public static boolean onPlayerRotated(double yawAdd, double pitchAdd) {
         //TODO: lock with restraints here
         if (isActive()) {
-            float scale = 0.2f * getNormalizedZoomFactor();
+            float scale = 0.2f * (1-getNormalizedZoomFactor() + 0.01f);
             yawIncrease += (float) (yawAdd * scale);
             pitchIncrease += (float) (pitchAdd * scale);
             if (yawAdd != 0 || pitchAdd != 0) needsToUpdateServer = true;
@@ -149,8 +149,8 @@ public class ViewFinderController {
 
         if (scrollDelta != 0) {
             ViewFinderBlockEntity tile = access.getInternalTile();
-            byte newPower = (byte) (1 + Math.floorMod((int) (tile.getZoomLevel() - 1 + scrollDelta), MAX_ZOOM));
-            tile.setZoomLevel(newPower);
+            int newZoom = (Math.clamp(1,(int) (tile.getZoomLevel() + scrollDelta), MAX_ZOOM));
+            tile.setZoomLevel(newZoom);
             needsToUpdateServer = true;
         }
         return true;
@@ -202,7 +202,7 @@ public class ViewFinderController {
             return true;
         }
         if (options.keyShift.matches(key, scanCode)) {
-
+            stopControllingAndSync();
             return true;
         }
         return false;

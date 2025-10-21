@@ -1,9 +1,11 @@
 package net.mehvahdjukaar.vista.common;
 
-import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.moonlight.api.block.ItemDisplayTile;
+import net.mehvahdjukaar.vista.VistaMod;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.ItemInteractionResult;
@@ -51,13 +53,7 @@ public class TVBlockEntity extends ItemDisplayTile {
         return stack.is(VistaMod.CASSETTE.get()) || stack.is(VistaMod.HOLLOW_CASSETTE.get());
     }
 
-    @Override
-    public void updateTileOnInventoryChanged() {
-        super.updateTileOnInventoryChanged();
-        cacheState();
-    }
-
-    private void cacheState() {
+    private void cacheClientState() {
         ItemStack displayedItem = this.getDisplayedItem();
         linkedFeedUuid = displayedItem.get(VistaMod.LINKED_FEED_COMPONENT.get());
         tape = displayedItem.get(VistaMod.CASSETTE_TAPE_COMPONENT.get());
@@ -66,7 +62,12 @@ public class TVBlockEntity extends ItemDisplayTile {
     @Override
     public void updateClientVisualsOnLoad() {
         super.updateClientVisualsOnLoad();
-        cacheState();
+        cacheClientState();
+    }
+
+    @Override
+    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+        super.loadAdditional(tag, registries);
     }
 
     @Override
@@ -82,6 +83,7 @@ public class TVBlockEntity extends ItemDisplayTile {
             itemEntity.setDefaultPickUpDelay();
             this.level.addFreshEntity(itemEntity);
             this.clearContent();
+            this.setChanged();
             return ItemInteractionResult.sidedSuccess(this.level.isClientSide);
         }
 

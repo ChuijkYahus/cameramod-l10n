@@ -27,6 +27,7 @@ public record ServerBoundSyncViewFinderPacket(
         buf.writeFloat(this.yaw);
         buf.writeFloat(this.pitch);
         buf.writeVarInt(this.zoomLevel);
+        buf.writeBoolean(this.locked);
         buf.writeBoolean(this.stopControlling);
         this.target.write(buf);
     }

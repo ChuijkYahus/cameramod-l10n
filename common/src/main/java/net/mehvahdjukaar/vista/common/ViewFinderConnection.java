@@ -15,6 +15,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @SuppressWarnings("unchecked")
 public class ViewFinderConnection extends WorldSavedData {
@@ -84,6 +85,29 @@ public class ViewFinderConnection extends WorldSavedData {
     }
 
     public static ViewFinderConnection get(Level level) {
-        return VistaMod.VIEWFINDER_CONNECTION.getData(level);
+        ViewFinderConnection connection = VistaMod.VIEWFINDER_CONNECTION.getData(level);
+
+        return connection;
+    }
+
+    public void validateAll(ServerLevel level) {
+        if(!level.isClientSide){
+            //validate all
+            AtomicBoolean changed = new AtomicBoolean(false);
+            this.linkedFeeds.entrySet().removeIf(e -> {
+                GlobalPos pos = e.getValue();
+                if (pos.dimension() != level.dimension()) return false;
+                if (level.getBlockEntity(pos.pos()) instanceof ViewFinderBlockEntity) {
+                    return false;
+                } else {
+                    changed.set(true);
+                    this.setDirty();
+                    return true;
+                }
+            });
+            if (changed.get()) {
+                this.sync();
+            }
+        }
     }
 }

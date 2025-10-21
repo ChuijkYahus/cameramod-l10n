@@ -3,6 +3,7 @@ package net.mehvahdjukaar.vista.common;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.VistaModClient;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionResult;
@@ -58,7 +59,9 @@ public class EchoCassetteItem extends Item {
                     tooltipComponents.add(Component.translatable("tooltip.vista.hollow_cassette.linked_unknown"));
                 } else {
                     if (gp.dimension() == level.dimension()) {
-                        tooltipComponents.add(Component.translatable("tooltip.vista.hollow_cassette.linked", gp.pos()));
+                        BlockPos pos = gp.pos();
+                        tooltipComponents.add(Component.translatable("tooltip.vista.hollow_cassette.linked",
+                                pos.getX(), pos.getY(), pos.getZ()));
                     } else {
                         tooltipComponents.add(Component.translatable("tooltip.vista.hollow_cassette.linked_away", gp.dimension()));
                     }
