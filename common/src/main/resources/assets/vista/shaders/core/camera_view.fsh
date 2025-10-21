@@ -8,7 +8,7 @@ uniform float FogStart;
 uniform float FogEnd;
 uniform vec4 FogColor;
 
-/* SpriteDimensions = (minU, minV, sizeU, sizeV) */
+/* SpriteDimensions = (minU, minV, sizeU, sizeV) in normalized UVs */
 uniform vec4 SpriteDimensions;
 
 /* ===================== KNOBS ===================== */
@@ -31,7 +31,6 @@ in vec2 texCoord0;
 out vec4 fragColor;
 
 /* ===================== Helpers ===================== */
-
 float beamFalloff(float d) {
     float expLike   = exp2(-d * d * 2.5 - 0.3);
     float softTail  = 0.05 / (d * d * d * 0.45 + 0.055);
@@ -47,103 +46,102 @@ float triadDistance(vec2 triadA, vec2 triadB) {
 }
 
 /* TRIAD space -> UV (no global clamp here; we clamp to sprite rect later) */
-vec2 triadToUV(vec2 triadP, vec2 textureSizePx) {
+vec2 triadToUV(vec2 triadP, vec2 atlasSizePx) {
     vec2 pix = triadP / max(TriadsPerPixel, 1e-6);
-    return pix / textureSizePx;
+    return pix / atlasSizePx;
 }
 
-/* Kernel footprint (in texels) to compute padding for clamping */
-float kernelFootprintPx(int dynRadius) {
-    return (float(dynRadius) + 1.0) / max(TriadsPerPixel, 1e-6);
-}
-
-/* Clamp atlas UV to sprite rect with padding */
-vec2 clampToSprite(vec2 uv, float footprintPx, vec2 atlasPx) {
+/* ---- Precise, no-bleed clamp: clamp to edge texel centers ----
+   We clamp in texel units relative to the sprite, to [0.5 .. width-0.5].
+   This prevents linear filtering from seeing outside the sprite without
+   over-clamping a whole band of fragments. */
+vec2 clampToSpriteTexelCenters(vec2 uv, vec2 atlasSizePx) {
     vec2 minUV = SpriteDimensions.xy;
     vec2 sizeUV = SpriteDimensions.zw;
-    vec2 maxUV = minUV + sizeUV;
+    vec2 spritePx = sizeUV * atlasSizePx;
 
-    // +0.5 half-texel safety so we never touch gutters
-    vec2 padUV = (vec2(footprintPx) + 0.5) / atlasPx;
-    return clamp(uv, minUV + padUV, maxUV - padUV);
+    // Convert to texel coords relative to sprite:
+    vec2 p = (uv - minUV) * atlasSizePx;
+
+    // Safe range is from center of first texel to center of last:
+    vec2 lo = vec2(0.5);
+    vec2 hi = max(spritePx - vec2(0.5), lo); // avoid inversion for tiny sprites
+
+    p = clamp(p, lo, hi);
+    return minUV + p / atlasSizePx;
 }
 
-/* ===================== Phosphor pass (true gather) ===================== */
-vec3 accumulateTriadResponse(vec2 pixelPos, sampler2D srcTexture, vec2 textureSizePx) {
+/* ===================== Phosphor pass (gather) ===================== */
+vec3 accumulateTriadResponse(vec2 pixelPos, sampler2D srcTexture, vec2 atlasSizePx) {
     vec2 triadPos = pixelPos * TriadsPerPixel - 0.25;
 
     // Small scanline/beam jitter in TRIAD space (stable vs texture)
-    vec2 jitteredTriadPos = triadPos;
+    vec2 jittered = triadPos;
     float amp = 0.03 * clamp(1.0 / max(TriadsPerPixel, 1e-6), 0.25, 1.0);
     float offset = 0.0;
     offset += (mod(floor(triadPos.x), 3.0) < 1.5 ? 1.0 : -1.0) * amp;
     offset += (mod(floor(triadPos.x), 5.0) < 2.5 ? 1.0 : -1.0) * (amp * 0.6);
     offset += (mod(floor(triadPos.x), 7.0) < 3.5 ? 1.0 : -1.0) * (amp * 0.4);
-    jitteredTriadPos.y += offset;
+    jittered.y += offset;
 
-    vec3 accumulatedRGB = vec3(0.0);
-    float totalWeightR = 0.0;
-    float totalWeightG = 0.0;
-    float totalWeightB = 0.0;
+    vec3 sum = vec3(0.0);
+    float wr = 0.0, wg = 0.0, wb = 0.0;
 
     int dynRadius = max(TriadKernelRadius, int(ceil(2.5 * Smear)));
-    float fpPx = kernelFootprintPx(dynRadius);
-    vec2 atlasPx = textureSizePx;
 
     // Subpixel layout (stripe-like)
-    const float lrPixelOffset = 0.25;
-    const float upPixelOffset = 0.2;
+    const float lr = 0.25;
+    const float up = 0.2;
 
     for (int dy = -dynRadius; dy <= dynRadius; ++dy) {
         for (int dx = -dynRadius; dx <= dynRadius; ++dx) {
             vec2 cellCenter = floor(triadPos) + 0.5 + vec2(dx, dy);
 
-            vec2 rTriadP = jitteredTriadPos + vec2(0.0,  upPixelOffset);
-            vec2 gTriadP = jitteredTriadPos + vec2( lrPixelOffset, 0.0);
-            vec2 bTriadP = jitteredTriadPos + vec2(-lrPixelOffset, 0.0);
+            vec2 rP = jittered + vec2(0.0, up);
+            vec2 gP = jittered + vec2( lr, 0.0);
+            vec2 bP = jittered + vec2(-lr, 0.0);
 
-            float distR = triadDistance(cellCenter, rTriadP);
-            float distG = triadDistance(cellCenter, gTriadP);
-            float distB = triadDistance(cellCenter, bTriadP);
+            float dR = triadDistance(cellCenter, rP);
+            float dG = triadDistance(cellCenter, gP);
+            float dB = triadDistance(cellCenter, bP);
 
-            float wR = beamFalloff(distR);
-            float wG = beamFalloff(distG);
-            float wB = beamFalloff(distB);
+            float wR = beamFalloff(dR);
+            float wG = beamFalloff(dG);
+            float wB = beamFalloff(dB);
 
-            // Beam center → atlas UV, then clamp to sprite rect (no mipmaps)
-            vec2 uvR = clampToSprite(triadToUV(rTriadP, textureSizePx), fpPx, atlasPx);
-            vec2 uvG = clampToSprite(triadToUV(gTriadP, textureSizePx), fpPx, atlasPx);
-            vec2 uvB = clampToSprite(triadToUV(bTriadP, textureSizePx), fpPx, atlasPx);
+            // Beam center → atlas UV, then clamp to sprite edge texel centers
+            vec2 uvR = clampToSpriteTexelCenters(triadToUV(rP, atlasSizePx), atlasSizePx);
+            vec2 uvG = clampToSpriteTexelCenters(triadToUV(gP, atlasSizePx), atlasSizePx);
+            vec2 uvB = clampToSpriteTexelCenters(triadToUV(bP, atlasSizePx), atlasSizePx);
 
-            vec3 sampleR = texture(srcTexture, uvR).rgb;
-            vec3 sampleG = texture(srcTexture, uvG).rgb;
-            vec3 sampleB = texture(srcTexture, uvB).rgb;
+            vec3 sR = texture(srcTexture, uvR).rgb;
+            vec3 sG = texture(srcTexture, uvG).rgb;
+            vec3 sB = texture(srcTexture, uvB).rgb;
 
             // Optional gentle tonal tweak
-            sampleR = pow(sampleR, vec3(1.18)) * 1.08;
-            sampleG = pow(sampleG, vec3(1.18)) * 1.08;
-            sampleB = pow(sampleB, vec3(1.18)) * 1.08;
+            sR = pow(sR, vec3(1.18)) * 1.08;
+            sG = pow(sG, vec3(1.18)) * 1.08;
+            sB = pow(sB, vec3(1.18)) * 1.08;
 
-            accumulatedRGB.r += sampleR.r * wR;  totalWeightR += wR;
-            accumulatedRGB.g += sampleG.g * wG;  totalWeightG += wG;
-            accumulatedRGB.b += sampleB.b * wB;  totalWeightB += wB;
+            sum.r += sR.r * wR;  wr += wR;
+            sum.g += sG.g * wG;  wg += wG;
+            sum.b += sB.b * wB;  wb += wB;
         }
     }
 
     if (EnableEnergyNormalize > 0.5) {
-        accumulatedRGB.r /= max(totalWeightR, 1e-6);
-        accumulatedRGB.g /= max(totalWeightG, 1e-6);
-        accumulatedRGB.b /= max(totalWeightB, 1e-6);
+        sum.r /= max(wr, 1e-6);
+        sum.g /= max(wg, 1e-6);
+        sum.b /= max(wb, 1e-6);
     }
-
-    return clamp(accumulatedRGB, 0.0, 1.0);
+    return clamp(sum, 0.0, 1.0);
 }
 
 void main() {
-    vec2 textureSizePx = vec2(textureSize(Sampler0, 0)); // atlas size in texels
-    vec2 pixelPos = texCoord0 * textureSizePx;
+    vec2 atlasSizePx = vec2(textureSize(Sampler0, 0)); // atlas size in texels
+    vec2 pixelPos    = texCoord0 * atlasSizePx;
 
-    vec3 triadRGB = accumulateTriadResponse(pixelPos, Sampler0, textureSizePx);
+    vec3 triadRGB = accumulateTriadResponse(pixelPos, Sampler0, atlasSizePx);
 
     vec4 color = vec4(triadRGB, 1.0) * vertexColor * ColorModulator;
     color *= lightMapColor;
