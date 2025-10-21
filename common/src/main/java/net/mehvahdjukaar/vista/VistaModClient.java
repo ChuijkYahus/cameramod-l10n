@@ -6,12 +6,14 @@ import net.mehvahdjukaar.moonlight.api.misc.EventCalled;
 import net.mehvahdjukaar.moonlight.api.platform.ClientHelper;
 import net.mehvahdjukaar.vista.client.TvBlockEntityRenderer;
 import net.mehvahdjukaar.vista.client.ViewFinderBlockEntityRenderer;
+import net.mehvahdjukaar.vista.client.ViewFinderController;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.color.item.ItemColor;
 import net.minecraft.client.model.geom.ModelLayerLocation;
+import net.minecraft.client.player.Input;
+import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.resources.model.Material;
-import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 
 import static net.minecraft.client.renderer.texture.TextureAtlas.LOCATION_BLOCKS;
@@ -39,33 +41,28 @@ public class VistaModClient {
         ClientHelper.addItemColorsRegistration(VistaModClient::registerItemColors);
     }
 
-    @EventCalled
     private static void registerItemColors(ClientHelper.ItemColorEvent event) {
         event.register((itemStack, i) -> {
             if (i == 1) {
                 var tape = itemStack.get(VistaMod.CASSETTE_TAPE_COMPONENT.get());
-                if (tape == null) return 0;
+                if (tape == null) return 0xee2200ff;
                 return tape.value().color();
             }
-            return 0;
+            return -1;
         }, VistaMod.CASSETTE.get());
     }
 
-    @EventCalled
     private static void registerBlockEntityRenderers(ClientHelper.BlockEntityRendererEvent event) {
         event.register(VistaMod.TV_TILE.get(), TvBlockEntityRenderer::new);
         event.register(VistaMod.VIEWFINDER_TILE.get(), ViewFinderBlockEntityRenderer::new);
     }
 
-    @EventCalled
     private static void registerShaders(ClientHelper.ShaderEvent event) {
         event.register(VistaMod.res("static_noise"), DefaultVertexFormat.NEW_ENTITY, STATIC_SHADER::assign);
         event.register(VistaMod.res("camera_view"), DefaultVertexFormat.NEW_ENTITY, CAMERA_VIEW_SHADER::assign);
         event.register(VistaMod.res("posterize"), DefaultVertexFormat.POSITION_TEX, POSTERIZE_SHADER::assign);
     }
 
-
-    @EventCalled
     private static void registerModelLayers(ClientHelper.ModelLayerEvent event) {
         event.register(VIEWFINDER_MODEL, ViewFinderBlockEntityRenderer::createMesh);
     }
@@ -73,4 +70,32 @@ public class VistaModClient {
     public static Level getLevel() {
         return Minecraft.getInstance().level;
     }
+
+
+    @EventCalled
+    public static void onClientTick(Minecraft minecraft) {
+        if (minecraft.isPaused() || minecraft.level == null) return;
+
+        Player p = minecraft.player;
+        if (p == null) return;
+
+        ViewFinderController.onClientTick(minecraft);
+    }
+
+
+    private static boolean preventShiftTillNextKeyUp = false;
+
+    public static void modifyInputUpdate(Input instance, LocalPlayer player) {
+        if (ViewFinderController.isActive()) {
+            ViewFinderController.onInputUpdate(instance);
+            preventShiftTillNextKeyUp = true;
+        } else if (preventShiftTillNextKeyUp) {
+            if (!instance.shiftKeyDown) {
+                preventShiftTillNextKeyUp = false;
+            } else {
+                instance.shiftKeyDown = false;
+            }
+        }
+    }
+
 }

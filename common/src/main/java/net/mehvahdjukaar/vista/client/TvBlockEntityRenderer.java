@@ -60,11 +60,15 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
 
         poseStack.translate(0.5, 0.5, -0.001);
 
-        vertexConsumer.addVertex(pose, -s, -s, 0).setColor(1f, 1f, 1f, 1f).setUv(1f, 0f).setOverlay(overlay).setLight(light).setNormal(pose, 0f, 0f, -1f);
-        vertexConsumer.addVertex(pose, -s, s, 0).setColor(1f, 1f, 1f, 1f).setUv(1f, 1f).setOverlay(overlay).setLight(light).setNormal(pose, 0f, 0f, -1f);
+        vertexConsumer.addVertex(pose, -s, -s, 0).setColor(-1)
+                .setUv(1f, 1f).setOverlay(overlay).setLight(light).setNormal(pose, 0f, 0f, -1f);
+        vertexConsumer.addVertex(pose, -s, s, 0).setColor(-1)
+                .setUv(1f, 0f).setOverlay(overlay).setLight(light).setNormal(pose, 0f, 0f, -1f);
 
-        vertexConsumer.addVertex(pose, s, s, 0).setColor(1f, 1f, 1f, 1f).setUv(0f, 1f).setOverlay(overlay).setLight(light).setNormal(pose, 0f, 0f, -1f);
-        vertexConsumer.addVertex(pose, s, -s, 0).setColor(1f, 1f, 1f, 1f).setUv(0f, 0f).setOverlay(overlay).setLight(light).setNormal(pose, 0f, 0f, -1f);
+        vertexConsumer.addVertex(pose, s, s, 0).setColor(-1)
+                .setUv(0f, 0f).setOverlay(overlay).setLight(light).setNormal(pose, 0f, 0f, -1f);
+        vertexConsumer.addVertex(pose, s, -s, 0).setColor(-1)
+                .setUv(0f, 1f).setOverlay(overlay).setLight(light).setNormal(pose, 0f, 0f, -1f);
 
 
     }

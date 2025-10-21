@@ -6,6 +6,9 @@
   "mixins": [
   ],
   "client": [
+    "AbstractClientPlayerMixin",
+    "GuiMixin",
+    "MouseScrollMixin"
   ],
   "injectors": {
     "defaultRequire": 1

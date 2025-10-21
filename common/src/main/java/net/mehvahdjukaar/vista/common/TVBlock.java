@@ -75,7 +75,9 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock {
 
     @Override
     public @Nullable BlockState getStateForPlacement(BlockPlaceContext context) {
+        boolean powered = context.getLevel().hasNeighborSignal(context.getClickedPos());
         return this.defaultBlockState()
+                .setValue(POWERED, powered)
                 .setValue(FACING, context.getHorizontalDirection().getOpposite());
     }
 

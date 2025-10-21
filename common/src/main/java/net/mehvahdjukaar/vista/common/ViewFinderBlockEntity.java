@@ -36,7 +36,7 @@ public class ViewFinderBlockEntity extends BlockEntity implements IOnePlayerInte
     private float yaw = 0;
     private float prevYaw = 0;
 
-    private float zoom = 1.0f;
+    private int zoom = 1;
 
     //not saved
     @Nullable
@@ -134,14 +134,14 @@ public class ViewFinderBlockEntity extends BlockEntity implements IOnePlayerInte
         return pitch;
     }
 
-    public float getZoomLevel() {
+    public int getZoomLevel() {
         return zoom;
     }
 
 
     //cannon bs
 
-    public void setAttributes(float yaw, float pitch, float zoom,
+    public void setAttributes(float yaw, float pitch, int zoom,
                               Player controllingPlayer, ViewFinderAccess access) {
         this.setYaw(access, yaw);
         this.setPitch(access, pitch);
@@ -149,7 +149,7 @@ public class ViewFinderBlockEntity extends BlockEntity implements IOnePlayerInte
     }
 
 
-    public void setZoomLevel(float zoom) {
+    public void setZoomLevel(int zoom) {
         this.zoom = zoom;
     }
 

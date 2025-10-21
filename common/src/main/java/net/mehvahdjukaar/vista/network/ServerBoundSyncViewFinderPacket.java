@@ -11,21 +11,21 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
 
 public record ServerBoundSyncViewFinderPacket(
-        float yaw, float pitch, float zoomLevel, boolean stopControlling,
+        float yaw, float pitch, int zoomLevel, boolean stopControlling,
         TileOrEntityTarget target) implements Message {
 
     public static final TypeAndCodec<RegistryFriendlyByteBuf, ServerBoundSyncViewFinderPacket> CODEC = Message.makeType(
             VistaMod.res("c2s_sync_viewfinder"), ServerBoundSyncViewFinderPacket::new);
 
     public ServerBoundSyncViewFinderPacket(FriendlyByteBuf buf) {
-        this(buf.readFloat(), buf.readFloat(), buf.readFloat(), buf.readBoolean(), TileOrEntityTarget.read(buf));
+        this(buf.readFloat(), buf.readFloat(), buf.readVarInt(), buf.readBoolean(), TileOrEntityTarget.read(buf));
     }
 
     @Override
     public void write(RegistryFriendlyByteBuf buf) {
         buf.writeFloat(this.yaw);
         buf.writeFloat(this.pitch);
-        buf.writeFloat(this.zoomLevel);
+        buf.writeVarInt(this.zoomLevel);
         buf.writeBoolean(this.stopControlling);
         this.target.write(buf);
     }

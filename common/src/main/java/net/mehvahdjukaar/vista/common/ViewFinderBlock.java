@@ -3,12 +3,12 @@ package net.mehvahdjukaar.vista.common;
 import com.mojang.serialization.MapCodec;
 import net.mehvahdjukaar.moonlight.api.util.Utils;
 import net.mehvahdjukaar.vista.VistaMod;
+import net.mehvahdjukaar.vista.client.ViewFinderController;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
@@ -50,6 +50,8 @@ public class ViewFinderBlock extends DirectionalBlock implements EntityBlock {
 
     @Override
     protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
+        ItemStack heldItem = player.getItemInHand(hand);
+        if (heldItem.is(VistaMod.HOLLOW_CASSETTE.get())) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         if (level.getBlockEntity(pos) instanceof ViewFinderBlockEntity tile) {
             if (player instanceof ServerPlayer sp) {
                 tile.tryInteracting(sp, pos);
@@ -111,12 +113,7 @@ public class ViewFinderBlock extends DirectionalBlock implements EntityBlock {
 
     @Override
     public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        if (context instanceof EntityCollisionContext ec) {
-             if (ec.getEntity() != null) {
-                return super.getCollisionShape(state, level, pos, context);
-            }
-        }
-        return Shapes.empty();
+        return Shapes.block();
     }
 
     @Override
@@ -132,4 +129,11 @@ public class ViewFinderBlock extends DirectionalBlock implements EntityBlock {
     }
 
 
+    @Override
+    protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        if (ViewFinderController.isActive()){
+            return Shapes.empty();
+        }
+        return super.getShape(state, level, pos, context);
+    }
 }

@@ -19,6 +19,8 @@ import org.lwjgl.glfw.GLFW;
 //TODO: merge events with supp cannon
 public class ViewFinderController {
 
+    public static final int MAX_ZOOM = 44;
+
     protected static ViewFinderAccess access;
 
     private static CameraType lastCameraType;
@@ -87,7 +89,7 @@ public class ViewFinderController {
         }
 
         // lerp camera
-        Vec3 targetCameraPos = centerCannonPos.add(0, 2, 0);
+        Vec3 targetCameraPos = centerCannonPos.add(0, 0.5, 0);
         float targetYRot = camera.getYRot() + yawIncrease;
         float targetXRot = Mth.clamp(camera.getXRot() + pitchIncrease, -90, 90);
 
@@ -98,10 +100,6 @@ public class ViewFinderController {
         lastCameraYaw = camera.getYRot();
         lastCameraPitch = camera.getXRot();
         lastZoomOut = camera.getMaxZoom(4);
-
-        float horizontalOffset = -1;
-
-        camera.move(-lastZoomOut, 0, horizontalOffset);
 
         yawIncrease = 0;
         pitchIncrease = 0;
@@ -117,12 +115,9 @@ public class ViewFinderController {
         float followSpeed = 1;
         ViewFinderBlockEntity cannon = access.getInternalTile();
 
-        cannon.setPitch(access, Mth.rotLerp(followSpeed, cannon.getPitch(),
-                cameraPitch * Mth.RAD_TO_DEG));
+        cannon.setPitch(access, Mth.rotLerp(followSpeed, cannon.getPitch(), cameraPitch));
         // targetYawDeg = Mth.rotLerp(followSpeed, cannon.getYaw(0), targetYawDeg);
-        cannon.setRenderYaw(access,
-                cameraYaw * Mth.RAD_TO_DEG +
-                        access.getCannonGlobalYawOffset(partialTick));
+        cannon.setRenderYaw(access, cameraYaw + access.getCannonGlobalYawOffset(partialTick));
     }
 
     // true cancels the thing
@@ -148,13 +143,16 @@ public class ViewFinderController {
     }
 
 
-    public static void onMouseScrolled(double scrollDelta) {
+    public static boolean onMouseScrolled(double scrollDelta) {
+        if (!isActive()) return false;
+
         if (scrollDelta != 0) {
             ViewFinderBlockEntity tile = access.getInternalTile();
-            byte newPower = (byte) (1 + Math.floorMod((int) (tile.getZoomLevel() - 1 + scrollDelta), 4));
+            byte newPower = (byte) (1 + Math.floorMod((int) (tile.getZoomLevel() - 1 + scrollDelta), MAX_ZOOM));
             tile.setZoomLevel(newPower);
             needsToUpdateServer = true;
         }
+        return true;
     }
 
 
@@ -209,9 +207,23 @@ public class ViewFinderController {
         return false;
     }
 
-    public static boolean rendersXpBar() {
-        return isActive() || access.rendersXpWhenManeuvering();
+    public static boolean isZooming() {
+        if (isActive()) {
+            ViewFinderBlockEntity tile = access.getInternalTile();
+            return tile.getZoomLevel() > 1;
+        }
+        return false;
     }
 
+    public static float modifyFOV(float startingFov, float modFov, Player player) {
+        if (isActive()) {
+            float spyglassZoom = 0.1f;
+            float maxZoom = spyglassZoom / 5;
+            float normalizedZoom = (access.getInternalTile().getZoomLevel() - 1f) / (MAX_ZOOM - 1f);
+            normalizedZoom = 1 - ((1 - normalizedZoom) * (1 - normalizedZoom)); //easing
+            return Mth.lerp(normalizedZoom, 1, maxZoom);
+        }
+        return modFov;
+    }
 }
 

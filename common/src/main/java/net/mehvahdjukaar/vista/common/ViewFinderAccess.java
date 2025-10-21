@@ -44,10 +44,6 @@ public interface ViewFinderAccess {
         return true;
     }
 
-    default boolean rendersXpWhenManeuvering() {
-        return false;
-    }
-
     class Block implements ViewFinderAccess {
         private final ViewFinderBlockEntity cannon;
 
@@ -104,12 +100,12 @@ public interface ViewFinderAccess {
         public Restraint getPitchAndYawRestrains() {
             BlockState state = cannon.getBlockState();
             return switch (state.getValue(ViewFinderBlock.FACING).getOpposite()) {
-                case NORTH -> new Restraint(70, 290, -180, 180);
-                case SOUTH -> new Restraint(-110, 110, -180, 180);
-                case EAST -> new Restraint(-200, 20, -180, 180);
-                case WEST -> new Restraint(-20, 200, -180, 180);
-                case UP -> new Restraint(-360, 360, -200, 20);
-                case DOWN -> new Restraint(-360, 360, -20, 200);
+                case NORTH -> new Restraint(-360, 360, -180, 180);
+                case SOUTH -> new Restraint(-360, 360, -180, 180);
+                case EAST -> new Restraint(-360, 360, -180, 180);
+                case WEST -> new Restraint(-360, 360, -180, 180);
+                case UP -> new Restraint(-360, 360, -180, 180);
+                case DOWN -> new Restraint(-360, 360, -180, 180);
             };
         }
 

@@ -42,7 +42,7 @@ public class LiveFeedRendererManager {
     private static final DummyCamera DUMMY_CAMERA = new DummyCamera();
     private static final Int2ObjectArrayMap<RenderTarget> CANVASES = new Int2ObjectArrayMap<>();
     private static final BiMap<UUID, ResourceLocation> LIVE_FEED_LOCATIONS = HashBiMap.create();
-    private static final ResourceLocation INVALID_FEED_LOCATION = VistaMod.res("textures/block/invalid_live_feed.png");
+    private static final ResourceLocation INVALID_FEED_LOCATION = VistaMod.res("textures/entity/color_bars.png");
 
     private static long feedCounter = 0;
 
@@ -104,12 +104,6 @@ public class LiveFeedRendererManager {
         float partialTicks = mc.getTimer().getGameTimeDeltaTicks();
 
         setupSceneCamera(tile, partialTicks);
-
-
-        BlockPos blockPos = new BlockPos(0, -62, 0);
-        float yaw = 0;
-        DUMMY_CAMERA.setPosition(blockPos);
-        DUMMY_CAMERA.setRotation(180 - yaw, 0);
 
         RenderTarget renderTarget = text.getFrameBuffer();
         RenderTarget mainTarget = mc.getMainRenderTarget();
@@ -229,10 +223,10 @@ public class LiveFeedRendererManager {
 
             VertexConsumer vc = bufferSource.getBuffer(rt);
 
-            vc.addVertex(-1, -1, 0).setUv(0f, 0f);
-            vc.addVertex(1, -1, 0).setUv(1f, 0f);
-            vc.addVertex(1, 1, 0).setUv(1f, 1f);
-            vc.addVertex(-1, 1, 0).setUv(0f, 1f);
+            vc.addVertex(-1, -1, 0).setUv(0f, 1f);
+            vc.addVertex(1, -1, 0).setUv(1f, 1f);
+            vc.addVertex(1, 1, 0).setUv(1f, 0f);
+            vc.addVertex(-1, 1, 0).setUv(0f, 0f);
             bufferSource.endBatch(rt);
 
         }
