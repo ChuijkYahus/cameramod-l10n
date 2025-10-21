@@ -45,20 +45,20 @@ public interface ViewFinderAccess {
     }
 
     class Block implements ViewFinderAccess {
-        private final ViewFinderBlockEntity cannon;
+        private final ViewFinderBlockEntity blockEntity;
 
-        public Block(ViewFinderBlockEntity cannon) {
-            this.cannon = cannon;
+        public Block(ViewFinderBlockEntity tile) {
+            this.blockEntity = tile;
         }
 
         @Override
         public TileOrEntityTarget makeNetworkTarget() {
-            return TileOrEntityTarget.of(this.cannon);
+            return TileOrEntityTarget.of(this.blockEntity);
         }
 
         @Override
         public Vec3 getCannonGlobalPosition(float ticks) {
-            return cannon.getBlockPos().getCenter();
+            return blockEntity.getBlockPos().getCenter();
         }
 
         @Override
@@ -73,32 +73,33 @@ public interface ViewFinderAccess {
 
         @Override
         public ViewFinderBlockEntity getInternalTile() {
-            return this.cannon;
+            return this.blockEntity;
         }
 
         @Override
         public void updateClients() {
-            var level = cannon.getLevel();
-            level.sendBlockUpdated(cannon.getBlockPos(), cannon.getBlockState(), cannon.getBlockState(), 3);
+            var level = blockEntity.getLevel();
+            level.sendBlockUpdated(blockEntity.getBlockPos(), blockEntity.getBlockState(), blockEntity.getBlockState(), 3);
         }
 
         @Override
         public void syncToServer(boolean removeOwner) {
             NetworkHelper.sendToServer(new ServerBoundSyncViewFinderPacket(
-                    cannon.getYaw(), cannon.getPitch(), cannon.getZoomLevel(),
-                    removeOwner, TileOrEntityTarget.of(this.cannon)));
+                    blockEntity.getYaw(), blockEntity.getPitch(), blockEntity.getZoomLevel(),
+                    blockEntity.isLocked(),
+                    removeOwner, TileOrEntityTarget.of(this.blockEntity)));
         }
 
         @Override
         public boolean stillValid(Player player) {
             Level level = player.level();
             float maxDist = 7;
-            return !cannon.isRemoved() && level.getBlockEntity(cannon.getBlockPos()) == cannon &&
-                    cannon.getBlockPos().distToCenterSqr(player.position()) < maxDist * maxDist;
+            return !blockEntity.isRemoved() && level.getBlockEntity(blockEntity.getBlockPos()) == blockEntity &&
+                    blockEntity.getBlockPos().distToCenterSqr(player.position()) < maxDist * maxDist;
         }
 
         public Restraint getPitchAndYawRestrains() {
-            BlockState state = cannon.getBlockState();
+            BlockState state = blockEntity.getBlockState();
             return switch (state.getValue(ViewFinderBlock.FACING).getOpposite()) {
                 case NORTH -> new Restraint(-360, 360, -180, 180);
                 case SOUTH -> new Restraint(-360, 360, -180, 180);

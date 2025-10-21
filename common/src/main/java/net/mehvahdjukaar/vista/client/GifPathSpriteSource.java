@@ -12,6 +12,7 @@ import net.minecraft.client.renderer.texture.SpriteContents;
 import net.minecraft.client.renderer.texture.atlas.SpriteResourceLoader;
 import net.minecraft.client.renderer.texture.atlas.SpriteSource;
 import net.minecraft.client.renderer.texture.atlas.SpriteSourceType;
+import net.minecraft.client.resources.metadata.animation.AnimationFrame;
 import net.minecraft.client.resources.metadata.animation.AnimationMetadataSection;
 import net.minecraft.client.resources.metadata.animation.FrameSize;
 import net.minecraft.resources.FileToIdConverter;
@@ -89,7 +90,7 @@ public class GifPathSpriteSource implements SpriteSource {
                 int w = wh[0], h = wh[1];
 
                 NativeImage strip = buildVerticalStrip(frames, w, h);
-                // strip.writeToFile(new File("temp_image_dump.png")); // debug output
+                // strip.writeToFile(new File("temp_image_dump.png")); // debug if needed
 
                 AnimationMetadataSection anim = buildAnimationMeta(frameTicks, w, h, frames.size());
 
@@ -115,22 +116,24 @@ public class GifPathSpriteSource implements SpriteSource {
             return r;
         }
 
+        /** Read GIF delays and convert to Minecraft "ticks" (1 tick = 50ms). */
         private static List<Integer> readFrameTicks(ImageReader reader, int count) {
             List<Integer> ticks = new ArrayList<>(count);
             for (int i = 0; i < count; i++) {
-                int cs = 5; // fallback 50 ms
+                int cs = 5; // GIF delayTime is in centiseconds; fallback 5 cs = 50 ms
                 try {
                     var meta = reader.getImageMetadata(i);
                     var root = (IIOMetadataNode) meta.getAsTree("javax_imageio_gif_image_1.0");
                     var gce = (IIOMetadataNode) root.getElementsByTagName("GraphicControlExtension").item(0);
                     if (gce != null) cs = Math.max(1, Integer.parseInt(gce.getAttribute("delayTime")));
                 } catch (Exception ignored) {}
-                ticks.add(Math.max(1, Math.round(cs / 5.0f))); // 1 tick = 50 ms = 5 cs
+                // Convert centiseconds -> ticks (50ms each). Round to nearest; clamp to at least 1.
+                ticks.add(Math.max(1, Math.round(cs / 5.0f)));
             }
             return ticks;
         }
 
-        // === Fixed GIF frame reader ===
+        // === Fixed GIF frame reader (handles offsets + disposal) ===
 
         private static final String GIF_IMAGE_META = "javax_imageio_gif_image_1.0";
         private static final String GIF_STREAM_META = "javax_imageio_gif_stream_1.0";
@@ -284,27 +287,44 @@ public class GifPathSpriteSource implements SpriteSource {
             }
         }
 
+        /** Build proper Minecraft animation metadata with correct frame timing. */
         private static AnimationMetadataSection buildAnimationMeta(List<Integer> ticks, int w, int h, int frameCount) {
-        /*
-        boolean uniform = ticks.stream().allMatch(t -> t.equals(ticks.get(0)));
-        if (uniform) {
-            return new AnimationMetadataSection(
-                    ImmutableList.of(),
-                    w, h,
-                    ticks.get(0),
-                    false
-            );
-        }
-        ImmutableList.Builder<AnimationFrame> frames = ImmutableList.builder();
-        for (int i = 0; i < frameCount; i++) frames.add(new AnimationFrame(i, ticks.get(i)));
-        return new AnimationMetadataSection(frames.build(), w, h, -1, false);
-        */
-            return new AnimationMetadataSection(
-                    List.of(),
-                    w, h,
-                    5,
-                    false
-            );
+            // Ensure ticks size >= frames (GIF metadata should match, but be safe)
+            if (ticks.size() < frameCount) {
+                // pad with last value
+                int last = ticks.isEmpty() ? 1 : Math.max(1, ticks.get(ticks.size() - 1));
+                while (ticks.size() < frameCount) ticks.add(last);
+            }
+
+            // Check if all frames have the same duration
+            boolean uniform = true;
+            int first = Math.max(1, ticks.get(0));
+            for (int i = 1; i < frameCount; i++) {
+                if (!ticks.get(i).equals(first)) { uniform = false; break; }
+            }
+
+            if (uniform) {
+                // Use empty frames list and set default frameTime to the GIF delay (in ticks).
+                int frameTime = first; // <-- this is the "time between frames" parameter
+                return new AnimationMetadataSection(
+                        List.of(), // no per-frame overrides
+                        w, h,
+                        Math.max(1, frameTime),
+                        false
+                );
+            } else {
+                // Provide per-frame durations; default frameTime is ignored.
+                List<AnimationFrame> frames = new ArrayList<>(frameCount);
+                for (int i = 0; i < frameCount; i++) {
+                    frames.add(new AnimationFrame(i, Math.max(1, ticks.get(i))));
+                }
+                return new AnimationMetadataSection(
+                        frames,
+                        w, h,
+                        1,      // default; unused because frames have explicit times
+                        false
+                );
+            }
         }
     }
 

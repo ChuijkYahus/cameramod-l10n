@@ -11,14 +11,15 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
 
 public record ServerBoundSyncViewFinderPacket(
-        float yaw, float pitch, int zoomLevel, boolean stopControlling,
+        float yaw, float pitch, int zoomLevel, boolean locked, boolean stopControlling,
         TileOrEntityTarget target) implements Message {
 
     public static final TypeAndCodec<RegistryFriendlyByteBuf, ServerBoundSyncViewFinderPacket> CODEC = Message.makeType(
             VistaMod.res("c2s_sync_viewfinder"), ServerBoundSyncViewFinderPacket::new);
 
     public ServerBoundSyncViewFinderPacket(FriendlyByteBuf buf) {
-        this(buf.readFloat(), buf.readFloat(), buf.readVarInt(), buf.readBoolean(), TileOrEntityTarget.read(buf));
+        this(buf.readFloat(), buf.readFloat(), buf.readVarInt(),
+                buf.readBoolean(), buf.readBoolean(), TileOrEntityTarget.read(buf));
     }
 
     @Override
@@ -40,7 +41,7 @@ public record ServerBoundSyncViewFinderPacket(
             if (access != null) {
                 var cannon = access.getInternalTile();
                 if (cannon.isEditingPlayer(BlockPos.containing(access.getCannonGlobalPosition(1)), player)) {
-                    cannon.setAttributes(this.yaw, this.pitch, this.zoomLevel, player, access);
+                    cannon.setAttributes(this.yaw, this.pitch, this.zoomLevel, this.locked, player, access);
                     cannon.setChanged();
                     if (stopControlling) {
                         cannon.setPlayerWhoMayEdit(null);

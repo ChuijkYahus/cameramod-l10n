@@ -4,16 +4,18 @@ import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
-import com.mojang.blaze3d.vertex.VertexFormatElement;
 import net.mehvahdjukaar.vista.VistaModClient;
-import net.mehvahdjukaar.moonlight.api.client.texture_renderer.FrameBufferBackedDynamicTexture;
 import net.minecraft.Util;
 import net.minecraft.client.renderer.RenderStateShard;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.ShaderInstance;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.client.resources.model.Material;
 import net.minecraft.resources.ResourceLocation;
 import org.joml.Vector3f;
+import org.joml.Vector4f;
 
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 public class ModRenderTypes extends RenderType {
@@ -22,14 +24,6 @@ public class ModRenderTypes extends RenderType {
     public ModRenderTypes(String name, VertexFormat format, VertexFormat.Mode mode, int bufferSize, boolean affectsCrumbling, boolean sortOnUpload, Runnable setupState, Runnable clearState) {
         super(name, format, mode, bufferSize, affectsCrumbling, sortOnUpload, setupState, clearState);
     }
-
-    public static final VertexFormat ENTITY_NO_OVERLAY = VertexFormat.builder()
-            .add("Position", VertexFormatElement.POSITION)
-            .add("Color", VertexFormatElement.COLOR)
-            .add("UV0", VertexFormatElement.UV0)
-            .add("UV2", VertexFormatElement.UV2)
-            .add("Normal", VertexFormatElement.NORMAL)
-            .padding(1).build();
 
     private static final ShaderStateShard CAMERA_SHADER_STATE = new ShaderStateShard(VistaModClient.CAMERA_VIEW_SHADER);
     private static final ShaderStateShard STATIC_SHADER_STATE = new ShaderStateShard(VistaModClient.STATIC_SHADER);
@@ -52,6 +46,42 @@ public class ModRenderTypes extends RenderType {
                                     .set(1f);
                             shader.safeGetUniform("EnableEnergyNormalize")
                                     .set(0.0f);
+                            shader.safeGetUniform("SpriteDimensions")
+                                    .set(new Vector4f(0, 0, 1, 1f));
+                        },
+                        () -> {
+                        }))
+                .createCompositeState(false);
+
+        return create("camera_view", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS,
+                1536, true, false, compositeState);
+    });
+
+    public static final BiFunction<ResourceLocation, Material, RenderType> CAMERA_DRAW_SPRITE = Util.memoize((text, mat) -> {
+        RenderType.CompositeState compositeState = RenderType.CompositeState.builder()
+                .setShaderState(CAMERA_SHADER_STATE)
+                .setTextureState(new RenderStateShard.TextureStateShard(text,
+                        //TODO: mipmap
+                        false, false))
+                .setTransparencyState(NO_TRANSPARENCY)
+                .setLightmapState(LIGHTMAP)
+                .setTexturingState(new TexturingStateShard("set_texel_size",
+                        () -> {
+                            TextureAtlasSprite sprite = mat.sprite();
+                            ShaderInstance shader = VistaModClient.CAMERA_VIEW_SHADER.get();
+                            shader.safeGetUniform("TriadsPerPixel")
+                                    .set(1.37f);
+                            shader.safeGetUniform("Smear")
+                                    .set(1f);
+                            shader.safeGetUniform("EnableEnergyNormalize")
+                                    .set(0.0f);
+                            shader.safeGetUniform("SpriteDimensions")
+                                    .set(new Vector4f(
+                                            sprite.getU0(),                     // minU
+                                            sprite.getV0(),                     // minV
+                                            sprite.getU1() - sprite.getU0(),    // sizeU
+                                            sprite.getV1() - sprite.getV0()     // sizeV
+                                    ));
                         },
                         () -> {
                         }))

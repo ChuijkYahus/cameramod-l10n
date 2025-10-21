@@ -7,7 +7,6 @@ import net.mehvahdjukaar.moonlight.api.util.math.MthUtils;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.network.ClientBoundControlViewFinderPacket;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
@@ -15,7 +14,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -37,6 +35,7 @@ public class ViewFinderBlockEntity extends BlockEntity implements IOnePlayerInte
     private float prevYaw = 0;
 
     private int zoom = 1;
+    private boolean locked = false;
 
     //not saved
     @Nullable
@@ -81,6 +80,7 @@ public class ViewFinderBlockEntity extends BlockEntity implements IOnePlayerInte
         this.myUUID = tag.getUUID("UUID");
         this.yaw = tag.getFloat("yaw");
         this.pitch = tag.getFloat("pitch");
+        this.locked = tag.getBoolean("locked");
         updateLink();
     }
 
@@ -90,6 +90,7 @@ public class ViewFinderBlockEntity extends BlockEntity implements IOnePlayerInte
         tag.putUUID("UUID", this.myUUID);
         tag.putFloat("yaw", this.yaw);
         tag.putFloat("pitch", this.pitch);
+        tag.putBoolean("locked", this.locked);
     }
 
     @Override
@@ -138,14 +139,19 @@ public class ViewFinderBlockEntity extends BlockEntity implements IOnePlayerInte
         return zoom;
     }
 
+    public boolean isLocked() {
+        return locked;
+    }
+
 
     //cannon bs
 
-    public void setAttributes(float yaw, float pitch, int zoom,
+    public void setAttributes(float yaw, float pitch, int zoom, boolean locked,
                               Player controllingPlayer, ViewFinderAccess access) {
         this.setYaw(access, yaw);
         this.setPitch(access, pitch);
         this.zoom = zoom;
+        this.locked = locked;
     }
 
 

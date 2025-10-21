@@ -4,6 +4,7 @@ import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import net.mehvahdjukaar.moonlight.api.client.CoreShaderContainer;
 import net.mehvahdjukaar.moonlight.api.misc.EventCalled;
 import net.mehvahdjukaar.moonlight.api.platform.ClientHelper;
+import net.mehvahdjukaar.vista.client.LiveFeedRendererManager;
 import net.mehvahdjukaar.vista.client.TvBlockEntityRenderer;
 import net.mehvahdjukaar.vista.client.ViewFinderBlockEntityRenderer;
 import net.mehvahdjukaar.vista.client.ViewFinderController;
@@ -71,6 +72,9 @@ public class VistaModClient {
         return Minecraft.getInstance().level;
     }
 
+    public static void onLevelClose() {
+        LiveFeedRendererManager.clear();
+    }
 
     @EventCalled
     public static void onClientTick(Minecraft minecraft) {

@@ -1,5 +1,6 @@
 package net.mehvahdjukaar.vista.neoforge;
 
+import net.mehvahdjukaar.moonlight.api.misc.fake_level.FakeLevelManager;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.client.GifPathSpriteSource;
@@ -14,6 +15,8 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.*;
 import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 
 @EventBusSubscriber(Dist.CLIENT)
 public class VistaForgeClient {
@@ -66,4 +69,8 @@ public class VistaForgeClient {
         event.register(VistaMod.res("directory_gifs"), GifPathSpriteSource.TYPE);
     }
 
+    @SubscribeEvent
+    public static void onServerShuttingDown(ServerStoppingEvent event) {
+        VistaModClient.onLevelClose();
+    }
 }

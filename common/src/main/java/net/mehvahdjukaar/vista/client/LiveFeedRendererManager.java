@@ -25,7 +25,11 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.Display;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
@@ -39,10 +43,9 @@ import static net.minecraft.client.Minecraft.ON_OSX;
 public class LiveFeedRendererManager {
 
     private static final float RENDER_DISTANCE = 32f;
-    private static final DummyCamera DUMMY_CAMERA = new DummyCamera();
     private static final Int2ObjectArrayMap<RenderTarget> CANVASES = new Int2ObjectArrayMap<>();
     private static final BiMap<UUID, ResourceLocation> LIVE_FEED_LOCATIONS = HashBiMap.create();
-    public static final ResourceLocation BARS_LOCATION = VistaMod.res("cassette_tape/color_bars");
+    private static final DummyCamera DUMMY_CAMERA = new DummyCamera();
 
     private static long feedCounter = 0;
 
@@ -50,6 +53,7 @@ public class LiveFeedRendererManager {
     public static RenderTarget LIVE_FEED_BEING_RENDERED = null;
 
 
+    @Nullable
     public static ResourceLocation requestLiveFeedTexture(Level level, UUID location, int size) {
         ViewFinderConnection connection = ViewFinderConnection.get(level);
         if (connection != null) {
@@ -64,7 +68,7 @@ public class LiveFeedRendererManager {
                 }
             }
         }
-        return BARS_LOCATION;
+        return null;
     }
 
     private static ResourceLocation getOrCreateFeedId(UUID uuid) {
@@ -83,6 +87,12 @@ public class LiveFeedRendererManager {
             CANVASES.put(size, canvas);
         }
         return canvas;
+    }
+
+    public static void clear() {
+        CANVASES.clear();
+        LIVE_FEED_LOCATIONS.clear();
+        DUMMY_CAMERA.entity = null;
     }
 
 
@@ -131,10 +141,20 @@ public class LiveFeedRendererManager {
     }
 
     private static void setupSceneCamera(ViewFinderBlockEntity tile, float partialTicks) {
+        Level level = tile.getLevel();
         float pitch = tile.getPitch(partialTicks);
         float yaw = tile.getYaw(partialTicks);
-        BlockPos pos = tile.getBlockPos();
-        DUMMY_CAMERA.setPosition(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);
+
+        if (DUMMY_CAMERA.entity == null) {
+            DUMMY_CAMERA.entity = new Display.BlockDisplay(EntityType.BLOCK_DISPLAY, level);
+        }
+        Entity dummyCameraEntity = DUMMY_CAMERA.getEntity();
+        Vec3 pos = tile.getBlockPos().getCenter();
+        dummyCameraEntity.setPos(pos);
+        dummyCameraEntity.setXRot(pitch);
+        dummyCameraEntity.setYRot(yaw + 180);
+
+        DUMMY_CAMERA.setPosition(pos);
         DUMMY_CAMERA.setRotation(yaw, pitch);
 
     }

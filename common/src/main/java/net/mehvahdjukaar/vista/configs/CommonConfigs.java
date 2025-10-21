@@ -13,7 +13,7 @@ public class CommonConfigs {
     static {
         ConfigBuilder builder = ConfigBuilder.create(VistaMod.MOD_ID, ConfigType.COMMON_SYNCED);
 
-        builder.push("lectern");
+        builder.push("general");
 
         builder.pop();
 

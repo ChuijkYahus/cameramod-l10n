@@ -3,12 +3,12 @@ package net.mehvahdjukaar.vista.client;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
+import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.common.CassetteTape;
 import net.mehvahdjukaar.vista.common.TVBlock;
 import net.mehvahdjukaar.vista.common.TVBlockEntity;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
@@ -23,6 +23,8 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
 
     public TvBlockEntityRenderer(BlockEntityRendererProvider.Context context) {
     }
+
+    public static final ResourceLocation BARS_LOCATION = VistaMod.res("cassette_tape/color_bars");
 
     private static final int SCREEN_RESOLUTION_SCALE = 8;
 
@@ -39,15 +41,19 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
         Holder<CassetteTape> tape = blockEntity.getTape();
 
         if (liveFeedId != null) {
+
             ResourceLocation tex = LiveFeedRendererManager.requestLiveFeedTexture(blockEntity.getLevel(),
                     liveFeedId, screenPixelSize * SCREEN_RESOLUTION_SCALE);
+            if (tex == null) {
+                tex = BARS_LOCATION; //TODO: mve to atlas
+            }
 
             vertexConsumer = buffer.getBuffer(ModRenderTypes.CAMERA_DRAW.apply(tex));
 
         } else if (tape != null) {
             Material mat = TapeTextureManager.getMaterial(tape);
 
-            vertexConsumer = mat.buffer(buffer, RenderType::text);
+            vertexConsumer = mat.buffer(buffer, t -> ModRenderTypes.CAMERA_DRAW_SPRITE.apply(t, mat));
 
         } else {
 
