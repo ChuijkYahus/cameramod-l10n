@@ -3,6 +3,7 @@ package net.mehvahdjukaar.vista.client;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
+import net.mehvahdjukaar.vista.common.CassetteTape;
 import net.mehvahdjukaar.vista.common.TVBlock;
 import net.mehvahdjukaar.vista.common.TVBlockEntity;
 import net.minecraft.client.renderer.LightTexture;
@@ -10,11 +11,10 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
-import net.minecraft.client.renderer.blockentity.DecoratedPotRenderer;
-import net.minecraft.client.renderer.entity.PaintingRenderer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.resources.model.Material;
 import net.minecraft.core.Direction;
+import net.minecraft.core.Holder;
 import net.minecraft.resources.ResourceLocation;
 
 import java.util.UUID;
@@ -32,19 +32,26 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
 
         if (!blockEntity.getBlockState().getValue(TVBlock.POWERED)) return;
 
-        UUID liveFeedId = blockEntity.getLinkedFeedUUID();
+        VertexConsumer vertexConsumer;
 
-        RenderType renderType = null;
         int screenPixelSize = blockEntity.getScreenPixelSize();
+        UUID liveFeedId = blockEntity.getLinkedFeedUUID();
+        Holder<CassetteTape> tape = blockEntity.getTape();
 
         if (liveFeedId != null) {
             ResourceLocation tex = LiveFeedRendererManager.requestLiveFeedTexture(blockEntity.getLevel(),
                     liveFeedId, screenPixelSize * SCREEN_RESOLUTION_SCALE);
-            renderType = ModRenderTypes.CAMERA_DRAW.apply(tex);
-        }
 
-        if (renderType == null) {
-            renderType = ModRenderTypes.CAMERA_DRAW_STATIC;
+            vertexConsumer = buffer.getBuffer(ModRenderTypes.CAMERA_DRAW.apply(tex));
+
+        } else if (tape != null) {
+            Material mat = TapeTextureManager.getMaterial(tape);
+
+            vertexConsumer = mat.buffer(buffer, RenderType::text);
+
+        } else {
+
+            vertexConsumer = buffer.getBuffer(ModRenderTypes.CAMERA_DRAW_STATIC);
         }
 
         Direction dir = blockEntity.getBlockState().getValue(TVBlock.FACING);
@@ -57,7 +64,6 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
         overlay = OverlayTexture.NO_OVERLAY;
 
         float s = screenPixelSize / 32f;
-        VertexConsumer vertexConsumer = buffer.getBuffer(renderType);
         PoseStack.Pose pose = poseStack.last();
 
         poseStack.translate(0.5, 0.5, -0.001);

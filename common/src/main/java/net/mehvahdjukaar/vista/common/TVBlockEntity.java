@@ -3,9 +3,9 @@ package net.mehvahdjukaar.vista.common;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.moonlight.api.block.ItemDisplayTile;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResult;
 import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
@@ -20,6 +20,8 @@ public class TVBlockEntity extends ItemDisplayTile {
 
     @Nullable
     private UUID linkedFeedUuid = null;
+    @Nullable
+    private Holder<CassetteTape> tape = null;
 
     public TVBlockEntity(BlockPos pos, BlockState state) {
         super(VistaMod.TV_TILE.get(), pos, state);
@@ -28,6 +30,11 @@ public class TVBlockEntity extends ItemDisplayTile {
     @Nullable
     public UUID getLinkedFeedUUID() {
         return linkedFeedUuid;
+    }
+
+    @Nullable
+    public Holder<CassetteTape> getTape() {
+        return tape;
     }
 
     public int getScreenPixelSize() {
@@ -47,13 +54,19 @@ public class TVBlockEntity extends ItemDisplayTile {
     @Override
     public void updateTileOnInventoryChanged() {
         super.updateTileOnInventoryChanged();
-        linkedFeedUuid = this.getDisplayedItem().get(VistaMod.LINKED_FEED_COMPONENT.get());
+        cacheState();
+    }
+
+    private void cacheState() {
+        ItemStack displayedItem = this.getDisplayedItem();
+        linkedFeedUuid = displayedItem.get(VistaMod.LINKED_FEED_COMPONENT.get());
+        tape = displayedItem.get(VistaMod.CASSETTE_TAPE_COMPONENT.get());
     }
 
     @Override
     public void updateClientVisualsOnLoad() {
         super.updateClientVisualsOnLoad();
-        linkedFeedUuid = this.getDisplayedItem().get(VistaMod.LINKED_FEED_COMPONENT.get());
+        cacheState();
     }
 
     @Override

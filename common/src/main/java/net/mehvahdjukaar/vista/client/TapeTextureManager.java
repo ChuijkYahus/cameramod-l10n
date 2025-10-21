@@ -2,6 +2,8 @@ package net.mehvahdjukaar.vista.client;
 
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.common.CassetteTape;
+import net.minecraft.client.particle.SpriteSet;
+import net.minecraft.client.renderer.Sheets;
 import net.minecraft.client.resources.model.Material;
 import net.minecraft.core.Holder;
 import net.minecraft.resources.ResourceKey;
@@ -20,8 +22,7 @@ public class TapeTextureManager {
 
     public static Material getMaterial(Holder<CassetteTape> tapeKey) {
         return MATERIALS.computeIfAbsent(tapeKey.unwrapKey().get(), k ->
-                new Material(ATLAS_LOCATION, tapeKey.value().assetId()
-                        .withPrefix("cassette_tape/")));
+                new Material(ATLAS_LOCATION, tapeKey.value().assetId()));
     }
 
 

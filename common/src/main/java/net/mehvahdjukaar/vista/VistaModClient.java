@@ -45,7 +45,7 @@ public class VistaModClient {
         event.register((itemStack, i) -> {
             if (i == 1) {
                 var tape = itemStack.get(VistaMod.CASSETTE_TAPE_COMPONENT.get());
-                if (tape == null) return 0xee2200ff;
+                if (tape == null) return -1;
                 return tape.value().color();
             }
             return -1;
