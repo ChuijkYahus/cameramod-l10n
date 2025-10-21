@@ -81,6 +81,7 @@ public class ViewFinderBlockEntity extends BlockEntity implements IOnePlayerInte
         this.yaw = tag.getFloat("yaw");
         this.pitch = tag.getFloat("pitch");
         this.locked = tag.getBoolean("locked");
+        this.zoom = tag.getInt("zoom");
         updateLink();
     }
 
@@ -91,6 +92,7 @@ public class ViewFinderBlockEntity extends BlockEntity implements IOnePlayerInte
         tag.putFloat("yaw", this.yaw);
         tag.putFloat("pitch", this.pitch);
         tag.putBoolean("locked", this.locked);
+        tag.putInt("zoom", this.zoom);
     }
 
     @Override

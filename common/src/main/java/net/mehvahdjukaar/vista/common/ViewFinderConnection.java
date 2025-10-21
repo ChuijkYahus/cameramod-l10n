@@ -4,6 +4,7 @@ import com.mojang.serialization.Codec;
 import net.mehvahdjukaar.moonlight.api.misc.WorldSavedData;
 import net.mehvahdjukaar.moonlight.api.misc.WorldSavedDataType;
 import net.mehvahdjukaar.vista.VistaMod;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -67,12 +68,13 @@ public class ViewFinderConnection extends WorldSavedData {
         return linkedFeeds.get(viewFinderUUID);
     }
 
+    //for client
     @Nullable
     public ViewFinderBlockEntity getLinkedViewFinder(Level level, UUID viewFinderUUID) {
-        GlobalPos pos = linkedFeeds.get(viewFinderUUID);
-
-        if (pos != null && pos.dimension() == level.dimension()) {
-            if (level.getBlockEntity(pos.pos()) instanceof ViewFinderBlockEntity be) {
+        GlobalPos gp = linkedFeeds.get(viewFinderUUID);
+        if (gp != null && gp.dimension() == level.dimension()) {
+            BlockPos pos = gp.pos();
+            if (level.isLoaded(pos) && level.getBlockEntity(pos) instanceof ViewFinderBlockEntity be) {
                 return be;
             }
         }
@@ -91,7 +93,7 @@ public class ViewFinderConnection extends WorldSavedData {
     }
 
     public void validateAll(ServerLevel level) {
-        if(!level.isClientSide){
+        if (!level.isClientSide) {
             //validate all
             AtomicBoolean changed = new AtomicBoolean(false);
             this.linkedFeeds.entrySet().removeIf(e -> {

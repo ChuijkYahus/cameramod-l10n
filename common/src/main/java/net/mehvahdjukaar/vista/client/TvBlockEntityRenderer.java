@@ -53,7 +53,7 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
 
             vc = mat.buffer(buffer, t -> ModRenderTypes.CAMERA_DRAW_SPRITE.apply(t, mat));
         } else {
-            vc = buffer.getBuffer(ModRenderTypes.CAMERA_DRAW_STATIC);
+            vc = buffer.getBuffer(ModRenderTypes.NOISE);
         }
 
         Direction dir = blockEntity.getBlockState().getValue(TVBlock.FACING);

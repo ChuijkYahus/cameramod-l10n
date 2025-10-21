@@ -19,6 +19,9 @@ uniform float Smear;
 // 1.0 keeps average brightness stable across settings
 uniform float EnableEnergyNormalize;
 
+// Vignette strength: 0.0 = off, 1.0 = full
+uniform float VignetteIntensity;
+
 // Base kernel radius used if the dynamic one computes smaller.
 // (Dynamic radius grows with Smear; this is a floor.)
 const int TriadKernelRadius = 1; // 0 => fastest/sharpest (no neighbors)
@@ -52,9 +55,7 @@ vec2 triadToUV(vec2 triadP, vec2 atlasSizePx) {
 }
 
 /* ---- Precise, no-bleed clamp: clamp to edge texel centers ----
-   We clamp in texel units relative to the sprite, to [0.5 .. width-0.5].
-   This prevents linear filtering from seeing outside the sprite without
-   over-clamping a whole band of fragments. */
+   We clamp in texel units relative to the sprite, to [0.5 .. width-0.5]. */
 vec2 clampToSpriteTexelCenters(vec2 uv, vec2 atlasSizePx) {
     vec2 minUV = SpriteDimensions.xy;
     vec2 sizeUV = SpriteDimensions.zw;
@@ -71,9 +72,32 @@ vec2 clampToSpriteTexelCenters(vec2 uv, vec2 atlasSizePx) {
     return minUV + p / atlasSizePx;
 }
 
+/* ===================== CRT Vignette (pure, no randomness) ===================== */
+// UV must be in [0,1] within the SPRITE (not the whole atlas).
+float crtVignette() {
+    // ===================== Apply CRT Vignette =====================
+    // Compute sprite-local UV (0..1 across the sprite rect)
+    vec2 minUV  = SpriteDimensions.xy;
+    vec2 sizeUV = max(SpriteDimensions.zw, vec2(1e-6));
+    vec2 uvLocal = clamp((texCoord0 - minUV) / sizeUV, 0.0, 1.0);
+
+    float v = 44.0 * (uvLocal.x * (1.0 - uvLocal.x) * uvLocal.y * (1.0 - uvLocal.y));
+    // Base/gain chosen to match the referenced style: 0.6 + 0.4 * v
+    return 0.6 + 0.4 * v;
+}
+
 /* ===================== Phosphor pass (gather) ===================== */
 vec3 accumulateTriadResponse(vec2 pixelPos, sampler2D srcTexture, vec2 atlasSizePx) {
     vec2 triadPos = pixelPos * TriadsPerPixel - 0.25;
+
+    // -------- Derivative-based aliasing detection (cycles per pixel) --------
+    // Estimate how many triad cycles a single screen pixel spans.
+    vec2 dx = dFdx(triadPos);
+    vec2 dy = dFdy(triadPos);
+    float cpp = max(length(dx), length(dy));   // cycles-per-pixel in triad units
+    // Nyquist ~ 0.5 cpp. Build a soft contrast scale in [0..1].
+    float t = clamp(0.5 / max(cpp, 1e-5), 0.0, 1.0);
+    float contrast = t * t; // smoother rolloff
 
     // Small scanline/beam jitter in TRIAD space (stable vs texture)
     vec2 jittered = triadPos;
@@ -93,9 +117,9 @@ vec3 accumulateTriadResponse(vec2 pixelPos, sampler2D srcTexture, vec2 atlasSize
     const float lr = 0.25;
     const float up = 0.2;
 
-    for (int dy = -dynRadius; dy <= dynRadius; ++dy) {
-        for (int dx = -dynRadius; dx <= dynRadius; ++dx) {
-            vec2 cellCenter = floor(triadPos) + 0.5 + vec2(dx, dy);
+    for (int dy_i = -dynRadius; dy_i <= dynRadius; ++dy_i) {
+        for (int dx_i = -dynRadius; dx_i <= dynRadius; ++dx_i) {
+            vec2 cellCenter = floor(triadPos) + 0.5 + vec2(dx_i, dy_i);
 
             vec2 rP = jittered + vec2(0.0, up);
             vec2 gP = jittered + vec2( lr, 0.0);
@@ -134,7 +158,33 @@ vec3 accumulateTriadResponse(vec2 pixelPos, sampler2D srcTexture, vec2 atlasSize
         sum.g /= max(wg, 1e-6);
         sum.b /= max(wb, 1e-6);
     }
-    return clamp(sum, 0.0, 1.0);
+
+    vec3 triadOut = clamp(sum, 0.0, 1.0);
+
+    // Low-frequency fallback (no triad) using the sprite-local UV
+    vec3 fallback = texture(srcTexture, clampToSpriteTexelCenters(texCoord0, atlasSizePx)).rgb;
+
+    // Blend based on aliasing risk: high cpp -> contrast→0 -> prefer fallback
+    return mix(fallback, triadOut, contrast);
+}
+
+
+// Returns [0..1] contrast scale for the triad mask based on pixel footprint.
+// 1.0 = keep full mask; 0.0 = kill mask (too high frequency).
+float triadContrastScale(vec2 triadPos) {
+    // How fast triad coordinates change across a screen pixel:
+    vec2 dx = dFdx(triadPos);
+    vec2 dy = dFdy(triadPos);
+    // Approx cycles-per-pixel (CPP) ~ length of gradient (triad units per pixel)
+    float cpp = max(length(dx), length(dy));
+
+    // Nyquist is ~0.5 cycles/pixel. Add softness to avoid hard popping.
+    const float nyquist = 0.5;
+    // Start rolling off a bit below Nyquist to be safe:
+    float t = clamp(nyquist / max(cpp, 1e-5), 0.0, 1.0);
+
+    // Ease the rolloff for smoother transition
+    return t * t; // or smoothstep(0.0, 1.0, t)
 }
 
 void main() {
@@ -144,6 +194,16 @@ void main() {
     vec3 triadRGB = accumulateTriadResponse(pixelPos, Sampler0, atlasSizePx);
 
     vec4 color = vec4(triadRGB, 1.0) * vertexColor * ColorModulator;
+
+
+
+    // Pure vignette factor and blend with intensity
+    float vFactor = crtVignette();
+    float vignette = mix(1.0, vFactor, clamp(VignetteIntensity, 0.0, 1.0));
+
+    color.rgb *= vignette;
+    // =============================================================
+
     color *= lightMapColor;
     fragColor = linear_fog(color, vertexDistance, FogStart, FogEnd, FogColor);
 }

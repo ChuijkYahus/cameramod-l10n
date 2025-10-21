@@ -57,7 +57,7 @@ public class VistaMod {
 
     public static final Supplier<CassetteItem> CASSETTE = RegHelper.registerItem(res("cassette"),
             () -> new CassetteItem(new Item.Properties()
-                    .rarity(Rarity.UNCOMMON)
+                    .rarity(Rarity.RARE)
                     .stacksTo(1)));
 
     public static final Supplier<EchoCassetteItem> HOLLOW_CASSETTE = RegHelper.registerItem(res("hollow_cassette"),

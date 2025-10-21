@@ -76,8 +76,12 @@ public class TVBlockEntity extends ItemDisplayTile {
         ItemStack current = this.getDisplayedItem();
         if (!current.isEmpty()) {
             //pop pop current
-            Vec3 vec3 = Vec3.atLowerCornerWithOffset(this.worldPosition, 0.5, 1.05, 0.5)
-                    .offsetRandom(this.level.random, 0.7F);
+            Vec3 vec3 = level.getBlockState(this.worldPosition.above()).isSolid() ?
+                    this.worldPosition.relative(getBlockState().getValue(TVBlock.FACING)).getCenter() :
+                    Vec3.atLowerCornerWithOffset(this.worldPosition, 0.5, 1.05, 0.5);
+
+            vec3 = vec3.offsetRandom(this.level.random, 0.7F);
+
             ItemStack itemStack2 = current.copy();
             ItemEntity itemEntity = new ItemEntity(this.level, vec3.x(), vec3.y(), vec3.z(), itemStack2);
             itemEntity.setDefaultPickUpDelay();

@@ -40,14 +40,9 @@ public class ModRenderTypes extends RenderType {
                 .setTexturingState(new TexturingStateShard("set_texel_size",
                         () -> {
                             ShaderInstance shader = VistaModClient.CAMERA_VIEW_SHADER.get();
-                            shader.safeGetUniform("TriadsPerPixel")
-                                    .set(1.37f);
-                            shader.safeGetUniform("Smear")
-                                    .set(1f);
-                            shader.safeGetUniform("EnableEnergyNormalize")
-                                    .set(0.0f);
                             shader.safeGetUniform("SpriteDimensions")
                                     .set(new Vector4f(0, 0, 1, 1f));
+                            setCameraDrawUniforms(shader);
                         },
                         () -> {
                         }))
@@ -67,14 +62,8 @@ public class ModRenderTypes extends RenderType {
                 .setLightmapState(LIGHTMAP)
                 .setTexturingState(new TexturingStateShard("set_texel_size",
                         () -> {
-                            TextureAtlasSprite sprite = mat.sprite();
                             ShaderInstance shader = VistaModClient.CAMERA_VIEW_SHADER.get();
-                            shader.safeGetUniform("TriadsPerPixel")
-                                    .set(1.37f);
-                            shader.safeGetUniform("Smear")
-                                    .set(1f);
-                            shader.safeGetUniform("EnableEnergyNormalize")
-                                    .set(0.0f);
+                            TextureAtlasSprite sprite = mat.sprite();
                             shader.safeGetUniform("SpriteDimensions")
                                     .set(new Vector4f(
                                             sprite.getU0(),                     // minU
@@ -82,6 +71,7 @@ public class ModRenderTypes extends RenderType {
                                             sprite.getU1() - sprite.getU0(),    // sizeU
                                             sprite.getV1() - sprite.getV0()     // sizeV
                                     ));
+                            setCameraDrawUniforms(shader);
                         },
                         () -> {
                         }))
@@ -91,7 +81,16 @@ public class ModRenderTypes extends RenderType {
                 1536, true, false, compositeState);
     });
 
-    public static final RenderType CAMERA_DRAW_STATIC =
+    private static void setCameraDrawUniforms(ShaderInstance shader) {
+
+        setFloat(shader,"TriadsPerPixel", 1.37f);
+        setFloat(shader,"Smear",  1f);
+        setFloat(shader,"EnableEnergyNormalize", 0.0f);
+
+        setFloat(shader, "VignetteIntensity", 0.5f);
+    }
+
+    public static final RenderType NOISE =
             create("noise", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS,
                     1536, true, false,
                     RenderType.CompositeState.builder()
@@ -135,6 +134,7 @@ public class ModRenderTypes extends RenderType {
                                     .set(1f);
                             shader.safeGetUniform("DitherStrength")
                                     .set(1f);
+
                         },
                         () -> {
                         }
@@ -144,6 +144,11 @@ public class ModRenderTypes extends RenderType {
         return create("posterize", DefaultVertexFormat.POSITION_TEX, VertexFormat.Mode.QUADS,
                 1536, true, false, compositeState);
     });
+
+
+    private static void setFloat(ShaderInstance shader, String name, float value) {
+        shader.safeGetUniform(name).set(value);
+    }
 
 
 }

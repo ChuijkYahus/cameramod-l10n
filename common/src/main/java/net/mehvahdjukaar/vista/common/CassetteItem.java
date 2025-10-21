@@ -32,8 +32,8 @@ public class CassetteItem extends Item {
         var tape = stack.get(VistaMod.CASSETTE_TAPE_COMPONENT.get());
         if(tape != null){
             tape.unwrapKey().ifPresent((resourceKey) -> {
-                tooltipComponents.add(Component.translatable(resourceKey.location().toLanguageKey("cassette_tape", "title")).withStyle(ChatFormatting.YELLOW));
-                tooltipComponents.add(Component.translatable(resourceKey.location().toLanguageKey("cassette_tape", "author")).withStyle(ChatFormatting.GRAY));
+                //tooltipComponents.add(Component.translatable(resourceKey.location().toLanguageKey("cassette_tape", "title")).withStyle(ChatFormatting.YELLOW));
+                tooltipComponents.add(Component.translatable(resourceKey.location().toLanguageKey("cassette_tape", "tooltip")).withStyle(ChatFormatting.GRAY));
             });
         }
     }

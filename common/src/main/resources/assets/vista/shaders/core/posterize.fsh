@@ -242,7 +242,8 @@ vec3 posterize_oklab(vec3 srgb, vec2 texelSize) {
 void main() {
     vec2 texelSize = 1.0 / vec2(textureSize(Sampler0, 0));  // width, height of the atlas
     // Use the provided TexelSize (1/width, 1/height) for FXAA
-    vec3 sampled = fxaaSample(Sampler0, texCoord0, texelSize);
+    //vec3 sampled = fxaaSample(Sampler0, texCoord0, texelSize);
+    vec3 sampled = texture(Sampler0, texCoord0).rgb;
 
     // Apply posterize + dithering (uncomment/leave as-is to enable)
     sampled = posterize_oklab(sampled, texelSize);
