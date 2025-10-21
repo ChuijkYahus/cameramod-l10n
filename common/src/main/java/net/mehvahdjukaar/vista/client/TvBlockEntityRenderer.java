@@ -3,7 +3,6 @@ package net.mehvahdjukaar.vista.client;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
-import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.common.CassetteTape;
 import net.mehvahdjukaar.vista.common.TVBlock;
 import net.mehvahdjukaar.vista.common.TVBlockEntity;
@@ -24,8 +23,6 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
     public TvBlockEntityRenderer(BlockEntityRendererProvider.Context context) {
     }
 
-    public static final ResourceLocation BARS_LOCATION = VistaMod.res("cassette_tape/color_bars");
-
     private static final int SCREEN_RESOLUTION_SCALE = 8;
 
     @Override
@@ -34,7 +31,7 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
 
         if (!blockEntity.getBlockState().getValue(TVBlock.POWERED)) return;
 
-        VertexConsumer vertexConsumer;
+        VertexConsumer vc;
 
         int screenPixelSize = blockEntity.getScreenPixelSize();
         UUID liveFeedId = blockEntity.getLinkedFeedUUID();
@@ -44,20 +41,19 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
 
             ResourceLocation tex = LiveFeedRendererManager.requestLiveFeedTexture(blockEntity.getLevel(),
                     liveFeedId, screenPixelSize * SCREEN_RESOLUTION_SCALE);
-            if (tex == null) {
-                tex = BARS_LOCATION; //TODO: mve to atlas
+            if (tex != null) {
+                vc = buffer.getBuffer(ModRenderTypes.CAMERA_DRAW.apply(tex));
+            } else {
+                vc = TapeTextureManager.DEFAULT_MATERIAL.buffer(buffer, ModRenderTypes.CAMERA_DRAW);
             }
 
-            vertexConsumer = buffer.getBuffer(ModRenderTypes.CAMERA_DRAW.apply(tex));
 
         } else if (tape != null) {
             Material mat = TapeTextureManager.getMaterial(tape);
 
-            vertexConsumer = mat.buffer(buffer, t -> ModRenderTypes.CAMERA_DRAW_SPRITE.apply(t, mat));
-
+            vc = mat.buffer(buffer, t -> ModRenderTypes.CAMERA_DRAW_SPRITE.apply(t, mat));
         } else {
-
-            vertexConsumer = buffer.getBuffer(ModRenderTypes.CAMERA_DRAW_STATIC);
+            vc = buffer.getBuffer(ModRenderTypes.CAMERA_DRAW_STATIC);
         }
 
         Direction dir = blockEntity.getBlockState().getValue(TVBlock.FACING);
@@ -74,17 +70,32 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
 
         poseStack.translate(0.5, 0.5, -0.001);
 
-        vertexConsumer.addVertex(pose, -s, -s, 0).setColor(-1)
-                .setUv(1f, 1f).setOverlay(overlay).setLight(light).setNormal(pose, 0f, 0f, -1f);
-        vertexConsumer.addVertex(pose, -s, s, 0).setColor(-1)
-                .setUv(1f, 0f).setOverlay(overlay).setLight(light).setNormal(pose, 0f, 0f, -1f);
-
-        vertexConsumer.addVertex(pose, s, s, 0).setColor(-1)
-                .setUv(0f, 0f).setOverlay(overlay).setLight(light).setNormal(pose, 0f, 0f, -1f);
-        vertexConsumer.addVertex(pose, s, -s, 0).setColor(-1)
-                .setUv(0f, 1f).setOverlay(overlay).setLight(light).setNormal(pose, 0f, 0f, -1f);
-
-
+        //leave to avoid buffer bug
+        //we could have also used whats passed in the shader and dont use a material
+        vc.addVertex(pose, -s, -s, 0);
+        vc.setColor(-1);
+        vc.setUv(1f, 1f);
+        vc.setOverlay(overlay);
+        vc.setLight(light);
+        vc.setNormal(pose, 0f, 0f, -1f);
+        vc.addVertex(pose, -s, s, 0);
+        vc.setColor(-1);
+        vc.setUv(1f, 0f);
+        vc.setOverlay(overlay);
+        vc.setLight(light);
+        vc.setNormal(pose, 0f, 0f, -1f);
+        vc.addVertex(pose, s, s, 0);
+        vc.setColor(-1);
+        vc.setUv(0f, 0f);
+        vc.setOverlay(overlay);
+        vc.setLight(light);
+        vc.setNormal(pose, 0f, 0f, -1f);
+        vc.addVertex(pose, s, -s, 0);
+        vc.setColor(-1);
+        vc.setUv(0f, 1f);
+        vc.setOverlay(overlay);
+        vc.setLight(light);
+        vc.setNormal(pose, 0f, 0f, -1f);
     }
 
 

@@ -4,6 +4,7 @@ package net.mehvahdjukaar.vista.common;
 import net.mehvahdjukaar.moonlight.api.misc.TileOrEntityTarget;
 import net.mehvahdjukaar.moonlight.api.platform.network.NetworkHelper;
 import net.mehvahdjukaar.vista.network.ServerBoundSyncViewFinderPacket;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
@@ -22,17 +23,9 @@ public interface ViewFinderAccess {
 
     float getCannonGlobalYawOffset(float partialTicks);
 
-    Vec3 getCannonGlobalOffset();
-
     boolean stillValid(Player player);
 
     void updateClients();
-
-    default Vec3 getCannonGlobalFacing(float partialTicks) {
-        ViewFinderBlockEntity cannon = this.getInternalTile();
-        return Vec3.directionFromRotation(cannon.getPitch(partialTicks),
-                cannon.getYaw(partialTicks) - this.getCannonGlobalYawOffset(partialTicks)).scale(-1);
-    }
 
     Restraint getPitchAndYawRestrains();
 
@@ -43,6 +36,8 @@ public interface ViewFinderAccess {
     default boolean impedePlayerMovementWhenManeuvering() {
         return true;
     }
+
+
 
     class Block implements ViewFinderAccess {
         private final ViewFinderBlockEntity blockEntity;
@@ -59,11 +54,6 @@ public interface ViewFinderAccess {
         @Override
         public Vec3 getCannonGlobalPosition(float ticks) {
             return blockEntity.getBlockPos().getCenter();
-        }
-
-        @Override
-        public Vec3 getCannonGlobalOffset() {
-            return new Vec3(0.5, 0.5, 0.5);
         }
 
         @Override

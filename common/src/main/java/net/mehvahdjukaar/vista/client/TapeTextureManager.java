@@ -17,8 +17,10 @@ public class TapeTextureManager {
     public static final ResourceLocation ATLAS_LOCATION = VistaMod.res("textures/atlas/cassette_tape.png");
     public static final ResourceLocation ATLAS_INFO_LOCATION = VistaMod.res("cassette_tapes");
 
+    public static final ResourceLocation BARS_LOCATION = VistaMod.res("color_bars");
 
     private static final Map<ResourceKey<CassetteTape>, Material> MATERIALS = new HashMap<>();
+    public static final Material DEFAULT_MATERIAL = new Material(ATLAS_LOCATION, BARS_LOCATION);
 
     public static Material getMaterial(Holder<CassetteTape> tapeKey) {
         return MATERIALS.computeIfAbsent(tapeKey.unwrapKey().get(), k ->

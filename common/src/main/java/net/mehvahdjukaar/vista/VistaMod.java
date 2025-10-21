@@ -13,6 +13,7 @@ import net.minecraft.core.UUIDUtil;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.*;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -79,6 +80,9 @@ public class VistaMod {
                             .networkSynchronized(CassetteTape.STREAM_CODEC)
                             .build());
 
+    public static final TagKey<CassetteTape> HIDDEN_TAPES = TagKey.create(
+            CASSETTE_TAPE_REGISTRY_KEY, res("hidden"));
+
     public static void init() {
         CommonConfigs.init();
 
@@ -99,6 +103,7 @@ public class VistaMod {
         event.add(CreativeModeTabs.REDSTONE_BLOCKS, VIEWFINDER.get());
         CreativeModeTab.ItemDisplayParameters parameters = event.getParameters();
         for (var v : parameters.holders().lookupOrThrow(CASSETTE_TAPE_REGISTRY_KEY).listElements().toList()) {
+            if (v.is(HIDDEN_TAPES)) continue;
             ItemStack stack = CASSETTE.get().getDefaultInstance();
             stack.set(CASSETTE_TAPE_COMPONENT.get(), v);
             event.add(CreativeModeTabs.TOOLS_AND_UTILITIES, stack);

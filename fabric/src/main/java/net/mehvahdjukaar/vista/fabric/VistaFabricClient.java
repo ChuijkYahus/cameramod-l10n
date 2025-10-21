@@ -4,6 +4,7 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.model.loading.v1.FabricBakedModelManager;
 import net.fabricmc.fabric.api.client.model.loading.v1.ModelLoadingPlugin;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
+import net.fabricmc.fabric.api.event.client.player.ClientPreAttackCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.renderer.v1.RendererAccess;
 import net.fabricmc.fabric.api.renderer.v1.model.SpriteFinder;
@@ -11,6 +12,7 @@ import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.client.GifPathSpriteSource;
 import net.mehvahdjukaar.vista.client.TapeTextureManager;
+import net.mehvahdjukaar.vista.client.ViewFinderController;
 import net.mehvahdjukaar.vista.client.ViewFinderHud;
 import net.mehvahdjukaar.vista.mixins.fabric.SpriteSourcesAccessor;
 import net.minecraft.client.DeltaTracker;
@@ -27,6 +29,13 @@ public class VistaFabricClient {
             VistaModClient.onLevelClose();
         });
 
+        ClientPreAttackCallback.EVENT.register((minecraft, localPlayer, i) -> {
+            if (ViewFinderController.onPlayerAttack()) {
+                return true;
+            }
+            return false;
+        });
+
 
         SpriteSourcesAccessor.getTYPES().put(VistaMod.res("directory_gifs"), GifPathSpriteSource.TYPE);
 
@@ -36,6 +45,7 @@ public class VistaFabricClient {
     private static void onRenderHud(GuiGraphics graphics, DeltaTracker partialTicks) {
         ViewFinderHud.INSTANCE.render(graphics, partialTicks);
     }
+
 
 
 }

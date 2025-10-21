@@ -22,7 +22,6 @@ import net.minecraft.client.renderer.FogRenderer;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Display;
@@ -33,8 +32,6 @@ import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL30;
 
 import java.util.UUID;
 
@@ -124,6 +121,9 @@ public class LiveFeedRendererManager {
         canvas.bindWrite(true);
         LIVE_FEED_BEING_RENDERED = canvas;
 
+        //same as field of view modifier
+        float fov = 70 * tile.getModifiedFOV(1, 1);
+
 
         RenderSystem.clear(16640, ON_OSX);
         FogRenderer.setupNoFog();
@@ -131,7 +131,7 @@ public class LiveFeedRendererManager {
 
         float oldRenderDistance = mc.gameRenderer.renderDistance;
         mc.gameRenderer.renderDistance = RENDER_DISTANCE;
-        renderLevel(mc, canvas, DUMMY_CAMERA);
+        renderLevel(mc, canvas, DUMMY_CAMERA, fov);
         mc.gameRenderer.renderDistance = oldRenderDistance;
 
         copyWithShader(canvas, renderTarget, ModRenderTypes.POSTERIZE.apply(canvas));
@@ -160,13 +160,12 @@ public class LiveFeedRendererManager {
     }
 
     //same as game renderer render level but simplified
-    private static void renderLevel(Minecraft mc, RenderTarget target, Camera camera) {
+    private static void renderLevel(Minecraft mc, RenderTarget target, Camera camera, float fov) {
         DeltaTracker deltaTracker = mc.getTimer();
         GameRenderer gr = mc.gameRenderer;
         LevelRenderer lr = mc.levelRenderer;
 
-
-        Matrix4f projMatrix = createProjectionMatrix(gr, target);
+        Matrix4f projMatrix = createProjectionMatrix(gr, target, fov);
         PoseStack poseStack = new PoseStack();
         projMatrix.mul(poseStack.last().pose());
         gr.resetProjectionMatrix(projMatrix);
@@ -185,10 +184,9 @@ public class LiveFeedRendererManager {
         mc.getProfiler().pop();
     }
 
-    private static Matrix4f createProjectionMatrix(GameRenderer gr, RenderTarget target) {
+    private static Matrix4f createProjectionMatrix(GameRenderer gr, RenderTarget target, float fov) {
         Matrix4f matrix4f = new Matrix4f();
         float zoom = 1;
-        double fovNumber = 70;
 
         if (zoom != 1.0F) {
             float zoomX = 0;
@@ -198,7 +196,7 @@ public class LiveFeedRendererManager {
         }
         float depthFar = gr.getDepthFar();
 
-        return matrix4f.perspective((float) (fovNumber * Mth.DEG_TO_RAD),
+        return matrix4f.perspective((float) (fov * Mth.DEG_TO_RAD),
                 (float) target.width / (float) target.height, 0.05F, depthFar);
     }
 
@@ -215,41 +213,23 @@ public class LiveFeedRendererManager {
             throw new IllegalStateException("RenderTarget sizes must match for shader copy");
 
 
-        if (false) {
-            // Bind src as READ, dst as DRAW
-            GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, src.frameBufferId);
-            GL30.glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, dst.frameBufferId);
+        // Bind destination framebuffer
+        dst.clear(true);
 
-            // Blit color buffer (use LINEAR or NEAREST; sizes match so either is fine)
-            GL30.glBlitFramebuffer(
-                    0, 0, src.width, src.height,      // src rect
-                    0, 0, dst.width, dst.height,      // dst rect
-                    GL11.GL_COLOR_BUFFER_BIT,         // copy color
-                    GL11.GL_NEAREST                   // filter (NEAREST is safe; LINEAR also fine for color)
-            );
+        dst.bindWrite(true);
 
-            // Unbind (bind 0 to GL_FRAMEBUFFER resets both READ/DRAW)
-            GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, 0);
-        } else {
-            // Bind destination framebuffer
-            dst.clear(true);
+        RenderSystem.getModelViewMatrix().set(new Matrix4f().identity());
+        RenderSystem.getProjectionMatrix().set(new Matrix4f().identity());
 
-            dst.bindWrite(true);
+        var bufferSource = Minecraft.getInstance().renderBuffers().bufferSource();
 
-            RenderSystem.getModelViewMatrix().set(new Matrix4f().identity());
-            RenderSystem.getProjectionMatrix().set(new Matrix4f().identity());
+        VertexConsumer vc = bufferSource.getBuffer(rt);
 
-            var bufferSource = Minecraft.getInstance().renderBuffers().bufferSource();
-
-            VertexConsumer vc = bufferSource.getBuffer(rt);
-
-            vc.addVertex(-1, -1, 0).setUv(0f, 1f);
-            vc.addVertex(1, -1, 0).setUv(1f, 1f);
-            vc.addVertex(1, 1, 0).setUv(1f, 0f);
-            vc.addVertex(-1, 1, 0).setUv(0f, 0f);
-            bufferSource.endBatch(rt);
-
-        }
+        vc.addVertex(-1, -1, 0).setUv(0f, 1f);
+        vc.addVertex(1, -1, 0).setUv(1f, 1f);
+        vc.addVertex(1, 1, 0).setUv(1f, 0f);
+        vc.addVertex(-1, 1, 0).setUv(0f, 0f);
+        bufferSource.endBatch(rt);
 
     }
 

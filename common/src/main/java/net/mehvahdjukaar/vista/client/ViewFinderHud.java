@@ -17,11 +17,13 @@ public class ViewFinderHud implements LayeredDraw.Layer {
     private static final ResourceLocation BAR_SPRITE = VistaMod.res("hud/bar");
     private static final ResourceLocation INDICATOR_SPRITE = VistaMod.res("hud/indicator");
     private static final ResourceLocation LOCKED_INDICATOR_SPRITE = VistaMod.res("hud/lock");
-    private static final ResourceLocation OVERLAY = VistaMod.res("textures/gui/scope.png");
+    private static final ResourceLocation OVERLAY = VistaMod.res("textures/gui/viewfinder_scope.png");
 
     public static final ViewFinderHud INSTANCE = new ViewFinderHud();
 
     protected final Minecraft mc;
+
+    private float scopeScale;
 
     protected ViewFinderHud() {
         this.mc = Minecraft.getInstance();
@@ -30,6 +32,10 @@ public class ViewFinderHud implements LayeredDraw.Layer {
     @Override
     public void render(GuiGraphics graphics, DeltaTracker deltaTracker) {
         if (mc.options.hideGui) return;
+
+        float deltaTicks = deltaTracker.getGameTimeDeltaTicks();
+        this.scopeScale = Mth.lerp(0.5F * deltaTicks, this.scopeScale, 1.125F);
+
         if (ViewFinderController.isActive()) {
 
             ViewFinderBlockEntity tile = ViewFinderController.access.getInternalTile();
@@ -37,6 +43,8 @@ public class ViewFinderHud implements LayeredDraw.Layer {
             setupOverlayRenderState();
             int screenWidth = graphics.guiWidth();
             int screenHeight = graphics.guiHeight();
+
+            renderSpyglassOverlay(graphics, this.scopeScale);
 
             renderBar(graphics, screenWidth, screenHeight, tile, deltaTracker.getGameTimeDeltaPartialTick(false));
         }
@@ -61,9 +69,9 @@ public class ViewFinderHud implements LayeredDraw.Layer {
 
         int zoomOffset = (zoomLevel - 1) * 4;
 
-        if(ViewFinderController.isLocked){
-            graphics.blitSprite(LOCKED_INDICATOR_SPRITE, xpBarLeft + zoomOffset, xpBarTop +1, 9, 11);
-        }else {
+        if (ViewFinderController.isLocked) {
+            graphics.blitSprite(LOCKED_INDICATOR_SPRITE, xpBarLeft + zoomOffset, xpBarTop + 1, 9, 11);
+        } else {
             graphics.blitSprite(INDICATOR_SPRITE, xpBarLeft + zoomOffset, xpBarTop + 5, 11, 7);
         }
 
@@ -84,9 +92,10 @@ public class ViewFinderHud implements LayeredDraw.Layer {
 
     private void renderSpyglassOverlay(GuiGraphics guiGraphics, float scopeScale) {
         float f = (float) Math.min(guiGraphics.guiWidth(), guiGraphics.guiHeight());
-        float f1 = Math.min((float) guiGraphics.guiWidth() / f, (float) guiGraphics.guiHeight() / f) * scopeScale;
-        int i = Mth.floor(f * f1);
-        int j = Mth.floor(f * f1);
+        float scaleThing = Math.min((float) guiGraphics.guiWidth() / f, (float) guiGraphics.guiHeight() / f) * scopeScale;
+        int i = Mth.floor(f * scaleThing);
+
+        int j = Mth.floor(f * scaleThing);
         int k = (guiGraphics.guiWidth() - i) / 2;
         int l = (guiGraphics.guiHeight() - j) / 2;
         int i1 = k + i;

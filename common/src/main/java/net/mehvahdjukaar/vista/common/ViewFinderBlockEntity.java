@@ -139,6 +139,10 @@ public class ViewFinderBlockEntity extends BlockEntity implements IOnePlayerInte
         return zoom;
     }
 
+    public int getMaxZoom(){
+        return 44;
+    }
+
     public boolean isLocked() {
         return locked;
     }
@@ -195,6 +199,20 @@ public class ViewFinderBlockEntity extends BlockEntity implements IOnePlayerInte
     @Override
     public UUID getPlayerWhoMayEdit() {
         return controllingPlayer;
+    }
+
+
+    public float getModifiedFOV(float startingFov, float modFov) {
+        float spyglassZoom = 0.1f;
+        float maxZoom = spyglassZoom / 5;
+        float normalizedZoom = getNormalizedZoomFactor();
+        return Mth.lerp(normalizedZoom, 1, maxZoom);
+    }
+
+    public float getNormalizedZoomFactor() {
+        float normalizedZoom = (this.getZoomLevel() - 1f) / (this.getMaxZoom() - 1f);
+        normalizedZoom = 1 - ((1 - normalizedZoom) * (1 - normalizedZoom)); //easing
+        return normalizedZoom;
     }
 
 }

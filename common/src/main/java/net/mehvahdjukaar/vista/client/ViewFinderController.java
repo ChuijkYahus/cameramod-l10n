@@ -1,6 +1,6 @@
 package net.mehvahdjukaar.vista.client;
 
-import com.mojang.blaze3d.systems.RenderSystem;
+import net.mehvahdjukaar.moonlight.api.misc.EventCalled;
 import net.mehvahdjukaar.vista.common.ViewFinderAccess;
 import net.mehvahdjukaar.vista.common.ViewFinderBlockEntity;
 import net.minecraft.client.Camera;
@@ -20,8 +20,6 @@ import org.lwjgl.glfw.GLFW;
 //TODO: merge events with supp cannon
 public class ViewFinderController {
 
-    public static final int MAX_ZOOM = 44;
-
     protected static ViewFinderAccess access;
 
     private static CameraType lastCameraType;
@@ -35,8 +33,6 @@ public class ViewFinderController {
     private static boolean needsToUpdateServer;
 
     // lerp camera
-    private static Vec3 lastCameraPos;
-    private static float lastZoomOut = 0;
     private static float lastCameraYaw = 0;
     private static float lastCameraPitch = 0;
 
@@ -47,11 +43,15 @@ public class ViewFinderController {
             lastCameraType = mc.options.getCameraType();
         } //if not it means we entered from manouver mode gui
         mc.options.setCameraType(CameraType.THIRD_PERSON_BACK);
-        MutableComponent message = Component.translatable("message.vista.viewfinder_control",
+        MutableComponent message = Component.translatable("message.vista.viewfinder.control",
                 mc.options.keyShift.getTranslatedKeyMessage(),
                 mc.options.keyAttack.getTranslatedKeyMessage());
         mc.gui.setOverlayMessage(message, false);
         mc.getNarrator().sayNow(message);
+
+        Camera camera = mc.gameRenderer.getMainCamera();
+        ViewFinderBlockEntity tile = access.getInternalTile();
+        camera.setRotation(Mth.wrapDegrees(tile.getYaw()), Mth.wrapDegrees(tile.getPitch()));
     }
 
     // only works if we are already controlling
@@ -66,8 +66,6 @@ public class ViewFinderController {
         access = null;
         lastCameraYaw = 0;
         lastCameraPitch = 0;
-        lastZoomOut = 0;
-        lastCameraPos = null;
         if (lastCameraType != null) {
             Minecraft.getInstance().options.setCameraType(lastCameraType);
         }
@@ -80,52 +78,42 @@ public class ViewFinderController {
     public static boolean setupCamera(Camera camera, BlockGetter level, Entity entity,
                                       boolean detached, boolean thirdPersonReverse, float partialTick) {
 
+        //TODO: improve and simplify
         if (!isActive()) return false;
         Vec3 centerCannonPos = access.getCannonGlobalPosition(partialTick);
 
-        if (lastCameraPos == null) {
-            lastCameraPos = camera.getPosition();
+
+
+            // lerp camera
+            Vec3 targetCameraPos = centerCannonPos.add(0, 0.5, 0);
+            float targetYRot = camera.getYRot() + yawIncrease;
+            float targetXRot = Mth.clamp(camera.getXRot() + pitchIncrease, -90, 90);
+
+            camera.setPosition(targetCameraPos);
+            camera.setRotation(targetYRot, targetXRot);
+
             lastCameraYaw = camera.getYRot();
             lastCameraPitch = camera.getXRot();
-        }
 
-        // lerp camera
-        Vec3 targetCameraPos = centerCannonPos.add(0, 0.5, 0);
-        float targetYRot = camera.getYRot() + yawIncrease;
-        float targetXRot = Mth.clamp(camera.getXRot() + pitchIncrease, -90, 90);
+            yawIncrease = 0;
+            pitchIncrease = 0;
 
-        camera.setPosition(targetCameraPos);
-        camera.setRotation(targetYRot, targetXRot);
+            float followSpeed = 1;
+            ViewFinderBlockEntity tile = access.getInternalTile();
 
-        lastCameraPos = camera.getPosition();
-        lastCameraYaw = camera.getYRot();
-        lastCameraPitch = camera.getXRot();
-        lastZoomOut = camera.getMaxZoom(4);
-
-        yawIncrease = 0;
-        pitchIncrease = 0;
-
-        if (!isLocked) {
-            updateViewFinderBlockRenderingAngles(partialTick, camera.getYRot(), camera.getXRot());
-        }
+            tile.setPitch(access, Mth.rotLerp(followSpeed, tile.getPitch(), lastCameraPitch));
+            // targetYawDeg = Mth.rotLerp(followSpeed, cannon.getYaw(0), targetYawDeg);
+            tile.setRenderYaw(access, lastCameraYaw + access.getCannonGlobalYawOffset(partialTick));
 
         return true;
     }
 
-    private static void updateViewFinderBlockRenderingAngles(float partialTick, float cameraYaw, float cameraPitch) {
-        float followSpeed = 1;
-        ViewFinderBlockEntity cannon = access.getInternalTile();
-
-        cannon.setPitch(access, Mth.rotLerp(followSpeed, cannon.getPitch(), cameraPitch));
-        // targetYawDeg = Mth.rotLerp(followSpeed, cannon.getYaw(0), targetYawDeg);
-        cannon.setRenderYaw(access, cameraYaw + access.getCannonGlobalYawOffset(partialTick));
-    }
-
     // true cancels the thing
+    @EventCalled
     public static boolean onPlayerRotated(double yawAdd, double pitchAdd) {
-        //TODO: lock with restraints here
         if (isActive()) {
-            float scale = 0.2f * (1-getNormalizedZoomFactor() + 0.01f);
+            if (isLocked) return true;
+            float scale = 0.2f * (1 - access.getInternalTile().getNormalizedZoomFactor() + 0.01f);
             yawIncrease += (float) (yawAdd * scale);
             pitchIncrease += (float) (pitchAdd * scale);
             if (yawAdd != 0 || pitchAdd != 0) needsToUpdateServer = true;
@@ -143,20 +131,39 @@ public class ViewFinderController {
         return false;
     }
 
-
+    @EventCalled
     public static boolean onMouseScrolled(double scrollDelta) {
         if (!isActive()) return false;
+        if (isLocked) return true;
 
         if (scrollDelta != 0) {
             ViewFinderBlockEntity tile = access.getInternalTile();
-            int newZoom = (Math.clamp(1,(int) (tile.getZoomLevel() + scrollDelta), MAX_ZOOM));
+            int newZoom = (Math.clamp((int) (tile.getZoomLevel() + scrollDelta), 1, tile.getMaxZoom()));
             tile.setZoomLevel(newZoom);
             needsToUpdateServer = true;
         }
         return true;
     }
 
+    @EventCalled
+    public static boolean onPlayerAttack() {
+        if (!isActive()) return false;
+        toggleLock();
+        return true;
+    }
 
+    @EventCalled
+    public static boolean onPlayerUse() {
+        if (!isActive()) return false;
+        toggleLock();
+        return true;
+    }
+
+    private static void toggleLock() {
+        isLocked = !isLocked;
+    }
+
+    @EventCalled
     public static void onInputUpdate(Input input) {
         // resets input
         if (access.impedePlayerMovementWhenManeuvering()) {
@@ -171,6 +178,7 @@ public class ViewFinderController {
         input.jumping = false;
     }
 
+    @EventCalled
     public static void onClientTick(Minecraft mc) {
         Player player = Minecraft.getInstance().player;
         if (player == null) return;
@@ -186,6 +194,7 @@ public class ViewFinderController {
     }
 
     //called by mixin. its cancellable. maybe switch all to this
+    @EventCalled
     public static boolean onEarlyKeyPress(int key, int scanCode, int action, int modifiers) {
         if (!isActive()) return false;
         if (action != GLFW.GLFW_PRESS) return false;
@@ -216,20 +225,13 @@ public class ViewFinderController {
         return false;
     }
 
-    public static float modifyFOV(float startingFov, float modFov, Player player) {
-        if (isActive()) {
-            float spyglassZoom = 0.1f;
-            float maxZoom = spyglassZoom / 5;
-            float normalizedZoom = getNormalizedZoomFactor();
-            return Mth.lerp(normalizedZoom, 1, maxZoom);
-        }
-        return modFov;
-    }
 
-    private static float getNormalizedZoomFactor() {
-        float normalizedZoom = (access.getInternalTile().getZoomLevel() - 1f) / (MAX_ZOOM - 1f);
-        normalizedZoom = 1 - ((1 - normalizedZoom) * (1 - normalizedZoom)); //easing
-        return normalizedZoom;
+    @EventCalled
+    public static float modifyFOV(float start, float modified, Player player) {
+        if (isActive()) {
+            return access.getInternalTile().getModifiedFOV(start, modified);
+        }
+        return modified;
     }
 }
 

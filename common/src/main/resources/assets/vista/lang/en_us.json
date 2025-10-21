@@ -8,7 +8,9 @@
   "tooltip.vista.hollow_cassette.linked": "Linked to [%1$s, %2$s, %3$s]",
   "tooltip.vista.hollow_cassette.linked_unknown": "Linked to invalid location",
   "tooltip.vista.hollow_cassette.linked_away": "Linked somewhere in %s",
-  "cassette_tape.vista.vhs.author": "Plantkillable",
-  "cassette_tape.vista.vhs.title": "Test",
+  "cassette_tape.vista.block_wave.author": "Plantkillable",
+  "cassette_tape.vista.block_wave.title": "Block Wave",
+  "cassette_tape.vista.block_wave.author": "Plantkillable",
+  "cassette_tape.vista.block_wave.title": "Block Wave",
   "message.vista.viewfinder.control": "Press %1$s to Dismount, %2$s to Fire"
 }

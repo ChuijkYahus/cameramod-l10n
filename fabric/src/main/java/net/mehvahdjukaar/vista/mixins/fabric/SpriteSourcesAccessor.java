@@ -8,10 +8,10 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 
 @Mixin(SpriteSources.class)
-public class SpriteSourcesAccessor {
+public interface SpriteSourcesAccessor {
 
     @Accessor("TYPES")
-    public static BiMap<ResourceLocation, SpriteSourceType> getTYPES() {
+    static BiMap<ResourceLocation, SpriteSourceType> getTYPES() {
         throw new AssertionError();
     }
 }

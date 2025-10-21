@@ -8,6 +8,7 @@
   "client": [
     "AbstractClientPlayerMixin",
     "GuiMixin",
+    "MinecraftInputMixin",
     "ModelManagerMixin",
     "MouseScrollMixin",
     "SpriteSourcesAccessor"

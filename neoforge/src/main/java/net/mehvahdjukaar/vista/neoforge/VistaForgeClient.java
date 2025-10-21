@@ -73,4 +73,15 @@ public class VistaForgeClient {
     public static void onServerShuttingDown(ServerStoppingEvent event) {
         VistaModClient.onLevelClose();
     }
+
+    @SubscribeEvent
+    public static void onClickInput(InputEvent.InteractionKeyMappingTriggered event) {
+        if (event.isAttack() && ViewFinderController.onPlayerAttack()) {
+            event.setCanceled(true);
+            event.setSwingHand(false);
+        } else if (event.isUseItem() && ViewFinderController.onPlayerUse()) {
+            event.setCanceled(true);
+            event.setSwingHand(false);
+        }
+    }
 }
