@@ -80,8 +80,8 @@ public class VistaMod {
                             .networkSynchronized(CassetteTape.STREAM_CODEC)
                             .build());
 
-    public static final TagKey<CassetteTape> HIDDEN_TAPES = TagKey.create(
-            CASSETTE_TAPE_REGISTRY_KEY, res("hidden"));
+    public static final TagKey<CassetteTape> SUPPORTER_TAPES = TagKey.create(
+            CASSETTE_TAPE_REGISTRY_KEY, res("supporter_tapes"));
 
     public static void init() {
         CommonConfigs.init();
@@ -103,7 +103,7 @@ public class VistaMod {
         event.add(CreativeModeTabs.REDSTONE_BLOCKS, VIEWFINDER.get());
         CreativeModeTab.ItemDisplayParameters parameters = event.getParameters();
         for (var v : parameters.holders().lookupOrThrow(CASSETTE_TAPE_REGISTRY_KEY).listElements().toList()) {
-            if (v.is(HIDDEN_TAPES)) continue;
+            if (v.is(SUPPORTER_TAPES)) continue;
             ItemStack stack = CASSETTE.get().getDefaultInstance();
             stack.set(CASSETTE_TAPE_COMPONENT.get(), v);
             event.add(CreativeModeTabs.TOOLS_AND_UTILITIES, stack);
