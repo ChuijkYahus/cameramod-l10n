@@ -28,18 +28,6 @@ public class VistaForge {
         NeoForge.EVENT_BUS.register(this);
     }
 
-    @SubscribeEvent
-    public void onAnvilRepair(AnvilUpdateEvent event) {
-        int aa = 1;
-        ItemStack stack = event.getLeft();
-
-        if (stack.is(VistaMod.CASSETTE.get()) && event.getRight().isEmpty()) {
-            ItemStack newOutput = stack.copy();
-            CassetteItem.assignCustomCassette(newOutput, event.getPlayer().level(), event.getName());
-            if(!ItemStack.isSameItemSameComponents(newOutput, stack)) event.setOutput(newOutput);
-        }
-    }
-
 
     @SubscribeEvent
     public void onLevelLoad(LevelEvent.Load event) {
