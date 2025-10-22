@@ -1,6 +1,7 @@
 #version 150
 
 #moj_import <fog.glsl>
+#moj_import <vista:crt_vignette.glsl>
 
 uniform sampler2D Sampler0;
 
@@ -12,9 +13,14 @@ uniform vec4 FogColor;
 
 uniform float GameTime;
 
-uniform int NoiseSpeed;
-uniform int NoiseScale;
-uniform float Intensity;
+uniform float NoiseSpeed;
+uniform float NoiseScale;
+uniform float NoiseIntensity;
+
+// Vignette strength: 0.0 = off, 1.0 = full
+uniform float VignetteIntensity;
+/* SpriteDimensions = (minU, minV, sizeU, sizeV) in normalized UVs */
+uniform vec4 SpriteDimensions;
 
 in float vertexDistance;
 in vec4 vertexColor;
@@ -32,20 +38,36 @@ float gold_noise(in vec2 xy, in float seed){
 }
 
 void main() {
-    float seed = fract(GameTime*NoiseSpeed); // fractional base seed
-    vec4 color = vec4 (
-        gold_noise(texCoord0*NoiseScale, seed + 0.1), // r
-        gold_noise(texCoord0*NoiseScale, seed + 0.2),  // g
-        gold_noise(texCoord0*NoiseScale, seed + 0.3), // b
-        gold_noise(texCoord0*NoiseScale, seed + 0.4));// α
+    float seed = fract(GameTime * NoiseSpeed);
+    vec2  uv   = texCoord0 * NoiseScale;
 
-    vec4 textColor = texture(Sampler0, texCoord0);
+    // Procedural noise color
+    vec4 noise = vec4(
+        gold_noise(uv, seed + 0.1),
+        gold_noise(uv, seed + 0.2),
+        gold_noise(uv, seed + 0.3),
+        gold_noise(uv, seed + 0.4)
+    );
 
-    textColor *= vertexColor * ColorModulator;
-    textColor *= lightMapColor;
-    textColor = linear_fog(textColor, vertexDistance, FogStart, FogEnd, FogColor);
-    fragColor.rgb = mix(textColor.rgb, color.rgb, Intensity);
+    // Base texture
+    vec4 tex = texture(Sampler0, texCoord0);
+
+    // Mix texture ↔ noise
+    float k = clamp(NoiseIntensity, 0.0, 1.0);
+    vec3 base = mix(tex.rgb, noise.rgb, k);
+
+    // Apply material/lighting tints
+    vec4 tint = vertexColor * ColorModulator * lightMapColor;
+    vec4 shaded = vec4(base, tex.a) * tint;
+
+    // Fog is usually last scene-space op
+    vec4 fogged = linear_fog(shaded, vertexDistance, FogStart, FogEnd, FogColor);
+
+    // Vignette is a post effect: last
+    float vignette = mix(1.0, crtVignette(SpriteDimensions, texCoord0), clamp(VignetteIntensity, 0.0, 1.0));
+    fogged.rgb *= vignette;
+
+    fragColor = fogged;
 }
-
 
 

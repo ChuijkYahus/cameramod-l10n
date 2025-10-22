@@ -64,13 +64,7 @@ public class ModRenderTypes extends RenderType {
                         () -> {
                             ShaderInstance shader = VistaModClient.CAMERA_VIEW_SHADER.get();
                             TextureAtlasSprite sprite = mat.sprite();
-                            shader.safeGetUniform("SpriteDimensions")
-                                    .set(new Vector4f(
-                                            sprite.getU0(),                     // minU
-                                            sprite.getV0(),                     // minV
-                                            sprite.getU1() - sprite.getU0(),    // sizeU
-                                            sprite.getV1() - sprite.getV0()     // sizeV
-                                    ));
+                            setSpriteDimensions(shader, sprite);
                             setCameraDrawUniforms(shader);
                         },
                         () -> {
@@ -81,13 +75,23 @@ public class ModRenderTypes extends RenderType {
                 1536, true, false, compositeState);
     });
 
+    private static void setSpriteDimensions(ShaderInstance shader, TextureAtlasSprite sprite) {
+        shader.safeGetUniform("SpriteDimensions")
+                .set(new Vector4f(
+                        sprite.getU0(),                     // minU
+                        sprite.getV0(),                     // minV
+                        sprite.getU1() - sprite.getU0(),    // sizeU
+                        sprite.getV1() - sprite.getV0()     // sizeV
+                ));
+    }
+
     private static void setCameraDrawUniforms(ShaderInstance shader) {
 
         setFloat(shader,"TriadsPerPixel", 1.37f);
         setFloat(shader,"Smear",  1f);
         setFloat(shader,"EnableEnergyNormalize", 0.0f);
 
-        setFloat(shader, "VignetteIntensity", 0.5f);
+        setFloat(shader, "VignetteIntensity", 1f);
     }
 
     public static final RenderType NOISE =
@@ -99,6 +103,9 @@ public class ModRenderTypes extends RenderType {
                             .setLightmapState(LIGHTMAP)
                             .setTexturingState(new TexturingStateShard("set_texel_size",
                                     () -> {
+                                        ShaderInstance shader = VistaModClient.STATIC_SHADER.get();
+
+
                                     },
                                     () -> {
                                     }))

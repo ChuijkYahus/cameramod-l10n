@@ -1,5 +1,6 @@
 package net.mehvahdjukaar.vista;
 
+import net.mehvahdjukaar.moonlight.api.misc.RegSupplier;
 import net.mehvahdjukaar.moonlight.api.misc.WorldSavedDataType;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.platform.RegHelper;
@@ -47,11 +48,14 @@ public class VistaMod {
         RegHelper.registerDataPackRegistry(CASSETTE_TAPE_REGISTRY_KEY, CassetteTape.DIRECT_CODEC, CassetteTape.DIRECT_CODEC);
     }
 
-    public static final Supplier<Block> TV = RegHelper.registerBlockWithItem(res("television"),
+    public static final Supplier<Block> TV = RegHelper.registerBlock(res("television"),
             () -> new TVBlock(Block.Properties.of()
                     .sound(SoundType.WOOD)
                     .mapColor(MapColor.COLOR_BROWN)
                     .strength(1.5f)));
+
+    public static final Supplier<BlockItem> TV_ITEM = RegHelper.registerItem(res("television"),
+            () -> new TelevisionItem(TV.get(), new Item.Properties()));
 
     public final static Supplier<BlockEntityType<TVBlockEntity>> TV_TILE = RegHelper.registerBlockEntityType(
             res("television"), TVBlockEntity::new, TV);
@@ -87,9 +91,10 @@ public class VistaMod {
                             .networkSynchronized(CassetteTape.STREAM_CODEC)
                             .build());
 
-    public static final Supplier<SoundEvent> CASSETTE_INSERT = RegHelper.registerSound(res("block.television.insert"));
-    public static final Supplier<SoundEvent> CASSETTE_EJECT = RegHelper.registerSound(res("block.television.eject"));
-    public static final Supplier<SoundEvent> TV_STATIC = RegHelper.registerSound(res("block.television.static"));
+    public static final Supplier<SoundEvent> CASSETTE_INSERT_SOUND = RegHelper.registerSound(res("block.television.insert"));
+    public static final Supplier<SoundEvent> CASSETTE_EJECT_SOUND = RegHelper.registerSound(res("block.television.eject"));
+    public static final RegSupplier<SoundEvent> TV_STATIC_SOUND = RegHelper.registerSound(res("block.television.static"));
+    public static final int STATIC_SOUND_DURATION = 4 * 20; //4 seconds
 
     public static final Supplier<LootItemFunctionType<CassetteTapeLootFunction>> CASSETTE_TAPE_LOOT_FUNCTION =
             RegHelper.registerLootFunction(res("random_tape"), CassetteTapeLootFunction.CODEC);
@@ -98,6 +103,27 @@ public class VistaMod {
             CASSETTE_TAPE_REGISTRY_KEY, res("supporter_tapes"));
 
     public static void init() {
+
+        //TODO:
+        //connection 2x2
+        //no adjusted frustum causing to clip through blocks when placed next to it
+        //emderman view through camera
+        //LOD
+        //make phosphor density indepentent of png size
+        //turn table rotation thing
+        //update time fps change with round robin
+        //click sounds and new insert sound
+        //turn on shader
+        //turn on sound
+        //gifs play independently. No more atlas. sad
+        //new cassettes
+        //view distance scales with zoom
+        //fix flickering
+        //verify the connection system
+        //tv glitch shader
+        //exposure compat
+
+        //for gifs maybe we could send the strips to the atlas, then in the shader do the scrolling
         CommonConfigs.init();
 
         ModNetwork.init();

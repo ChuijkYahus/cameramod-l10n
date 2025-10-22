@@ -8,8 +8,10 @@ import net.minecraft.client.CameraType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.Input;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
@@ -140,8 +142,15 @@ public class ViewFinderController {
         if (scrollDelta != 0) {
             ViewFinderBlockEntity tile = access.getInternalTile();
             int newZoom = (Math.clamp((int) (tile.getZoomLevel() + scrollDelta), 1, tile.getMaxZoom()));
-            tile.setZoomLevel(newZoom);
-            needsToUpdateServer = true;
+            int oldZoom = tile.getZoomLevel();
+            if (newZoom != oldZoom) {
+                tile.setZoomLevel(newZoom);
+                needsToUpdateServer = true;
+                if (newZoom % 4 == 0)
+                    //TODO: proper sound here
+                    Minecraft.getInstance().getSoundManager()
+                            .play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 3));
+            }
         }
         return true;
     }

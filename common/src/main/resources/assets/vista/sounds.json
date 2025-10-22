@@ -18,7 +18,7 @@
     "sounds": [
       {
         "name": "vista:block/television_static",
-        "volume": 0.1
+        "volume": 0.01
       }
     ]
   }

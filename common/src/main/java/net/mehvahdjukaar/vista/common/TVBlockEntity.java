@@ -28,7 +28,8 @@ public class TVBlockEntity extends ItemDisplayTile {
     @Nullable
     private Holder<CassetteTape> tape = null;
 
-    private int staticTicks = 0;
+    private int soundLoopTicks = 0;
+    private int timeSinceTurnedOn = 0;
 
     public TVBlockEntity(BlockPos pos, BlockState state) {
         super(VistaMod.TV_TILE.get(), pos, state);
@@ -50,7 +51,7 @@ public class TVBlockEntity extends ItemDisplayTile {
 
     @Override
     public SoundEvent getAddItemSound() {
-        return VistaMod.CASSETTE_INSERT.get();
+        return VistaMod.CASSETTE_INSERT_SOUND.get();
     }
 
     @Override
@@ -85,7 +86,7 @@ public class TVBlockEntity extends ItemDisplayTile {
 
         ItemStack current = this.getDisplayedItem();
         if (!current.isEmpty()) {
-            level.playSound(player, worldPosition, VistaMod.CASSETTE_EJECT.get(),
+            level.playSound(player, worldPosition, VistaMod.CASSETTE_EJECT_SOUND.get(),
                     SoundSource.BLOCKS, 1, 1);
             //pop pop current
             Vec3 vec3 = level.getBlockState(this.worldPosition.above()).isSolid() ?
@@ -111,11 +112,33 @@ public class TVBlockEntity extends ItemDisplayTile {
     }
 
     public static void clientTick(Level level, BlockPos pos, BlockState state, TVBlockEntity tile) {
-        if (++tile.staticTicks >= (4 * 20) && state.getValue(TVBlock.POWERED)) {
-            tile.staticTicks = 0;
-            level.playLocalSound(pos,
-                    VistaMod.TV_STATIC.get(), SoundSource.BLOCKS,
-                    0.1f, 1.0f, false);
+        if (state.getValue(TVBlock.POWERED)) {
+            float duration = tile.getPlayDuration();
+            if (++tile.soundLoopTicks >= (duration)) {
+                tile.soundLoopTicks = 0;
+                SoundEvent sound = tile.getPlaySound();
+                level.playLocalSound(pos, sound, SoundSource.BLOCKS, 1, 1.0f, false);
+            }
+            tile.timeSinceTurnedOn++;
+        } else {
+            tile.soundLoopTicks = 0;
+            tile.timeSinceTurnedOn = 0;
         }
+
+    }
+
+    private SoundEvent getPlaySound() {
+        if (tape != null) {
+            var s = tape.value().soundEvent();
+            if (s.isPresent()) return s.get().value();
+        }
+        return VistaMod.TV_STATIC_SOUND.get();
+    }
+
+    private int getPlayDuration() {
+        if (tape != null) {
+            return tape.value().soundDuration().orElse(VistaMod.STATIC_SOUND_DURATION);
+        }
+        return VistaMod.STATIC_SOUND_DURATION;
     }
 }

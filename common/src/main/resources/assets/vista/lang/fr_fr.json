@@ -1,0 +1,19 @@
+{
+  "block.vista.television": "Télévision",
+  "item.vista.cassette": "Cassette",
+  "item.vista.hollow_cassette": "Cassette creuse",
+  "block.vista.viewfinder": "Viseur",
+  "tooltip.vista.cassette.tape": "Bande: %s",
+  "tooltip.vista.hollow_cassette.linked": "Lié à [%1$s, %2$s, %3$s]",
+  "tooltip.vista.hollow_cassette.linked_unknown": "Lié à un emplacement invalide",
+  "tooltip.vista.hollow_cassette.linked_away": "Lié quelque part dans %s",
+  "cassette_tape.vista.block_wave.tooltip": "Plantkillable - Block Wave",
+  "cassette_tape.vista.mc98.tooltip": "Plantkillable - Mc 98",
+  "cassette_tape.vista.space_sniffer.tooltip": "Plantkillable - Space Sniffer",
+  "cassette_tape.vista.bounce.tooltip": "MehVahdJukaar - Bounce",
+  "cassette_tape.vista.67.tooltip": "MehVahdJukaar - 67",
+  "cassette_tape.vista.mc_98.tooltip": "Plantkillable - Mc 98",
+  "subtitles.vista.television.eject": "Éjection de la cassette",
+  "subtitles.vista.television.insert": "Insertion de la cassette",
+  "message.vista.viewfinder.control": "Appuyez sur %1$s pour descendre, %2$s pour bloquer/débloquer"
+}

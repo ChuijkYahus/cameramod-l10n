@@ -8,7 +8,9 @@ import net.minecraft.core.Direction;
 import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Equipable;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.Level;
@@ -29,7 +31,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Arrays;
 import java.util.Locale;
 
-public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock {
+public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, Equipable {
 
     public static final MapCodec<TVBlock> CODEC = simpleCodec(TVBlock::new);
     public static final BooleanProperty POWERED = BlockStateProperties.POWERED;
@@ -40,6 +42,11 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock {
         this.registerDefaultState(this.stateDefinition.any()
                 .setValue(POWERED, false)
                 .setValue(FACING, Direction.NORTH));
+    }
+
+    @Override
+    public EquipmentSlot getEquipmentSlot() {
+        return EquipmentSlot.HEAD;
     }
 
     @Override

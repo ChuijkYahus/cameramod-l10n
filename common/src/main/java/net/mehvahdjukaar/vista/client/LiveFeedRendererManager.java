@@ -14,6 +14,7 @@ import net.mehvahdjukaar.moonlight.core.client.DummyCamera;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.common.ViewFinderBlockEntity;
 import net.mehvahdjukaar.vista.common.ViewFinderConnection;
+import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.minecraft.client.Camera;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
@@ -40,7 +41,6 @@ import static net.minecraft.client.Minecraft.ON_OSX;
 
 public class LiveFeedRendererManager {
 
-    private static final float RENDER_DISTANCE = 32f;
     private static final Int2ObjectArrayMap<RenderTarget> CANVASES = new Int2ObjectArrayMap<>();
     private static final BiMap<UUID, ResourceLocation> LIVE_FEED_LOCATIONS = HashBiMap.create();
     private static final DummyCamera DUMMY_CAMERA = new DummyCamera();
@@ -131,7 +131,7 @@ public class LiveFeedRendererManager {
         RenderSystem.enableCull();
 
         float oldRenderDistance = mc.gameRenderer.renderDistance;
-        mc.gameRenderer.renderDistance = RENDER_DISTANCE;
+        mc.gameRenderer.renderDistance = Math.min(oldRenderDistance, ClientConfigs.RENDER_DISTANCE.get());
         renderLevel(mc, canvas, DUMMY_CAMERA, fov);
         mc.gameRenderer.renderDistance = oldRenderDistance;
 

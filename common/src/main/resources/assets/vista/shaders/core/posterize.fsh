@@ -4,11 +4,6 @@
 
 uniform sampler2D Sampler0;
 
-uniform float FxaaEdge;
-uniform float FxaaBlend;
-uniform float FxaaSpread;
-uniform float FxaaDiagonal;
-
 uniform float PostMode;      // 0 = OKLab, 1 = OKLCh
 uniform vec3 PostLevels;     // x=L or L, y=a/C, z=b/H (depending on mode)
 
@@ -20,70 +15,6 @@ const float MAX_CHROMA = 0.4;
 in vec2 texCoord0;
 
 out vec4 fragColor;
-
-// =============================================================
-//                      FXAA SAMPLER FUNCTION
-// =============================================================
-
-float luma(vec3 c) {
-    // Perceptual luma, works fine for sRGB inputs
-    return dot(c, vec3(0.2126, 0.7152, 0.0722));
-}
-
-vec3 fxaaSample(sampler2D tex, vec2 uv, vec2 invSz) {
-
-    // --- Fetch center pixel ---
-    vec3  cM = texture(tex, uv).rgb;
-    float lM = luma(cM);
-
-    // --- Fetch 4-neighbor luma values ---
-    float lN = luma(texture(tex, uv + vec2(0.0, -invSz.y)).rgb);
-    float lS = luma(texture(tex, uv + vec2(0.0,  invSz.y)).rgb);
-    float lW = luma(texture(tex, uv + vec2(-invSz.x, 0.0)).rgb);
-    float lE = luma(texture(tex, uv + vec2( invSz.x, 0.0)).rgb);
-
-    // --- Compute local contrast ---
-    float lMin = min(lM, min(min(lN, lS), min(lW, lE)));
-    float lMax = max(lM, max(max(lN, lS), max(lW, lE)));
-    float contrast = lMax - lMin;
-
-    // --- Adaptive threshold (relative + absolute floor) ---
-    float threshold = max(0.0312, FxaaEdge * lMax);
-    if (contrast < threshold)
-    return cM; // No strong edge → keep original
-
-    // --- Estimate edge direction ---
-    float gx = lW - lE;  // horizontal gradient
-    float gy = lN - lS;  // vertical gradient
-
-    // Add a small diagonal bias (helps detect stair-step edges)
-    vec2 diagBias = vec2(sign(gx), sign(gy)) * FxaaDiagonal * 0.05;
-    vec2 dir = normalize(vec2(gx, gy) + diagBias + 1e-6);
-
-    // --- Adjust step length based on gradient magnitude ---
-    float dirReduce = max((lW + lE + lN + lS) * 0.125, 1e-4);
-    float invMin = 1.0 / (min(abs(dir.x), abs(dir.y)) + dirReduce);
-
-    // Step direction scaled by texture size
-    vec2 stepUV = clamp(dir * invMin, -2.0, 2.0) * invSz * FxaaSpread;
-
-    // --- Sample two points along the edge direction ---
-    vec3 cA = texture(tex, uv + stepUV * (1.0/3.0 - 0.5)).rgb;
-    vec3 cB = texture(tex, uv + stepUV * (2.0/3.0 - 0.5)).rgb;
-    vec3 cEdge = 0.5 * (cA + cB);
-
-    // --- Compute subpixel aliasing amount (how uneven the luma is) ---
-    float subpix = clamp(
-    ((lN + lS + lW + lE) * 0.25 - lMin) / (contrast + 1e-5),
-    0.0, 1.0
-    );
-
-    // --- Blend amount: stronger on high aliasing areas ---
-    float blend = FxaaBlend * subpix;
-
-    // --- Final mix ---
-    return mix(cM, cEdge, blend);
-}
 
 // =============================================================
 //                 OKLab Posterization + Dithering
@@ -242,7 +173,6 @@ vec3 posterize_oklab(vec3 srgb, vec2 texelSize) {
 void main() {
     vec2 texelSize = 1.0 / vec2(textureSize(Sampler0, 0));  // width, height of the atlas
     // Use the provided TexelSize (1/width, 1/height) for FXAA
-    //vec3 sampled = fxaaSample(Sampler0, texCoord0, texelSize);
     vec3 sampled = texture(Sampler0, texCoord0).rgb;
 
     // Apply posterize + dithering (uncomment/leave as-is to enable)

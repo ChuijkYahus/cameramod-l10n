@@ -1,9 +1,10 @@
 package net.mehvahdjukaar.vista.client;
 
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.common.CassetteTape;
-import net.minecraft.client.particle.SpriteSet;
-import net.minecraft.client.renderer.Sheets;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.resources.model.Material;
 import net.minecraft.core.Holder;
 import net.minecraft.resources.ResourceKey;
@@ -17,12 +18,15 @@ public class TapeTextureManager {
     public static final ResourceLocation ATLAS_LOCATION = VistaMod.res("textures/atlas/cassette_tape.png");
     public static final ResourceLocation ATLAS_INFO_LOCATION = VistaMod.res("cassette_tapes");
 
-    public static final ResourceLocation BARS_LOCATION = VistaMod.res("color_bars");
+    private static final ResourceLocation BARS_LOCATION = VistaMod.res("color_bars");
+    private static final ResourceLocation SMILE_LOCATION = VistaMod.res("smile");
 
     private static final Map<ResourceKey<CassetteTape>, Material> MATERIALS = new HashMap<>();
     private static final Map<ResourceKey<CassetteTape>, Material> MATERIALS_FLAT = new HashMap<>();
-    public static final Material DEFAULT_MATERIAL = new Material(ATLAS_LOCATION, BARS_LOCATION);
-    public static final Material DEFAULT_MATERIAL_FLAT = new Material(ATLAS_LOCATION, BARS_LOCATION);
+    private static final Material DEFAULT_MATERIAL = new Material(ATLAS_LOCATION, BARS_LOCATION);
+    private static final Material DEFAULT_MATERIAL_FLAT = new Material(ATLAS_LOCATION, BARS_LOCATION);
+    private static final Material SMILE_MATERIAL = new Material(ATLAS_LOCATION, SMILE_LOCATION);
+    private static final Material SMILE_MATERIAL_FLAT = new Material(ATLAS_LOCATION, SMILE_LOCATION);
 
     public static Material getMaterial(Holder<CassetteTape> tapeKey) {
         return MATERIALS.computeIfAbsent(tapeKey.unwrapKey().get(), k ->
@@ -35,9 +39,30 @@ public class TapeTextureManager {
     }
 
 
+    public static VertexConsumer getTapeVC(Holder<CassetteTape> tapeKey, MultiBufferSource buffer, boolean flat) {
+        Material mat = flat ? getMaterialFlat(tapeKey) : getMaterial(tapeKey);
+        return mat.buffer(buffer, !flat ? t -> ModRenderTypes.CAMERA_DRAW_SPRITE.apply(t, mat) : RenderType::text);
+    }
+
+    public static VertexConsumer getDefaultTapeVC(MultiBufferSource buffer, boolean flat) {
+        Material mat = flat ? DEFAULT_MATERIAL_FLAT : DEFAULT_MATERIAL;
+        return mat.buffer(buffer, !flat ? t -> ModRenderTypes.CAMERA_DRAW_SPRITE.apply(t, mat) : RenderType::text);
+    }
+
+    public static VertexConsumer getSmileTapeVC(MultiBufferSource buffer, boolean flat) {
+        Material mat = flat ? SMILE_MATERIAL_FLAT : SMILE_MATERIAL;
+        return mat.buffer(buffer, !flat ? t -> ModRenderTypes.CAMERA_DRAW_SPRITE.apply(t, mat) : RenderType::text);
+    }
+
+    public static VertexConsumer getFullSpriteVC(ResourceLocation tex, MultiBufferSource buffer, boolean flat) {
+        RenderType rt = !flat ? ModRenderTypes.CAMERA_DRAW.apply(tex) : RenderType.text(tex);
+        return buffer.getBuffer(rt);
+    }
 
     public static void onWorldReload() {
         MATERIALS.clear();
         MATERIALS_FLAT.clear();
     }
+
+
 }

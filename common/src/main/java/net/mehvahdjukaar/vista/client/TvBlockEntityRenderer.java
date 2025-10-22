@@ -3,6 +3,7 @@ package net.mehvahdjukaar.vista.client;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
+import net.mehvahdjukaar.moonlight.api.client.util.VertexUtil;
 import net.mehvahdjukaar.vista.common.CassetteTape;
 import net.mehvahdjukaar.vista.common.TVBlock;
 import net.mehvahdjukaar.vista.common.TVBlockEntity;
@@ -32,8 +33,7 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
 
         if (!blockEntity.getBlockState().getValue(TVBlock.POWERED)) return;
 
-        boolean drawingCamera = LiveFeedRendererManager.LIVE_FEED_BEING_RENDERED != null ||
-                ViewFinderController.isZooming();
+        boolean drawingCamera = LiveFeedRendererManager.LIVE_FEED_BEING_RENDERED != null;
 
         VertexConsumer vc;
 
@@ -46,14 +46,10 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
             ResourceLocation tex = LiveFeedRendererManager.requestLiveFeedTexture(blockEntity.getLevel(),
                     liveFeedId, screenPixelSize * SCREEN_RESOLUTION_SCALE);
             if (tex != null) {
-                RenderType apply = drawingCamera ? RenderType.text(tex) :
-                        ModRenderTypes.CAMERA_DRAW.apply(tex);
-                vc = buffer.getBuffer(apply);
+                vc = TapeTextureManager.getFullSpriteVC(tex, buffer, drawingCamera);
             } else {
-                vc = drawingCamera ? TapeTextureManager.DEFAULT_MATERIAL_FLAT.buffer(buffer, RenderType::text) :
-                        TapeTextureManager.DEFAULT_MATERIAL.buffer(buffer, ModRenderTypes.CAMERA_DRAW);
+                vc = TapeTextureManager.getDefaultTapeVC(buffer, drawingCamera);
             }
-
 
         } else if (tape != null) {
             if (drawingCamera) {
@@ -84,30 +80,10 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
 
         //leave to avoid buffer bug
         //we could have also used whats passed in the shader and dont use a material
-        vc.addVertex(pose, -s, -s, 0);
-        vc.setColor(-1);
-        vc.setUv(1f, 1f);
-        vc.setOverlay(overlay);
-        vc.setLight(light);
-        vc.setNormal(pose, 0f, 0f, -1f);
-        vc.addVertex(pose, -s, s, 0);
-        vc.setColor(-1);
-        vc.setUv(1f, 0f);
-        vc.setOverlay(overlay);
-        vc.setLight(light);
-        vc.setNormal(pose, 0f, 0f, -1f);
-        vc.addVertex(pose, s, s, 0);
-        vc.setColor(-1);
-        vc.setUv(0f, 0f);
-        vc.setOverlay(overlay);
-        vc.setLight(light);
-        vc.setNormal(pose, 0f, 0f, -1f);
-        vc.addVertex(pose, s, -s, 0);
-        vc.setColor(-1);
-        vc.setUv(0f, 1f);
-        vc.setOverlay(overlay);
-        vc.setLight(light);
-        vc.setNormal(pose, 0f, 0f, -1f);
+
+        int lightU = light & 0xFFFF;
+        int lightV = (light >> 16) & 0xFFFF;
+        VertexUtil.addQuad(vc, poseStack, -s, -s, s, s, lightU, lightV);
     }
 
 

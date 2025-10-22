@@ -1,5 +1,6 @@
 #version 150
 #moj_import <fog.glsl>
+#moj_import <vista:crt_vignette.glsl>
 
 uniform sampler2D Sampler0;
 
@@ -51,7 +52,8 @@ float triadDistance(vec2 triadA, vec2 triadB) {
 /* TRIAD space -> UV (no global clamp here; we clamp to sprite rect later) */
 vec2 triadToUV(vec2 triadP, vec2 atlasSizePx) {
     vec2 pix = triadP / max(TriadsPerPixel, 1e-6);
-    return pix / atlasSizePx;
+    vec2 perPixelAmount = pix / atlasSizePx;
+    return perPixelAmount;// normalized so all texture sizes have same density
 }
 
 /* ---- Precise, no-bleed clamp: clamp to edge texel centers ----
@@ -72,19 +74,6 @@ vec2 clampToSpriteTexelCenters(vec2 uv, vec2 atlasSizePx) {
     return minUV + p / atlasSizePx;
 }
 
-/* ===================== CRT Vignette (pure, no randomness) ===================== */
-// UV must be in [0,1] within the SPRITE (not the whole atlas).
-float crtVignette() {
-    // ===================== Apply CRT Vignette =====================
-    // Compute sprite-local UV (0..1 across the sprite rect)
-    vec2 minUV  = SpriteDimensions.xy;
-    vec2 sizeUV = max(SpriteDimensions.zw, vec2(1e-6));
-    vec2 uvLocal = clamp((texCoord0 - minUV) / sizeUV, 0.0, 1.0);
-
-    float v = 44.0 * (uvLocal.x * (1.0 - uvLocal.x) * uvLocal.y * (1.0 - uvLocal.y));
-    // Base/gain chosen to match the referenced style: 0.6 + 0.4 * v
-    return 0.6 + 0.4 * v;
-}
 
 /* ===================== Phosphor pass (gather) ===================== */
 vec3 accumulateTriadResponse(vec2 pixelPos, sampler2D srcTexture, vec2 atlasSizePx) {
@@ -198,7 +187,7 @@ void main() {
 
 
     // Pure vignette factor and blend with intensity
-    float vFactor = crtVignette();
+    float vFactor = crtVignette(SpriteDimensions, texCoord0);
     float vignette = mix(1.0, vFactor, clamp(VignetteIntensity, 0.0, 1.0));
 
     color.rgb *= vignette;

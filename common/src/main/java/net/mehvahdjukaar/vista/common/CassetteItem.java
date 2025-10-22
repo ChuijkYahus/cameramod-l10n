@@ -1,9 +1,11 @@
 package net.mehvahdjukaar.vista.common;
 
+import net.mehvahdjukaar.moonlight.api.resources.assets.LangBuilder;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.tooltip.TooltipComponent;
 import net.minecraft.world.item.Item;
@@ -20,7 +22,6 @@ public class CassetteItem extends Item {
     public CassetteItem(Properties properties) {
         super(properties);
     }
-
 
     @Override
     public Optional<TooltipComponent> getTooltipImage(ItemStack stack) {
@@ -66,8 +67,13 @@ public class CassetteItem extends Item {
         var tape = stack.get(VistaMod.CASSETTE_TAPE_COMPONENT.get());
         if (tape != null) {
             tape.unwrapKey().ifPresent((resourceKey) -> {
-                //tooltipComponents.add(Component.translatable(resourceKey.location().toLanguageKey("cassette_tape", "title")).withStyle(ChatFormatting.YELLOW));
-                tooltipComponents.add(Component.translatable(resourceKey.location().toLanguageKey("cassette_tape", "tooltip")).withStyle(ChatFormatting.GRAY));
+                ResourceLocation location = resourceKey.location();
+                if (tape.is(VistaMod.SUPPORTER_TAPES)) {
+                    tooltipComponents.add(Component.literal(LangBuilder.getReadableName(location.getPath()))
+                            .withStyle(ChatFormatting.GRAY));
+                } else {
+                    tooltipComponents.add(Component.translatable(location.toLanguageKey("cassette_tape", "tooltip")).withStyle(ChatFormatting.GRAY));
+                }
             });
         }
     }

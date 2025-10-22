@@ -8,6 +8,8 @@ import net.mehvahdjukaar.vista.client.LiveFeedRendererManager;
 import net.mehvahdjukaar.vista.client.TvBlockEntityRenderer;
 import net.mehvahdjukaar.vista.client.ViewFinderBlockEntityRenderer;
 import net.mehvahdjukaar.vista.client.ViewFinderController;
+import net.mehvahdjukaar.vista.client.TvItemRenderer;
+import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.geom.ModelLayerLocation;
 import net.minecraft.client.player.Input;
@@ -23,7 +25,7 @@ public class VistaModClient {
 
     public static final CoreShaderContainer POSTERIZE_SHADER = new CoreShaderContainer(GameRenderer::getPositionTexColorShader);
     public static final CoreShaderContainer CAMERA_VIEW_SHADER = new CoreShaderContainer(GameRenderer::getRendertypeEntitySolidShader);
-    public static final CoreShaderContainer STATIC_SHADER = new CoreShaderContainer(GameRenderer::getRendertypeEntitySolidShader);
+    public static final CoreShaderContainer STATIC_SHADER = new CoreShaderContainer(GameRenderer::getPositionColorShader);
 
     public static final ModelLayerLocation VIEWFINDER_MODEL = loc("viewfinder");
 
@@ -36,10 +38,16 @@ public class VistaModClient {
     }
 
     public static void init() {
+        ClientConfigs.init();
         ClientHelper.addBlockEntityRenderersRegistration(VistaModClient::registerBlockEntityRenderers);
         ClientHelper.addShaderRegistration(VistaModClient::registerShaders);
         ClientHelper.addModelLayerRegistration(VistaModClient::registerModelLayers);
         ClientHelper.addItemColorsRegistration(VistaModClient::registerItemColors);
+        ClientHelper.addItemRenderersRegistration(VistaModClient::registerItemRenderers);
+    }
+
+    private static void registerItemRenderers(ClientHelper.ItemRendererEvent event) {
+        event.register(VistaMod.TV_ITEM.get(), new TvItemRenderer());
     }
 
     private static void registerItemColors(ClientHelper.ItemColorEvent event) {
