@@ -8,6 +8,7 @@ import net.mehvahdjukaar.vista.common.TVBlock;
 import net.mehvahdjukaar.vista.common.TVBlockEntity;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
@@ -31,6 +32,9 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
 
         if (!blockEntity.getBlockState().getValue(TVBlock.POWERED)) return;
 
+        boolean drawingCamera = LiveFeedRendererManager.LIVE_FEED_BEING_RENDERED != null ||
+                ViewFinderController.isZooming();
+
         VertexConsumer vc;
 
         int screenPixelSize = blockEntity.getScreenPixelSize();
@@ -42,16 +46,24 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
             ResourceLocation tex = LiveFeedRendererManager.requestLiveFeedTexture(blockEntity.getLevel(),
                     liveFeedId, screenPixelSize * SCREEN_RESOLUTION_SCALE);
             if (tex != null) {
-                vc = buffer.getBuffer(ModRenderTypes.CAMERA_DRAW.apply(tex));
+                RenderType apply = drawingCamera ? RenderType.text(tex) :
+                        ModRenderTypes.CAMERA_DRAW.apply(tex);
+                vc = buffer.getBuffer(apply);
             } else {
-                vc = TapeTextureManager.DEFAULT_MATERIAL.buffer(buffer, ModRenderTypes.CAMERA_DRAW);
+                vc = drawingCamera ? TapeTextureManager.DEFAULT_MATERIAL_FLAT.buffer(buffer, RenderType::text) :
+                        TapeTextureManager.DEFAULT_MATERIAL.buffer(buffer, ModRenderTypes.CAMERA_DRAW);
             }
 
 
         } else if (tape != null) {
-            Material mat = TapeTextureManager.getMaterial(tape);
+            if (drawingCamera) {
+                Material mat = TapeTextureManager.getMaterialFlat(tape);
+                vc = mat.buffer(buffer, RenderType::text);
+            } else {
+                Material mat = TapeTextureManager.getMaterial(tape);
 
-            vc = mat.buffer(buffer, t -> ModRenderTypes.CAMERA_DRAW_SPRITE.apply(t, mat));
+                vc = mat.buffer(buffer, t -> ModRenderTypes.CAMERA_DRAW_SPRITE.apply(t, mat));
+            }
         } else {
             vc = buffer.getBuffer(ModRenderTypes.NOISE);
         }

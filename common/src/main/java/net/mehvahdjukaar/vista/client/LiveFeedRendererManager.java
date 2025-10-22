@@ -22,6 +22,7 @@ import net.minecraft.client.renderer.FogRenderer;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Display;
@@ -159,6 +160,7 @@ public class LiveFeedRendererManager {
 
     }
 
+
     //same as game renderer render level but simplified
     private static void renderLevel(Minecraft mc, RenderTarget target, Camera camera, float fov) {
         DeltaTracker deltaTracker = mc.getTimer();
@@ -196,7 +198,7 @@ public class LiveFeedRendererManager {
         }
         float depthFar = gr.getDepthFar();
 
-        return matrix4f.perspective((float) (fov * Mth.DEG_TO_RAD),
+        return matrix4f.perspective(fov * Mth.DEG_TO_RAD,
                 (float) target.width / (float) target.height, 0.05F, depthFar);
     }
 

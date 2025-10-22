@@ -136,4 +136,5 @@ public class ViewFinderBlock extends DirectionalBlock implements EntityBlock {
         }
         return super.getShape(state, level, pos, context);
     }
+
 }

@@ -13,10 +13,13 @@ import net.minecraft.core.UUIDUtil;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.*;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.level.storage.loot.functions.LootItemFunctionType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -45,7 +48,10 @@ public class VistaMod {
     }
 
     public static final Supplier<Block> TV = RegHelper.registerBlockWithItem(res("television"),
-            () -> new TVBlock(Block.Properties.of().strength(1.5f).noOcclusion()));
+            () -> new TVBlock(Block.Properties.of()
+                    .sound(SoundType.WOOD)
+                    .mapColor(MapColor.COLOR_BROWN)
+                    .strength(1.5f)));
 
     public final static Supplier<BlockEntityType<TVBlockEntity>> TV_TILE = RegHelper.registerBlockEntityType(
             res("television"), TVBlockEntity::new, TV);
@@ -81,6 +87,10 @@ public class VistaMod {
                             .networkSynchronized(CassetteTape.STREAM_CODEC)
                             .build());
 
+    public static final Supplier<SoundEvent> CASSETTE_INSERT = RegHelper.registerSound(res("block.television.insert"));
+    public static final Supplier<SoundEvent> CASSETTE_EJECT = RegHelper.registerSound(res("block.television.eject"));
+    public static final Supplier<SoundEvent> TV_STATIC = RegHelper.registerSound(res("block.television.static"));
+
     public static final Supplier<LootItemFunctionType<CassetteTapeLootFunction>> CASSETTE_TAPE_LOOT_FUNCTION =
             RegHelper.registerLootFunction(res("random_tape"), CassetteTapeLootFunction.CODEC);
 
@@ -91,6 +101,7 @@ public class VistaMod {
         CommonConfigs.init();
 
         ModNetwork.init();
+        ModLootOverrides.init();
 
         RegHelper.addItemsToTabsRegistration(VistaMod::addItemsToTabs);
 

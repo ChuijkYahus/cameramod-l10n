@@ -9,6 +9,7 @@
   ],
   "client": [
     "CameraMixin",
+    "FrustumMixin",
     "GameRendererMixin",
     "KeyboardHandlerMixin",
     "LevelRendererMixin",

@@ -69,7 +69,7 @@ public class ViewFinderHud implements LayeredDraw.Layer {
 
         int zoomOffset = (zoomLevel - 1) * 4;
 
-        if (ViewFinderController.isLocked) {
+        if (ViewFinderController.isLocked()) {
             graphics.blitSprite(LOCKED_INDICATOR_SPRITE, xpBarLeft + zoomOffset, xpBarTop + 1, 9, 11);
         } else {
             graphics.blitSprite(INDICATOR_SPRITE, xpBarLeft + zoomOffset, xpBarTop + 5, 11, 7);

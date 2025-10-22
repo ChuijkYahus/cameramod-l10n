@@ -7,11 +7,14 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
@@ -24,6 +27,8 @@ public class TVBlockEntity extends ItemDisplayTile {
     private UUID linkedFeedUuid = null;
     @Nullable
     private Holder<CassetteTape> tape = null;
+
+    private int staticTicks = 0;
 
     public TVBlockEntity(BlockPos pos, BlockState state) {
         super(VistaMod.TV_TILE.get(), pos, state);
@@ -41,6 +46,11 @@ public class TVBlockEntity extends ItemDisplayTile {
 
     public int getScreenPixelSize() {
         return 12;
+    }
+
+    @Override
+    public SoundEvent getAddItemSound() {
+        return VistaMod.CASSETTE_INSERT.get();
     }
 
     @Override
@@ -75,6 +85,8 @@ public class TVBlockEntity extends ItemDisplayTile {
 
         ItemStack current = this.getDisplayedItem();
         if (!current.isEmpty()) {
+            level.playSound(player, worldPosition, VistaMod.CASSETTE_EJECT.get(),
+                    SoundSource.BLOCKS, 1, 1);
             //pop pop current
             Vec3 vec3 = level.getBlockState(this.worldPosition.above()).isSolid() ?
                     this.worldPosition.relative(getBlockState().getValue(TVBlock.FACING)).getCenter() :
@@ -96,5 +108,14 @@ public class TVBlockEntity extends ItemDisplayTile {
 
     public boolean hasVideo() {
         return linkedFeedUuid != null;
+    }
+
+    public static void clientTick(Level level, BlockPos pos, BlockState state, TVBlockEntity tile) {
+        if (++tile.staticTicks >= (4 * 20) && state.getValue(TVBlock.POWERED)) {
+            tile.staticTicks = 0;
+            level.playLocalSound(pos,
+                    VistaMod.TV_STATIC.get(), SoundSource.BLOCKS,
+                    0.1f, 1.0f, false);
+        }
     }
 }

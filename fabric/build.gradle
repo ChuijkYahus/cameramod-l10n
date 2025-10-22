@@ -117,7 +117,7 @@ dependencies {
         exclude module: "fabric-api"
     }
 
-    //modCompileOnly("curse.maven:supplementaries-412082:5147147")
+    modImplementation("curse.maven:supplementaries-412082:7114488")
     modImplementation ("net.mehvahdjukaar:moonlight-fabric:${moonlight_version}")
     //modImplementation("curse.maven:selene-499980:7113116")
 

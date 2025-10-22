@@ -20,15 +20,24 @@ public class TapeTextureManager {
     public static final ResourceLocation BARS_LOCATION = VistaMod.res("color_bars");
 
     private static final Map<ResourceKey<CassetteTape>, Material> MATERIALS = new HashMap<>();
+    private static final Map<ResourceKey<CassetteTape>, Material> MATERIALS_FLAT = new HashMap<>();
     public static final Material DEFAULT_MATERIAL = new Material(ATLAS_LOCATION, BARS_LOCATION);
+    public static final Material DEFAULT_MATERIAL_FLAT = new Material(ATLAS_LOCATION, BARS_LOCATION);
 
     public static Material getMaterial(Holder<CassetteTape> tapeKey) {
         return MATERIALS.computeIfAbsent(tapeKey.unwrapKey().get(), k ->
                 new Material(ATLAS_LOCATION, tapeKey.value().assetId()));
     }
 
+    public static Material getMaterialFlat(Holder<CassetteTape> tapeKey) {
+        return MATERIALS_FLAT.computeIfAbsent(tapeKey.unwrapKey().get(), k ->
+                new Material(ATLAS_LOCATION, tapeKey.value().assetId()));
+    }
+
+
 
     public static void onWorldReload() {
         MATERIALS.clear();
+        MATERIALS_FLAT.clear();
     }
 }

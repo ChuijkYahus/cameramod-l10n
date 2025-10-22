@@ -24,8 +24,6 @@ public class ViewFinderController {
 
     private static CameraType lastCameraType;
 
-    protected static boolean isLocked = false;
-
     // values controlled by player mouse movement. Not actually what camera uses
     private static float yawIncrease;
     private static float pitchIncrease;
@@ -75,6 +73,10 @@ public class ViewFinderController {
         return access != null;
     }
 
+    public static boolean isLocked() {
+        return access.getInternalTile().isLocked();
+    }
+
     public static boolean setupCamera(Camera camera, BlockGetter level, Entity entity,
                                       boolean detached, boolean thirdPersonReverse, float partialTick) {
 
@@ -83,27 +85,26 @@ public class ViewFinderController {
         Vec3 centerCannonPos = access.getCannonGlobalPosition(partialTick);
 
 
+        // lerp camera
+        Vec3 targetCameraPos = centerCannonPos.add(0, 0.5, 0);
+        float targetYRot = camera.getYRot() + yawIncrease;
+        float targetXRot = Mth.clamp(camera.getXRot() + pitchIncrease, -90, 90);
 
-            // lerp camera
-            Vec3 targetCameraPos = centerCannonPos.add(0, 0.5, 0);
-            float targetYRot = camera.getYRot() + yawIncrease;
-            float targetXRot = Mth.clamp(camera.getXRot() + pitchIncrease, -90, 90);
+        camera.setPosition(targetCameraPos);
+        camera.setRotation(targetYRot, targetXRot);
 
-            camera.setPosition(targetCameraPos);
-            camera.setRotation(targetYRot, targetXRot);
+        lastCameraYaw = camera.getYRot();
+        lastCameraPitch = camera.getXRot();
 
-            lastCameraYaw = camera.getYRot();
-            lastCameraPitch = camera.getXRot();
+        yawIncrease = 0;
+        pitchIncrease = 0;
 
-            yawIncrease = 0;
-            pitchIncrease = 0;
+        float followSpeed = 1;
+        ViewFinderBlockEntity tile = access.getInternalTile();
 
-            float followSpeed = 1;
-            ViewFinderBlockEntity tile = access.getInternalTile();
-
-            tile.setPitch(access, Mth.rotLerp(followSpeed, tile.getPitch(), lastCameraPitch));
-            // targetYawDeg = Mth.rotLerp(followSpeed, cannon.getYaw(0), targetYawDeg);
-            tile.setRenderYaw(access, lastCameraYaw + access.getCannonGlobalYawOffset(partialTick));
+        tile.setPitch(access, Mth.rotLerp(followSpeed, tile.getPitch(), lastCameraPitch));
+        // targetYawDeg = Mth.rotLerp(followSpeed, cannon.getYaw(0), targetYawDeg);
+        tile.setRenderYaw(access, lastCameraYaw + access.getCannonGlobalYawOffset(partialTick));
 
         return true;
     }
@@ -112,7 +113,7 @@ public class ViewFinderController {
     @EventCalled
     public static boolean onPlayerRotated(double yawAdd, double pitchAdd) {
         if (isActive()) {
-            if (isLocked) return true;
+            if (isLocked()) return true;
             float scale = 0.2f * (1 - access.getInternalTile().getNormalizedZoomFactor() + 0.01f);
             yawIncrease += (float) (yawAdd * scale);
             pitchIncrease += (float) (pitchAdd * scale);
@@ -134,7 +135,7 @@ public class ViewFinderController {
     @EventCalled
     public static boolean onMouseScrolled(double scrollDelta) {
         if (!isActive()) return false;
-        if (isLocked) return true;
+        if (isLocked()) return true;
 
         if (scrollDelta != 0) {
             ViewFinderBlockEntity tile = access.getInternalTile();
@@ -160,7 +161,11 @@ public class ViewFinderController {
     }
 
     private static void toggleLock() {
-        isLocked = !isLocked;
+        ViewFinderBlockEntity tile = access.getInternalTile();
+        tile.setLocked(!tile.isLocked());
+
+        needsToUpdateServer = true;
+
     }
 
     @EventCalled

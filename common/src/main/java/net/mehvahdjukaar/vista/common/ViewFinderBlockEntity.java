@@ -193,6 +193,10 @@ public class ViewFinderBlockEntity extends BlockEntity implements IOnePlayerInte
     }
 
 
+    public void setLocked(boolean b) {
+        this.locked = b;
+    }
+
     @Override
     public void setPlayerWhoMayEdit(@Nullable UUID uuid) {
         this.controllingPlayer = uuid;
@@ -216,5 +220,4 @@ public class ViewFinderBlockEntity extends BlockEntity implements IOnePlayerInte
         normalizedZoom = 1 - ((1 - normalizedZoom) * (1 - normalizedZoom)); //easing
         return normalizedZoom;
     }
-
 }

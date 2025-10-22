@@ -1,6 +1,8 @@
 package net.mehvahdjukaar.vista.common;
 
 import com.mojang.serialization.MapCodec;
+import net.mehvahdjukaar.moonlight.api.util.Utils;
+import net.mehvahdjukaar.vista.VistaMod;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.util.StringRepresentable;
@@ -14,6 +16,8 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityTicker;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
@@ -37,6 +41,13 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock {
                 .setValue(POWERED, false)
                 .setValue(FACING, Direction.NORTH));
     }
+
+    @Override
+    public @Nullable <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> blockEntityType) {
+        return !level.isClientSide ? null : Utils.getTicker(blockEntityType, VistaMod.TV_TILE.get(), TVBlockEntity::clientTick);
+    }
+
+
 
     @Override
     protected void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock, BlockPos neighborPos, boolean movedByPiston) {
