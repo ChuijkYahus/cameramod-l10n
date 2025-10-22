@@ -17,6 +17,7 @@ import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.*;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.storage.loot.functions.LootItemFunctionType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -79,6 +80,9 @@ public class VistaMod {
                             .persistent(CassetteTape.CODEC)
                             .networkSynchronized(CassetteTape.STREAM_CODEC)
                             .build());
+
+    public static final Supplier<LootItemFunctionType<CassetteTapeLootFunction>> CASSETTE_TAPE_LOOT_FUNCTION =
+            RegHelper.registerLootFunction(res("random_tape"), CassetteTapeLootFunction.CODEC);
 
     public static final TagKey<CassetteTape> SUPPORTER_TAPES = TagKey.create(
             CASSETTE_TAPE_REGISTRY_KEY, res("supporter_tapes"));

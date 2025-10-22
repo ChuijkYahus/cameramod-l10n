@@ -7,6 +7,6 @@
     "east": "vista:block/tv_side",
     "west": "vista:block/tv_side",
     "up": "vista:block/tv_top",
-    "down": "vista:block/tv_bottom"
+    "down": "vista:block/tv_top"
   }
 }
