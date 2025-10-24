@@ -12,6 +12,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 
 public class TvItemRenderer extends ItemStackRenderer {
+
     @Override
     public void renderByItem(ItemStack itemStack, ItemDisplayContext itemDisplayContext, PoseStack poseStack,
                              MultiBufferSource buffer, int light, int overlay) {
@@ -21,7 +22,8 @@ public class TvItemRenderer extends ItemStackRenderer {
 
         if (itemDisplayContext == ItemDisplayContext.HEAD) {
             boolean drawingCamera = LiveFeedRendererManager.LIVE_FEED_BEING_RENDERED != null;
-            VertexConsumer vc = TapeTextureManager.getSmileTapeVC(buffer, drawingCamera);
+            //TODO: make this using armor layer so we have entity context
+            VertexConsumer vc = TapeTextureManager.getSmileTapeVC(buffer, Minecraft.getInstance().player,  drawingCamera);
 
             //bugged when looking up. draw shader must be bugged
             int lightU = light & 0xFFFF;

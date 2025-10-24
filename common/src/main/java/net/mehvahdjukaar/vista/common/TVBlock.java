@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import com.mojang.serialization.MapCodec;
 import net.mehvahdjukaar.moonlight.api.util.Utils;
 import net.mehvahdjukaar.vista.VistaMod;
+import net.mehvahdjukaar.vista.configs.CommonConfigs;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionHand;
@@ -27,6 +28,9 @@ import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, Equipable {
 
@@ -134,9 +138,13 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
 
 
     private void updateAllConnections(BlockState state, Level level, BlockPos pos) {
-        var gridAccess = new TVGridAccess(level, pos, state);
-        TvHelper.apply(gridAccess);
-        int aa = 1;
+        if(!CommonConfigs.CONNECTED_TVS.get())return;
+        TVGridAccess gridAccess = new TVGridAccess(level, pos, state);
+        TvHelper.updateConnections(gridAccess);
+        gridAccess.applyChanges();
+    }
+
+    private record Vec2i(int x, int y) {
     }
 
     public static class TVGridAccess implements TvHelper.GridAccess {
@@ -145,7 +153,8 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
         private final Direction facing;
         private final Level level;
 
-        private int getCalls = 0;
+        private final Map<Vec2i, TvConnection> statesCache = new HashMap<>();
+        private final Map<Vec2i, TvConnection> statesChanged = new HashMap<>();
 
         public TVGridAccess(Level level, BlockPos pos, BlockState state) {
             this.pos = pos;
@@ -156,24 +165,39 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
         @Nullable
         @Override
         public TvConnection get(int left, int top) {
-            BlockPos target = TVBlock.relativePos(pos, facing, left, top, 0);
-            BlockState bs = level.getBlockState(target);
-            getCalls++;
-            if (bs.getBlock() instanceof TVBlock) {
-                return bs.getValue(CONNECTION);
+            Vec2i key = new Vec2i(left, top);
+            if (statesChanged.containsKey(key)) {
+                return statesChanged.get(key);
             }
-            return null;
+            BlockPos target = relativePos(pos, facing, left, top, 0);
+            BlockState bs = level.getBlockState(target);
+            TvConnection value = null;
+            if (bs.getBlock() instanceof TVBlock && bs.getValue(FACING) == facing) {
+                value = bs.getValue(CONNECTION);
+            }
+            statesCache.put(key, value);
+            return value;
         }
 
         @Override
         public void set(int left, int top, @Nullable TvConnection state) {
-            BlockPos target = TVBlock.relativePos(pos, facing, left, top, 0);
-            BlockState bs = level.getBlockState(target);
-            if (bs.getBlock() instanceof TVBlock) {
-                if (state == null) state = TvConnection.NONE;
-                level.setBlockAndUpdate(target, bs.setValue(CONNECTION, state));
+            Vec2i key = new Vec2i(left, top);
+            TvConnection old = statesCache.get(key);
+            if (old != state) {
+                statesChanged.put(key, state);
             }
+        }
 
+        public void applyChanges() {
+            for (var e : statesChanged.entrySet()) {
+                Vec2i key = e.getKey();
+                TvConnection conn = e.getValue();
+                BlockPos target = relativePos(pos, facing, key.x, key.y, 0);
+                BlockState bs = level.getBlockState(target);
+                if (bs.getBlock() instanceof TVBlock && conn != null) {
+                    level.setBlockAndUpdate(target, bs.setValue(CONNECTION, conn));
+                }
+            }
         }
 
     }

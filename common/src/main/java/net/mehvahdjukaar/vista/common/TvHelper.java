@@ -29,7 +29,7 @@ public final class TvHelper {
 
     // ---------- Core algorithm ----------
 
-    public static void apply(GridAccess g) {
+    public static void updateConnections(GridAccess g) {
         Square sq = findBiggestSquare(g);
         if (sq != null) {
             // Use your existing setter/painting logic here:

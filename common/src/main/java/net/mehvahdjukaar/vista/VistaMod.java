@@ -7,6 +7,7 @@ import net.mehvahdjukaar.moonlight.api.platform.RegHelper;
 import net.mehvahdjukaar.vista.client.TapeTextureManager;
 import net.mehvahdjukaar.vista.common.*;
 import net.mehvahdjukaar.vista.configs.CommonConfigs;
+import net.mehvahdjukaar.vista.integration.ExposureCompat;
 import net.mehvahdjukaar.vista.network.ModNetwork;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
@@ -116,7 +117,8 @@ public class VistaMod {
         //update time fps change with round robin
         //click sounds and new insert sound
         //turn on shader
-        //show tv screen for far away cunks using a static screenshot with pause shader
+        //show tv screen for far away cunks using a static screenshot with pause shaderand pause icon
+        //liveleak icon
         //turn on sound
         //player holding hand slike when using explosure cameera
         //shader when you wear a tv. fnaf
@@ -137,6 +139,7 @@ public class VistaMod {
 
         ModNetwork.init();
         ModLootOverrides.init();
+        if (EXPOSURE_ON) ExposureCompat.init();
 
         RegHelper.addItemsToTabsRegistration(VistaMod::addItemsToTabs);
 
@@ -160,7 +163,6 @@ public class VistaMod {
         }
         event.add(CreativeModeTabs.TOOLS_AND_UTILITIES, HOLLOW_CASSETTE.get());
     }
-
 
 
 }

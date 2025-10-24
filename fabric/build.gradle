@@ -86,7 +86,7 @@ dependencies {
     common(project(path: ":common", configuration: "namedElements")) { transitive false }
     shadowCommon(project(path: ":common", configuration: "transformProductionFabric")) { transitive false }
 
-    //include(implementation(annotationProcessor("io.github.llamalad7:mixinextras-fabric:0.5.0")))
+    include(implementation(annotationProcessor("io.github.llamalad7:mixinextras-fabric:0.5.0")))
 
     if (isMyPc) {
         modImplementation("net.mehvahdjukaar:moonlight-fabric:${moonlight_version}")
