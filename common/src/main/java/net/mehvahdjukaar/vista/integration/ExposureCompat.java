@@ -38,7 +38,7 @@ public class ExposureCompat {
                             .networkSynchronized(ItemStack.LIST_STREAM_CODEC)
                             .build());
 
-    public static final Supplier<PictureTapeItem> PICTURE_TAPE = RegHelper.registerItem(
+    public static final Supplier<Item> PICTURE_TAPE = RegHelper.registerItem(
             VistaMod.res("picture_tape"),
             () -> new PictureTapeItem(new Item.Properties()
                     .component(ITEM_LIST_COMPONENT.get(), List.of()))
@@ -76,7 +76,7 @@ public class ExposureCompat {
                 ItemAndStack<PhotographItem> frameItem =
                         photos.get((time / TIME_PER_PICTURE) % size);
                 ItemStack s = frameItem.getItemStack();
-                Frame frame = frameItem.getItem().getFrame(stack);
+                Frame frame = frameItem.getItem().getFrame(s);
 
                 return getFrameTexture(s, frame);
             }

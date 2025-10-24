@@ -162,6 +162,10 @@ public class VistaMod {
             event.add(CreativeModeTabs.TOOLS_AND_UTILITIES, stack);
         }
         event.add(CreativeModeTabs.TOOLS_AND_UTILITIES, HOLLOW_CASSETTE.get());
+
+        if (EXPOSURE_ON) {
+            event.add(CreativeModeTabs.TOOLS_AND_UTILITIES, ExposureCompat.PICTURE_TAPE.get());
+        }
     }
 
 

@@ -24,7 +24,7 @@ public class TapeTextureManager {
     private static final ResourceLocation BARS_LOCATION = VistaMod.res("color_bars");
     private static final ResourceLocation SMILE_LOCATION = VistaMod.res("smile");
     private static final ResourceLocation NEUTRAL_LOCATION = VistaMod.res("neutral");
-    private static final ResourceLocation SAD_LOCATION = VistaMod.res("neutral");
+    private static final ResourceLocation SAD_LOCATION = VistaMod.res("sad");
 
     private static final Map<ResourceKey<CassetteTape>, Material> MATERIALS = new HashMap<>();
     private static final Map<ResourceKey<CassetteTape>, Material> MATERIALS_FLAT = new HashMap<>();

@@ -61,6 +61,7 @@ public class PictureTapeItem extends Item {
 
     @Override
     public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
+        tooltipComponents.add(Component.literal("WIP"));
         int photographsCount = this.getContent(stack).size();
         if (photographsCount > 0) {
             tooltipComponents.add(Component.translatable("item.exposure.album.tooltip.photos_count", photographsCount));

@@ -1,2 +1,2 @@
-- bandaid fix for a misterious issue where mixins sometimes fail to apply on fabric
-- fixed a crash of dedicated servers
+- fixed another server crash
+- tv head is now animated
