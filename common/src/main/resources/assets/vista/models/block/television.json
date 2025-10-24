@@ -1,12 +1,12 @@
 {
   "parent": "minecraft:block/cube",
   "textures": {
-    "particle": "vista:block/tv_front",
-    "north": "vista:block/tv_front",
-    "south": "vista:block/tv_back",
-    "east": "vista:block/tv_side",
-    "west": "vista:block/tv_side",
-    "up": "vista:block/tv_top",
-    "down": "vista:block/tv_top"
+    "particle": "vista:block/tv/front/default",
+    "north": "vista:block/tv/front/default",
+    "south": "vista:block/tv/back/default",
+    "east": "vista:block/tv/side/default",
+    "west": "vista:block/tv/side/default",
+    "down": "vista:block/tv/top/default",
+    "up": "vista:block/tv/top/default"
   }
 }

@@ -2,9 +2,11 @@ package net.mehvahdjukaar.vista.client;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.math.Axis;
 import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.common.ViewFinderBlock;
 import net.mehvahdjukaar.vista.common.ViewFinderBlockEntity;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.model.geom.PartPose;
 import net.minecraft.client.model.geom.builders.CubeListBuilder;
@@ -16,6 +18,9 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.util.Mth;
+import net.minecraft.world.item.ItemDisplayContext;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
@@ -85,7 +90,21 @@ public class ViewFinderBlockEntityRenderer implements BlockEntityRenderer<ViewFi
         this.head.visible = !isControlledByLocalInstance;
 
         this.model.render(poseStack, builder, packedLight, packedOverlay);
+
+        poseStack.mulPose(Axis.YP.rotation(yawRad));
+        poseStack.mulPose(Axis.XP.rotation(pitchRad));
+        poseStack.mulPose(Axis.ZP.rotationDegrees(180));
+        poseStack.scale(0.75f,0.75f,0.75f);
+        poseStack.translate(0.25,0.5,0.25);
+
+        ItemStack stack = Items.CREEPER_HEAD.getDefaultInstance();
+      //  Minecraft.getInstance().getItemRenderer()
+        //        .renderStatic(stack, ItemDisplayContext.NONE,  packedLight, packedOverlay,poseStack,
+          //              bufferSource, tile.getLevel(), 0);
+
         poseStack.popPose();
+
+
     }
 
 

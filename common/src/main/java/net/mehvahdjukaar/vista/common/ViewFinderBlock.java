@@ -1,11 +1,11 @@
 package net.mehvahdjukaar.vista.common;
 
 import com.mojang.serialization.MapCodec;
+import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.util.Utils;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.client.ViewFinderController;
 import net.minecraft.core.BlockPos;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -21,7 +21,6 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
-import net.minecraft.world.phys.shapes.EntityCollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.Nullable;
@@ -53,10 +52,7 @@ public class ViewFinderBlock extends DirectionalBlock implements EntityBlock {
         ItemStack heldItem = player.getItemInHand(hand);
         if (heldItem.is(VistaMod.HOLLOW_CASSETTE.get())) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         if (level.getBlockEntity(pos) instanceof ViewFinderBlockEntity tile) {
-            if (player instanceof ServerPlayer sp) {
-                tile.tryInteracting(sp, pos);
-            }
-            return ItemInteractionResult.sidedSuccess(level.isClientSide());
+            return tile.tryInteracting(player, hand, stack, pos);
         }
         return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
     }
@@ -131,7 +127,7 @@ public class ViewFinderBlock extends DirectionalBlock implements EntityBlock {
 
     @Override
     protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        if (ViewFinderController.isActive()){
+        if (PlatHelper.getPhysicalSide().isClient() && ViewFinderController.isActive()) {
             return Shapes.empty();
         }
         return super.getShape(state, level, pos, context);

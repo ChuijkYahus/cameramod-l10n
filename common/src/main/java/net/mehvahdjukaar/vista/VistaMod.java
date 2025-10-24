@@ -33,6 +33,8 @@ public class VistaMod {
     public static final String MOD_ID = "vista";
     public static final Logger LOGGER = LogManager.getLogger("Vista");
 
+    public static final boolean EXPOSURE_ON = PlatHelper.isModLoaded("exposure");
+
     public static ResourceLocation res(String name) {
         return ResourceLocation.fromNamespaceAndPath(MOD_ID, name);
     }
@@ -71,8 +73,8 @@ public class VistaMod {
                     .rarity(Rarity.RARE)
                     .stacksTo(1)));
 
-    public static final Supplier<EchoCassetteItem> HOLLOW_CASSETTE = RegHelper.registerItem(res("hollow_cassette"),
-            () -> new EchoCassetteItem(new Item.Properties()
+    public static final Supplier<HollowCassetteItem> HOLLOW_CASSETTE = RegHelper.registerItem(res("hollow_cassette"),
+            () -> new HollowCassetteItem(new Item.Properties()
                     .rarity(Rarity.RARE)
                     .stacksTo(1)));
 
@@ -114,11 +116,18 @@ public class VistaMod {
         //update time fps change with round robin
         //click sounds and new insert sound
         //turn on shader
+        //show tv screen for far away cunks using a static screenshot with pause shader
         //turn on sound
+        //player holding hand slike when using explosure cameera
+        //shader when you wear a tv. fnaf
         //gifs play independently. No more atlas. sad
         //new cassettes
         //view distance scales with zoom
         //fix flickering
+        //zoom broken on fabric?
+        //check turn table
+        //cannon maoeuvering sound
+        //view finder maneuvering sound
         //verify the connection system
         //tv glitch shader
         //exposure compat

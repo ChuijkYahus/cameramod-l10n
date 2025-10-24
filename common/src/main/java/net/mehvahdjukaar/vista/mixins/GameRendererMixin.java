@@ -14,7 +14,7 @@ public class GameRendererMixin {
     @Definition(id = "fov", field = "Lnet/minecraft/client/renderer/GameRenderer;fov:F")
     @Expression("this.fov < 0.1")
     @ModifyExpressionValue(method = "tickFov", at = @At("MIXINEXTRAS:EXPRESSION"))
-    private boolean vista$uncapFog(boolean original) {
+    private boolean vista$uncapFOV(boolean original) {
         if (!original) {
             return false;
         }

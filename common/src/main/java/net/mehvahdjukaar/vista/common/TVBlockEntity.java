@@ -2,7 +2,9 @@ package net.mehvahdjukaar.vista.common;
 
 import net.mehvahdjukaar.moonlight.api.block.ItemDisplayTile;
 import net.mehvahdjukaar.vista.VistaMod;
+import net.mehvahdjukaar.vista.integration.ExposureCompat;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
@@ -28,11 +30,25 @@ public class TVBlockEntity extends ItemDisplayTile {
     @Nullable
     private Holder<CassetteTape> tape = null;
 
+    private int connectedTvsSize = 1;
+
     private int soundLoopTicks = 0;
-    private int timeSinceTurnedOn = 0;
+    private int animationTicks = 0;
 
     public TVBlockEntity(BlockPos pos, BlockState state) {
         super(VistaMod.TV_TILE.get(), pos, state);
+    }
+
+    @Override
+    public void saveAdditional(CompoundTag compound, HolderLookup.Provider registries) {
+        super.saveAdditional(compound, registries);
+        compound.putInt("ConnectedTVsSize", connectedTvsSize);
+    }
+
+    @Override
+    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+        super.loadAdditional(tag, registries);
+        this.connectedTvsSize = tag.getInt("ConnectedTVsSize");
     }
 
     @Nullable
@@ -60,9 +76,21 @@ public class TVBlockEntity extends ItemDisplayTile {
     }
 
     @Override
-    public boolean canPlaceItem(int index, ItemStack stack) {
-        return stack.is(VistaMod.CASSETTE.get()) || stack.is(VistaMod.HOLLOW_CASSETTE.get());
+    public boolean canTakeItemThroughFace(int index, ItemStack stack, Direction direction) {
+        return true;
     }
+
+    @Override
+    public boolean canPlaceItemThroughFace(int index, ItemStack stack, @Nullable Direction direction) {
+        return true;
+    }
+
+    @Override
+    public boolean canPlaceItem(int index, ItemStack stack) {
+        return stack.is(VistaMod.CASSETTE.get()) || stack.is(VistaMod.HOLLOW_CASSETTE.get()) ||
+                (VistaMod.EXPOSURE_ON && ExposureCompat.isPictureItem(stack));
+    }
+    //TODO: is this needed? put in renderer?
 
     private void cacheClientState() {
         ItemStack displayedItem = this.getDisplayedItem();
@@ -74,11 +102,6 @@ public class TVBlockEntity extends ItemDisplayTile {
     public void updateClientVisualsOnLoad() {
         super.updateClientVisualsOnLoad();
         cacheClientState();
-    }
-
-    @Override
-    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
     }
 
     @Override
@@ -119,10 +142,10 @@ public class TVBlockEntity extends ItemDisplayTile {
                 SoundEvent sound = tile.getPlaySound();
                 level.playLocalSound(pos, sound, SoundSource.BLOCKS, 1, 1.0f, false);
             }
-            tile.timeSinceTurnedOn++;
+            tile.animationTicks++;
         } else {
             tile.soundLoopTicks = 0;
-            tile.timeSinceTurnedOn = 0;
+            tile.animationTicks = 0;
         }
 
     }
@@ -140,5 +163,9 @@ public class TVBlockEntity extends ItemDisplayTile {
             return tape.value().soundDuration().orElse(VistaMod.STATIC_SOUND_DURATION);
         }
         return VistaMod.STATIC_SOUND_DURATION;
+    }
+
+    public int getAnimationTick() {
+        return animationTicks;
     }
 }

@@ -49,12 +49,18 @@ float triadDistance(vec2 triadA, vec2 triadB) {
     return mix(chebyshevCore, euclidBlend, 0.3);
 }
 
+vec2 normalizedTriadPerPixel(vec2 atlasSizePx) {
+    return TriadsPerPixel * ((96 / atlasSizePx) / SpriteDimensions.zw);
+}
+
 /* TRIAD space -> UV (no global clamp here; we clamp to sprite rect later) */
 vec2 triadToUV(vec2 triadP, vec2 atlasSizePx) {
-    vec2 pix = triadP / max(TriadsPerPixel, 1e-6);
+    vec2 tpp = normalizedTriadPerPixel(atlasSizePx);
+    vec2 pix = triadP / max(tpp, 1e-6);
     vec2 perPixelAmount = pix / atlasSizePx;
     return perPixelAmount;// normalized so all texture sizes have same density
 }
+
 
 /* ---- Precise, no-bleed clamp: clamp to edge texel centers ----
    We clamp in texel units relative to the sprite, to [0.5 .. width-0.5]. */
@@ -77,7 +83,9 @@ vec2 clampToSpriteTexelCenters(vec2 uv, vec2 atlasSizePx) {
 
 /* ===================== Phosphor pass (gather) ===================== */
 vec3 accumulateTriadResponse(vec2 pixelPos, sampler2D srcTexture, vec2 atlasSizePx) {
-    vec2 triadPos = pixelPos * TriadsPerPixel - 0.25;
+    vec2 tpp = normalizedTriadPerPixel(atlasSizePx);
+
+    vec2 triadPos = pixelPos * tpp - 0.25;
 
     // -------- Derivative-based aliasing detection (cycles per pixel) --------
     // Estimate how many triad cycles a single screen pixel spans.
@@ -90,7 +98,7 @@ vec3 accumulateTriadResponse(vec2 pixelPos, sampler2D srcTexture, vec2 atlasSize
 
     // Small scanline/beam jitter in TRIAD space (stable vs texture)
     vec2 jittered = triadPos;
-    float amp = 0.03 * clamp(1.0 / max(TriadsPerPixel, 1e-6), 0.25, 1.0);
+    float amp = 0.03 * clamp(1.0 / max(tpp.x, 1e-6), 0.25, 1.0); //tpp.x is incorrect
     float offset = 0.0;
     offset += (mod(floor(triadPos.x), 3.0) < 1.5 ? 1.0 : -1.0) * amp;
     offset += (mod(floor(triadPos.x), 5.0) < 2.5 ? 1.0 : -1.0) * (amp * 0.6);
@@ -173,7 +181,7 @@ float triadContrastScale(vec2 triadPos) {
     float t = clamp(nyquist / max(cpp, 1e-5), 0.0, 1.0);
 
     // Ease the rolloff for smoother transition
-    return t * t; // or smoothstep(0.0, 1.0, t)
+    return t * t; // or smoothstep(0.0, 1.0, top)
 }
 
 void main() {

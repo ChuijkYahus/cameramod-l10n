@@ -1,1 +1,2 @@
-- fixes
+- bandaid fix for a misterious issue where mixins sometimes fail to apply on fabric
+- fixed a crash of dedicated servers

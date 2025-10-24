@@ -19,9 +19,9 @@ import java.util.List;
 import java.util.UUID;
 
 
-public class EchoCassetteItem extends Item {
+public class HollowCassetteItem extends Item {
 
-    public EchoCassetteItem(Properties properties) {
+    public HollowCassetteItem(Properties properties) {
         super(properties);
     }
 

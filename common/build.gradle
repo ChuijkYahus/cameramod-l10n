@@ -11,10 +11,14 @@ dependencies {
     // We depend on fabric loader here to use the fabric @Environment annotations and get the mixin dependencies
     // Do NOT use other classes from fabric loader
     modImplementation "net.fabricmc:fabric-loader:${fabric_loader_version}"
-    implementation("io.github.llamalad7:mixinextras-common:0.5.0")
+    implementation(annotationProcessor("io.github.llamalad7:mixinextras-common:0.5.0"))
 
     modImplementation("net.mehvahdjukaar:moonlight:${moonlight_version}")
     //modImplementation("curse.maven:selene-499980:7113116")
+    modImplementation("curse.maven:supplementaries-412082:5981094")
+
+    modImplementation("curse.maven:exposure-871755:7033927")
+
 
 }
 

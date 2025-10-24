@@ -4,9 +4,11 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import net.mehvahdjukaar.moonlight.api.client.util.VertexUtil;
+import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.common.CassetteTape;
 import net.mehvahdjukaar.vista.common.TVBlock;
 import net.mehvahdjukaar.vista.common.TVBlockEntity;
+import net.mehvahdjukaar.vista.integration.ExposureCompat;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -17,6 +19,7 @@ import net.minecraft.client.resources.model.Material;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.ItemStack;
 
 import java.util.UUID;
 
@@ -35,11 +38,13 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
 
         boolean drawingCamera = LiveFeedRendererManager.LIVE_FEED_BEING_RENDERED != null;
 
-        VertexConsumer vc;
+        VertexConsumer vc = null;
 
         int screenPixelSize = blockEntity.getScreenPixelSize();
         UUID liveFeedId = blockEntity.getLinkedFeedUUID();
         Holder<CassetteTape> tape = blockEntity.getTape();
+
+        ItemStack stack = blockEntity.getDisplayedItem();
 
         if (liveFeedId != null) {
 
@@ -60,7 +65,13 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
 
                 vc = mat.buffer(buffer, t -> ModRenderTypes.CAMERA_DRAW_SPRITE.apply(t, mat));
             }
-        } else {
+        } else if (VistaMod.EXPOSURE_ON) {
+            ResourceLocation texture = ExposureCompat.getPictureTextureForRenderer(stack, blockEntity.getAnimationTick());
+            if (texture != null) {
+                vc = TapeTextureManager.getFullSpriteVC(texture, buffer, drawingCamera);
+            }
+        }
+        if (vc == null) {
             vc = buffer.getBuffer(ModRenderTypes.NOISE);
         }
 
@@ -71,10 +82,8 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
         poseStack.translate(-0.5, -0.5, -0.5);
 
         light = LightTexture.FULL_BRIGHT;
-        overlay = OverlayTexture.NO_OVERLAY;
 
         float s = screenPixelSize / 32f;
-        PoseStack.Pose pose = poseStack.last();
 
         poseStack.translate(0.5, 0.5, -0.001);
 

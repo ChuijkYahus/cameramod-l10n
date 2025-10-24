@@ -103,6 +103,8 @@ dependencies {
     } else {
         modImplementation("curse.maven:selene-499980:7068422")
     }
+    modImplementation("curse.maven:exposure-871755:7033927")
+    modImplementation("curse.maven:jei-238222:7057366")
 
 
 }

@@ -1,6 +1,7 @@
 package net.mehvahdjukaar.vista.common;
 
 import net.mehvahdjukaar.moonlight.api.block.IOnePlayerInteractable;
+import net.mehvahdjukaar.moonlight.api.block.ItemDisplayTile;
 import net.mehvahdjukaar.moonlight.api.misc.TileOrEntityTarget;
 import net.mehvahdjukaar.moonlight.api.platform.network.NetworkHelper;
 import net.mehvahdjukaar.moonlight.api.util.math.MthUtils;
@@ -10,18 +11,24 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.SkullBlock;
+import net.minecraft.world.level.block.StainedGlassPaneBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.UUID;
 
-public class ViewFinderBlockEntity extends BlockEntity implements IOnePlayerInteractable {
+public class ViewFinderBlockEntity extends ItemDisplayTile implements IOnePlayerInteractable {
 
     public Object ccHack = null;
 
@@ -86,13 +93,24 @@ public class ViewFinderBlockEntity extends BlockEntity implements IOnePlayerInte
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+    public void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
         tag.putUUID("UUID", this.myUUID);
         tag.putFloat("yaw", this.yaw);
         tag.putFloat("pitch", this.pitch);
         tag.putBoolean("locked", this.locked);
         tag.putInt("zoom", this.zoom);
+    }
+
+    @Override
+    protected Component getDefaultName() {
+        return Component.literal("View Finder");
+    }
+
+    @Override
+    public boolean canPlaceItem(int index, ItemStack stack) {
+        return stack.getItem() instanceof BlockItem bi &&
+                (bi.getBlock() instanceof StainedGlassPaneBlock || bi.getBlock() instanceof SkullBlock);
     }
 
     @Override
@@ -106,15 +124,19 @@ public class ViewFinderBlockEntity extends BlockEntity implements IOnePlayerInte
     }
 
 
-    public boolean tryInteracting(ServerPlayer player, BlockPos pos) {
+    public ItemInteractionResult tryInteracting(Player player, InteractionHand hand, ItemStack stack, BlockPos pos) {
+        ItemInteractionResult itemAdd = this.interactWithPlayerItem(player, hand, stack);
+        if (itemAdd.consumesAction()) {
+            return itemAdd;
+        }
         //same as super but sends custom packet
-        if (!this.isOtherPlayerEditing(pos, player)) {
+        if (player instanceof ServerPlayer sp && !this.isOtherPlayerEditing(pos, player)) {
             // open gui (edit sign with empty hand)
             this.setPlayerWhoMayEdit(player.getUUID());
-            NetworkHelper.sendToClientPlayer(player, new ClientBoundControlViewFinderPacket(TileOrEntityTarget.of(this)));
+            NetworkHelper.sendToClientPlayer(sp, new ClientBoundControlViewFinderPacket(TileOrEntityTarget.of(this)));
         }
         //always swing on fail
-        return true;
+        return ItemInteractionResult.SUCCESS;
     }
 
     public UUID getUUID() {
@@ -141,7 +163,7 @@ public class ViewFinderBlockEntity extends BlockEntity implements IOnePlayerInte
         return zoom;
     }
 
-    public int getMaxZoom(){
+    public int getMaxZoom() {
         return 44;
     }
 
