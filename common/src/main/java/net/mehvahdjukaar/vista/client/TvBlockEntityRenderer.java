@@ -8,13 +8,12 @@ import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.common.CassetteTape;
 import net.mehvahdjukaar.vista.common.TVBlock;
 import net.mehvahdjukaar.vista.common.TVBlockEntity;
-import net.mehvahdjukaar.vista.integration.ExposureCompat;
+import net.mehvahdjukaar.vista.integration.exposure.ExposureCompatClient;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
-import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.resources.model.Material;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
@@ -35,6 +34,14 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
                        int light, int overlay) {
 
         if (!blockEntity.getBlockState().getValue(TVBlock.POWERED)) return;
+
+        Direction dir = blockEntity.getBlockState().getValue(TVBlock.FACING);
+
+        LOD lod = LOD.at(blockEntity);
+
+        if (lod.isPlaneCulled(dir, 0.5f, 0f)) {
+            return;
+        }
 
         boolean drawingCamera = LiveFeedRendererManager.LIVE_FEED_BEING_RENDERED != null;
 
@@ -66,7 +73,7 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
                 vc = mat.buffer(buffer, t -> ModRenderTypes.CAMERA_DRAW_SPRITE.apply(t, mat));
             }
         } else if (VistaMod.EXPOSURE_ON) {
-            ResourceLocation texture = ExposureCompat.getPictureTextureForRenderer(stack, blockEntity.getAnimationTick());
+            ResourceLocation texture = ExposureCompatClient.getPictureTextureForRenderer(stack, blockEntity.getAnimationTick());
             if (texture != null) {
                 vc = TapeTextureManager.getFullSpriteVC(texture, buffer, drawingCamera);
             }
@@ -75,7 +82,6 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
             vc = buffer.getBuffer(ModRenderTypes.NOISE);
         }
 
-        Direction dir = blockEntity.getBlockState().getValue(TVBlock.FACING);
         float yaw = dir.toYRot();
         poseStack.translate(0.5, 0.5, 0.5);
         poseStack.mulPose(Axis.YP.rotationDegrees(180 - yaw));

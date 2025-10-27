@@ -23,7 +23,6 @@ import net.minecraft.client.renderer.FogRenderer;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Display;
@@ -44,6 +43,12 @@ public class LiveFeedRendererManager {
     private static final Int2ObjectArrayMap<RenderTarget> CANVASES = new Int2ObjectArrayMap<>();
     private static final BiMap<UUID, ResourceLocation> LIVE_FEED_LOCATIONS = HashBiMap.create();
     private static final DummyCamera DUMMY_CAMERA = new DummyCamera();
+    private static final AdaptiveUpdateScheduler<ResourceLocation> SCHEDULER = new AdaptiveUpdateScheduler<>(
+            20,
+            20,
+            20,
+            20
+    );
 
     private static long feedCounter = 0;
 
@@ -93,6 +98,10 @@ public class LiveFeedRendererManager {
         DUMMY_CAMERA.entity = null;
     }
 
+    public static void onRenderTickEnd(){
+            SCHEDULER.onFrameEnd();
+    }
+
 
     private static void refreshTexture(FrameBufferBackedDynamicTexture text) {
         Minecraft mc = Minecraft.getInstance();
@@ -100,12 +109,14 @@ public class LiveFeedRendererManager {
         ClientLevel level = mc.level;
         if (!mc.isGameLoadFinished() || level == null) return;
 
-        long gameTime = level.getGameTime();
-        if (gameTime % 5 != 0) return; //update every 5 ticks TODO: round robin between feeds
+        ResourceLocation textureId = text.getTextureLocation();
+
+        if (!SCHEDULER.shouldUpdate(textureId, mc)) return;
+
         ViewFinderConnection connection = ViewFinderConnection.get(level);
         if (connection == null) return;
 
-        UUID uuid = LIVE_FEED_LOCATIONS.inverse().get(text.getTextureLocation());
+        UUID uuid = LIVE_FEED_LOCATIONS.inverse().get(textureId);
         ViewFinderBlockEntity tile = connection.getLinkedViewFinder(level, uuid);
         if (tile == null) return; //TODO: do something here
 

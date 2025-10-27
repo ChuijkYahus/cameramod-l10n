@@ -9,9 +9,7 @@ import net.minecraft.client.resources.model.Material;
 import net.minecraft.core.Holder;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.player.Player;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -59,7 +57,7 @@ public class TapeTextureManager {
     }
 
     public static VertexConsumer getSmileTapeVC(MultiBufferSource buffer, LivingEntity player, boolean flat) {
-        float health = player.getHealth()/player.getMaxHealth();
+        float health = player.getHealth() / player.getMaxHealth();
         Material mat;
         if (health > 0.66f) {
             mat = flat ? SMILE_MATERIAL_FLAT : SMILE_MATERIAL;

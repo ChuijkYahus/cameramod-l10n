@@ -7,7 +7,7 @@ import net.mehvahdjukaar.moonlight.api.platform.RegHelper;
 import net.mehvahdjukaar.vista.client.TapeTextureManager;
 import net.mehvahdjukaar.vista.common.*;
 import net.mehvahdjukaar.vista.configs.CommonConfigs;
-import net.mehvahdjukaar.vista.integration.ExposureCompat;
+import net.mehvahdjukaar.vista.integration.exposure.ExposureCompat;
 import net.mehvahdjukaar.vista.network.ModNetwork;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
@@ -111,8 +111,7 @@ public class VistaMod {
         //connection 2x2
         //no adjusted frustum causing to clip through blocks when placed next to it
         //emderman view through camera
-        //LOD
-        //make phosphor density indepentent of png size
+        //creative only cassette that targets a video
         //turn table rotation thing
         //update time fps change with round robin
         //click sounds and new insert sound
@@ -164,7 +163,7 @@ public class VistaMod {
         event.add(CreativeModeTabs.TOOLS_AND_UTILITIES, HOLLOW_CASSETTE.get());
 
         if (EXPOSURE_ON) {
-            event.add(CreativeModeTabs.TOOLS_AND_UTILITIES, ExposureCompat.PICTURE_TAPE.get());
+         //   event.add(CreativeModeTabs.TOOLS_AND_UTILITIES, ExposureCompat.PICTURE_TAPE.get());
         }
     }
 

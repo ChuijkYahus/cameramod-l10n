@@ -1,19 +1,23 @@
-package net.mehvahdjukaar.vista.integration;
+package net.mehvahdjukaar.vista.integration.exposure;
 
+import io.github.mortuusars.exposure.world.inventory.AlbumMenu;
 import net.mehvahdjukaar.moonlight.api.misc.ForgeOverride;
+import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.stats.Stats;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.MenuProvider;
+import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Collections;
 import java.util.List;
 
 public class PictureTapeItem extends Item {
@@ -21,12 +25,24 @@ public class PictureTapeItem extends Item {
         super(properties);
     }
 
-    public List<ItemStack> getContent(ItemStack stack) {
-        return stack.getOrDefault(ExposureCompat.ITEM_LIST_COMPONENT.get(), Collections.emptyList());
+    public static PictureTapeContent getContent(ItemStack stack) {
+        return stack.getOrDefault(ExposureCompat.PICTURE_TAPE_CONTENT.get(), PictureTapeContent.EMPTY);
     }
 
-    public void setContent(ItemStack stack, List<ItemStack> content) {
-        stack.set(ExposureCompat.ITEM_LIST_COMPONENT.get(), content);
+    public static void setContent(ItemStack stack, PictureTapeContent content) {
+        stack.set(ExposureCompat.PICTURE_TAPE_CONTENT.get(), content);
+    }
+
+    public static void setPictureAtIndex(ItemStack stack, int index, ItemStack picture) {
+        PictureTapeContent content = getContent(stack);
+        PictureTapeContent newContent = content.withInsertedAtIndex(index, picture);
+        setContent(stack, newContent);
+    }
+
+    public static void removePictureAtIndex(ItemStack stack, int index) {
+        PictureTapeContent content = getContent(stack);
+        PictureTapeContent newContent = content.withRemovedAtIndex(index);
+        setContent(stack, newContent);
     }
 
     @Override
@@ -36,33 +52,30 @@ public class PictureTapeItem extends Item {
             int albumSlot = usedHand == InteractionHand.OFF_HAND ? 40 : player.getInventory().selected;
             this.open(serverPlayer, itemStack, albumSlot);
         }
-
         player.awardStat(Stats.ITEM_USED.get(this));
         return InteractionResultHolder.sidedSuccess(itemStack, level.isClientSide());
     }
 
     public void open(ServerPlayer player, final ItemStack albumStack, final int albumSlot) {
-        /*
-        MenuProvider menuProvider = new MenuProvider(this) {
+        MenuProvider menuProvider = new MenuProvider() {
             public @NotNull Component getDisplayName() {
                 return albumStack.getHoverName();
             }
 
             public @NotNull AbstractContainerMenu createMenu(int containerId, @NotNull Inventory playerInventory, @NotNull Player player) {
-                return new AlbumMenu(containerId, playerInventory, albumSlot);
+                return new PictureTapeMenu(containerId, playerInventory, albumSlot);
             }
         };
 
-        PlatformHelper.openMenu(player, menuProvider, (buffer) -> {
+        PlatHelper.openCustomMenu(player, menuProvider, (buffer) -> {
             buffer.writeVarInt(albumSlot);
         });
-        */
     }
 
     @Override
     public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
         tooltipComponents.add(Component.literal("WIP"));
-        int photographsCount = this.getContent(stack).size();
+        int photographsCount = getContent(stack).size();
         if (photographsCount > 0) {
             tooltipComponents.add(Component.translatable("item.exposure.album.tooltip.photos_count", photographsCount));
         }

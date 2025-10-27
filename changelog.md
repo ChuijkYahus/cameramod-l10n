@@ -1,2 +1,1 @@
-- fixed another server crash
-- tv head is now animated
+- tv LOD
