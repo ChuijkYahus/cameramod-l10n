@@ -8,6 +8,7 @@ import net.mehvahdjukaar.vista.client.TapeTextureManager;
 import net.mehvahdjukaar.vista.client.ViewFinderController;
 import net.mehvahdjukaar.vista.client.ViewFinderHud;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.texture.atlas.SpriteSourceType;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.api.distmarker.Dist;
@@ -25,6 +26,11 @@ public class VistaForgeClient {
     @SubscribeEvent
     public static void onClientEndTick(ClientTickEvent.Post event) {
         VistaModClient.onClientTick(Minecraft.getInstance());
+    }
+
+    @SubscribeEvent
+    public static void onRenderTick(RenderFrameEvent.Post event) {
+        VistaModClient.onRenderTickEnd(Minecraft.getInstance());
     }
 
     @SubscribeEvent

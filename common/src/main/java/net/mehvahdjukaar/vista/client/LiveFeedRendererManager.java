@@ -4,6 +4,7 @@ import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.pipeline.TextureTarget;
+import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -43,12 +44,13 @@ public class LiveFeedRendererManager {
     private static final Int2ObjectArrayMap<RenderTarget> CANVASES = new Int2ObjectArrayMap<>();
     private static final BiMap<UUID, ResourceLocation> LIVE_FEED_LOCATIONS = HashBiMap.create();
     private static final DummyCamera DUMMY_CAMERA = new DummyCamera();
-    private static final AdaptiveUpdateScheduler<ResourceLocation> SCHEDULER = new AdaptiveUpdateScheduler<>(
-            20,
-            20,
-            20,
-            20
-    );
+    private static final AdaptiveUpdateScheduler<ResourceLocation> SCHEDULER = AdaptiveUpdateScheduler.builder()
+            .desiredUpdatesTickInterval(5)
+            .minUpdatesTickInterval(20)
+            .targetFpsBudgetScale(60, 0.1f) //10% of a frame which at 60fps = 16.6ms is ~1.66ms which should lower fps from 60 to 54. in other words at most a 6fps drop
+            .evictionAfterTicks(20*5) //5 seconds
+            .build();
+
 
     private static long feedCounter = 0;
 
@@ -98,8 +100,8 @@ public class LiveFeedRendererManager {
         DUMMY_CAMERA.entity = null;
     }
 
-    public static void onRenderTickEnd(){
-            SCHEDULER.onFrameEnd();
+    public static void onRenderTickEnd() {
+        SCHEDULER.onFrameEnd();
     }
 
 
@@ -108,50 +110,55 @@ public class LiveFeedRendererManager {
 
         ClientLevel level = mc.level;
         if (!mc.isGameLoadFinished() || level == null) return;
+        if (mc.isPaused()) return;
 
         ResourceLocation textureId = text.getTextureLocation();
 
-        if (!SCHEDULER.shouldUpdate(textureId, mc)) return;
+        SCHEDULER.runIfShouldUpdate(textureId, ()->{
 
-        ViewFinderConnection connection = ViewFinderConnection.get(level);
-        if (connection == null) return;
+            ViewFinderConnection connection = ViewFinderConnection.get(level);
+            if (connection == null) return;
 
-        UUID uuid = LIVE_FEED_LOCATIONS.inverse().get(textureId);
-        ViewFinderBlockEntity tile = connection.getLinkedViewFinder(level, uuid);
-        if (tile == null) return; //TODO: do something here
+            UUID uuid = LIVE_FEED_LOCATIONS.inverse().get(textureId);
+            ViewFinderBlockEntity tile = connection.getLinkedViewFinder(level, uuid);
+            if (tile == null) return; //TODO: do something here
 
-        float partialTicks = mc.getTimer().getGameTimeDeltaTicks();
+            float partialTicks = mc.getTimer().getGameTimeDeltaTicks();
 
-        setupSceneCamera(tile, partialTicks);
+            setupSceneCamera(tile, partialTicks);
 
-        RenderTarget renderTarget = text.getFrameBuffer();
-        RenderTarget mainTarget = mc.getMainRenderTarget();
+            RenderTarget renderTarget = text.getFrameBuffer();
+            RenderTarget mainTarget = mc.getMainRenderTarget();
 
-        int size = text.getWidth();
-        RenderTarget canvas = getOrCreateCanvas(size);
+            int size = text.getWidth();
+            RenderTarget canvas = getOrCreateCanvas(size);
 
-        canvas.bindWrite(true);
-        LIVE_FEED_BEING_RENDERED = canvas;
+            canvas.bindWrite(true);
+            LIVE_FEED_BEING_RENDERED = canvas;
 
-        //same as field of view modifier
-        float fov = 70 * tile.getModifiedFOV(1, 1);
+            //same as field of view modifier
+            float fov = 70 * tile.getModifiedFOV(1, 1);
 
 
-        RenderSystem.clear(16640, ON_OSX);
-        FogRenderer.setupNoFog();
-        RenderSystem.enableCull();
+            RenderSystem.clear(16640, ON_OSX);
+            FogRenderer.setupNoFog();
+            RenderSystem.enableCull();
 
-        float oldRenderDistance = mc.gameRenderer.renderDistance;
-        mc.gameRenderer.renderDistance = Math.min(oldRenderDistance, ClientConfigs.RENDER_DISTANCE.get());
-        renderLevel(mc, canvas, DUMMY_CAMERA, fov);
-        mc.gameRenderer.renderDistance = oldRenderDistance;
+            float oldRenderDistance = mc.gameRenderer.renderDistance;
+            mc.gameRenderer.renderDistance = Math.min(oldRenderDistance, ClientConfigs.RENDER_DISTANCE.get());
+            renderLevel(mc, canvas, DUMMY_CAMERA, fov);
+            mc.gameRenderer.renderDistance = oldRenderDistance;
 
-        copyWithShader(canvas, renderTarget, ModRenderTypes.POSTERIZE.apply(canvas));
+            copyWithShader(canvas, renderTarget, ModRenderTypes.POSTERIZE.apply(canvas));
 
-        LiveFeedRendererManager.LIVE_FEED_BEING_RENDERED = null;
-        mainTarget.bindWrite(true);
+            LiveFeedRendererManager.LIVE_FEED_BEING_RENDERED = null;
+            mainTarget.bindWrite(true);
+
+        });
+
     }
 
+    @SuppressWarnings("ConstantConditions")
     private static void setupSceneCamera(ViewFinderBlockEntity tile, float partialTicks) {
         Level level = tile.getLevel();
         float pitch = tile.getPitch(partialTicks);

@@ -94,6 +94,11 @@ public class VistaModClient {
         ViewFinderController.onClientTick(minecraft);
     }
 
+    @EventCalled
+    public static void onRenderTickEnd(Minecraft minecraft) {
+        LiveFeedRendererManager.onRenderTickEnd();
+    }
+
 
     private static boolean preventShiftTillNextKeyUp = false;
 
