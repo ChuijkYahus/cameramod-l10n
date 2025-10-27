@@ -4,13 +4,13 @@ import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.pipeline.TextureTarget;
-import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
 import net.mehvahdjukaar.moonlight.api.client.texture_renderer.FrameBufferBackedDynamicTexture;
 import net.mehvahdjukaar.moonlight.api.client.texture_renderer.RenderedTexturesManager;
+import net.mehvahdjukaar.moonlight.api.misc.RollingBuffer;
 import net.mehvahdjukaar.moonlight.core.client.DummyCamera;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.common.ViewFinderBlockEntity;
@@ -26,6 +26,7 @@ import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
+import net.minecraft.util.VisibleForDebug;
 import net.minecraft.world.entity.Display;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -35,6 +36,8 @@ import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 import static net.minecraft.client.Minecraft.ON_OSX;
@@ -44,11 +47,13 @@ public class LiveFeedRendererManager {
     private static final Int2ObjectArrayMap<RenderTarget> CANVASES = new Int2ObjectArrayMap<>();
     private static final BiMap<UUID, ResourceLocation> LIVE_FEED_LOCATIONS = HashBiMap.create();
     private static final DummyCamera DUMMY_CAMERA = new DummyCamera();
-    private static final AdaptiveUpdateScheduler<ResourceLocation> SCHEDULER = AdaptiveUpdateScheduler.builder()
-            .desiredUpdatesTickInterval(5)
+
+    @VisibleForDebug
+    public static final AdaptiveUpdateScheduler<ResourceLocation> SCHEDULER = AdaptiveUpdateScheduler.builder()
+            .desiredUpdatesTickInterval(1)
             .minUpdatesTickInterval(20)
-            .targetFpsBudgetScale(60, 0.1f) //10% of a frame which at 60fps = 16.6ms is ~1.66ms which should lower fps from 60 to 54. in other words at most a 6fps drop
-            .evictionAfterTicks(20*5) //5 seconds
+            .targetBudgetFromFps(60, 0.1f) //10% of a frame which at 60fps = 16.6ms is ~1.66ms which should lower fps from 60 to 54. in other words at most a 6fps drop
+            .evictionAfterTicks(20 * 5) //5 seconds
             .build();
 
 
@@ -70,6 +75,8 @@ public class LiveFeedRendererManager {
                         true);
                 if (texture.isInitialized()) {
                     return texture.getTextureLocation();
+                } else {
+                    SCHEDULER.forceNextUpdate(feedId);
                 }
             }
         }
@@ -94,6 +101,7 @@ public class LiveFeedRendererManager {
         return canvas;
     }
 
+    @SuppressWarnings("ConstantConditions")
     public static void clear() {
         CANVASES.clear();
         LIVE_FEED_LOCATIONS.clear();
@@ -103,6 +111,9 @@ public class LiveFeedRendererManager {
     public static void onRenderTickEnd() {
         SCHEDULER.onFrameEnd();
     }
+
+    @VisibleForDebug
+    public static final Map<ResourceLocation, RollingBuffer<Long>> UPDATE_TIMES = new HashMap<>();
 
 
     private static void refreshTexture(FrameBufferBackedDynamicTexture text) {
@@ -114,7 +125,10 @@ public class LiveFeedRendererManager {
 
         ResourceLocation textureId = text.getTextureLocation();
 
-        SCHEDULER.runIfShouldUpdate(textureId, ()->{
+        SCHEDULER.runIfShouldUpdate(textureId, () -> {
+
+            UPDATE_TIMES.computeIfAbsent(textureId, k -> new RollingBuffer<>(20))
+                    .push(level.getGameTime());
 
             ViewFinderConnection connection = ViewFinderConnection.get(level);
             if (connection == null) return;

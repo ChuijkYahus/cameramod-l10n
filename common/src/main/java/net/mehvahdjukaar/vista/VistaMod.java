@@ -111,6 +111,7 @@ public class VistaMod {
         //connection 2x2
         //no adjusted frustum causing to clip through blocks when placed next to it
         //emderman view through camera
+        //view finder scroll bug
         //creative only cassette that targets a video
         //turn table rotation thing
         //update time fps change with round robin
