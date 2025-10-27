@@ -1,1 +1,7 @@
-- tv LOD
+- Many improvements to make tv live feeds faster and more efficient:
+- tv live feed won't render and update when facing away from the camera
+- tv live feed won't update but still render when player is not too near
+- tv live feeds now update dynamically depending on update time, fps and update at staggered time thanks to a new update scheduling logic
+- added many configs
+- fired an event missing from neoforge
+- 

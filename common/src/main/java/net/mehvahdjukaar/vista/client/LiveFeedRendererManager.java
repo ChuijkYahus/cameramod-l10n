@@ -8,11 +8,11 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
-import net.mehvahdjukaar.moonlight.api.client.texture_renderer.FrameBufferBackedDynamicTexture;
 import net.mehvahdjukaar.moonlight.api.client.texture_renderer.RenderedTexturesManager;
 import net.mehvahdjukaar.moonlight.api.misc.RollingBuffer;
 import net.mehvahdjukaar.moonlight.core.client.DummyCamera;
 import net.mehvahdjukaar.vista.VistaMod;
+import net.mehvahdjukaar.vista.VistaPlatStuff;
 import net.mehvahdjukaar.vista.common.ViewFinderBlockEntity;
 import net.mehvahdjukaar.vista.common.ViewFinderConnection;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
@@ -50,10 +50,12 @@ public class LiveFeedRendererManager {
 
     @VisibleForDebug
     public static final AdaptiveUpdateScheduler<ResourceLocation> SCHEDULER = AdaptiveUpdateScheduler.builder()
-            .desiredUpdatesTickInterval(1)
-            .minUpdatesTickInterval(20)
-            .targetBudgetFromFps(60, 0.1f) //10% of a frame which at 60fps = 16.6ms is ~1.66ms which should lower fps from 60 to 54. in other words at most a 6fps drop
-            .evictionAfterTicks(20 * 5) //5 seconds
+            .baseFps(ClientConfigs.UPDATE_FPS.get())
+            .minFps(ClientConfigs.MIN_UPDATE_FPS.get())
+            .targetBudgetMs(ClientConfigs.THROTTLING_UPDATE_MS.get()) //10% of a frame which at 60fps = 16.6ms is ~1.66ms which should lower fps from 60 to 54. in other words at most a 6fps drop
+            .evictAfterTicks(20 * 5) //5 seconds
+
+            .guardTargetFps(60) //if we go under 6o fps, be more aggressive
             .build();
 
 
@@ -64,19 +66,21 @@ public class LiveFeedRendererManager {
 
 
     @Nullable
-    public static ResourceLocation requestLiveFeedTexture(Level level, UUID location, int size) {
+    public static ResourceLocation requestLiveFeedTexture(Level level, UUID location, int screenSize, boolean requiresUpdate) {
         ViewFinderConnection connection = ViewFinderConnection.get(level);
         if (connection != null) {
             ViewFinderBlockEntity tile = connection.getLinkedViewFinder(level, location);
             if (tile != null) {
                 ResourceLocation feedId = getOrCreateFeedId(location);
-                var texture = RenderedTexturesManager.requestTexture(feedId, size,
-                        LiveFeedRendererManager::refreshTexture,
-                        true);
+                TVLiveFeedTexture texture = RenderedTexturesManager.requestTexture(feedId,
+                        () -> new TVLiveFeedTexture(feedId,
+                                screenSize * ClientConfigs.RESOLUTION_SCALE.get(),
+                                LiveFeedRendererManager::refreshTexture, location));
+                if (!requiresUpdate) texture.unMarkForUpdate();
                 if (texture.isInitialized()) {
                     return texture.getTextureLocation();
                 } else {
-                    SCHEDULER.forceNextUpdate(feedId);
+                    SCHEDULER.forceUpdateNextTick(feedId);
                 }
             }
         }
@@ -109,14 +113,14 @@ public class LiveFeedRendererManager {
     }
 
     public static void onRenderTickEnd() {
-        SCHEDULER.onFrameEnd();
+        SCHEDULER.onEndOfFrame();
     }
 
     @VisibleForDebug
     public static final Map<ResourceLocation, RollingBuffer<Long>> UPDATE_TIMES = new HashMap<>();
 
 
-    private static void refreshTexture(FrameBufferBackedDynamicTexture text) {
+    private static void refreshTexture(TVLiveFeedTexture text) {
         Minecraft mc = Minecraft.getInstance();
 
         ClientLevel level = mc.level;
@@ -127,13 +131,15 @@ public class LiveFeedRendererManager {
 
         SCHEDULER.runIfShouldUpdate(textureId, () -> {
 
-            UPDATE_TIMES.computeIfAbsent(textureId, k -> new RollingBuffer<>(20))
-                    .push(level.getGameTime());
+            if (ClientConfigs.isDebugOn()) {
+                UPDATE_TIMES.computeIfAbsent(textureId, k -> new RollingBuffer<>(20))
+                        .push(level.getGameTime());
+            }
 
             ViewFinderConnection connection = ViewFinderConnection.get(level);
             if (connection == null) return;
 
-            UUID uuid = LIVE_FEED_LOCATIONS.inverse().get(textureId);
+            UUID uuid = text.associatedUUID;
             ViewFinderBlockEntity tile = connection.getLinkedViewFinder(level, uuid);
             if (tile == null) return; //TODO: do something here
 
@@ -211,11 +217,9 @@ public class LiveFeedRendererManager {
         lr.renderLevel(deltaTracker, false, camera, gr,
                 gr.lightTexture(), cameraMatrix, projMatrix);
 
+        Matrix4f modelViewMatrix = RenderSystem.getModelViewMatrix();
 
-        mc.getProfiler().popPush("neoforge_render_last");
-        //ClientHooks.dispatchRenderStage(Stage.AFTER_LEVEL, mc.levelRenderer, (PoseStack)null, matrix4f1, matrix4f, mc.levelRenderer.getTicks(), camera, mc.levelRenderer.getFrustum());
-
-        mc.getProfiler().pop();
+        VistaPlatStuff.dispatchRenderStageAfterLevel(mc, poseStack, camera, modelViewMatrix, projMatrix);
     }
 
     private static Matrix4f createProjectionMatrix(GameRenderer gr, RenderTarget target, float fov) {

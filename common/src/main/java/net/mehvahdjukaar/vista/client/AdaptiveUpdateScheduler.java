@@ -1,6 +1,5 @@
 package net.mehvahdjukaar.vista.client;
 
-import net.mehvahdjukaar.moonlight.api.misc.RollingBuffer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.Mth;
 
@@ -8,209 +7,211 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * AdaptiveUpdateScheduler
- * <p>
- * Deterministic staggered per-object scheduler using a phase accumulator:
- * - Each object has phase in [0,1). Each tick: phase += effRate + ε; if (phase >= 1) { phase -= 1; grant }.
- * - Phase is seeded from a stable hash of the ID → strong, deterministic staggering.
- * - effRate adapts via attribution-based control: scale = clamp(targetBudgetMs / emaUpdateMs, 0..1).
- * - Optional FPS guardrail (off by default).
- * <p>
- * Extras:
- * - forceNextUpdate(id): ensures next tick grants once (counts toward budget).
- * - runForcedNow(id, runnable, countTowardsBudget): run immediately (optionally counted).
+ * StaggeredBudgetUpdateScheduler
+ *
+ * Deterministic staggered, per-object scheduler using a phase accumulator:
+ *  • Each object holds a phase in [0,1). Each tick: phase += effectiveRate + ε; if phase >= 1 → wrap once and grant.
+ *  • Phase is seeded from a stable hash of the ID → persistent, uniform staggering even if objects start together.
+ *
+ * Adaptation by attribution:
+ *  • targetBudgetMs = desired ms per *rendered frame* spent in these updates.
+ *  • We smooth the measured update time with a time-constant EMA (frame-time aware), then
+ *    compute a raw scale = clamp(targetBudgetMs / smoothedUpdateMs, 0..1).
+ *  • The scale itself is smoothed (own time constant) and rate-limited per frame to avoid twitch.
+ *
+ * Optional FPS guardrail (off by default) scales down further if overall FPS is poor.
+ *
+ * API:
+ *  • tryRunUpdate(id, runnable): run at most once per tick per object (no catch-up) and count time to budget.
+ *  • runIfShouldUpdate(id, runnable): alias to tryRunUpdate for compatibility.
+ *  • forceUpdateNextTick(id): guarantee a grant on the next tick (counts toward budget when it runs).
+ *  • onEndOfFrame(): call once per rendered frame to finalize EMAs.
  */
 public final class AdaptiveUpdateScheduler<ID> {
 
     // ---------- Per-object state ----------
     private final class Entry {
-        double phase;   // [0,1)
-        long lastTick;
-        long lastSeenTick;
 
+        double phase01;    // phase in [0,1)
+        long lastTickSeen;
+        long lastTickTouched;
         Entry(ID id, long tick) {
-            this.phase = stablePhaseFromId(id);
-            this.lastTick = tick;
-            this.lastSeenTick = tick;
+            this.phase01 = stablePhaseFromId(id);
+            this.lastTickSeen = tick;
+            this.lastTickTouched = tick;
         }
 
-        // Stable per-ID phase in [0,1). Uses a 64-bit mix to avoid clustering from poor hashCodes.
-        private double stablePhaseFromId(ID id) {
-            long h = mix64(id == null ? 0 : id.hashCode());
-            // Convert top 53 bits to a double in [0,1)
-            long mant = (h >>> 11); // keep 53 bits
-            return mant * (1.0 / (1L << 53));
-        }
-
-        // SplitMix64 mix from a 32-bit input to 64-bit
-        private static long mix64(int x) {
-            long z = (x * 0x9E3779B9L) ^ 0xBF58476D1CE4E5B9L;
-            z = (z ^ (z >>> 30)) * 0xBF58476D1CE4E5B9L;
-            z = (z ^ (z >>> 27)) * 0x94D049BB133111EBL;
-            return z ^ (z >>> 31);
-        }
     }
+    private final Map<ID, Entry> entries = new ConcurrentHashMap<>();
 
-    private final Map<ID, Entry> state = new ConcurrentHashMap<>();
 
     // ---------- Rate knobs ----------
-    /**
-     * Desired per-object rate when healthy (updates per tick per object).
-     */
-    private final double baseRatePerObj;
-    /**
-     * Hard per-object floor (never below this).
-     */
-    private final double minRatePerObj;
+    /** Desired per-object rate (updates per TICK per object) when healthy. */
+    private volatile double baseUpdateRatePerTick;
+    /** Per-object minimum rate (never goes below this). */
+    private final double minUpdateRatePerTick;
 
-    // ---------- Attribution-based adaptation (single budget) ----------
-    /**
-     * Target time budget (ms) you allow these updates to consume per frame.
-     */
-    private final double targetBudgetMs;
-    /**
-     * EMA smoothing for per-frame update time (0,1].
-     */
-    private final double emaAlphaUpdate;
-    /**
-     * Smoothed ms per frame spent in scheduled updates.
-     */
-    private volatile double emaUpdateMs = 0.0;
-    /**
-     * Accumulator for this frame's total update time (nanos).
-     */
-    private long accumUpdateNanosThisFrame = 0L;
+    // ---------- Budget feedback (attribution) ----------
+    /** Max milliseconds per FRAME we allow these updates to consume. */
+    private final double updateTimeTargetMs;
+    /** EMA time constant (ms) for the measured update-time signal. */
+    private final double updateTimeSmoothingTimeWindowMs;
 
-    // ---------- Optional FPS guardrail (OFF by default) ----------
-    private final boolean enableFpsGuard;
-    /**
-     * Target frame time for FPS guard (ms), e.g., 16.667 for 60 FPS.
-     */
-    private final double guardTargetFrameMs;
-    /**
-     * EMA smoothing for FPS guardrail.
-     */
-    private final double emaAlphaFrame;
-    /**
-     * Smoothed observed frame time (ms).
-     */
-    private volatile double emaFrameMs;
-    /**
-     * Minimum scale when FPS guard is used (e.g., 0.2).
-     */
-    private final double minPerfScaleFps;
+
+
+    /** Smoothed ms per frame spent in scheduled updates. */
+    public volatile double smoothedAverageUpdateTimeMs = 0.0;
+
+    /** Accumulator for this frame's total update time (nanos). */
+    private long thisFrameAccumulatedUpdateTimeNano = 0L;
+
+
+    // ---------- Smoothed budget scale + rate limit ----------
+    /** EMA time constant (ms) for the scale itself (slower than update-time EMA recommended). */
+    private final double scaleSmoothingTimeConstantMs;
+    /** Max allowed absolute change of the smoothed scale per frame (e.g., 0.08 → ±8%). */
+    private final double maxScaleChangePerFrame;
+
+    /** Smoothed scale (multiplier in [0,1]) applied to baseRatePerTick. */
+    private double smoothedBudgetScale = 1.0;
+
+    // ---------- Optional FPS guardrail ----------
+
+    private final boolean useFpsGuard;
+    /** Target frame time for the guard (ms). */
+    private final double fpsGuardTargetFrameMs;
+    /** EMA alpha for FPS guard (simple fixed-alpha smoothing is sufficient). */
+    private final double fpsEmaAlpha;
+    /** Smoothed observed frame time (ms). */
+    private volatile double smoothedAverageFrameTimeMs;
+    /** Minimum FPS scale when guard is enabled. */
+    private final double minFpsScale;
 
     // ---------- Staggering helpers ----------
-    /**
-     * Tiny irrational micro-jitter added each tick to avoid rational locking.
-     */
-    private static final double GOLDEN_EPS = 1.0 / 1024.0 * 0.0001; // ~1e-4/1024 ≈ 9.7e-8
-
+    /** Tiny irrational micro-jitter added each tick to avoid long-term rational lock-in. */
+    private static final double GOLDEN_EPS = (1.0 / 1024.0) * 0.0001; // ≈ 9.77e-8
     // ---------- Housekeeping ----------
+
     private long currentTick = Long.MIN_VALUE;
-    private final int evictionAfterTicks;
+    private final int evictAfterTicks;
+    // ---------- Construction ----------
 
-    private AdaptiveUpdateScheduler(double baseRatePerObj,
-                                    double minRatePerObj,
-                                    double targetBudgetMs,
-                                    double emaAlphaUpdate,
-                                    boolean enableFpsGuard,
-                                    double guardTargetFrameMs,
-                                    double emaAlphaFrame,
-                                    double minPerfScaleFps,
-                                    int evictionAfterTicks) {
-        this.baseRatePerObj = reqPos(baseRatePerObj, "baseRatePerObj");
-        this.minRatePerObj = reqPos(minRatePerObj, "minRatePerObj");
+    private AdaptiveUpdateScheduler(
+            double baseRatePerTick,
+            double minRatePerTick,
+            double targetBudgetMs,
+            double smoothingTimeConstantMs,
+            double scaleSmoothingTimeConstantMs,
+            double maxScaleChangePerFrame,
+            boolean useFpsGuard,
+            double fpsGuardTargetFrameMs,
+            double fpsEmaAlpha,
+            double minFpsScale,
+            int evictAfterTicks) {
 
-        this.targetBudgetMs = reqPos(targetBudgetMs, "targetBudgetMs");
-        this.emaAlphaUpdate = reqAlpha(emaAlphaUpdate, "emaAlphaUpdate");
+        this.baseUpdateRatePerTick = requirePos(baseRatePerTick, "baseRatePerTick");
+        this.minUpdateRatePerTick = requirePos(minRatePerTick, "minRatePerTick");
+        this.updateTimeTargetMs = requirePos(targetBudgetMs, "targetBudgetMs");
+        this.updateTimeSmoothingTimeWindowMs = requirePos(smoothingTimeConstantMs, "smoothingTimeConstantMs");
+        this.scaleSmoothingTimeConstantMs = requirePos(scaleSmoothingTimeConstantMs, "scaleSmoothingTimeConstantMs");
+        this.maxScaleChangePerFrame = requirePos(maxScaleChangePerFrame, "maxScaleChangePerFrame");
 
-        this.enableFpsGuard = enableFpsGuard;
-        this.guardTargetFrameMs = enableFpsGuard ? reqPos(guardTargetFrameMs, "guardTargetFrameMs") : 16.667;
-        this.emaAlphaFrame = reqAlpha(emaAlphaFrame, "emaAlphaFrame");
-        this.minPerfScaleFps = reqAlpha(minPerfScaleFps, "minPerfScaleFps");
-        this.emaFrameMs = this.guardTargetFrameMs;
+        this.useFpsGuard = useFpsGuard;
+        this.fpsGuardTargetFrameMs = useFpsGuard ? requirePos(fpsGuardTargetFrameMs, "fpsGuardTargetFrameMs") : 16.667;
+        this.fpsEmaAlpha = requireAlpha(fpsEmaAlpha, "fpsEmaAlpha");
+        this.minFpsScale = requireAlpha(minFpsScale, "minFpsScale");
+        this.smoothedAverageFrameTimeMs = this.fpsGuardTargetFrameMs;
 
-        if (evictionAfterTicks < 1) throw new IllegalArgumentException("evictionAfterTicks must be >= 1");
-        this.evictionAfterTicks = evictionAfterTicks;
+        if (evictAfterTicks < 1) throw new IllegalArgumentException("evictAfterTicks must be >= 1");
+        this.evictAfterTicks = evictAfterTicks;
     }
-
-    private static double reqPos(double v, String name) {
+    private static double requirePos(double v, String name) {
         if (v <= 0) throw new IllegalArgumentException(name + " must be > 0");
         return v;
     }
 
-    private static double reqAlpha(double v, String name) {
+    private static double requireAlpha(double v, String name) {
         if (v <= 0 || v > 1) throw new IllegalArgumentException(name + " must be in (0,1]");
         return v;
     }
 
+
     // ------------------ Public API ------------------
 
+    public double getAverageUpdateTimeMs() {
+        return smoothedAverageUpdateTimeMs;
+    }
+
     /**
-     * Decide and (if granted) run and time the update.
+     * Preferred call: decides this tick and, if granted, runs and times the update.
      * Guarantees at most ONE update per tick per object (no catch-up).
      */
-    public void runIfShouldUpdate(ID id, Runnable update) {
+    public void tryRunUpdate(ID id, Runnable update) {
         long tick = Minecraft.getInstance().level.getGameTime();
-        rollTickIfNeeded(tick);
-        final Entry e = state.computeIfAbsent(id, j -> new Entry(id, tick));
-        e.lastSeenTick = tick;
+        onNewTick(tick);
+        final Entry e = entries.computeIfAbsent(id, j -> new Entry(id, tick));
+        e.lastTickSeen = tick;
 
-        if (stepAndGrant(e)) {
+        if (stepPhaseAndGrant(e)) {
             long t0 = System.nanoTime();
             try {
                 update.run();
             } finally {
-                long dt = System.nanoTime() - t0;
-                accumUpdateNanosThisFrame += dt;
+                thisFrameAccumulatedUpdateTimeNano += (System.nanoTime() - t0);
             }
         }
     }
 
-    /**
-     * Prime an object so the next tick will grant exactly one update (counts toward budget).
-     */
-    public void forceNextUpdate(ID id) {
-        long tick = Minecraft.getInstance().level.getGameTime();
-        final Entry e = state.computeIfAbsent(id, j -> new Entry(id, tick));
-        e.lastSeenTick = tick;
-        e.lastTick = tick;
-        // put phase just below 1 so next step wraps
-        e.phase = Math.nextAfter(1.0, Double.NEGATIVE_INFINITY);
+    /** Compatibility alias (same behavior as tryRunUpdate). */
+    public void runIfShouldUpdate(ID id, Runnable update) {
+        tryRunUpdate(id, update);
     }
 
-    /**
-     * Call once at the end of each rendered frame.
-     */
-    public void onFrameEnd() {
-        // getFrameTimeNs() is ns of last frame
-        double frameMs = Minecraft.getInstance().getFrameTimeNs() / 1_000_000.0;
+    /** Force the object to be granted once on the NEXT tick (counts toward budget when it runs). */
+    public void forceUpdateNextTick(ID id) {
+        long tick = Minecraft.getInstance().level.getGameTime();
+        final Entry e = entries.computeIfAbsent(id, j -> new Entry(id, tick));
+        e.lastTickSeen = tick;
+        e.lastTickTouched = tick;
+        // set phase just below 1 so the next tick's step will wrap once
+        e.phase01 = Math.nextAfter(1.0, Double.NEGATIVE_INFINITY);
+    }
 
-        // finalize this frame's update-time accounting
-        double updateMsThisFrame = accumUpdateNanosThisFrame / 1_000_000.0;
-        emaUpdateMs = ((1.0 - emaAlphaUpdate) * emaUpdateMs + emaAlphaUpdate * updateMsThisFrame);
-        accumUpdateNanosThisFrame = 0L;
+    /** Call once at the end of each rendered frame. */
+    public void onEndOfFrame() {
+        // ns → ms
+        /** Last frame duration (ms); set in onEndOfFrame(), reused elsewhere for consistent smoothing. */
+        double lastFrameMs = Math.max(0.001, Minecraft.getInstance().getFrameTimeNs() / 1_000_000.0);
 
-        if (enableFpsGuard) {
-            emaFrameMs = (1.0 - emaAlphaFrame) * emaFrameMs + emaAlphaFrame * frameMs;
+        // 1) Smooth the measured update time with time-constant EMA
+        double updateMsThisFrame = thisFrameAccumulatedUpdateTimeNano / 1_000_000.0;
+        double alphaTime = 1.0 - Math.exp(-lastFrameMs / updateTimeSmoothingTimeWindowMs);
+        smoothedAverageUpdateTimeMs = (1.0 - alphaTime) * smoothedAverageUpdateTimeMs + alphaTime * updateMsThisFrame;
+        thisFrameAccumulatedUpdateTimeNano = 0L;
+
+        // 2) Smooth & limit the budget scale
+        double rawScale = (updateTimeTargetMs <= 0 || smoothedAverageUpdateTimeMs <= 0) ? 1.0
+                : Mth.clamp(updateTimeTargetMs / smoothedAverageUpdateTimeMs, 0.0, 1.0);
+        double betaScale = 1.0 - Math.exp(-lastFrameMs / scaleSmoothingTimeConstantMs);
+        double targetScale = (1.0 - betaScale) * smoothedBudgetScale + betaScale * rawScale;
+        double delta = Mth.clamp(targetScale - smoothedBudgetScale,
+                -maxScaleChangePerFrame, +maxScaleChangePerFrame);
+        smoothedBudgetScale += delta;
+
+        // 3) Optional FPS guardrail
+        if (useFpsGuard) {
+            smoothedAverageFrameTimeMs = (1.0 - fpsEmaAlpha) * smoothedAverageFrameTimeMs + fpsEmaAlpha * lastFrameMs;
         }
     }
 
-    /**
-     * Diagnostics
-     */
-    public double getEmaUpdateMs() {
-        return emaUpdateMs;
-    }
-
-    public double getEmaFrameMs() {
-        return emaFrameMs;
+    /** Change the base per-object update rate at runtime. */
+    public void setBaseRatePerTick(double v) {
+        this.baseUpdateRatePerTick = requirePos(v, "baseRatePerTick");
     }
 
     // ------------------ Internals ------------------
 
-    private void rollTickIfNeeded(long tick) {
+    private void onNewTick(long tick) {
         if (tick != currentTick) {
             if (currentTick != Long.MIN_VALUE && (tick & 0xFF) == 0) {
                 evictStale(tick);
@@ -220,189 +221,178 @@ public final class AdaptiveUpdateScheduler<ID> {
     }
 
     private void evictStale(long tick) {
-        long cutoff = tick - evictionAfterTicks;
-        state.entrySet().removeIf(en -> en.getValue().lastSeenTick < cutoff);
+        long cutoff = tick - evictAfterTicks;
+        entries.entrySet().removeIf(en -> en.getValue().lastTickSeen < cutoff);
     }
 
-    /**
-     * Advance phase by effective rate + epsilon and determine if we grant exactly one update.
-     * We compute effRate once per object per tick to avoid inconsistencies.
-     */
-    private boolean stepAndGrant(Entry e) {
-        double effRate = computeEffRate();
+    /** Advance phase by (effectiveRate + ε) and grant at most once. */
+    private boolean stepPhaseAndGrant(Entry e) {
+        double effRate = computeEffectiveUpdateRate();
         effRate = Mth.clamp(effRate, 0.0, 1.0);
 
-        // Add tiny irrational jitter to avoid lock-in when effRate is rational.
+        // add tiny irrational jitter to avoid phase-lock when effRate is rational
         double step = effRate + GOLDEN_EPS;
 
-        double newPhase = e.phase + step;
-        boolean grant = newPhase >= 1.0;
-        if (grant) newPhase -= 1.0; // wrap once; no catch-up
-        e.phase = newPhase;
+        double newPhase = e.phase01 + step;
+        boolean granted = newPhase >= 1.0;
+        if (granted) newPhase -= 1.0; // single wrap → single grant
+        e.phase01 = newPhase;
 
-        e.lastTick = currentTick;
-        return grant;
+        e.lastTickTouched = currentTick;
+        return granted;
     }
 
-    private double computeEffRate() {
-        // Attribution-based scaling: keep total updates within the ms budget.
-        double scaleBudget = computeScaleFromBudget();
-        double eff = Math.max(minRatePerObj, baseRatePerObj * scaleBudget);
+    private double computeEffectiveUpdateRate() {
+        // Budget-based scale (already smoothed and rate-limited in onEndOfFrame)
+        double scaled = Math.max(minUpdateRatePerTick, baseUpdateRatePerTick * smoothedBudgetScale);
 
-        // Optional FPS guardrail: additionally scale by FPS health.
-        if (enableFpsGuard) {
-            double scaleFps = Mth.clamp(guardTargetFrameMs / Math.max(emaFrameMs, guardTargetFrameMs), 0.0, 1.0);
-            scaleFps = Math.max(minPerfScaleFps, scaleFps);
-            eff = Math.max(minRatePerObj, eff * scaleFps);
+        if (useFpsGuard) {
+            double fpsScale = Mth.clamp(fpsGuardTargetFrameMs / Math.max(smoothedAverageFrameTimeMs, fpsGuardTargetFrameMs), 0.0, 1.0);
+            fpsScale = Math.max(minFpsScale, fpsScale);
+            scaled = Math.max(minUpdateRatePerTick, scaled * fpsScale);
         }
-        return eff;
+        return scaled;
     }
 
-    private double computeScaleFromBudget() {
-        if (targetBudgetMs <= 0) return 1.0;
-        if (emaUpdateMs <= 0) return 1.0; // updates are effectively free → no throttling
-        double s = targetBudgetMs / emaUpdateMs; // proportional control
-        return Mth.clamp(s, 0.0, 1.0);          // never boost above 1 here
+    // Stable per-ID phase in [0,1). Mix a 32-bit hashCode into 64 bits, then map to [0,1).
+    private static double stablePhaseFromId(Object id) {
+        int x = (id == null) ? 0 : id.hashCode();
+        long z = mix64(x);
+        long mant = (z >>> 11); // top 53 bits
+        return mant * (1.0 / (1L << 53));
     }
 
-
+    // SplitMix64-like mixer for 32→64 bit hashing
+    private static long mix64(int x) {
+        long z = (x * 0x9E3779B9L) ^ 0xBF58476D1CE4E5B9L;
+        z = (z ^ (z >>> 30)) * 0xBF58476D1CE4E5B9L;
+        z = (z ^ (z >>> 27)) * 0x94D049BB133111EBL;
+        return z ^ (z >>> 31);
+    }
 
     // ---------- Builder ----------
     public static final class Builder {
         // Required
-        private double baseRatePerObj;   // updates/tick/object at healthy perf
-        private double minRatePerObj;    // hard floor
+        private double baseRatePerTick;    // updates/tick/object at healthy perf
+        private double minRatePerTick;     // hard floor
 
-        // Budget controller
-        private double targetBudgetMs = 5.0;   // default 5 ms per frame for these updates
-        private double emaAlphaUpdate = 0.2;   // smoothing for update-time EMA
+        // Budget
+        private double updateTimeTargetMs = 5.0;          // e.g., 5 ms per frame for these updates
+        private double updateTimeSmoothingTimeWindowMs = 300; // EMA tau for update time (ms). time window in real time for decay
 
-        // Optional FPS guardrail
-        private boolean enableFpsGuard = false;
-        private double guardTargetFrameMs = 16.667; // 60 FPS
-        private double emaAlphaFrame = 0.2;
-        private double minPerfScaleFps = 0.2;
+        // Scale smoothing
+        private double scaleSmoothingTimeWindowMs = 350; // EMA tau for budget scale (ms)
+        private double maxScaleChangePerFrame = 0.08;      // ≤ 8% change per frame
+
+        // FPS guard (optional)
+        private boolean useFpsGuard = false;
+        private double fpsGuardTargetFrameMs = 16.667; // 60 FPS target
+        private double fpsEmaAlpha = 0.2;
+        private double minFpsScale = 0.2; // min 20% scale when guard engages
 
         // Eviction
-        private int evictionAfterTicks = 20 * 5; // evict after 5 seconds at 20 TPS
+        private int evictAfterTicks = 20 * 5; // evict after ~5s at 20 TPS
 
-        /**
-         * Required: desired per-object base rate (updates per tick per object).
-         */
-        public Builder desiredUpdatesPerTick(double v) {
-            if (v <= 0) throw new IllegalArgumentException("baseRatePerObj must be > 0");
-            this.baseRatePerObj = v;
-            return this;
+        /** Desired per-object base rate (updates per tick per object). */
+        public Builder baseRatePerTick(double v) {
+            if (v <= 0) throw new IllegalArgumentException("baseRatePerTick must be > 0");
+            this.baseRatePerTick = v; return this;
+        }
+        /** Convenience: desired update every N ticks. */
+        public Builder basePeriodTicks(int ticks) {
+            if (ticks <= 0) throw new IllegalArgumentException("ticks must be > 0");
+            return baseRatePerTick(1.0 / ticks);
         }
 
-        /**
-         * Convenience: desired update every N ticks.
-         */
-        public Builder desiredUpdatesTickInterval(int tickInterval) {
-            if (tickInterval <= 0) throw new IllegalArgumentException("tickInterval must be > 0");
-            return desiredUpdatesPerTick(1.0 / tickInterval);
+        public Builder baseFps(double fps) {
+            if (fps <= 0) throw new IllegalArgumentException("fps must be > 0");
+            return baseRatePerTick(fps / 20.0); // assuming 20 TPS
         }
 
-        /**
-         * Required: minimum per-object rate (never go below).
-         */
-        public Builder minUpdatesPerTick(double v) {
-            if (v <= 0) throw new IllegalArgumentException("minRatePerObj must be > 0");
-            this.minRatePerObj = v;
-            return this;
+        /** Minimum per-object rate (never below). */
+        public Builder minRatePerTick(double v) {
+            if (v <= 0) throw new IllegalArgumentException("minRatePerTick must be > 0");
+            this.minRatePerTick = v; return this;
+        }
+        /** Convenience: minimum update every N ticks. */
+        public Builder minPeriodTicks(int ticks) {
+            if (ticks <= 0) throw new IllegalArgumentException("ticks must be > 0");
+            return minRatePerTick(1.0 / ticks);
         }
 
-        /**
-         * Convenience: minimum update every N ticks.
-         */
-        public Builder minUpdatesTickInterval(int tickInterval) {
-            if (tickInterval <= 0) throw new IllegalArgumentException("tickInterval must be > 0");
-            return minUpdatesPerTick(1.0 / tickInterval);
+        public Builder minFps(double fps) {
+            if (fps <= 0) throw new IllegalArgumentException("fps must be > 0");
+            return minRatePerTick(fps / 20.0); // assuming 20 TPS
         }
 
-        /**
-         * Direct ms budget per frame for all scheduled updates (recommended).
-         */
+        /** Direct ms budget per frame for all scheduled updates. */
         public Builder targetBudgetMs(double v) {
             if (v <= 0) throw new IllegalArgumentException("targetBudgetMs must be > 0");
-            this.targetBudgetMs = v;
-            return this;
+            this.updateTimeTargetMs = v; return this;
         }
 
-        /**
-         * Convenience: compute ms budget from FPS and share (0..1].
-         */
+        /** Convenience: budget from FPS + share (0..1]. */
         public Builder targetBudgetFromFps(double fps, double share) {
             if (fps <= 0) throw new IllegalArgumentException("fps must be > 0");
             if (share <= 0 || share > 1) throw new IllegalArgumentException("share must be in (0,1]");
-            double frameMs = 1000.0 / fps;
-            return targetBudgetMs(frameMs * share);
+            return targetBudgetMs((1000.0 / fps) * share);
         }
 
-        /**
-         * EMA smoothing for update-time budget controller.
-         */
-        public Builder emaAlphaUpdate(double v) {
-            if (v <= 0 || v > 1) throw new IllegalArgumentException("emaAlphaUpdate must be in (0,1]");
-            this.emaAlphaUpdate = v;
-            return this;
+        /** Update-time smoothing time-constant (ms). */
+        public Builder smoothingTimeConstantMs(double v) {
+            if (v <= 0) throw new IllegalArgumentException("smoothingTimeConstantMs must be > 0");
+            this.updateTimeSmoothingTimeWindowMs = v; return this;
         }
 
-        /**
-         * Enable optional FPS guardrail (separate from budget logic).
-         */
-        public Builder enableFpsGuard(boolean enabled) {
-            this.enableFpsGuard = enabled;
-            return this;
+        /** Budget-scale smoothing time-constant (ms). */
+        public Builder scaleSmoothingTimeConstantMs(double v) {
+            if (v <= 0) throw new IllegalArgumentException("scaleSmoothingTimeConstantMs must be > 0");
+            this.scaleSmoothingTimeWindowMs = v; return this;
         }
 
-        /**
-         * Sets the FPS target for the guardrail (e.g., 60 → 16.667 ms).
-         */
+        /** Max allowed scale change per frame (0..1]. */
+        public Builder maxScaleChangePerFrame(double v) {
+            if (v <= 0 || v > 1) throw new IllegalArgumentException("maxScaleChangePerFrame must be in (0,1]");
+            this.maxScaleChangePerFrame = v; return this;
+        }
+
+        /** FPS target for the guard (e.g., 60 → 16.667 ms). */
         public Builder guardTargetFps(double fps) {
             if (fps <= 0) throw new IllegalArgumentException("fps must be > 0");
-            this.guardTargetFrameMs = 1000.0 / fps;
+            this.fpsGuardTargetFrameMs = 1000.0 / fps;
+            this.useFpsGuard = true;
             return this;
+
+        }
+        /** FPS guard smoothing alpha (fixed-alpha is fine). */
+        public Builder fpsGuardAlpha(double alpha) {
+            if (alpha <= 0 || alpha > 1) throw new IllegalArgumentException("fpsEmaAlpha must be in (0,1]");
+            this.fpsEmaAlpha = alpha; return this;
+        }
+        /** Minimum FPS scale when guard engages. */
+        public Builder minFpsScale(double v) {
+            if (v <= 0 || v > 1) throw new IllegalArgumentException("minFpsScale must be in (0,1]");
+            this.minFpsScale = v; return this;
         }
 
-        /**
-         * EMA smoothing for FPS guardrail.
-         */
-        public Builder emaAlphaFrame(double v) {
-            if (v <= 0 || v > 1) throw new IllegalArgumentException("emaAlphaFrame must be in (0,1]");
-            this.emaAlphaFrame = v;
-            return this;
-        }
-
-        /**
-         * Minimum scale when FPS guard engages.
-         */
-        public Builder minPerfScaleFps(double v) {
-            if (v <= 0 || v > 1) throw new IllegalArgumentException("minPerfScaleFps must be in (0,1]");
-            this.minPerfScaleFps = v;
-            return this;
-        }
-
-        /**
-         * Evict objects not seen for this many ticks.
-         */
-        public Builder evictionAfterTicks(int v) {
-            if (v < 1) throw new IllegalArgumentException("evictionAfterTicks must be >= 1");
-            this.evictionAfterTicks = v;
-            return this;
+        /** Evict objects not seen for this many ticks. */
+        public Builder evictAfterTicks(int v) {
+            if (v < 1) throw new IllegalArgumentException("evictAfterTicks must be >= 1");
+            this.evictAfterTicks = v; return this;
         }
 
         public <T> AdaptiveUpdateScheduler<T> build() {
             return new AdaptiveUpdateScheduler<>(
-                    baseRatePerObj, minRatePerObj,
-                    targetBudgetMs, emaAlphaUpdate,
-                    enableFpsGuard, guardTargetFrameMs, emaAlphaFrame, minPerfScaleFps,
-                    evictionAfterTicks
+                    baseRatePerTick, minRatePerTick,
+                    updateTimeTargetMs,
+                    updateTimeSmoothingTimeWindowMs,
+                    scaleSmoothingTimeWindowMs,
+                    maxScaleChangePerFrame,
+                    useFpsGuard, fpsGuardTargetFrameMs, fpsEmaAlpha, minFpsScale,
+                    evictAfterTicks
             );
         }
     }
 
-    public static Builder builder() {
-        return new Builder();
-    }
+    public static Builder builder() { return new Builder(); }
 }

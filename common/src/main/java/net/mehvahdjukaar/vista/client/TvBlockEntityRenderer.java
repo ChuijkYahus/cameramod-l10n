@@ -3,12 +3,14 @@ package net.mehvahdjukaar.vista.client;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
+import net.mehvahdjukaar.moonlight.api.client.util.LOD;
 import net.mehvahdjukaar.moonlight.api.client.util.VertexUtil;
 import net.mehvahdjukaar.moonlight.api.misc.RollingBuffer;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.common.CassetteTape;
 import net.mehvahdjukaar.vista.common.TVBlock;
 import net.mehvahdjukaar.vista.common.TVBlockEntity;
+import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.mehvahdjukaar.vista.integration.exposure.ExposureCompatClient;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -17,8 +19,6 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
-import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
-import net.minecraft.client.renderer.entity.LivingEntityRenderer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.resources.model.Material;
 import net.minecraft.core.Direction;
@@ -33,7 +33,10 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
     public TvBlockEntityRenderer(BlockEntityRendererProvider.Context context) {
     }
 
-    private static final int SCREEN_RESOLUTION_SCALE = 8;
+    @Override
+    public int getViewDistance() {
+        return 96;
+    }
 
     @Override
     public void render(TVBlockEntity blockEntity, float partialTick, PoseStack poseStack, MultiBufferSource buffer,
@@ -44,10 +47,16 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
         Direction dir = blockEntity.getBlockState().getValue(TVBlock.FACING);
 
         LOD lod = LOD.at(blockEntity);
+        //TODO: change with tv size
 
         if (lod.isPlaneCulled(dir, 0.5f, 0f)) {
             return;
         }
+
+        float yaw = dir.toYRot();
+        poseStack.translate(0.5, 0.5, 0.5);
+        poseStack.mulPose(Axis.YP.rotationDegrees(180 - yaw));
+        poseStack.translate(-0.5, -0.5, -0.5);
 
         boolean drawingCamera = LiveFeedRendererManager.LIVE_FEED_BEING_RENDERED != null;
 
@@ -61,10 +70,11 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
 
         if (liveFeedId != null) {
 
+            boolean shouldUpdate = lod.within(ClientConfigs.UPDATE_DISTANCE.get());
             ResourceLocation tex = LiveFeedRendererManager.requestLiveFeedTexture(blockEntity.getLevel(),
-                    liveFeedId, screenPixelSize * SCREEN_RESOLUTION_SCALE);
+                    liveFeedId, screenPixelSize, shouldUpdate);
             if (tex != null) {
-                renderDebugStats(tex, poseStack, buffer, partialTick);
+                maybeRenderDebug(tex, poseStack, buffer, partialTick);
                 vc = TapeTextureManager.getFullSpriteVC(tex, buffer, drawingCamera);
 
 
@@ -91,10 +101,6 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
             vc = buffer.getBuffer(ModRenderTypes.NOISE);
         }
 
-        float yaw = dir.toYRot();
-        poseStack.translate(0.5, 0.5, 0.5);
-        poseStack.mulPose(Axis.YP.rotationDegrees(180 - yaw));
-        poseStack.translate(-0.5, -0.5, -0.5);
 
         light = LightTexture.FULL_BRIGHT;
 
@@ -102,52 +108,44 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
 
         poseStack.translate(0.5, 0.5, -0.001);
 
-        //leave to avoid buffer bug
-        //we could have also used whats passed in the shader and dont use a material
-
         int lightU = light & 0xFFFF;
         int lightV = (light >> 16) & 0xFFFF;
         VertexUtil.addQuad(vc, poseStack, -s, -s, s, s, lightU, lightV);
     }
 
-    private void renderDebugStats(ResourceLocation tex, PoseStack poseStack, MultiBufferSource buffer, float partialTick) {
-        var font = Minecraft.getInstance().font;
-
+    private void maybeRenderDebug(ResourceLocation tex, PoseStack poseStack, MultiBufferSource buffer, float partialTick) {
+        if (!ClientConfigs.isDebugOn()) return;
         poseStack.pushPose();
-        poseStack.translate(0,1.5,0);
-        poseStack.mulPose(Axis.YP.rotationDegrees(-90));
-        poseStack.scale(1/16f, -1/16f, 1/16f);
-        poseStack.scale(0.5f, 0.5f, 0.5f);
-
-        RollingBuffer<Long> lastUpdateTimes = LiveFeedRendererManager.UPDATE_TIMES.get(tex);
-
-        float averageUpdateinterval = calculateAverageUpdateTime(lastUpdateTimes);
 
         try {
-            font.drawInBatch("int " + averageUpdateinterval, 0, 0, -1,
+            Font font = Minecraft.getInstance().font;
+
+            poseStack.translate(1, 1.5, 0);
+            poseStack.mulPose(Axis.YP.rotationDegrees(-180));
+            poseStack.scale(1 / 16f, -1 / 16f, 1 / 16f);
+            poseStack.scale(0.5f, 0.5f, 0.5f);
+
+            RollingBuffer<Long> lastUpdateTimes = LiveFeedRendererManager.UPDATE_TIMES.get(tex);
+
+            double averageUpdateinterval = calculateAverageUpdateTime(lastUpdateTimes);
+
+            font.drawInBatch(String.format("up rate %.2f", averageUpdateinterval), 0, 0, -1,
                     false, poseStack.last().pose(), buffer, Font.DisplayMode.NORMAL,
                     OverlayTexture.NO_OVERLAY,
                     LightTexture.FULL_BRIGHT);
 
-              long lastUpdateTime = lastUpdateTimes.get(lastUpdateTimes.size() - 1);
+            double updateMs = LiveFeedRendererManager.SCHEDULER.getAverageUpdateTimeMs();
 
-              font.drawInBatch("last " + lastUpdateTime, 0, -9, -1, false, poseStack.last().pose(), buffer,Font.DisplayMode.NORMAL,
-                      OverlayTexture.NO_OVERLAY, LightTexture.FULL_BRIGHT);
-
-              var frameMs = LiveFeedRendererManager.SCHEDULER.getEmaFrameMs();
-              var updateMs = LiveFeedRendererManager.SCHEDULER.getEmaUpdateMs();
-
-            font.drawInBatch("ums " + frameMs, 0, -18, -1, false, poseStack.last().pose(), buffer,Font.DisplayMode.NORMAL,
+            font.drawInBatch(String.format("up ms %.2f", updateMs), 0, -9, -1, false, poseStack.last().pose(), buffer, Font.DisplayMode.NORMAL,
                     OverlayTexture.NO_OVERLAY, LightTexture.FULL_BRIGHT);
 
-            font.drawInBatch(String.format("updateMs %.2f" , updateMs), 0, -27, -1, false, poseStack.last().pose(), buffer,Font.DisplayMode.NORMAL,
-                    OverlayTexture.NO_OVERLAY, LightTexture.FULL_BRIGHT);
-
-        }catch (Exception e){}
+        } catch (Exception ignored) {
+            int aa = 1;
+        }
         poseStack.popPose();
     }
 
-    long calculateAverageUpdateTime(RollingBuffer<Long> lastUpdateTimes) {
+    static double calculateAverageUpdateTime(RollingBuffer<Long> lastUpdateTimes) {
         int size = lastUpdateTimes.size();
         if (size < 2) return 0; // Need at least 2 timestamps to compute intervals
 
@@ -156,8 +154,7 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
             totalDiff += lastUpdateTimes.get(i) - lastUpdateTimes.get(i - 1);
         }
 
-        long avgNano = totalDiff / (size - 1);
-        return avgNano; // average in nanoseconds
+        return totalDiff / (size - 1d); // average in nanoseconds
     }
 
 
