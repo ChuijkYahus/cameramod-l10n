@@ -2,7 +2,7 @@ package net.mehvahdjukaar.vista.common;
 
 import net.mehvahdjukaar.moonlight.api.block.ItemDisplayTile;
 import net.mehvahdjukaar.vista.VistaMod;
-import net.mehvahdjukaar.vista.integration.ExposureCompat;
+import net.mehvahdjukaar.vista.integration.exposure.ExposureCompat;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;

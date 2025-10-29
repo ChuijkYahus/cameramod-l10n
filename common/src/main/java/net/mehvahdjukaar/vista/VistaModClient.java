@@ -4,11 +4,7 @@ import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import net.mehvahdjukaar.moonlight.api.client.CoreShaderContainer;
 import net.mehvahdjukaar.moonlight.api.misc.EventCalled;
 import net.mehvahdjukaar.moonlight.api.platform.ClientHelper;
-import net.mehvahdjukaar.vista.client.LiveFeedRendererManager;
-import net.mehvahdjukaar.vista.client.TvBlockEntityRenderer;
-import net.mehvahdjukaar.vista.client.ViewFinderBlockEntityRenderer;
-import net.mehvahdjukaar.vista.client.ViewFinderController;
-import net.mehvahdjukaar.vista.client.TvItemRenderer;
+import net.mehvahdjukaar.vista.client.*;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.geom.ModelLayerLocation;
@@ -92,6 +88,11 @@ public class VistaModClient {
         if (p == null) return;
 
         ViewFinderController.onClientTick(minecraft);
+    }
+
+    @EventCalled
+    public static void onRenderTickEnd(Minecraft minecraft) {
+        LiveFeedRendererManager.onRenderTickEnd();
     }
 
 

@@ -1,5 +1,6 @@
 package net.mehvahdjukaar.vista.configs;
 
+import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.platform.configs.ConfigBuilder;
 import net.mehvahdjukaar.moonlight.api.platform.configs.ConfigType;
 import net.mehvahdjukaar.moonlight.api.platform.configs.ModConfigHolder;
@@ -18,9 +19,9 @@ public class CommonConfigs {
         ConfigBuilder builder = ConfigBuilder.create(VistaMod.MOD_ID, ConfigType.COMMON_SYNCED);
 
         builder.push("general");
-        CONNECTED_TVS = builder
+        CONNECTED_TVS = PlatHelper.isDev() ? () -> true : builder
                 .comment("If true, TVs placed next to each other will connect into a larger screen (WIP)")
-                .define("connected_tvs", true);
+                .define("connected_tv", false);
 
 
         builder.pop();
