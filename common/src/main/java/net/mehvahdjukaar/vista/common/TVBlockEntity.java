@@ -21,6 +21,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 public class TVBlockEntity extends ItemDisplayTile {
@@ -135,19 +137,102 @@ public class TVBlockEntity extends ItemDisplayTile {
     }
 
     public static void clientTick(Level level, BlockPos pos, BlockState state, TVBlockEntity tile) {
-        if (state.getValue(TVBlock.POWERED)) {
-            float duration = tile.getPlayDuration();
-            if (++tile.soundLoopTicks >= (duration)) {
+        boolean powered = state.getValue(TVBlock.POWERED);
+        if (level.isClientSide) {
+
+
+            if (powered) {
+                float duration = tile.getPlayDuration();
+                if (++tile.soundLoopTicks >= (duration)) {
+                    tile.soundLoopTicks = 0;
+                    SoundEvent sound = tile.getPlaySound();
+                    level.playLocalSound(pos, sound, SoundSource.BLOCKS, 1, 1.0f, false);
+                }
+                tile.animationTicks++;
+            } else {
                 tile.soundLoopTicks = 0;
-                SoundEvent sound = tile.getPlaySound();
-                level.playLocalSound(pos, sound, SoundSource.BLOCKS, 1, 1.0f, false);
+                tile.animationTicks = 0;
             }
-            tile.animationTicks++;
-        } else {
-            tile.soundLoopTicks = 0;
-            tile.animationTicks = 0;
+        } else if (powered) {
+            Direction facing = state.getValue(TVBlock.FACING);
+            List<Player> players = getPlayersFacingLookingAtFace(level, pos, facing,
+                    14 / 16f, 20); //TODO: adjust for big tvs
+
         }
 
+    }
+
+    private static boolean isFacingFace(Player player, BlockPos screenPos, Direction facing) {
+        Vec3 screenCenterPos = Vec3.atCenterOf(screenPos).relative(facing, 0.5);
+        Vec3 dirVec = new Vec3(facing.step());
+        Vec3 playerPos = player.position();
+        Vec3 distanceFromCenter = playerPos.subtract(screenCenterPos);
+        double dot = distanceFromCenter.normalize().dot(dirVec);
+        return dot > 0.5;
+    }
+
+    private record ViewResult(Player player, Vec3 hitPos, double distanceSq) {
+    }
+
+    private static List<ViewResult> getPlayersFacingLookingAtFace(Level level,
+                                                              BlockPos pos,
+                                                              Direction facing,
+                                                              float screenSideLength,
+                                                              float radiusFromCenter) {
+        List<? extends Player> allPlayers = level.players();
+        if (allPlayers.isEmpty()) return List.of();
+        List<Player> result = new ArrayList<>();
+
+        // Screen center: block center offset half a block in facing direction
+        Vec3 screenCenterPos = Vec3.atCenterOf(pos).relative(facing, 0.5);
+        // Screen normal (points outward from screen). facing is horizontal => normal.y == 0
+        Vec3 screenNormal = new Vec3(facing.step()).normalize();
+
+        double radiusSq = (double) radiusFromCenter * (double) radiusFromCenter;
+        double halfSide = (double) screenSideLength * 0.5;
+
+        Vec3 up = new Vec3(0, 1, 0);
+
+        // right = normal cross up -> points along screen's local +X
+        Vec3 right = screenNormal.cross(up).normalize();
+        final double EPS = 1e-6;
+
+        for (Player p : allPlayers) {
+            Vec3 eyePos = p.getEyePosition(1.0F);
+
+            // 1) radius check (cheap, no sqrt)
+            Vec3 d = eyePos.subtract(screenCenterPos);
+            double distSq = d.lengthSqr();
+            if (distSq > radiusSq) continue;
+
+            // 2) half-circle in front check (cheap): player must be in front half-space of screen
+            double frontDot = d.dot(screenNormal);
+            if (frontDot <= 0.0) continue;
+
+            // 3) get view vector (normalize for stable intersection math)
+            Vec3 view = p.getViewVector(1.0F).normalize();
+
+            // 4) ray-plane intersection
+            double denom = view.dot(screenNormal);
+            if (Math.abs(denom) < EPS) continue; // nearly parallel -> won't hit reliably
+
+            double t = screenCenterPos.subtract(eyePos).dot(screenNormal) / denom;
+            if (t <= 0.0) continue; // intersection is behind the eye
+
+            Vec3 hit = eyePos.add(view.scale(t));
+
+            // 5) local screen coordinates of hit relative to center
+            Vec3 local = hit.subtract(screenCenterPos);
+            double x = local.dot(right);
+            double y = local.dot(up);
+
+            // 6) bounds check (screen centered at screenCenterPos)
+            if (Math.abs(x) <= halfSide && Math.abs(y) <= halfSide) {
+                result.add(p);
+            }
+        }
+
+        return result;
     }
 
     private SoundEvent getPlaySound() {
