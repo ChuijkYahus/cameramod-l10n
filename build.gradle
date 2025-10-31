@@ -62,32 +62,6 @@ subprojects {
 
     var versions = listGameVersions(minecraft_min_version, minecraft_version)
 
-    if (env.MODRINTH_TOKEN) {
-        modrinth {
-            projectId = "snowy-spirit"
-            uploadFile = tasks.remapJar
-            gameVersions = versions
-            if (modLoader == "forge") {
-                loaders = ["neoforge"]
-            } else loaders = [modLoader]
-
-            changelog = changelogText
-            versionNumber = modLoader +"_"+ mod_version
-            versionType = release_type
-
-            if (modLoader == "fabric") {
-                dependencies {
-                    required.project "fabric-api"
-                    required.project "moonlight"
-                }
-            } else {
-                dependencies {
-                    required.project "moonlight"
-                }
-            }
-        }
-    }
-
     if (env.CURSEFORGE_TOKEN) {
         curseforge {
             apiKey = env.CURSEFORGE_TOKEN

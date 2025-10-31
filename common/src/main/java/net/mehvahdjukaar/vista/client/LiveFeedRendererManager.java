@@ -1,5 +1,6 @@
 package net.mehvahdjukaar.vista.client;
 
+import com.google.common.base.Suppliers;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.mojang.blaze3d.pipeline.RenderTarget;
@@ -39,6 +40,7 @@ import org.joml.Quaternionf;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Supplier;
 
 import static net.minecraft.client.Minecraft.ON_OSX;
 
@@ -49,14 +51,17 @@ public class LiveFeedRendererManager {
     private static final DummyCamera DUMMY_CAMERA = new DummyCamera();
 
     @VisibleForDebug
-    public static final AdaptiveUpdateScheduler<ResourceLocation> SCHEDULER = AdaptiveUpdateScheduler.builder()
-            .baseFps(ClientConfigs.UPDATE_FPS.get())
-            .minFps(ClientConfigs.MIN_UPDATE_FPS.get())
-            .targetBudgetMs(ClientConfigs.THROTTLING_UPDATE_MS.get()) //10% of a frame which at 60fps = 16.6ms is ~1.66ms which should lower fps from 60 to 54. in other words at most a 6fps drop
-            .evictAfterTicks(20 * 5) //5 seconds
+    public static final Supplier<AdaptiveUpdateScheduler<ResourceLocation>> SCHEDULER =
+            Suppliers.memoize(() ->
+                    AdaptiveUpdateScheduler.builder()
+                            .baseFps(ClientConfigs.UPDATE_FPS.get())
+                            .minFps(ClientConfigs.MIN_UPDATE_FPS.get())
+                            .targetBudgetMs(ClientConfigs.THROTTLING_UPDATE_MS.get()) //10% of a frame which at 60fps = 16.6ms is ~1.66ms which should lower fps from 60 to 54. in other words at most a 6fps drop
+                            .evictAfterTicks(20 * 5) //5 seconds
 
-            .guardTargetFps(60) //if we go under 6o fps, be more aggressive
-            .build();
+                            .guardTargetFps(60) //if we go under 6o fps, be more aggressive
+                            .build()
+            );
 
 
     private static long feedCounter = 0;
@@ -80,7 +85,7 @@ public class LiveFeedRendererManager {
                 if (texture.isInitialized()) {
                     return texture.getTextureLocation();
                 } else {
-                    SCHEDULER.forceUpdateNextTick(feedId);
+                    SCHEDULER.get().forceUpdateNextTick(feedId);
                 }
             }
         }
@@ -113,7 +118,7 @@ public class LiveFeedRendererManager {
     }
 
     public static void onRenderTickEnd() {
-        SCHEDULER.onEndOfFrame();
+        SCHEDULER.get().onEndOfFrame();
     }
 
     @VisibleForDebug
@@ -129,7 +134,7 @@ public class LiveFeedRendererManager {
 
         ResourceLocation textureId = text.getTextureLocation();
 
-        SCHEDULER.runIfShouldUpdate(textureId, () -> {
+        SCHEDULER.get().runIfShouldUpdate(textureId, () -> {
 
             if (ClientConfigs.isDebugOn()) {
                 UPDATE_TIMES.computeIfAbsent(textureId, k -> new RollingBuffer<>(20))

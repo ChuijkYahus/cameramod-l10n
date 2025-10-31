@@ -134,7 +134,7 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
                     OverlayTexture.NO_OVERLAY,
                     LightTexture.FULL_BRIGHT);
 
-            double updateMs = LiveFeedRendererManager.SCHEDULER.getAverageUpdateTimeMs();
+            double updateMs = LiveFeedRendererManager.SCHEDULER.get().getAverageUpdateTimeMs();
 
             font.drawInBatch(String.format("up ms %.2f", updateMs), 0, -9, -1, false, poseStack.last().pose(), buffer, Font.DisplayMode.NORMAL,
                     OverlayTexture.NO_OVERLAY, LightTexture.FULL_BRIGHT);
