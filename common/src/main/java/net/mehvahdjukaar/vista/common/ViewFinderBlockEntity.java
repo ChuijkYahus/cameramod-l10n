@@ -275,11 +275,16 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOnePlayer
         return anyAnger;
     }
 
-    public record EndermanLookResult(Player player, EnderMan enderman) {
+    private record EndermanLookResult(Player player, EnderMan enderman) {
     }
 
-    public List<EndermanLookResult> computeEndermanLookedAt(List<TVSpectatorView> views, float screenW, float screenH,
-                                                            List<EnderMan> enderMen) {
+
+    public boolean isEndermanBeingLookedAt(TVSpectatorView view, float screenW, float screenH, EnderMan man) {
+        return !computeEndermanLookedAt(List.of(view), screenW, screenH, List.of(man)).isEmpty();
+    }
+
+    private List<EndermanLookResult> computeEndermanLookedAt(List<TVSpectatorView> views, float screenW, float screenH,
+                                                             List<EnderMan> enderMen) {
         List<EndermanLookResult> lookResults = new ArrayList<>();
         Vec3 lensFacing = Vec3.directionFromRotation(this.pitch, this.yaw).normalize();
         Vec3 lensCenter = Vec3.atCenterOf(worldPosition);

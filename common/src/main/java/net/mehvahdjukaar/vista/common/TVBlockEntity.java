@@ -170,8 +170,8 @@ public class TVBlockEntity extends ItemDisplayTile {
                 tile.canSeeEnderman = false;
                 Direction facing = state.getValue(TVBlock.FACING);
                 float screenL = 12;
-                var doomScrollingPlayers = tile.getPlayersFacingLookingAtFace(level, pos, facing,
-                        screenL / 16f, 20); //TODO: adjust for big tvs
+                var doomScrollingPlayers = getPlayersFacingLookingAtFace(level, pos, facing,
+                        screenL / 16f); //TODO: adjust for big tvs
 
                 if (viewFinder.angerEndermenBeingLookedAt(doomScrollingPlayers, 32,
                         screenL / 16f, screenL / 16f, tile)) {
@@ -202,8 +202,7 @@ public class TVBlockEntity extends ItemDisplayTile {
     }
 
 
-    private static List<TVSpectatorView> getPlayersFacingLookingAtFace(Level level, Direction facing,
-                                                                       BlockPos pos, float screenSideLength) {
+    private static List<TVSpectatorView> getPlayersFacingLookingAtFace(Level level, BlockPos pos, Direction facing, float screenSideLength) {
         List<? extends Player> allPlayers = level.players();
         if (allPlayers.isEmpty()) return List.of();
         List<TVSpectatorView> result = new ArrayList<>();

@@ -48,49 +48,7 @@ public class ViewFinderBlockEntityRenderer implements BlockEntityRenderer<ViewFi
     @Override
     public void render(ViewFinderBlockEntity tile, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource,
                        int packedLight, int packedOverlay) {
-
-        this.head.visible = false;
-        this.pivot.visible = false;
-        this.legs.visible = false;
         this.renderModel(tile, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
-
-
-        var player = tile.fakePlayer;
-        if(player != null){
-            poseStack.pushPose();
-            Vec3 pos = player.getEyePosition().subtract(Vec3.atLowerCornerOf(tile.getBlockPos()));
-            poseStack.translate(pos.x, pos.y, pos.z);
-            PoseStack.Pose pose = poseStack.last();
-            VertexConsumer vc =  bufferSource.getBuffer(RenderType.lines());
-        vc.addVertex(pose, 0,0,0)
-                .setColor(255, 0, 255, 255)
-                .setNormal(pose, 0, 1, 0);
-        vc.addVertex(pose, 0,1,0)
-                .setColor(255, 0, 255, 255)
-                .setNormal(pose, 0, 1, 0);
-
-            float tileYaw = tile.getYaw();
-            float tilePitch = tile.getPitch();
-           var tileView = Vec3.directionFromRotation(tilePitch, tileYaw).normalize();
-            vc.addVertex(pose, 0,0,0)
-                    .setColor(30, 30, 255, 255)
-                    .setNormal(pose, 0, 1, 0);
-            vc.addVertex(pose, (float) tileView.x, (float) tileView.y, (float) tileView.z)
-                    .setColor(30, 30, 255, 255)
-                    .setNormal(pose, 0, 1, 0);
-
-            float headY = player.yHeadRot;
-            float headX = player.xRotO;
-            var view = Vec3.directionFromRotation(headX, headY).normalize();
-            vc.addVertex(pose, 0,0,0)
-                    .setColor(30, 255, 30, 255)
-                    .setNormal(pose, 0, 1, 0);
-            vc.addVertex(pose, (float) view.x*2, (float) view.y*2, (float) view.z*2)
-                    .setColor(30, 255, 30, 255)
-                    .setNormal(pose, 0, 1, 0);
-
-        poseStack.popPose();
-        }
     }
 
     public void renderModel(ViewFinderBlockEntity tile, float partialTick, PoseStack poseStack,
