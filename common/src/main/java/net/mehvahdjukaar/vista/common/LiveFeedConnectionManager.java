@@ -103,7 +103,8 @@ public class LiveFeedConnectionManager extends WorldSavedData {
 
 
     @Nullable
-    public static ViewFinderBlockEntity findLinkedViewFinder(Level level, UUID viewFinderUUID) {
+    public static ViewFinderBlockEntity findLinkedViewFinder(Level level, @Nullable UUID viewFinderUUID) {
+        if (viewFinderUUID == null) return null;
         LiveFeedConnectionManager connection = getInstance(level);
         if (connection == null) return null;
         GlobalPos gp = connection.getLinkedFeedLocation(viewFinderUUID);

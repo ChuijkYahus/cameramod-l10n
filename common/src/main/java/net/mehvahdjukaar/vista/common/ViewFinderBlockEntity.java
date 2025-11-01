@@ -32,6 +32,7 @@ import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -252,12 +253,9 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOnePlayer
     private static final GameProfile VIEW_FINDER_PLAYER = new GameProfile(UUID.fromString("33242C44-27d9-1f22-3d27-99D2C45d1378"),
             "[VIEW_FINDER_ENDERMAN_PLAYER]");
 
-    public boolean angerEnderMen(List<TvViewHitResult> views, int range,
-                                 float screenW, float screenH) {
+    public boolean angerEndermenBeingLookedAt(List<TVSpectatorView> views, int range,
+                                              float screenW, float screenH, TVBlockEntity fromTV) {
         if (views.isEmpty()) return false;
-        final double EPS = 1e-6;
-
-        Vec3 lensFacing = Vec3.directionFromRotation(this.pitch, this.yaw).normalize();
         Vec3 lensCenter = Vec3.atCenterOf(worldPosition);
         double rangeSq = (double) range * (double) range;
 
@@ -266,27 +264,33 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOnePlayer
                 em.distanceToSqr(lensCenter.x, lensCenter.y, lensCenter.z) < rangeSq
         );
         if (enderMen.isEmpty()) return false;
+        boolean anyAnger = false;
 
-        // Destination screen geometry (receiver)
-        Vec3 worldUp = new Vec3(0, 1, 0);
+        List<EndermanLookResult> lookResults = computeEndermanLookedAt(views, screenW, screenH, enderMen);
+        for (var r : lookResults) {
+            if (EndermanFreezeWhenLookedAtThroughTVGoal.anger(r.enderman, r.player, this, fromTV)) {
+                anyAnger = true;
+            }
+        }
+        return anyAnger;
+    }
 
-        // destRight = destNormal × worldUp  (safe because destNormal is horizontal in your scenario OR robust fallback provided)
-        Vec3 lensRight = lensFacing.cross(worldUp);
-        double drLen = lensRight.length();
-        if (drLen < EPS) lensRight = new Vec3(1, 0, 0);
-        else lensRight = lensRight.scale(1.0 / drLen);
-        Vec3 destUp = lensRight.cross(lensFacing).normalize();
+    public record EndermanLookResult(Player player, EnderMan enderman) {
+    }
 
-        // destCenter: block center offset half a block along the outward normal (same convention as producer)
+    public List<EndermanLookResult> computeEndermanLookedAt(List<TVSpectatorView> views, float screenW, float screenH,
+                                                            List<EnderMan> enderMen) {
+        List<EndermanLookResult> lookResults = new ArrayList<>();
+        Vec3 lensFacing = Vec3.directionFromRotation(this.pitch, this.yaw).normalize();
+        Vec3 lensCenter = Vec3.atCenterOf(worldPosition);
 
         // Prepare fake player once
         Player fakePlayer = FakePlayerManager.get(VIEW_FINDER_PLAYER, level);
         float eyeH = fakePlayer.getEyeHeight();
 
-        boolean anyAnger = false;
 
         // For each view result: map local (x,y) -> destination world point, orient fake player, notify endermen
-        for (TvViewHitResult vr : views) {
+        for (TVSpectatorView vr : views) {
             // local offsets on source screen (meters)
             float localX = -vr.localHit().x; //flip since tv faces the other way
             float localY = vr.localHit().y;
@@ -295,8 +299,7 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOnePlayer
             // localX *= screenSideLength; localY *= screenSideLength;
 
             // Map local offset onto the destination screen:
-            Vec3 lensRelative = lensCenter.add(lensRight.scale(localX)).add(destUp.scale(localY));
-Vec3 t = lensCenter.add(lensFacing.scale(-NEAR_PLANE));
+            Vec3 t = lensCenter.add(lensFacing.scale(-NEAR_PLANE));
             // Place fake player's eye at the destination screen center height (adjust if you want different origin)
             fakePlayer.setPos(t.x, t.y - eyeH, t.z);
 
@@ -312,21 +315,18 @@ Vec3 t = lensCenter.add(lensFacing.scale(-NEAR_PLANE));
 
             fakePlayer.setYRot(yRot + this.yaw);
             fakePlayer.setYHeadRot(yRot + this.yaw);
-            fakePlayer.setXRot(xRot+ this.pitch);
-            this.fakePlayer = fakePlayer;
+            fakePlayer.setXRot(xRot + this.pitch);
 
             // Iterate endermen found in AABB and apply tighter checks before calling isLookingAtMe
-            for (EnderMan em : enderMen) {
+            for (EnderMan man : enderMen) {
                 // Now the enderman is in range and in front: trigger the "looking at fake player"
-                if (em.isLookingAtMe(fakePlayer)) {
-                    EndermanFreezeWhenLookedAtThroughTVGoal.anger(vr.player(), this);
-                    anyAnger = true;
-                    break;
+                if (man.isLookingAtMe(fakePlayer)) {
+                    lookResults.add(new EndermanLookResult(vr.player(), man));
                 }
             }
         }
 
-        return anyAnger;
+        return lookResults;
     }
 
 
@@ -352,6 +352,4 @@ Vec3 t = lensCenter.add(lensFacing.scale(-NEAR_PLANE));
         return new Vec3(dirCam.x, dirCam.y, dirCam.z);
     }
 
-
-    public Player fakePlayer = null;
 }

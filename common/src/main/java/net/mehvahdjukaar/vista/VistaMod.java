@@ -174,30 +174,11 @@ public class VistaMod {
         }
     }
 
-    public static class TaskHolder {
-        public EndermanFreezeWhenLookedAtThroughTVGoal task = null;
-
-        public TaskHolder() {
-        }
-
-        public TaskHolder(EndermanFreezeWhenLookedAtThroughTVGoal task){
-            this.task = task;
-        }
-    }
-
-    public static final IAttachmentType<TaskHolder, EnderMan> ENDERMAN_TASK_HOLDER = RegHelper.registerDataAttachment(
-            res("enderman_task_holder"),
-            () -> RegHelper.AttachmentBuilder.create(TaskHolder::new),
-            EnderMan.class
-    );
-
-
     @EventCalled
     public static void addEntityGoal(Entity entity, ServerLevel serverLevel) {
         if (entity instanceof EnderMan man) {
             EndermanFreezeWhenLookedAtThroughTVGoal task = new EndermanFreezeWhenLookedAtThroughTVGoal(man);
             man.goalSelector.addGoal(1, task);
-            ENDERMAN_TASK_HOLDER.set(man, new TaskHolder(task));
         }
     }
 
