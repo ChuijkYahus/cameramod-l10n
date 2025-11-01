@@ -3,6 +3,7 @@ package net.mehvahdjukaar.vista.common;
 import com.mojang.serialization.MapCodec;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.util.Utils;
+import net.mehvahdjukaar.moonlight.core.fake_player.FakeGenericPlayer;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.client.ViewFinderController;
 import net.minecraft.core.BlockPos;
@@ -21,6 +22,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.EntityCollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.Nullable;
@@ -108,11 +110,6 @@ public class ViewFinderBlock extends DirectionalBlock implements EntityBlock {
     }
 
     @Override
-    public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return Shapes.block();
-    }
-
-    @Override
     public VoxelShape getVisualShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         return switch (state.getValue(FACING)) {
             case UP -> SHAPE_UP;
@@ -127,10 +124,16 @@ public class ViewFinderBlock extends DirectionalBlock implements EntityBlock {
 
     @Override
     protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        if (PlatHelper.getPhysicalSide().isClient() && ViewFinderController.isActive()) {
+        if (PlatHelper.getPhysicalSide().isClient() && ViewFinderController.isActiveAt(pos) ) {
             return Shapes.empty();
         }
-        return super.getShape(state, level, pos, context);
+        if(context instanceof EntityCollisionContext ec &&
+                ((ec.getEntity() instanceof Player p &&
+                PlatHelper.isAFakePlayer(p) ) || ec.getEntity() == null)){
+            return Shapes.empty();
+
+        }
+        return Shapes.block();
     }
 
 }

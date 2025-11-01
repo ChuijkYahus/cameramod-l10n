@@ -85,7 +85,7 @@ public class ViewFinderBlockEntityRenderer implements BlockEntityRenderer<ViewFi
             vc.addVertex(pose, 0,0,0)
                     .setColor(30, 255, 30, 255)
                     .setNormal(pose, 0, 1, 0);
-            vc.addVertex(pose, (float) view.x, (float) view.y, (float) view.z)
+            vc.addVertex(pose, (float) view.x*2, (float) view.y*2, (float) view.z*2)
                     .setColor(30, 255, 30, 255)
                     .setNormal(pose, 0, 1, 0);
 

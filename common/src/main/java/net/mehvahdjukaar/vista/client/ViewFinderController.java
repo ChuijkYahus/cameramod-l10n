@@ -9,6 +9,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.Input;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.sounds.SoundEvents;
@@ -73,6 +74,10 @@ public class ViewFinderController {
 
     public static boolean isActive() {
         return access != null;
+    }
+
+    public static boolean isActiveAt(BlockPos pos){
+        return access != null && access.getInternalTile().getBlockPos() == pos;
     }
 
     public static boolean isLocked() {

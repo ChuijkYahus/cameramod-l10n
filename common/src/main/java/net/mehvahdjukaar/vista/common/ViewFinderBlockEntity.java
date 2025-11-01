@@ -30,9 +30,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
-import org.joml.Matrix4f;
 import org.joml.Vector3f;
-import org.joml.Vector4f;
 
 import java.util.List;
 import java.util.UUID;
@@ -260,7 +258,7 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOnePlayer
         final double EPS = 1e-6;
 
         Vec3 lensFacing = Vec3.directionFromRotation(this.pitch, this.yaw).normalize();
-        Vec3 lensCenter = Vec3.atCenterOf(worldPosition).add(lensFacing.scale(0.5));
+        Vec3 lensCenter = Vec3.atCenterOf(worldPosition);
         double rangeSq = (double) range * (double) range;
 
         AABB aabb = new AABB(worldPosition).inflate(range);
@@ -298,12 +296,12 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOnePlayer
 
             // Map local offset onto the destination screen:
             Vec3 lensRelative = lensCenter.add(lensRight.scale(localX)).add(destUp.scale(localY));
-
+Vec3 t = lensCenter.add(lensFacing.scale(-NEAR_PLANE));
             // Place fake player's eye at the destination screen center height (adjust if you want different origin)
-            fakePlayer.setPos(lensRelative.x, lensRelative.y - eyeH, lensRelative.z);
+            fakePlayer.setPos(t.x, t.y - eyeH, t.z);
 
             // Compute look vector from fake eye to mapped hit
-            Vec3 look = pixelRayDirWorld(localX, localY, screenW, screenH);
+            Vec3 look = pixelRayDir(localX, localY, screenW, screenH);
 
             //TODO:better math here
             // Convert look vector to yaw/pitch (Minecraft convention)
@@ -312,15 +310,16 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOnePlayer
             double horiz = Math.sqrt(look.x * look.x + look.z * look.z);
             float xRot = (float) (-Math.toDegrees(Math.atan2(look.y, horiz)));
 
-            fakePlayer.setYRot(yRot);
-            fakePlayer.setXRot(xRot);
-            fakePlayer.setYHeadRot(yRot);
+            fakePlayer.setYRot(yRot + this.yaw);
+            fakePlayer.setYHeadRot(yRot + this.yaw);
+            fakePlayer.setXRot(xRot+ this.pitch);
             this.fakePlayer = fakePlayer;
 
             // Iterate endermen found in AABB and apply tighter checks before calling isLookingAtMe
             for (EnderMan em : enderMen) {
                 // Now the enderman is in range and in front: trigger the "looking at fake player"
                 if (em.isLookingAtMe(fakePlayer)) {
+                    EndermanFreezeWhenLookedAtThroughTVGoal.anger(vr.player(), this);
                     anyAnger = true;
                     break;
                 }
@@ -331,39 +330,26 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOnePlayer
     }
 
 
-    /**
-     * Computes a normalized world-space ray direction for a given pixel.
-     *
-     * @param px pixel x (-0.5..0.5)
-     * @param py pixel y (-0.5..0.5)
-     * @return normalized world-space direction vector
-     */
-    public Vec3 pixelRayDirWorld(float px, float py, float screenWidth, float screenHeight) {
+    private Vec3 pixelRayDir(float px, float py, float screenWidth, float screenHeight) {
+        // 1) NDC coords in [-1, 1]
+        float fovRad = BASE_FOV * getFOVModifier() * Mth.DEG_TO_RAD;
+        float ndcX = (2.0f * px) / screenWidth;
+        float ndcY = (2.0f * py) / screenHeight; // flip Y if needed by your convention
 
-        // 1) Convert pixel to Normalized Device Coordinates from -1 to 1
-        float nx = (2 * px) / screenWidth;
-        float ny = (2 * py) / screenHeight;
+        // 2) camera-space ray direction (z = -1 for right-handed camera looking down -Z)
+        float aspect = screenWidth / screenHeight;
+        float tanHalfFov = (float) Math.tan(fovRad * 0.5f);
 
-        Matrix4f projView = new Matrix4f().perspective(BASE_FOV * getFOVModifier() * Mth.DEG_TO_RAD,
-                screenWidth / screenHeight, ViewFinderBlockEntity.NEAR_PLANE, 10);
+        float camX = ndcX * aspect * tanHalfFov;
+        float camY = ndcY * tanHalfFov;
+        // camera-space direction
+        Vector3f dirCam = new Vector3f(camX, camY, -1.0f).normalize();
 
-        // 2) Inverse of projection * view
-        Matrix4f invPV = projView.invert();
+        // 3) rotate by camera orientation to world space (no translation)
+        // cameraRotation should represent camera->world rotation (inverse of view rotation)
 
-        // 3) Define clip-space positions for near and far plane
-        Vector4f clipNear = new Vector4f(nx, ny, -1.0f, 1.0f);
-        Vector4f clipFar = new Vector4f(nx, ny, 1.0f, 1.0f);
-
-        // 4) Transform to world space
-        Vector4f worldNear4 = invPV.transform(clipNear);
-        Vector4f worldFar4 = invPV.transform(clipFar);
-
-        // 5) Perspective divide
-        Vector3f worldNear = new Vector3f(worldNear4.x / worldNear4.w, worldNear4.y / worldNear4.w, worldNear4.z / worldNear4.w);
-        Vector3f worldFar = new Vector3f(worldFar4.x / worldFar4.w, worldFar4.y / worldFar4.w, worldFar4.z / worldFar4.w);
-
-        // 6) Ray direction (normalized)
-        return new Vec3(worldFar.sub(worldNear).normalize());
+        // 4) return Minecraft Vec3
+        return new Vec3(dirCam.x, dirCam.y, dirCam.z);
     }
 
 

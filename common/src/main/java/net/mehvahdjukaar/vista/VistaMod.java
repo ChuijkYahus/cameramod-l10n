@@ -1,5 +1,7 @@
 package net.mehvahdjukaar.vista;
 
+import net.mehvahdjukaar.moonlight.api.misc.EventCalled;
+import net.mehvahdjukaar.moonlight.api.misc.IAttachmentType;
 import net.mehvahdjukaar.moonlight.api.misc.RegSupplier;
 import net.mehvahdjukaar.moonlight.api.misc.WorldSavedDataType;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
@@ -15,8 +17,11 @@ import net.minecraft.core.UUIDUtil;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.tags.TagKey;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.monster.EnderMan;
 import net.minecraft.world.item.*;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
@@ -119,6 +124,7 @@ public class VistaMod {
         //turn on shader
         //show tv screen for far away cunks using a static screenshot with pause shaderand pause icon
         //liveleak icon
+        //jittery scroll
         //turn on sound
         //player holding hand slike when using explosure cameera
         //shader when you wear a tv. fnaf
@@ -164,7 +170,34 @@ public class VistaMod {
         event.add(CreativeModeTabs.TOOLS_AND_UTILITIES, HOLLOW_CASSETTE.get());
 
         if (EXPOSURE_ON) {
-         //   event.add(CreativeModeTabs.TOOLS_AND_UTILITIES, ExposureCompat.PICTURE_TAPE.get());
+            //   event.add(CreativeModeTabs.TOOLS_AND_UTILITIES, ExposureCompat.PICTURE_TAPE.get());
+        }
+    }
+
+    public static class TaskHolder {
+        public EndermanFreezeWhenLookedAtThroughTVGoal task = null;
+
+        public TaskHolder() {
+        }
+
+        public TaskHolder(EndermanFreezeWhenLookedAtThroughTVGoal task){
+            this.task = task;
+        }
+    }
+
+    public static final IAttachmentType<TaskHolder, EnderMan> ENDERMAN_TASK_HOLDER = RegHelper.registerDataAttachment(
+            res("enderman_task_holder"),
+            () -> RegHelper.AttachmentBuilder.create(TaskHolder::new),
+            EnderMan.class
+    );
+
+
+    @EventCalled
+    public static void addEntityGoal(Entity entity, ServerLevel serverLevel) {
+        if (entity instanceof EnderMan man) {
+            EndermanFreezeWhenLookedAtThroughTVGoal task = new EndermanFreezeWhenLookedAtThroughTVGoal(man);
+            man.goalSelector.addGoal(1, task);
+            ENDERMAN_TASK_HOLDER.set(man, new TaskHolder(task));
         }
     }
 
