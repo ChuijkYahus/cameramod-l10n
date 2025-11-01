@@ -19,31 +19,31 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @SuppressWarnings("unchecked")
-public class ViewFinderConnection extends WorldSavedData {
+public class LiveFeedConnectionManager extends WorldSavedData {
 
-    public static final Codec<ViewFinderConnection> CODEC = Codec.unboundedMap(UUIDUtil.STRING_CODEC, GlobalPos.CODEC)
+    public static final Codec<LiveFeedConnectionManager> CODEC = Codec.unboundedMap(UUIDUtil.STRING_CODEC, GlobalPos.CODEC)
             .xmap(map -> {
-                ViewFinderConnection storage = new ViewFinderConnection();
+                LiveFeedConnectionManager storage = new LiveFeedConnectionManager();
                 storage.linkedFeeds.putAll(map);
                 return storage;
             }, storage -> storage.linkedFeeds);
 
-    public static final StreamCodec<RegistryFriendlyByteBuf, ViewFinderConnection> STREAM_CODEC =
+    public static final StreamCodec<RegistryFriendlyByteBuf, LiveFeedConnectionManager> STREAM_CODEC =
             (StreamCodec) ByteBufCodecs.map(
                     i -> new HashMap<>(),
                     UUIDUtil.STREAM_CODEC,
                     GlobalPos.STREAM_CODEC
             ).map(map -> {
-                ViewFinderConnection storage = new ViewFinderConnection();
+                LiveFeedConnectionManager storage = new LiveFeedConnectionManager();
                 storage.linkedFeeds.putAll(map);
                 return storage;
             }, storage -> storage.linkedFeeds);
 
-    private ViewFinderConnection() {
+    private LiveFeedConnectionManager() {
     }
 
-    public static ViewFinderConnection create(ServerLevel serverLevel) {
-        return new ViewFinderConnection();
+    public static LiveFeedConnectionManager create(ServerLevel serverLevel) {
+        return new LiveFeedConnectionManager();
     }
 
     private final HashMap<UUID, GlobalPos> linkedFeeds = new HashMap<>();
@@ -68,28 +68,10 @@ public class ViewFinderConnection extends WorldSavedData {
         return linkedFeeds.get(viewFinderUUID);
     }
 
-    //for client
-    @Nullable
-    public ViewFinderBlockEntity getLinkedViewFinder(Level level, UUID viewFinderUUID) {
-        GlobalPos gp = linkedFeeds.get(viewFinderUUID);
-        if (gp != null && gp.dimension() == level.dimension()) {
-            BlockPos pos = gp.pos();
-            if (level.isLoaded(pos) && level.getBlockEntity(pos) instanceof ViewFinderBlockEntity be) {
-                return be;
-            }
-        }
-        return null;
-    }
 
     @Override
-    public WorldSavedDataType<ViewFinderConnection> getType() {
+    public WorldSavedDataType<LiveFeedConnectionManager> getType() {
         return VistaMod.VIEWFINDER_CONNECTION;
-    }
-
-    public static ViewFinderConnection get(Level level) {
-        ViewFinderConnection connection = VistaMod.VIEWFINDER_CONNECTION.getData(level);
-
-        return connection;
     }
 
     public void validateAll(ServerLevel level) {
@@ -111,5 +93,26 @@ public class ViewFinderConnection extends WorldSavedData {
                 this.sync();
             }
         }
+    }
+
+    //static helpers
+
+    public static LiveFeedConnectionManager getInstance(Level level) {
+        return VistaMod.VIEWFINDER_CONNECTION.getData(level);
+    }
+
+
+    @Nullable
+    public static ViewFinderBlockEntity findLinkedViewFinder(Level level, UUID viewFinderUUID) {
+        LiveFeedConnectionManager connection = getInstance(level);
+        if (connection == null) return null;
+        GlobalPos gp = connection.getLinkedFeedLocation(viewFinderUUID);
+        if (gp != null && gp.dimension() == level.dimension()) {
+            BlockPos pos = gp.pos();
+            if (level.isLoaded(pos) && level.getBlockEntity(pos) instanceof ViewFinderBlockEntity be) {
+                return be;
+            }
+        }
+        return null;
     }
 }

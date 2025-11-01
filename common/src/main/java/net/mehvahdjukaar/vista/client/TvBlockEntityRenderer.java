@@ -74,7 +74,7 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
             ResourceLocation tex = LiveFeedRendererManager.requestLiveFeedTexture(blockEntity.getLevel(),
                     liveFeedId, screenPixelSize, shouldUpdate);
             if (tex != null) {
-                maybeRenderDebug(tex, poseStack, buffer, partialTick);
+                maybeRenderDebug(tex, poseStack, buffer, partialTick, blockEntity);
                 vc = TapeTextureManager.getFullSpriteVC(tex, buffer, drawingCamera);
 
 
@@ -113,7 +113,8 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
         VertexUtil.addQuad(vc, poseStack, -s, -s, s, s, lightU, lightV);
     }
 
-    private void maybeRenderDebug(ResourceLocation tex, PoseStack poseStack, MultiBufferSource buffer, float partialTick) {
+    private void maybeRenderDebug(ResourceLocation tex, PoseStack poseStack, MultiBufferSource buffer, float partialTick,
+                                  TVBlockEntity tile) {
         if (!ClientConfigs.isDebugOn()) return;
         poseStack.pushPose();
 
@@ -129,16 +130,25 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
 
             double averageUpdateinterval = calculateAverageUpdateTime(lastUpdateTimes);
 
-            font.drawInBatch(String.format("up rate %.2f", averageUpdateinterval), 0, 0, -1,
+            int y = 0;
+            font.drawInBatch(String.format("up rate %.2f", averageUpdateinterval), 0, 7, -1,
                     false, poseStack.last().pose(), buffer, Font.DisplayMode.NORMAL,
                     OverlayTexture.NO_OVERLAY,
                     LightTexture.FULL_BRIGHT);
 
             double updateMs = LiveFeedRendererManager.SCHEDULER.get().getAverageUpdateTimeMs();
 
-            font.drawInBatch(String.format("up ms %.2f", updateMs), 0, -9, -1, false, poseStack.last().pose(), buffer, Font.DisplayMode.NORMAL,
+            y-=9;
+            font.drawInBatch(String.format("up ms %.2f", updateMs), 0, y, -1, false, poseStack.last().pose(), buffer, Font.DisplayMode.NORMAL,
                     OverlayTexture.NO_OVERLAY, LightTexture.FULL_BRIGHT);
 
+            if( tile.canSeeEnderman) {
+                y-=9;
+
+                font.drawInBatch("p" , 0, y, -1, false, poseStack.last().pose(), buffer, Font.DisplayMode.NORMAL,
+                        OverlayTexture.NO_OVERLAY, LightTexture.FULL_BRIGHT);
+
+            }
         } catch (Exception ignored) {
             int aa = 1;
         }

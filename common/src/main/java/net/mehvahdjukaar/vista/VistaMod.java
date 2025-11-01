@@ -17,7 +17,6 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.tags.TagKey;
-import net.minecraft.world.entity.monster.EnderMan;
 import net.minecraft.world.item.*;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
@@ -41,9 +40,9 @@ public class VistaMod {
         return ResourceLocation.fromNamespaceAndPath(MOD_ID, name);
     }
 
-    public static final WorldSavedDataType<ViewFinderConnection> VIEWFINDER_CONNECTION =
-            RegHelper.registerWorldSavedData(res("viewfinder_connection"), ViewFinderConnection::create,
-                    ViewFinderConnection.CODEC, ViewFinderConnection.STREAM_CODEC);
+    public static final WorldSavedDataType<LiveFeedConnectionManager> VIEWFINDER_CONNECTION =
+            RegHelper.registerWorldSavedData(res("viewfinder_connection"), LiveFeedConnectionManager::create,
+                    LiveFeedConnectionManager.CODEC, LiveFeedConnectionManager.STREAM_CODEC);
 
     public static final ResourceKey<Registry<CassetteTape>> CASSETTE_TAPE_REGISTRY_KEY =
             ResourceKey.createRegistryKey(res("cassette_tape"));

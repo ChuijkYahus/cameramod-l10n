@@ -53,7 +53,7 @@ public class HollowCassetteItem extends Item {
         if (feedId != null) {
             if (PlatHelper.getPhysicalSide().isClient()) {
                 Level level = VistaModClient.getLevel();
-                var connection = ViewFinderConnection.get(level);
+                var connection = LiveFeedConnectionManager.getInstance(level);
                 if (connection == null) return;
                 GlobalPos gp = connection.getLinkedFeedLocation(feedId);
                 if (gp == null) {

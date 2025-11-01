@@ -61,7 +61,7 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
 
     @Override
     public @Nullable <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> blockEntityType) {
-        return !level.isClientSide ? null : Utils.getTicker(blockEntityType, VistaMod.TV_TILE.get(), TVBlockEntity::clientTick);
+        return  Utils.getTicker(blockEntityType, VistaMod.TV_TILE.get(), TVBlockEntity::onTick);
     }
 
     @Override

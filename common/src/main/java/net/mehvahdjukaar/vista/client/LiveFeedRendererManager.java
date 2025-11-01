@@ -14,8 +14,8 @@ import net.mehvahdjukaar.moonlight.api.misc.RollingBuffer;
 import net.mehvahdjukaar.moonlight.core.client.DummyCamera;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.VistaPlatStuff;
+import net.mehvahdjukaar.vista.common.LiveFeedConnectionManager;
 import net.mehvahdjukaar.vista.common.ViewFinderBlockEntity;
-import net.mehvahdjukaar.vista.common.ViewFinderConnection;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.minecraft.client.Camera;
 import net.minecraft.client.DeltaTracker;
@@ -72,21 +72,18 @@ public class LiveFeedRendererManager {
 
     @Nullable
     public static ResourceLocation requestLiveFeedTexture(Level level, UUID location, int screenSize, boolean requiresUpdate) {
-        ViewFinderConnection connection = ViewFinderConnection.get(level);
-        if (connection != null) {
-            ViewFinderBlockEntity tile = connection.getLinkedViewFinder(level, location);
-            if (tile != null) {
-                ResourceLocation feedId = getOrCreateFeedId(location);
-                TVLiveFeedTexture texture = RenderedTexturesManager.requestTexture(feedId,
-                        () -> new TVLiveFeedTexture(feedId,
-                                screenSize * ClientConfigs.RESOLUTION_SCALE.get(),
-                                LiveFeedRendererManager::refreshTexture, location));
-                if (!requiresUpdate) texture.unMarkForUpdate();
-                if (texture.isInitialized()) {
-                    return texture.getTextureLocation();
-                } else {
-                    SCHEDULER.get().forceUpdateNextTick(feedId);
-                }
+        ViewFinderBlockEntity tile = LiveFeedConnectionManager.findLinkedViewFinder(level, location);
+        if (tile != null) {
+            ResourceLocation feedId = getOrCreateFeedId(location);
+            TVLiveFeedTexture texture = RenderedTexturesManager.requestTexture(feedId,
+                    () -> new TVLiveFeedTexture(feedId,
+                            screenSize * ClientConfigs.RESOLUTION_SCALE.get(),
+                            LiveFeedRendererManager::refreshTexture, location));
+            if (!requiresUpdate) texture.unMarkForUpdate();
+            if (texture.isInitialized()) {
+                return texture.getTextureLocation();
+            } else {
+                SCHEDULER.get().forceUpdateNextTick(feedId);
             }
         }
         return null;
@@ -141,11 +138,9 @@ public class LiveFeedRendererManager {
                         .push(level.getGameTime());
             }
 
-            ViewFinderConnection connection = ViewFinderConnection.get(level);
-            if (connection == null) return;
 
             UUID uuid = text.associatedUUID;
-            ViewFinderBlockEntity tile = connection.getLinkedViewFinder(level, uuid);
+            ViewFinderBlockEntity tile = LiveFeedConnectionManager.findLinkedViewFinder(level, uuid);
             if (tile == null) return; //TODO: do something here
 
             float partialTicks = mc.getTimer().getGameTimeDeltaTicks();
@@ -162,7 +157,7 @@ public class LiveFeedRendererManager {
             LIVE_FEED_BEING_RENDERED = canvas;
 
             //same as field of view modifier
-            float fov = 70 * tile.getModifiedFOV(1, 1);
+            float fov = ViewFinderBlockEntity.BASE_FOV * tile.getFOVModifier();
 
 
             RenderSystem.clear(16640, ON_OSX);
@@ -240,7 +235,7 @@ public class LiveFeedRendererManager {
         float depthFar = gr.getDepthFar();
 
         return matrix4f.perspective(fov * Mth.DEG_TO_RAD,
-                (float) target.width / (float) target.height, 0.05F, depthFar);
+                (float) target.width / (float) target.height, ViewFinderBlockEntity.NEAR_PLANE, depthFar);
     }
 
     public static void copyWithShader(RenderTarget src, RenderTarget dst, RenderType rt) {

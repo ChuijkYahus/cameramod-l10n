@@ -243,7 +243,7 @@ public class ViewFinderController {
     @EventCalled
     public static float modifyFOV(float start, float modified, Player player) {
         if (isActive()) {
-            return access.getInternalTile().getModifiedFOV(start, modified);
+            return access.getInternalTile().getFOVModifier();
         }
         return modified;
     }

@@ -13,6 +13,8 @@ accessible method net/minecraft/client/Camera setRotation (FF)V
 accessible method net/minecraft/client/Camera getMaxZoom (F)F
 accessible method net/minecraft/client/Camera move (FFF)V
 
+accessible method net/minecraft/world/entity/monster/EnderMan isLookingAtMe (Lnet/minecraft/world/entity/player/Player;)Z
+
 accessible field net/minecraft/client/Camera entity Lnet/minecraft/world/entity/Entity;
 
 
