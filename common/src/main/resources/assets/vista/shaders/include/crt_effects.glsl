@@ -1,7 +1,13 @@
 #version 150
+
+
+const float PHI = 1.61803398874989484820459;
+const float NOISE_SPEED = 1000;
+const float NOISE_SCALE = 10000;
+
 /* ===================== CRT Vignette (pure, no randomness) ===================== */
 // UV must be in [0,1] within the SPRITE (not the whole atlas).
-float crtVignette(vec4 spriteDimensions, vec2 texCoord) {
+float crt_vignette(in vec4 spriteDimensions,in vec2 texCoord) {
     // ===================== Apply CRT Vignette =====================
     // Compute sprite-local UV (0..1 across the sprite rect)
     vec2 minUV  = spriteDimensions.xy;
@@ -13,9 +19,6 @@ float crtVignette(vec4 spriteDimensions, vec2 texCoord) {
     return 0.6 + 0.4 * v;
 }
 
-const float PHI = 1.61803398874989484820459;
-const float NOISE_SPEED = 1000;
-const float NOISE_SCALE = 10000;
 // ------------------------------------------------------------------
 // Golden-ratio procedural noise
 // ------------------------------------------------------------------
@@ -26,7 +29,7 @@ float gold_noise(in vec2 xy, in float seed) {
 // ------------------------------------------------------------------
 // Combined noise generation (RGB + A channel if needed)
 // ------------------------------------------------------------------
-vec4 staticNoise(vec2 uv, float timeSeed) {
+vec4 crt_noise(in vec2 uv, in float timeSeed) {
     uv = uv * NOISE_SCALE;
     timeSeed = fract(timeSeed * NOISE_SPEED);
     return vec4(

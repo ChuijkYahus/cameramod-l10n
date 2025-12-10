@@ -11,7 +11,6 @@ uniform float FogEnd;
 uniform vec4 FogColor;
 
 uniform float GameTime;
-
 uniform float NoiseIntensity;
 
 uniform float VignetteIntensity;
@@ -31,25 +30,23 @@ out vec4 fragColor;
 
 void main() {
     // Base texture
-    vec4 tex = texture(Sampler0, texCoord0);
 
     // Get procedural noise
-    vec4 noise = staticNoise(texCoord0, GameTime);
+    vec4 noise = crt_noise(texCoord0, GameTime);
 
     // Blend texture with noise
-    vec3 base = mix(tex.rgb, noise.rgb, clamp(NoiseIntensity, 0.0, 1.0));
 
     // Lighting / material tinting
     vec4 tint = vertexColor * ColorModulator * lightMapColor;
-    vec4 shaded = vec4(base, tex.a) * tint;
+    vec4 shaded = noise * tint;
+
+    float vignette = mix(1.0, crt_vignette(SpriteDimensions, texCoord0), clamp(VignetteIntensity, 0.0, 1.0));
+    shaded.rgb *= vignette;
 
     // Fog
     vec4 fogged = linear_fog(shaded, vertexDistance, FogStart, FogEnd, FogColor);
 
-    // Vignette
-    float vignette = mix(1.0, crtVignette(SpriteDimensions, texCoord0),
-    clamp(VignetteIntensity, 0.0, 1.0));
-    fogged.rgb *= vignette;
+
 
     fragColor = fogged;
 }

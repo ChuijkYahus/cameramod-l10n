@@ -9,10 +9,8 @@ uniform float FogStart;
 uniform float FogEnd;
 uniform vec4 FogColor;
 
-uniform float NoiseSpeed;
-uniform float NoiseScale;
-uniform float NoiseIntensity;
 uniform float GameTime;
+uniform float NoiseIntensity;
 
 /* SpriteDimensions = (minU, minV, sizeU, sizeV) in normalized UVs */
 uniform vec4 SpriteDimensions;
@@ -198,13 +196,11 @@ void main() {
     vec4 color = vec4(triadRGB, 1.0) * vertexColor * ColorModulator;
 
     // Get procedural noise
-    vec4 noise = staticNoise(texCoord0, GameTime);
-
-    // Blend texture with noise
-    color.rgb = mix(color.rgb, noise.rgb, clamp(NoiseIntensity, 0.0, 1.0));
+    vec4 noise = crt_noise(texCoord0, GameTime);
+    color.rgb = color.rgb + (noise.rgb-0.5) * clamp(NoiseIntensity, 0.0, 1.0);
 
     // Pure vignette factor and blend with intensity
-    float vFactor = crtVignette(SpriteDimensions, texCoord0);
+    float vFactor = crt_vignette(SpriteDimensions, texCoord0);
     float vignette = mix(1.0, vFactor, clamp(VignetteIntensity, 0.0, 1.0));
 
     color.rgb *= vignette;

@@ -19,11 +19,13 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
+import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.resources.model.Material;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.UUID;
@@ -49,12 +51,11 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
         LOD lod = LOD.at(blockEntity);
         //TODO: change with tv size
 
+        if(!lod.isMedium())return;
+
         if (lod.isPlaneCulled(dir, 0.5f, 0f)) {
             return;
         }
-
-        float endermanAnim = blockEntity.getLookingAtEndermanAnimation(partialTick);
-        ModRenderTypes.setEndermanStatic(endermanAnim);
 
         float yaw = dir.toYRot();
         poseStack.translate(0.5, 0.5, 0.5);
@@ -78,9 +79,8 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
                     liveFeedId, screenPixelSize, shouldUpdate);
             if (tex != null) {
                 maybeRenderDebug(tex, poseStack, buffer, partialTick, blockEntity);
-                vc = TapeTextureManager.getFullSpriteVC(tex, buffer, drawingCamera);
-
-
+                float enderman = blockEntity.getLookingAtEndermanAnimation(partialTick);
+                vc = TapeTextureManager.getFullSpriteVC(tex, buffer, drawingCamera, enderman);
             } else {
                 vc = TapeTextureManager.getDefaultTapeVC(buffer, drawingCamera);
             }
@@ -97,7 +97,7 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
         } else if (VistaMod.EXPOSURE_ON) {
             ResourceLocation texture = ExposureCompatClient.getPictureTextureForRenderer(stack, blockEntity.getAnimationTick());
             if (texture != null) {
-                vc = TapeTextureManager.getFullSpriteVC(texture, buffer, drawingCamera);
+                vc = TapeTextureManager.getFullSpriteVC(texture, buffer, drawingCamera, 0);
             }
         }
         if (vc == null) {
@@ -118,7 +118,8 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
 
     private void maybeRenderDebug(ResourceLocation tex, PoseStack poseStack, MultiBufferSource buffer, float partialTick,
                                   TVBlockEntity tile) {
-        if (!ClientConfigs.isDebugOn()) return;
+
+        if (!ClientConfigs.isDebugOn() || !Minecraft.getInstance().getEntityRenderDispatcher().shouldRenderHitBoxes()) return;
         poseStack.pushPose();
 
         try {

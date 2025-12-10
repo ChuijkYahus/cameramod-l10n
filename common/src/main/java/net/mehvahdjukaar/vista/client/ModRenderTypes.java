@@ -15,6 +15,7 @@ import net.minecraft.resources.ResourceLocation;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
@@ -25,14 +26,27 @@ public class ModRenderTypes extends RenderType {
         super(name, format, mode, bufferSize, affectsCrumbling, sortOnUpload, setupState, clearState);
     }
 
+    private static final AtomicReference<Float> ENDERMAN_NOISE = new AtomicReference<>(0f);
+
+
     private static final ShaderStateShard CAMERA_SHADER_STATE = new ShaderStateShard(VistaModClient.CAMERA_VIEW_SHADER);
     private static final ShaderStateShard STATIC_SHADER_STATE = new ShaderStateShard(VistaModClient.STATIC_SHADER);
     private static final ShaderStateShard POSTERIZE_SHADER_STATE = new ShaderStateShard(VistaModClient.POSTERIZE_SHADER);
 
-    public static final Function<ResourceLocation, RenderType> CAMERA_DRAW = Util.memoize((text) -> {
-        RenderType.CompositeState compositeState = RenderType.CompositeState.builder()
+    private static final Function<ResourceLocation, RenderType> CAMERA_DRAW = Util.memoize(
+            (t) -> ModRenderTypes.createCameraDraw(t, 0));
+
+
+    public static RenderType getCameraDraw(ResourceLocation texture, float enderman) {
+        if (enderman > 0f) {
+            return createCameraDraw(texture, enderman);
+        } else return CAMERA_DRAW.apply(texture);
+    }
+
+    private static RenderType createCameraDraw(ResourceLocation text, float enderman) {
+        CompositeState compositeState = CompositeState.builder()
                 .setShaderState(CAMERA_SHADER_STATE)
-                .setTextureState(new RenderStateShard.TextureStateShard(text,
+                .setTextureState(new TextureStateShard(text,
                         //TODO: mipmap
                         false, false))
                 .setTransparencyState(NO_TRANSPARENCY)
@@ -42,7 +56,7 @@ public class ModRenderTypes extends RenderType {
                             ShaderInstance shader = VistaModClient.CAMERA_VIEW_SHADER.get();
                             shader.safeGetUniform("SpriteDimensions")
                                     .set(new Vector4f(0, 0, 1, 1f));
-                            setCameraDrawUniforms(shader);
+                            setCameraDrawUniforms(shader, enderman);
                         },
                         () -> {
                         }))
@@ -50,7 +64,7 @@ public class ModRenderTypes extends RenderType {
 
         return create("camera_view", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS,
                 1536, true, false, compositeState);
-    });
+    }
 
     public static final BiFunction<ResourceLocation, Material, RenderType> CAMERA_DRAW_SPRITE = Util.memoize((text, mat) -> {
         RenderType.CompositeState compositeState = RenderType.CompositeState.builder()
@@ -65,7 +79,7 @@ public class ModRenderTypes extends RenderType {
                             ShaderInstance shader = VistaModClient.CAMERA_VIEW_SHADER.get();
                             TextureAtlasSprite sprite = mat.sprite();
                             setSpriteDimensions(shader, sprite);
-                            setCameraDrawUniforms(shader);
+                            setCameraDrawUniforms(shader, 0);
                         },
                         () -> {
                         }))
@@ -85,13 +99,15 @@ public class ModRenderTypes extends RenderType {
                 ));
     }
 
-    private static void setCameraDrawUniforms(ShaderInstance shader) {
+    private static void setCameraDrawUniforms(ShaderInstance shader, float noise) {
 
-        setFloat(shader,"TriadsPerPixel", 1.37f);
-        setFloat(shader,"Smear",  1f);
-        setFloat(shader,"EnableEnergyNormalize", 0.0f);
+        setFloat(shader, "TriadsPerPixel", 1.37f);
+        setFloat(shader, "Smear", 1f);
+        setFloat(shader, "EnableEnergyNormalize", 0.0f);
 
         setFloat(shader, "VignetteIntensity", 1f);
+//TODO: fix these 2 noise not looking the same when at 1
+        setFloat(shader, "NoiseIntensity", noise);
     }
 
     public static final RenderType NOISE =
@@ -104,8 +120,7 @@ public class ModRenderTypes extends RenderType {
                             .setTexturingState(new TexturingStateShard("set_texel_size",
                                     () -> {
                                         ShaderInstance shader = VistaModClient.STATIC_SHADER.get();
-
-
+                                        setFloat(shader, "NoiseIntensity", 1f);
                                     },
                                     () -> {
                                     }))
@@ -159,8 +174,7 @@ public class ModRenderTypes extends RenderType {
 
 
     public static void setEndermanStatic(float intensity) {
-        ShaderInstance shader = VistaModClient.STATIC_SHADER.get();
-        shader.safeGetUniform("NoiseIntensity").set(intensity);
+        ENDERMAN_NOISE.set(intensity);
     }
 
 }

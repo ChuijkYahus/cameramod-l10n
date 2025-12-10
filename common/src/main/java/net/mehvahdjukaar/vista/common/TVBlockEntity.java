@@ -29,6 +29,7 @@ import java.util.UUID;
 
 public class TVBlockEntity extends ItemDisplayTile {
 
+    private static final int MAX_LOOKED_ENDERMAN = 20;
     private static final float ENDERMAN_PLAYER_DIST_SQ = 20 * 20;
 
     @Nullable
@@ -51,7 +52,8 @@ public class TVBlockEntity extends ItemDisplayTile {
     }
 
     public float getLookingAtEndermanAnimation(float partialTicks) {
-        return Mth.lerp(partialTicks, prevLookingAtEndermanAnimation, lookingAtEndermanAnimation);
+        return Mth.lerp(partialTicks, prevLookingAtEndermanAnimation, lookingAtEndermanAnimation)
+                / MAX_LOOKED_ENDERMAN;
     }
 
     @Override
@@ -173,7 +175,7 @@ public class TVBlockEntity extends ItemDisplayTile {
             }
             tile.prevLookingAtEndermanAnimation = tile.lookingAtEndermanAnimation;
             if (tile.lookingAtEnderman) {
-                tile.lookingAtEndermanAnimation = tile.lookingAtEndermanAnimation + 1;
+                tile.lookingAtEndermanAnimation = Math.min(MAX_LOOKED_ENDERMAN, tile.lookingAtEndermanAnimation + 1);
             } else {
                 tile.lookingAtEndermanAnimation = Math.max(0, tile.lookingAtEndermanAnimation - 1);
             }
@@ -199,7 +201,7 @@ public class TVBlockEntity extends ItemDisplayTile {
                     }
                 }
             }
-            boolean couldSeeEnderman = tile.lookingAtEndermanAnimation > 0;
+            boolean couldSeeEnderman = tile.lookingAtEnderman;
             //if changed send block event
             if (canSeeEnderman != couldSeeEnderman) {
                 tile.lookingAtEnderman = canSeeEnderman;

@@ -96,7 +96,7 @@ public class ViewFinderBlockEntityRenderer implements BlockEntityRenderer<ViewFi
         poseStack.scale(0.75f,0.75f,0.75f);
         poseStack.translate(0.25,0.5,0.25);
 
-        ItemStack stack = Items.CREEPER_HEAD.getDefaultInstance();
+        //ItemStack stack = Items.CREEPER_HEAD.getDefaultInstance();
       //  Minecraft.getInstance().getItemRenderer()
         //        .renderStatic(stack, ItemDisplayContext.NONE,  packedLight, packedOverlay,poseStack,
           //              bufferSource, tile.getLevel(), 0);

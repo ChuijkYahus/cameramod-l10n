@@ -69,8 +69,8 @@ public class TapeTextureManager {
         return mat.buffer(buffer, !flat ? t -> ModRenderTypes.CAMERA_DRAW_SPRITE.apply(t, mat) : RenderType::text);
     }
 
-    public static VertexConsumer getFullSpriteVC(ResourceLocation tex, MultiBufferSource buffer, boolean flat) {
-        RenderType rt = !flat ? ModRenderTypes.CAMERA_DRAW.apply(tex) : RenderType.text(tex);
+    public static VertexConsumer getFullSpriteVC(ResourceLocation tex, MultiBufferSource buffer, boolean flat, float enderman) {
+        RenderType rt = !flat ? ModRenderTypes.getCameraDraw(tex, enderman) : RenderType.text(tex);
         return buffer.getBuffer(rt);
     }
 
