@@ -116,22 +116,63 @@ public class GifPathSpriteSource implements SpriteSource {
             return r;
         }
 
-        /** Read GIF delays and convert to Minecraft "ticks" (1 tick = 50ms). */
+        /** Read GIF delays and convert to Minecraft "ticks" (1 tick = 50ms).
+         *  Uses error accumulation so fractional tick parts are distributed and total duration matches GIF.
+         */
         private static List<Integer> readFrameTicks(ImageReader reader, int count) {
-            List<Integer> ticks = new ArrayList<>(count);
+            // read centiseconds (cs) per frame first
+            List<Integer> centis = new ArrayList<>(count);
             for (int i = 0; i < count; i++) {
-                int cs = 5; // GIF delayTime is in centiseconds; fallback 5 cs = 50 ms
+                int cs = 5; // fallback 5 cs = 50 ms
                 try {
                     var meta = reader.getImageMetadata(i);
                     var root = (IIOMetadataNode) meta.getAsTree("javax_imageio_gif_image_1.0");
                     var gce = (IIOMetadataNode) root.getElementsByTagName("GraphicControlExtension").item(0);
                     if (gce != null) cs = Math.max(1, Integer.parseInt(gce.getAttribute("delayTime")));
                 } catch (Exception ignored) {}
-                // Convert centiseconds -> ticks (50ms each). Round to nearest; clamp to at least 1.
-                ticks.add(Math.max(1, Math.round(cs / 5.0f)));
+                centis.add(cs);
             }
+
+            // Convert centiseconds -> milliseconds
+            List<Integer> millis = new ArrayList<>(count);
+            int totalMs = 0;
+            for (int cs : centis) {
+                int ms = cs * 10; // centiseconds -> ms
+                millis.add(ms);
+                totalMs += ms;
+            }
+
+            // Now distribute into ticks (50 ms each) using error accumulation to preserve total duration
+            List<Integer> ticks = new ArrayList<>(count);
+            double accError = 0.0;
+            for (int ms : millis) {
+                double exactTicks = ms / 50.0;      // exact fractional tick count for this frame
+                double tickWithError = exactTicks + accError;
+                int assigned = Math.max(1, (int) Math.round(tickWithError)); // at least 1 tick
+                // update error: what remains after assigning integer ticks
+                accError = tickWithError - assigned;
+                ticks.add(assigned);
+            }
+
+            // If rounding caused total ticks to be zero (shouldn't) or we want to enforce a minimum, ensure >=1 each already done.
+            // Optional: adjust sum to match expected total ticks (best-effort)
+            int expectedTotalTicks = Math.max(1, (int) Math.round(totalMs / 50.0));
+            int actualTotalTicks = ticks.stream().mapToInt(Integer::intValue).sum();
+            if (actualTotalTicks != expectedTotalTicks && count > 0) {
+                int diff = expectedTotalTicks - actualTotalTicks;
+                // distribute the difference across frames (one tick at a time)
+                int idx = 0;
+                int step = diff > 0 ? 1 : -1;
+                diff = Math.abs(diff);
+                while (diff-- > 0) {
+                    ticks.set(idx, Math.max(1, ticks.get(idx) + step));
+                    idx = (idx + 1) % count;
+                }
+            }
+
             return ticks;
         }
+
 
         // === Fixed GIF frame reader (handles offsets + disposal) ===
 

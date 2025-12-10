@@ -19,7 +19,7 @@ public class EndermanFreezeWhenLookedAtThroughTVGoal extends Goal {
 
     public EndermanFreezeWhenLookedAtThroughTVGoal(EnderMan enderman) {
         this.enderman = enderman;
-        this.setFlags(EnumSet.of(Flag.JUMP, Flag.MOVE));
+        this.setFlags(EnumSet.of(Flag.JUMP, Flag.MOVE, Flag.LOOK));
     }
 
 

@@ -53,6 +53,9 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
             return;
         }
 
+        float endermanAnim = blockEntity.getLookingAtEndermanAnimation(partialTick);
+        ModRenderTypes.setEndermanStatic(endermanAnim);
+
         float yaw = dir.toYRot();
         poseStack.translate(0.5, 0.5, 0.5);
         poseStack.mulPose(Axis.YP.rotationDegrees(180 - yaw));
@@ -138,14 +141,15 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
 
             double updateMs = LiveFeedRendererManager.SCHEDULER.get().getAverageUpdateTimeMs();
 
-            y-=9;
+            y -= 9;
             font.drawInBatch(String.format("up ms %.2f", updateMs), 0, y, -1, false, poseStack.last().pose(), buffer, Font.DisplayMode.NORMAL,
                     OverlayTexture.NO_OVERLAY, LightTexture.FULL_BRIGHT);
 
-            if( tile.canSeeEnderman) {
-                y-=9;
+            float endermanAnim = tile.getLookingAtEndermanAnimation(partialTick);
+            if (endermanAnim != 0) {
+                y -= 9;
 
-                font.drawInBatch("p" , 0, y, -1, false, poseStack.last().pose(), buffer, Font.DisplayMode.NORMAL,
+                font.drawInBatch("p " + endermanAnim, 0, y, -1, false, poseStack.last().pose(), buffer, Font.DisplayMode.NORMAL,
                         OverlayTexture.NO_OVERLAY, LightTexture.FULL_BRIGHT);
 
             }

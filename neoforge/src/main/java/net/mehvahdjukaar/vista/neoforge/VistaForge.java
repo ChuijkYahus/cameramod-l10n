@@ -30,7 +30,7 @@ public class VistaForge {
     }
 
     @SubscribeEvent
-    public static void onEntityJoin(EntityJoinLevelEvent event) {
+    public void onEntityJoin(EntityJoinLevelEvent event) {
         var level = event.getLevel();
         if (level instanceof ServerLevel serverLevel) {
             VistaMod.addEntityGoal(event.getEntity(), serverLevel);

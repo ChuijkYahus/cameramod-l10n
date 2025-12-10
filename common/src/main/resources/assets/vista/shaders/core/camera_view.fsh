@@ -1,6 +1,6 @@
 #version 150
 #moj_import <fog.glsl>
-#moj_import <vista:crt_vignette.glsl>
+#moj_import <vista:crt_effects.glsl>
 
 uniform sampler2D Sampler0;
 
@@ -8,6 +8,11 @@ uniform vec4 ColorModulator;
 uniform float FogStart;
 uniform float FogEnd;
 uniform vec4 FogColor;
+
+uniform float NoiseSpeed;
+uniform float NoiseScale;
+uniform float NoiseIntensity;
+uniform float GameTime;
 
 /* SpriteDimensions = (minU, minV, sizeU, sizeV) in normalized UVs */
 uniform vec4 SpriteDimensions;
@@ -192,7 +197,11 @@ void main() {
 
     vec4 color = vec4(triadRGB, 1.0) * vertexColor * ColorModulator;
 
+    // Get procedural noise
+    vec4 noise = staticNoise(texCoord0, GameTime);
 
+    // Blend texture with noise
+    color.rgb = mix(color.rgb, noise.rgb, clamp(NoiseIntensity, 0.0, 1.0));
 
     // Pure vignette factor and blend with intensity
     float vFactor = crtVignette(SpriteDimensions, texCoord0);

@@ -158,4 +158,9 @@ public class ModRenderTypes extends RenderType {
     }
 
 
+    public static void setEndermanStatic(float intensity) {
+        ShaderInstance shader = VistaModClient.STATIC_SHADER.get();
+        shader.safeGetUniform("NoiseIntensity").set(intensity);
+    }
+
 }

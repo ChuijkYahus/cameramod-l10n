@@ -127,6 +127,19 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
     }
 
     @Override
+    protected boolean triggerEvent(BlockState state, Level level, BlockPos pos, int id, int param) {
+        if (id == 1) {
+            if(level.isClientSide){
+                if (level.getBlockEntity(pos) instanceof TVBlockEntity tile) {
+                    tile.updateEndermanLookAnimation(param);
+                    return true;
+                }
+            }else return true;
+        }
+        return super.triggerEvent(state, level, pos, id, param);
+    }
+
+    @Override
     protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player,
                                               InteractionHand hand, BlockHitResult hitResult) {
 

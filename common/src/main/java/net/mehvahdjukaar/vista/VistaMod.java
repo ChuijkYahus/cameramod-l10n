@@ -59,6 +59,7 @@ public class VistaMod {
     public static final Supplier<Block> TV = RegHelper.registerBlock(res("television"),
             () -> new TVBlock(Block.Properties.of()
                     .sound(SoundType.WOOD)
+                    .isRedstoneConductor((blockState, blockGetter, blockPos) -> false)
                     .mapColor(MapColor.COLOR_BROWN)
                     .strength(1.5f)));
 

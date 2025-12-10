@@ -11,6 +11,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -28,10 +29,8 @@ import java.util.UUID;
 
 public class TVBlockEntity extends ItemDisplayTile {
 
-
     private static final float ENDERMAN_PLAYER_DIST_SQ = 20 * 20;
 
-    public boolean canSeeEnderman;
     @Nullable
     private UUID linkedFeedUuid = null;
     @Nullable
@@ -42,8 +41,17 @@ public class TVBlockEntity extends ItemDisplayTile {
     private int soundLoopTicks = 0;
     private int animationTicks = 0;
 
+    private boolean lookingAtEnderman = false;
+    private int lookingAtEndermanAnimation = 0;
+    private int prevLookingAtEndermanAnimation = 0;
+
+
     public TVBlockEntity(BlockPos pos, BlockState state) {
         super(VistaMod.TV_TILE.get(), pos, state);
+    }
+
+    public float getLookingAtEndermanAnimation(float partialTicks) {
+        return Mth.lerp(partialTicks, prevLookingAtEndermanAnimation, lookingAtEndermanAnimation);
     }
 
     @Override
@@ -163,21 +171,39 @@ public class TVBlockEntity extends ItemDisplayTile {
                 tile.soundLoopTicks = 0;
                 tile.animationTicks = 0;
             }
-        } else if (powered && tile.linkedFeedUuid != null) {
-            //server tick logic
-            ViewFinderBlockEntity viewFinder = LiveFeedConnectionManager.findLinkedViewFinder(level, tile.linkedFeedUuid);
-            if (viewFinder != null && (level.getGameTime() + pos.asLong()) % 27 == 0) { //stagger updates since this is expensive
-                tile.canSeeEnderman = false;
-                Direction facing = state.getValue(TVBlock.FACING);
-                float screenL = 12;
-                var doomScrollingPlayers = getPlayersFacingLookingAtFace(level, pos, facing,
-                        screenL / 16f); //TODO: adjust for big tvs
+            tile.prevLookingAtEndermanAnimation = tile.lookingAtEndermanAnimation;
+            if (tile.lookingAtEnderman) {
+                tile.lookingAtEndermanAnimation = tile.lookingAtEndermanAnimation + 1;
+            } else {
+                tile.lookingAtEndermanAnimation = Math.max(0, tile.lookingAtEndermanAnimation - 1);
+            }
 
-                if (viewFinder.angerEndermenBeingLookedAt(doomScrollingPlayers, 32,
-                        screenL / 16f, screenL / 16f, tile)) {
-                    tile.canSeeEnderman = true;
-                    //static
+
+        } else {
+            if ((level.getGameTime() + pos.asLong()) % 27 == 0) {
+                return;
+            }
+            boolean canSeeEnderman = false;
+            if (powered && tile.linkedFeedUuid != null) {
+                //server tick logic
+                ViewFinderBlockEntity viewFinder = LiveFeedConnectionManager.findLinkedViewFinder(level, tile.linkedFeedUuid);
+                if (viewFinder != null) { //stagger updates since this is expensive
+                    Direction facing = state.getValue(TVBlock.FACING);
+                    float screenL = 12;
+                    var doomScrollingPlayers = getPlayersFacingLookingAtFace(level, pos, facing,
+                            screenL / 16f); //TODO: adjust for big tvs
+
+                    if (viewFinder.angerEndermenBeingLookedAt(doomScrollingPlayers, 32,
+                            screenL / 16f, screenL / 16f, tile)) {
+                        canSeeEnderman = true;
+                    }
                 }
+            }
+            boolean couldSeeEnderman = tile.lookingAtEndermanAnimation > 0;
+            //if changed send block event
+            if (canSeeEnderman != couldSeeEnderman) {
+                tile.lookingAtEnderman = canSeeEnderman;
+                level.blockEvent(pos, state.getBlock(), 1, canSeeEnderman ? 1 : 0);
             }
         }
     }
@@ -281,4 +307,7 @@ public class TVBlockEntity extends ItemDisplayTile {
         return null;
     }
 
+    public void updateEndermanLookAnimation(int param) {
+        this.lookingAtEnderman = param > 0;
+    }
 }

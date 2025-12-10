@@ -3,10 +3,10 @@ package net.mehvahdjukaar.vista.common;
 import com.mojang.serialization.MapCodec;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.util.Utils;
-import net.mehvahdjukaar.moonlight.core.fake_player.FakeGenericPlayer;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.client.ViewFinderController;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -20,6 +20,7 @@ import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.EntityCollisionContext;
@@ -38,9 +39,13 @@ public class ViewFinderBlock extends DirectionalBlock implements EntityBlock {
     protected static final VoxelShape SHAPE_EAST = Block.box(14.0, 0.0, 0.0, 14, 14, 14);
     protected static final VoxelShape SHAPE_WEST = Block.box(0.0, 0.0, 0.0, 2.0, 14, 14);
 
+    public static final EnumProperty<Rotation> ROTATE_TILE = EnumProperty.create("rotate_tile", Rotation.class);
 
     public ViewFinderBlock(Properties properties) {
         super(properties);
+        this.registerDefaultState(this.defaultBlockState()
+                .setValue(FACING, Direction.UP)
+                .setValue(ROTATE_TILE, Rotation.NONE));
     }
 
     @Nullable
@@ -62,12 +67,14 @@ public class ViewFinderBlock extends DirectionalBlock implements EntityBlock {
 
     @Override
     public BlockState rotate(BlockState state, Rotation rot) {
-        return state.setValue(FACING, rot.rotate(state.getValue(FACING)));
+        return state.setValue(FACING, rot.rotate(state.getValue(FACING)))
+                .setValue(ROTATE_TILE, state.getValue(ROTATE_TILE).getRotated(rot));
     }
 
     @Override
     public BlockState mirror(BlockState state, Mirror mirrorIn) {
         return state.rotate(mirrorIn.getRotation(state.getValue(FACING)));
+              //  .setValue(ROTATE_TILE, state.getValue(ROTATE_TILE).getRotated(Rotation.CLOCKWISE_180));
     }
 
     @Override
@@ -78,7 +85,7 @@ public class ViewFinderBlock extends DirectionalBlock implements EntityBlock {
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         super.createBlockStateDefinition(builder);
-        builder.add(FACING);
+        builder.add(FACING, ROTATE_TILE);
     }
 
     @Nullable
@@ -124,12 +131,12 @@ public class ViewFinderBlock extends DirectionalBlock implements EntityBlock {
 
     @Override
     protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        if (PlatHelper.getPhysicalSide().isClient() && ViewFinderController.isActiveAt(pos) ) {
+        if (PlatHelper.getPhysicalSide().isClient() && ViewFinderController.isActiveAt(pos)) {
             return Shapes.empty();
         }
-        if(context instanceof EntityCollisionContext ec &&
+        if (context instanceof EntityCollisionContext ec &&
                 ((ec.getEntity() instanceof Player p &&
-                PlatHelper.isAFakePlayer(p) ) || ec.getEntity() == null)){
+                        PlatHelper.isAFakePlayer(p)) || ec.getEntity() == null)) {
             return Shapes.empty();
 
         }
