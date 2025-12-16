@@ -9,6 +9,7 @@ import net.mehvahdjukaar.moonlight.api.platform.RegHelper;
 import net.mehvahdjukaar.vista.client.TapeTextureManager;
 import net.mehvahdjukaar.vista.common.*;
 import net.mehvahdjukaar.vista.configs.CommonConfigs;
+import net.mehvahdjukaar.vista.integration.CompatHandler;
 import net.mehvahdjukaar.vista.integration.exposure.ExposureCompat;
 import net.mehvahdjukaar.vista.network.ModNetwork;
 import net.minecraft.core.Holder;
@@ -38,8 +39,6 @@ import java.util.function.Supplier;
 public class VistaMod {
     public static final String MOD_ID = "vista";
     public static final Logger LOGGER = LogManager.getLogger("Vista");
-
-    public static final boolean EXPOSURE_ON = PlatHelper.isModLoaded("exposure");
 
     public static ResourceLocation res(String name) {
         return ResourceLocation.fromNamespaceAndPath(MOD_ID, name);
@@ -146,7 +145,7 @@ public class VistaMod {
 
         ModNetwork.init();
         ModLootOverrides.init();
-        if (EXPOSURE_ON) ExposureCompat.init();
+        CompatHandler.init();
 
         RegHelper.addItemsToTabsRegistration(VistaMod::addItemsToTabs);
 
@@ -170,9 +169,7 @@ public class VistaMod {
         }
         event.add(CreativeModeTabs.TOOLS_AND_UTILITIES, HOLLOW_CASSETTE.get());
 
-        if (EXPOSURE_ON) {
-            //   event.add(CreativeModeTabs.TOOLS_AND_UTILITIES, ExposureCompat.PICTURE_TAPE.get());
-        }
+        CompatHandler.addItemsToTabs(event);
     }
 
     @EventCalled

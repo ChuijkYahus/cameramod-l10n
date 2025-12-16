@@ -1,1 +1,3 @@
-fixed  a crash with some unidentified mod
+- fixed flickering with distant horizons
+- added distant horizons compat. by default DH LODs are disabled
+- added computer craft compat, allowing to control a view finder with a computer

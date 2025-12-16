@@ -38,6 +38,8 @@ import java.util.UUID;
 
 public class ViewFinderBlockEntity extends ItemDisplayTile implements IOnePlayerInteractable {
 
+    public static final int MAX_ZOOM = 44;
+
     public static final float NEAR_PLANE = 0.05f;
     public static final float BASE_FOV = 70;
 
@@ -170,10 +172,6 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOnePlayer
         return zoom;
     }
 
-    public int getMaxZoom() {
-        return 44;
-    }
-
     public boolean isLocked() {
         return locked;
     }
@@ -245,7 +243,7 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOnePlayer
     }
 
     public float getNormalizedZoomFactor() {
-        float normalizedZoom = (this.getZoomLevel() - 1f) / (this.getMaxZoom() - 1f);
+        float normalizedZoom = (this.getZoomLevel() - 1f) / (ViewFinderBlockEntity.MAX_ZOOM - 1f);
         normalizedZoom = 1 - ((1 - normalizedZoom) * (1 - normalizedZoom)); //easing
         return normalizedZoom;
     }

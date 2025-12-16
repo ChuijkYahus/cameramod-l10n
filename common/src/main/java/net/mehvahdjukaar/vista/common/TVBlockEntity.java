@@ -2,6 +2,7 @@ package net.mehvahdjukaar.vista.common;
 
 import net.mehvahdjukaar.moonlight.api.block.ItemDisplayTile;
 import net.mehvahdjukaar.vista.VistaMod;
+import net.mehvahdjukaar.vista.integration.CompatHandler;
 import net.mehvahdjukaar.vista.integration.exposure.ExposureCompat;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -106,7 +107,7 @@ public class TVBlockEntity extends ItemDisplayTile {
     @Override
     public boolean canPlaceItem(int index, ItemStack stack) {
         return stack.is(VistaMod.CASSETTE.get()) || stack.is(VistaMod.HOLLOW_CASSETTE.get()) ||
-                (VistaMod.EXPOSURE_ON && ExposureCompat.isPictureItem(stack));
+                (CompatHandler.EXPOSURE && ExposureCompat.isPictureItem(stack));
     }
     //TODO: is this needed? put in renderer?
 

@@ -1,0 +1,26 @@
+package net.mehvahdjukaar.vista.integration;
+
+import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
+import net.mehvahdjukaar.moonlight.api.platform.RegHelper;
+import net.mehvahdjukaar.moonlight.api.platform.configs.ConfigBuilder;
+import net.mehvahdjukaar.vista.integration.distant_horizons.DistantHorizonsCompat;
+import net.mehvahdjukaar.vista.integration.exposure.ExposureCompat;
+import net.minecraft.world.item.CreativeModeTabs;
+
+public class CompatHandler {
+
+    public static final boolean EXPOSURE = PlatHelper.isModLoaded("exposure");
+    public static final boolean DISTANT_HORIZONS = PlatHelper.isModLoaded("distanthorizons");
+
+    public static void init() {
+        if (EXPOSURE) ExposureCompat.init();
+    }
+
+    public static void addItemsToTabs(RegHelper.ItemToTabEvent event) {
+        if (EXPOSURE) event.add(CreativeModeTabs.TOOLS_AND_UTILITIES, ExposureCompat.PICTURE_TAPE.get());
+    }
+
+    public static void addConfigs(ConfigBuilder builder) {
+        if (DISTANT_HORIZONS) DistantHorizonsCompat.addConfigs(builder);
+    }
+}

@@ -15,6 +15,8 @@ import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.level.LevelEvent;
 
+import java.lang.ref.WeakReference;
+
 import static net.mehvahdjukaar.vista.VistaMod.MOD_ID;
 
 /**
@@ -23,7 +25,9 @@ import static net.mehvahdjukaar.vista.VistaMod.MOD_ID;
 @Mod(MOD_ID)
 public class VistaForge {
 
+    public static WeakReference<IEventBus> modBus;
     public VistaForge(IEventBus bus) {
+        modBus = new WeakReference<>(bus);
         RegHelper.startRegisteringFor(bus);
         VistaMod.init();
         NeoForge.EVENT_BUS.register(this);

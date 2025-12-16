@@ -5,6 +5,7 @@ import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.pipeline.TextureTarget;
+import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -17,6 +18,8 @@ import net.mehvahdjukaar.vista.VistaPlatStuff;
 import net.mehvahdjukaar.vista.common.LiveFeedConnectionManager;
 import net.mehvahdjukaar.vista.common.ViewFinderBlockEntity;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
+import net.mehvahdjukaar.vista.integration.CompatHandler;
+import net.mehvahdjukaar.vista.integration.distant_horizons.DistantHorizonsCompat;
 import net.minecraft.client.Camera;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
@@ -131,12 +134,9 @@ public class LiveFeedRendererManager {
 
         ResourceLocation textureId = text.getTextureLocation();
 
-        SCHEDULER.get().runIfShouldUpdate(textureId, () -> {
+        Runnable runTask = () -> {
 
-            if (ClientConfigs.isDebugOn()) {
-                UPDATE_TIMES.computeIfAbsent(textureId, k -> new RollingBuffer<>(20))
-                        .push(level.getGameTime());
-            }
+            setLastUpdatedTime(textureId, level);
 
 
             UUID uuid = text.associatedUUID;
@@ -174,8 +174,23 @@ public class LiveFeedRendererManager {
             LiveFeedRendererManager.LIVE_FEED_BEING_RENDERED = null;
             mainTarget.bindWrite(true);
 
-        });
+            //important otherwise we get flicker
+            RenderSystem.clear(16640, ON_OSX);
+        };
 
+        if (CompatHandler.DISTANT_HORIZONS) {
+            runTask = DistantHorizonsCompat.renderWithoutLOD(runTask);
+        }
+
+        SCHEDULER.get().runIfShouldUpdate(textureId, runTask);
+
+    }
+
+    private static void setLastUpdatedTime(ResourceLocation textureId, ClientLevel level) {
+        if (ClientConfigs.isDebugOn()) {
+            UPDATE_TIMES.computeIfAbsent(textureId, k -> new RollingBuffer<>(20))
+                    .push(level.getGameTime());
+        }
     }
 
     @SuppressWarnings("ConstantConditions")
