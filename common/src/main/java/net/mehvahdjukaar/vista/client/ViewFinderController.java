@@ -1,8 +1,8 @@
 package net.mehvahdjukaar.vista.client;
 
 import net.mehvahdjukaar.moonlight.api.misc.EventCalled;
-import net.mehvahdjukaar.vista.common.ViewFinderAccess;
-import net.mehvahdjukaar.vista.common.ViewFinderBlockEntity;
+import net.mehvahdjukaar.vista.common.view_finder.ViewFinderAccess;
+import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
 import net.minecraft.client.Camera;
 import net.minecraft.client.CameraType;
 import net.minecraft.client.Minecraft;

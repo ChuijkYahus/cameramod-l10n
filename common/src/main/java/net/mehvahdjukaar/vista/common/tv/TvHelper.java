@@ -1,4 +1,4 @@
-package net.mehvahdjukaar.vista.common;
+package net.mehvahdjukaar.vista.common.tv;
 
 import org.jetbrains.annotations.Nullable;
 
@@ -22,9 +22,9 @@ public final class TvHelper {
          * Null is treated as OFF by the algorithm.
          */
         @Nullable
-        TvConnection get(int left, int bottom);
+        TVType get(int left, int bottom);
 
-        void set(int left, int bottom, @Nullable TvConnection state);
+        void set(int left, int bottom, @Nullable TVType state);
     }
 
     // ---------- Core algorithm ----------
@@ -159,7 +159,7 @@ public final class TvHelper {
                 boolean edgeLeft = (x == left);
                 boolean edgeRight = (x == right);
 
-                TvConnection conn = TvConnection.get(!edgeUp, !edgeDown, !edgeLeft, !edgeRight);
+                TVType conn = TVType.fromConnections(!edgeUp, !edgeDown, !edgeLeft, !edgeRight);
                 // GridAccess is (left, top) → pass (col, row)
                 grid.set(x, y, conn);
             }

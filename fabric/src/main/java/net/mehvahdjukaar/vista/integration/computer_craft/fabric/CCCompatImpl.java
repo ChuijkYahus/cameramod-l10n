@@ -5,8 +5,8 @@ import dan200.computercraft.api.peripheral.IPeripheral;
 import dan200.computercraft.api.peripheral.PeripheralLookup;
 import net.mehvahdjukaar.moonlight.api.misc.TileOrEntityTarget;
 import net.mehvahdjukaar.vista.VistaMod;
-import net.mehvahdjukaar.vista.common.ViewFinderAccess;
-import net.mehvahdjukaar.vista.common.ViewFinderBlockEntity;
+import net.mehvahdjukaar.vista.common.view_finder.ViewFinderAccess;
+import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;

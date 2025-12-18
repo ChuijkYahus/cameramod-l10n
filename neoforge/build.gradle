@@ -100,7 +100,9 @@ dependencies {
 
     implementation 'org.jetbrains:annotations:22.0.0'
 
-    modApi("net.mehvahdjukaar:moonlight-neoforge:${moonlight_version}")
+    modApi("net.mehvahdjukaar:moonlight-neoforge:${moonlight_version}"){
+        transitive = true
+    }
 
     modImplementation("curse.maven:exposure-871755:7033927")
     modImplementation("curse.maven:jei-238222:7057366")

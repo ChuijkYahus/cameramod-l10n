@@ -2,7 +2,7 @@ package net.mehvahdjukaar.vista.client;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.mehvahdjukaar.vista.VistaMod;
-import net.mehvahdjukaar.vista.common.ViewFinderBlockEntity;
+import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;

@@ -2,33 +2,42 @@ package net.mehvahdjukaar.vista.integration.distant_horizons;
 
 import com.seibel.distanthorizons.api.DhApi;
 import com.seibel.distanthorizons.api.enums.config.EDhApiHorizontalQuality;
-import com.seibel.distanthorizons.api.interfaces.config.IDhApiConfigValue;
 import net.mehvahdjukaar.moonlight.api.platform.configs.ConfigBuilder;
 
 import java.util.function.Supplier;
 
 public class DistantHorizonsCompat {
 
+    static {
+        int aa = 1;
+    }
+
+
     private static Supplier<DHMode> dhMode = () -> DHMode.OFF;
 
     public static Runnable renderWithoutLOD(Runnable task) {
-        return () -> {
+        return new RunnableWithoutLOD(task);
+    }
+
+    private record RunnableWithoutLOD(Runnable task) implements Runnable {
+        @Override
+        public void run() {
+            var config = DhApi.Delayed.configs.graphics().renderingEnabled();
             DHMode mode = dhMode.get();
             if (mode == DHMode.OFF) {
-                IDhApiConfigValue<Boolean> config = DhApi.Delayed.configs.graphics().renderingEnabled();
                 boolean valueBefore = config.getValue();
                 config.setValue(false);
                 task.run();
                 config.setValue(valueBefore);
             } else {
-                EDhApiHorizontalQuality newDHConfig = mode.horizontal();
-                var config = DhApi.Delayed.configs.graphics().horizontalQuality();
-                var valueBefore = config.getValue();
-                config.setValue(newDHConfig);
+                var newDHConfig = mode.horizontal();
+                var config1 = DhApi.Delayed.configs.graphics().horizontalQuality();
+                var valueBefore = config1.getValue();
+                config1.setValue(newDHConfig);
                 task.run();
-                config.setValue(valueBefore);
+                config1.setValue(valueBefore);
             }
-        };
+        }
     }
 
     public static void addConfigs(ConfigBuilder builder) {

@@ -1,9 +1,12 @@
-package net.mehvahdjukaar.vista.common;
+package net.mehvahdjukaar.vista.common.tv;
 
-import com.google.common.base.Preconditions;
 import com.mojang.serialization.MapCodec;
 import net.mehvahdjukaar.moonlight.api.util.Utils;
+import net.mehvahdjukaar.moonlight.api.util.math.MthUtils;
+import net.mehvahdjukaar.moonlight.api.util.math.Vec2i;
 import net.mehvahdjukaar.vista.VistaMod;
+import net.mehvahdjukaar.vista.common.tv.connection.GridAccessor;
+import net.mehvahdjukaar.vista.common.tv.connection.TVConnectionHelper;
 import net.mehvahdjukaar.vista.configs.CommonConfigs;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -36,13 +39,13 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
 
     public static final MapCodec<TVBlock> CODEC = simpleCodec(TVBlock::new);
     public static final BooleanProperty POWERED = BlockStateProperties.POWERED;
-    public static final EnumProperty<TvConnection> CONNECTION = EnumProperty.create("connection", TvConnection.class);
+    public static final EnumProperty<TVType> CONNECTION = EnumProperty.create("connection", TVType.class);
 
     public TVBlock(Properties properties) {
         super(properties.lightLevel(state -> state.getValue(POWERED) ? 3 : 0));
         this.registerDefaultState(this.stateDefinition.any()
                 .setValue(POWERED, false)
-                .setValue(CONNECTION, TvConnection.NONE)
+                .setValue(CONNECTION, TVType.SINGLE)
                 .setValue(FACING, Direction.NORTH));
     }
 
@@ -61,7 +64,7 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
 
     @Override
     public @Nullable <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> blockEntityType) {
-        return  Utils.getTicker(blockEntityType, VistaMod.TV_TILE.get(), TVBlockEntity::onTick);
+        return Utils.getTicker(blockEntityType, VistaMod.TV_TILE.get(), TVBlockEntity::onTick);
     }
 
     @Override
@@ -129,12 +132,12 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
     @Override
     protected boolean triggerEvent(BlockState state, Level level, BlockPos pos, int id, int param) {
         if (id == 1) {
-            if(level.isClientSide){
+            if (level.isClientSide) {
                 if (level.getBlockEntity(pos) instanceof TVBlockEntity tile) {
                     tile.updateEndermanLookAnimation(param);
                     return true;
                 }
-            }else return true;
+            } else return true;
         }
         return super.triggerEvent(state, level, pos, id, param);
     }
@@ -151,23 +154,20 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
 
 
     private void updateAllConnections(BlockState state, Level level, BlockPos pos) {
-        if(!CommonConfigs.CONNECTED_TVS.get())return;
+        if (false && !CommonConfigs.CONNECTED_TVS.get()) return;
         TVGridAccess gridAccess = new TVGridAccess(level, pos, state);
-        TvHelper.updateConnections(gridAccess);
+        TVConnectionHelper.updateConnections(gridAccess, state.is(this));
         gridAccess.applyChanges();
     }
 
-    private record Vec2i(int x, int y) {
-    }
-
-    public static class TVGridAccess implements TvHelper.GridAccess {
+    public static class TVGridAccess implements GridAccessor {
 
         private final BlockPos pos;
         private final Direction facing;
         private final Level level;
 
-        private final Map<Vec2i, TvConnection> statesCache = new HashMap<>();
-        private final Map<Vec2i, TvConnection> statesChanged = new HashMap<>();
+        private final Map<Vec2i, TVType> statesCache = new HashMap<>();
+        private final Map<Vec2i, TVType> statesChanged = new HashMap<>();
 
         public TVGridAccess(Level level, BlockPos pos, BlockState state) {
             this.pos = pos;
@@ -177,14 +177,15 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
 
         @Nullable
         @Override
-        public TvConnection get(int left, int top) {
-            Vec2i key = new Vec2i(left, top);
+        public TVType getAt(Vec2i key) {
+            int left = key.x();
+            int top = key.y();
             if (statesChanged.containsKey(key)) {
                 return statesChanged.get(key);
             }
-            BlockPos target = relativePos(pos, facing, left, top, 0);
+            BlockPos target = MthUtils.relativePos(pos, facing, left, top, 0);
             BlockState bs = level.getBlockState(target);
-            TvConnection value = null;
+            TVType value = null;
             if (bs.getBlock() instanceof TVBlock && bs.getValue(FACING) == facing) {
                 value = bs.getValue(CONNECTION);
             }
@@ -193,9 +194,8 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
         }
 
         @Override
-        public void set(int left, int top, @Nullable TvConnection state) {
-            Vec2i key = new Vec2i(left, top);
-            TvConnection old = statesCache.get(key);
+        public void setAt(Vec2i key, @Nullable TVType state) {
+            TVType old = statesCache.get(key);
             if (old != state) {
                 statesChanged.put(key, state);
             }
@@ -204,8 +204,8 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
         public void applyChanges() {
             for (var e : statesChanged.entrySet()) {
                 Vec2i key = e.getKey();
-                TvConnection conn = e.getValue();
-                BlockPos target = relativePos(pos, facing, key.x, key.y, 0);
+                TVType conn = e.getValue();
+                BlockPos target = MthUtils.relativePos(pos, facing, key.x(), key.y(), 0);
                 BlockState bs = level.getBlockState(target);
                 if (bs.getBlock() instanceof TVBlock && conn != null) {
                     level.setBlockAndUpdate(target, bs.setValue(CONNECTION, conn));
@@ -215,21 +215,6 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
 
     }
 
-    @Deprecated(forRemoval = true)
-    public static BlockPos relativePos(BlockPos pos, Direction normal, int left, int top, int forward) {
-        Preconditions.checkArgument(normal.getAxis() != Direction.Axis.Y, "Normal direction cannot be vertical");
-        if (forward != 0) {
-            pos = pos.relative(normal, forward);
-        }
-        if (left != 0) {
-            Direction leftDir = normal.getCounterClockWise();
-            pos = pos.relative(leftDir, left);
-        }
-        if (top != 0) {
-            pos = pos.above(top);
-        }
-        return pos;
-    }
 
 }
 

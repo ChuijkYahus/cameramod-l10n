@@ -1,4 +1,4 @@
-package net.mehvahdjukaar.vista.common;
+package net.mehvahdjukaar.vista.common.tv;
 
 
 import net.minecraft.world.entity.player.Player;

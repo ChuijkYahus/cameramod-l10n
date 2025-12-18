@@ -1,6 +1,6 @@
 {
   "variants": {
-    "facing=north,connection=none": {
+    "facing=north,connection=single": {
       "model": "vista:block/television"
     },
     "facing=north,connection=top": {
@@ -30,7 +30,7 @@
     "facing=north,connection=center": {
       "model": "vista:block/television_center"
     },
-    "facing=east,connection=none": {
+    "facing=east,connection=single": {
       "model": "vista:block/television",
       "y": 90
     },
@@ -70,7 +70,7 @@
       "model": "vista:block/television_center",
       "y": 90
     },
-    "facing=south,connection=none": {
+    "facing=south,connection=single": {
       "model": "vista:block/television",
       "y": 180
     },
@@ -110,7 +110,7 @@
       "model": "vista:block/television_center",
       "y": 180
     },
-    "facing=west,connection=none": {
+    "facing=west,connection=single": {
       "model": "vista:block/television",
       "y": 270
     },
