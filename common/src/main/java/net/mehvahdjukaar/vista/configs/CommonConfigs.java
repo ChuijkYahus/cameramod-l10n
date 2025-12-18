@@ -13,16 +13,15 @@ public class CommonConfigs {
 
     public static final ModConfigHolder SPEC;
 
-    public static final Supplier<Boolean> CONNECTED_TVS;
+    public static final Supplier<Integer> MAX_CONNECTED_TV_SIZE;
 
     static {
         ConfigBuilder builder = ConfigBuilder.create(VistaMod.MOD_ID, ConfigType.COMMON_SYNCED);
 
         builder.push("general");
-        CONNECTED_TVS = PlatHelper.isDev() ? () -> true : builder
-                .comment("If true, TVs placed next to each other will connect into a larger screen (WIP)")
-                .define("connected_tv", false);
-
+        MAX_CONNECTED_TV_SIZE = builder
+                .comment("Maximum size of connected TVs (in blocks). Set to 1 to disable multi-block TVs.")
+                .define("max_connected_tv_size", 8, 1, 32);
 
         builder.pop();
 

@@ -42,7 +42,7 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
     public void render(TVBlockEntity blockEntity, float partialTick, PoseStack poseStack, MultiBufferSource buffer,
                        int light, int overlay) {
 
-        if (!blockEntity.getBlockState().getValue(TVBlock.POWERED)) return;
+        if (!blockEntity.isPowered()) return;
 
         Direction dir = blockEntity.getBlockState().getValue(TVBlock.FACING);
 

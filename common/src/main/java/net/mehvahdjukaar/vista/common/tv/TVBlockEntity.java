@@ -1,6 +1,7 @@
 package net.mehvahdjukaar.vista.common.tv;
 
 import net.mehvahdjukaar.moonlight.api.block.ItemDisplayTile;
+import net.mehvahdjukaar.moonlight.api.util.math.Rect2D;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.common.CassetteTape;
 import net.mehvahdjukaar.vista.common.LiveFeedConnectionManager;
@@ -41,7 +42,8 @@ public class TVBlockEntity extends ItemDisplayTile {
     @Nullable
     private Holder<CassetteTape> tape = null;
 
-    private int connectedTvsSize = 1;
+    private int connectedTvHeight = 1;
+    private int connectedTvsWidth = 1;
 
     private int soundLoopTicks = 0;
     private int animationTicks = 0;
@@ -63,14 +65,29 @@ public class TVBlockEntity extends ItemDisplayTile {
     @Override
     public void saveAdditional(CompoundTag compound, HolderLookup.Provider registries) {
         super.saveAdditional(compound, registries);
-        compound.putInt("ConnectedTVsSize", connectedTvsSize);
+        compound.putInt("ConnectionWidth", connectedTvsWidth);
+        compound.putInt("ConnectionHeight", connectedTvHeight);
     }
 
     @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
-        this.connectedTvsSize = tag.getInt("ConnectedTVsSize");
+        this.connectedTvsWidth = tag.getInt("ConnectionWidth");
+        this.connectedTvHeight = tag.getInt("ConnectionHeight");
         cacheState(); //no called by update client state on first load since level is null..
+    }
+
+    public int getConnectionWidth() {
+        return connectedTvsWidth;
+    }
+
+    public int getConnectedHeight() {
+        return connectedTvHeight;
+    }
+
+    public void setConnectionSize(int width, int height) {
+        this.connectedTvsWidth = width;
+        this.connectedTvHeight = height;
     }
 
     @Nullable
@@ -163,7 +180,7 @@ public class TVBlockEntity extends ItemDisplayTile {
     }
 
     public static void onTick(Level level, BlockPos pos, BlockState state, TVBlockEntity tile) {
-        boolean powered = state.getValue(TVBlock.POWERED);
+        boolean powered = tile.isPowered();
         if (level.isClientSide) {
             if (powered) {
                 float duration = tile.getPlayDuration();
@@ -315,5 +332,11 @@ public class TVBlockEntity extends ItemDisplayTile {
 
     public void updateEndermanLookAnimation(int param) {
         this.lookingAtEnderman = param > 0;
+    }
+
+    //TODO: maybe use this instead of states
+    public boolean isPowered() {
+        BlockState state = this.getBlockState();
+        return state.getValue(TVBlock.POWER_STATE).isOn();
     }
 }

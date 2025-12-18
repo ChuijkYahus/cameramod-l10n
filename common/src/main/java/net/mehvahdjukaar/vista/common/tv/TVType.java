@@ -2,7 +2,9 @@ package net.mehvahdjukaar.vista.common.tv;
 
 
 import net.mehvahdjukaar.moonlight.api.util.math.Direction2D;
+import net.minecraft.core.Direction;
 import net.minecraft.util.StringRepresentable;
+import net.minecraft.world.level.block.Rotation;
 
 import java.util.Locale;
 
@@ -35,7 +37,8 @@ public enum TVType implements StringRepresentable {
         int mask = (up ? C.U : 0) | (down ? C.D : 0) | (left ? C.L : 0) | (right ? C.R : 0);
         TVType c = C.LUT[mask];
         if (c != null) return c;
-        throw new IllegalArgumentException("Invalid pattern for square tiling (mask=" + mask + ")");
+        return SINGLE;
+       // throw new IllegalArgumentException("Invalid pattern for square tiling (mask=" + mask + ")");
     }
 
     @Override
@@ -46,6 +49,21 @@ public enum TVType implements StringRepresentable {
     public boolean isConnected(TVType other) {
         if (other == null) return false;
         return (mask & other.mask) != 0;
+    }
+
+    public boolean isConnected(Direction fromDir, Direction facingDir){
+        Direction2D dir = Direction2D.from3D(fromDir, horizontalRot(facingDir));
+        return isConnected(dir);
+    }
+
+    private static Rotation horizontalRot(Direction dir){
+        return switch (dir) {
+            case NORTH -> Rotation.NONE;
+            case EAST -> Rotation.CLOCKWISE_90;
+            case SOUTH -> Rotation.CLOCKWISE_180;
+            case WEST -> Rotation.COUNTERCLOCKWISE_90;
+            default -> Rotation.NONE;
+        };
     }
 
     public boolean isConnected(Direction2D dir){

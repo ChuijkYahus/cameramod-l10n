@@ -50,7 +50,7 @@ public final class RectFinder {
             }
 
             // maximal = no further expansion possible
-            if (!squareOnly || r.isSquare()) {
+            if ((!squareOnly || r.isSquare())) {
                 maximalRects.add(r);
             }
         }
@@ -63,7 +63,7 @@ public final class RectFinder {
 
         while (edgeLocs.hasNext()) {
             Vec2i p = edgeLocs.next();
-            TVType t = grid.getAt(p);
+            TVType t = grid.getAt(p).type();
             if (t == null) return false;
 
             if (t.hasEdge(d2)) {
@@ -74,8 +74,8 @@ public final class RectFinder {
     }
 
 
-    public static Rect2D findMaxExpandedRect(GridAccessor grid, Vec2i from, boolean squareOnly) {
-        return findMaxExpandedRects(grid, from, squareOnly)
+    public static Rect2D findMaxExpandedRect(GridAccessor grid, Vec2i from, int maxSize, boolean squareOnly) {
+        return findMaxExpandedRects(grid, from, maxSize, squareOnly)
                 .stream()
                 .max(Comparator.comparingInt(Rect2D::getArea))
                 .orElse(new Rect2D(0, 0, 1, 1));
@@ -84,6 +84,7 @@ public final class RectFinder {
     private static Set<Rect2D> findMaxExpandedRects(
             GridAccessor grid,
             Vec2i from,
+            int maxSize,
             boolean squareOnly
     ) {
         Rect2D start = new Rect2D(from.x(), from.y(), 1, 1);
@@ -105,7 +106,10 @@ public final class RectFinder {
             }
 
             //validate solution
-            if ((!squareOnly || s.selection.isSquare()) && s.selection.contains(s.touchedRect)) {
+            if ((s.selection.width() <= maxSize && s.selection.height() <= maxSize) &&
+                    (!squareOnly || s.selection.isSquare())
+                    && s.selection.contains(s.touchedRect)) {
+
                 maximalRects.add(s.selection);
             }
         }
@@ -127,13 +131,14 @@ public final class RectFinder {
 
         while (edge.hasNext()) {
             Vec2i p = edge.next();
-            TVType t = grid.getAt(p);
+            GridTile at = grid.getAt(p);
+            TVType t = at.type();
 
             if (t == null) {
                 return List.of(); // no expansion possible
             }
 
-            if (t != TVType.SINGLE) {
+            if (t != TVType.SINGLE || at.hasBe()) {
 
                 // If we already chose a selection, it must match
                 if (touched != null) {
