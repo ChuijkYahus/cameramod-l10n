@@ -32,6 +32,8 @@ import java.util.UUID;
 
 public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity> {
 
+    private static final int EDGE_PIXEL_LEN = 4;
+
     public TvBlockEntityRenderer(BlockEntityRendererProvider.Context context) {
     }
 
@@ -60,6 +62,10 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
         };
     }
 
+    private static int getTVScreenPixelSize(int connectionLen) {
+        return Math.max(1, connectionLen) * 16 - EDGE_PIXEL_LEN;
+    }
+
     @Override
     public void render(TVBlockEntity blockEntity, float partialTick, PoseStack poseStack, MultiBufferSource buffer,
                        int light, int overlay) {
@@ -73,10 +79,7 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
         int connectionH = blockEntity.getConnectedHeight();
 
         if (!lod.isMedium()) return;
-
-        if (lod.isPlaneCulled(dir, 0.5f, 0f)) {
-            return;
-        }
+        if (lod.isPlaneCulled(dir, 0.5f, connectionW * 1.5f, 0f)) return;
 
         float yaw = dir.toYRot();
         float w = (connectionW - 1) / 2f;
@@ -85,10 +88,10 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
         poseStack.mulPose(Axis.YP.rotationDegrees(180 - yaw));
         poseStack.translate(-w, h, -0.501);
 
-        int screenPixelSize = blockEntity.getScreenPixelSize();
+        int screenPixelSize = getTVScreenPixelSize(connectionW);
 
         float s = screenPixelSize / 32f;
-        int pixelScale = ClientConfigs.SCALE_PIXELS.get() ? connectionW : 1;
+        int pixelEffectRes = ClientConfigs.SCALE_PIXELS.get() ? screenPixelSize : (16 - EDGE_PIXEL_LEN);
 
         VertexConsumer vc = null;
 
@@ -105,17 +108,17 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
             if (tex != null) {
                 maybeRenderDebug(tex, poseStack, buffer, partialTick, blockEntity);
                 float enderman = blockEntity.getLookingAtEndermanAnimation(partialTick);
-                vc = TapeTextureManager.getFullSpriteVC(tex, buffer, enderman, pixelScale);
+                vc = TapeTextureManager.getFullSpriteVC(tex, buffer, enderman, pixelEffectRes);
             } else {
-                vc = TapeTextureManager.getDefaultTapeVC(buffer, pixelScale);
+                vc = TapeTextureManager.getDefaultTapeVC(buffer, pixelEffectRes);
             }
 
         } else if (tape != null) {
-            vc = TapeTextureManager.getTapeVC(tape, buffer, pixelScale);
+            vc = TapeTextureManager.getTapeVC(tape, buffer, pixelEffectRes);
         } else if (CompatHandler.EXPOSURE) {
             ResourceLocation texture = ExposureCompatClient.getPictureTextureForRenderer(stack, blockEntity.getAnimationTick());
             if (texture != null) {
-                vc = TapeTextureManager.getFullSpriteVC(texture, buffer, 0, pixelScale);
+                vc = TapeTextureManager.getFullSpriteVC(texture, buffer, 0, pixelEffectRes);
             }
         }
         if (vc == null) {

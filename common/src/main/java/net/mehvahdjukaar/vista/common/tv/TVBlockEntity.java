@@ -1,7 +1,6 @@
 package net.mehvahdjukaar.vista.common.tv;
 
 import net.mehvahdjukaar.moonlight.api.block.ItemDisplayTile;
-import net.mehvahdjukaar.moonlight.api.util.math.Rect2D;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.common.CassetteTape;
 import net.mehvahdjukaar.vista.common.LiveFeedConnectionManager;
@@ -72,8 +71,8 @@ public class TVBlockEntity extends ItemDisplayTile {
     @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
-        this.connectedTvsWidth = tag.getInt("ConnectionWidth");
-        this.connectedTvHeight = tag.getInt("ConnectionHeight");
+        this.connectedTvsWidth = Math.max(1, tag.getInt("ConnectionWidth"));
+        this.connectedTvHeight = Math.max(1, tag.getInt("ConnectionHeight"));
         cacheState(); //no called by update client state on first load since level is null..
     }
 
@@ -98,10 +97,6 @@ public class TVBlockEntity extends ItemDisplayTile {
     @Nullable
     public Holder<CassetteTape> getTape() {
         return tape;
-    }
-
-    public int getScreenPixelSize() {
-        return (connectedTvsWidth*16)-4;
     }
 
     @Override

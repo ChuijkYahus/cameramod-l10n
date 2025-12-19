@@ -23,52 +23,62 @@ public class TapeTextureManager {
     private static final ResourceLocation SMILE_LOCATION = VistaMod.res("smile");
     private static final ResourceLocation NEUTRAL_LOCATION = VistaMod.res("neutral");
     private static final ResourceLocation SAD_LOCATION = VistaMod.res("sad");
+    private static final Map<Smile, ResourceLocation> SMILES = Map.of(
+            Smile.HAPPY, SMILE_LOCATION,
+            Smile.NEUTRAL, NEUTRAL_LOCATION,
+            Smile.SAD, SAD_LOCATION
+    );
 
-    private static final Map<ResourceKey<CassetteTape>, Material> MATERIALS = new HashMap<>();
-    private static final Map<ResourceKey<CassetteTape>, Material> MATERIALS_FLAT = new HashMap<>();
-    private static final Material DEFAULT_MATERIAL = new Material(ATLAS_LOCATION, BARS_LOCATION);
-    private static final Material DEFAULT_MATERIAL_FLAT = new Material(ATLAS_LOCATION, BARS_LOCATION);
-    private static final Material SMILE_MATERIAL = new Material(ATLAS_LOCATION, SMILE_LOCATION);
-    private static final Material SMILE_MATERIAL_FLAT = new Material(ATLAS_LOCATION, SMILE_LOCATION);
-    private static final Material NEUTRAL_MATERIAL = new Material(ATLAS_LOCATION, NEUTRAL_LOCATION);
-    private static final Material NEUTRAL_MATERIAL_FLAT = new Material(ATLAS_LOCATION, NEUTRAL_LOCATION);
-    private static final Material SAD_MATERIAL = new Material(ATLAS_LOCATION, SAD_LOCATION);
-    private static final Material SAD_MATERIAL_FLAT = new Material(ATLAS_LOCATION, SAD_LOCATION);
+    private static final Map<CassetteMaterialKey, Material> CASSETTE_MATERIALS = new HashMap<>();
+    private static final Map<DefaultMaterialKey, Material> BARS_MATERIAL = new HashMap<>();
+    private static final Map<SmileMaterialKey, Material> SMILE_MATERIAL = new HashMap<>();
 
-    public static Material getMaterial(Holder<CassetteTape> tapeKey) {
-        return MATERIALS.computeIfAbsent(tapeKey.unwrapKey().get(), k ->
-                new Material(ATLAS_LOCATION, tapeKey.value().assetId()));
+    private record CassetteMaterialKey(ResourceKey<CassetteTape> tapeKey, int scale, boolean hasSfx) {
     }
 
-    public static Material getMaterialFlat(Holder<CassetteTape> tapeKey) {
-        return MATERIALS_FLAT.computeIfAbsent(tapeKey.unwrapKey().get(), k ->
-                new Material(ATLAS_LOCATION, tapeKey.value().assetId()));
+    private record DefaultMaterialKey(int scale, boolean hasSfx) {
     }
 
+    private record SmileMaterialKey(Smile smile, boolean hasSfx) {
+    }
+
+    private enum Smile {
+        HAPPY, NEUTRAL, SAD;
+
+        public static Smile fromHealth(LivingEntity entity) {
+            float health = entity.getHealth() / entity.getMaxHealth();
+            if (health > 0.66f) {
+                return HAPPY;
+            } else if (health > 0.33f) {
+                return NEUTRAL;
+            } else {
+                return SAD;
+            }
+        }
+    }
 
     public static VertexConsumer getTapeVC(Holder<CassetteTape> tapeKey, MultiBufferSource buffer, int scale) {
         boolean hasSfx = hasSfx();
-        Material mat = hasSfx ? getMaterial(tapeKey) : getMaterialFlat(tapeKey);
+        var materialKey = new CassetteMaterialKey(tapeKey.unwrapKey().get(), scale, hasSfx);
+        Material mat = CASSETTE_MATERIALS.computeIfAbsent(materialKey, k ->
+                new Material(ATLAS_LOCATION, tapeKey.value().assetId()));
         return mat.buffer(buffer, hasSfx ? t -> ModRenderTypes.CAMERA_DRAW_SPRITE.apply(t, mat, scale) : RenderType::text);
     }
 
     public static VertexConsumer getDefaultTapeVC(MultiBufferSource buffer, int scale) {
         boolean hasSfx = hasSfx();
-        Material mat = hasSfx ? DEFAULT_MATERIAL : DEFAULT_MATERIAL_FLAT;
+        var materialKey = new DefaultMaterialKey(scale, hasSfx);
+        Material mat = BARS_MATERIAL.computeIfAbsent(materialKey, k ->
+                new Material(ATLAS_LOCATION, BARS_LOCATION));
         return mat.buffer(buffer, hasSfx ? t -> ModRenderTypes.CAMERA_DRAW_SPRITE.apply(t, mat, scale) : RenderType::text);
     }
 
     public static VertexConsumer getSmileTapeVC(MultiBufferSource buffer, LivingEntity player) {
         boolean hasSfx = hasSfx();
-        float health = player.getHealth() / player.getMaxHealth();
-        Material mat;
-        if (health > 0.66f) {
-            mat = hasSfx ? SMILE_MATERIAL : SMILE_MATERIAL_FLAT;
-        } else if (health > 0.33f) {
-            mat = hasSfx ? NEUTRAL_MATERIAL : NEUTRAL_MATERIAL_FLAT;
-        } else {
-            mat = hasSfx ? SAD_MATERIAL : SAD_MATERIAL_FLAT;
-        }
+        Smile smile = Smile.fromHealth(player);
+        var materialKey = new SmileMaterialKey(smile, hasSfx);
+        Material mat = SMILE_MATERIAL.computeIfAbsent(materialKey, k ->
+                new Material(ATLAS_LOCATION, SMILES.get(smile)));
         return mat.buffer(buffer, hasSfx ? t -> ModRenderTypes.CAMERA_DRAW_SPRITE.apply(t, mat, 1) : RenderType::text);
     }
 
@@ -80,8 +90,9 @@ public class TapeTextureManager {
     }
 
     public static void onWorldReload() {
-        MATERIALS.clear();
-        MATERIALS_FLAT.clear();
+        CASSETTE_MATERIALS.clear();
+        BARS_MATERIAL.clear();
+        SMILE_MATERIAL.clear();
     }
 
     private static boolean hasSfx() {

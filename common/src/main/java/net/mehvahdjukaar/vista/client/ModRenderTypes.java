@@ -28,9 +28,6 @@ public class ModRenderTypes extends RenderType {
         super(name, format, mode, bufferSize, affectsCrumbling, sortOnUpload, setupState, clearState);
     }
 
-    private static final AtomicReference<Float> ENDERMAN_NOISE = new AtomicReference<>(0f);
-
-
     private static final ShaderStateShard CAMERA_SHADER_STATE = new ShaderStateShard(VistaModClient.CAMERA_VIEW_SHADER);
     private static final ShaderStateShard STATIC_SHADER_STATE = new ShaderStateShard(VistaModClient.STATIC_SHADER);
     private static final ShaderStateShard POSTERIZE_SHADER_STATE = new ShaderStateShard(VistaModClient.POSTERIZE_SHADER);
@@ -101,8 +98,8 @@ public class ModRenderTypes extends RenderType {
                 ));
     }
 
-    private static void setCameraDrawUniforms(ShaderInstance shader, float noise, int scale) {
-
+    private static void setCameraDrawUniforms(ShaderInstance shader, float noise, int screenSize) {
+        float scale = screenSize / 12f;
         setFloat(shader, "TriadsPerPixel", 1.37f * scale);
         setFloat(shader, "Smear", 1f);
         setFloat(shader, "EnableEnergyNormalize", 0.0f);
@@ -172,11 +169,6 @@ public class ModRenderTypes extends RenderType {
 
     private static void setFloat(ShaderInstance shader, String name, float value) {
         shader.safeGetUniform(name).set(value);
-    }
-
-
-    public static void setEndermanStatic(float intensity) {
-        ENDERMAN_NOISE.set(intensity);
     }
 
 }

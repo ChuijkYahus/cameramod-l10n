@@ -90,13 +90,17 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
         while (type.isConnected(Direction.DOWN, facing)) {
             currentPos = currentPos.below();
             BlockState belowState = level.getBlockState(currentPos);
-            if (!belowState.is(this) || belowState.getValue(FACING) != facing) return null;
+            if (!belowState.is(this) || belowState.getValue(FACING) != facing){
+                return null;
+            }
             type = belowState.getValue(CONNECTION);
         }
-        while (type.isConnected(facing.getClockWise(), facing)) {
+        while (type.isConnected(facing.getCounterClockWise(), facing)) {
             currentPos = currentPos.relative(facing.getClockWise());
             BlockState sideState = level.getBlockState(currentPos);
-            if (!sideState.is(this) || sideState.getValue(FACING) != facing) return null;
+            if (!sideState.is(this) || sideState.getValue(FACING) != facing){
+                return null;
+            }
             type = sideState.getValue(CONNECTION);
         }
         be = level.getBlockEntity(currentPos);

@@ -1,7 +1,7 @@
 package net.mehvahdjukaar.vista.common.view_finder;
 
 import com.mojang.authlib.GameProfile;
-import net.mehvahdjukaar.moonlight.api.block.IOnePlayerInteractable;
+import net.mehvahdjukaar.moonlight.api.block.IOneUserInteractable;
 import net.mehvahdjukaar.moonlight.api.block.ItemDisplayTile;
 import net.mehvahdjukaar.moonlight.api.misc.TileOrEntityTarget;
 import net.mehvahdjukaar.moonlight.api.platform.network.NetworkHelper;
@@ -40,7 +40,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-public class ViewFinderBlockEntity extends ItemDisplayTile implements IOnePlayerInteractable {
+public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserInteractable {
 
     public static final int MAX_ZOOM = 44;
 
@@ -143,9 +143,9 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOnePlayer
             return itemAdd;
         }
         //same as super but sends custom packet
-        if (player instanceof ServerPlayer sp && !this.isOtherPlayerEditing(pos, player)) {
+        if (player instanceof ServerPlayer sp && this.canBeUsedBy(pos, player)) {
             // open gui (edit sign with empty hand)
-            this.setPlayerWhoMayEdit(player.getUUID());
+            this.setCurrentUser(player.getUUID());
             NetworkHelper.sendToClientPlayer(sp, new ClientBoundControlViewFinderPacket(TileOrEntityTarget.of(this)));
         }
         //always swing on fail
@@ -229,15 +229,14 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOnePlayer
     }
 
     @Override
-    public void setPlayerWhoMayEdit(@Nullable UUID uuid) {
+    public void setCurrentUser(@Nullable UUID uuid) {
         this.controllingPlayer = uuid;
     }
 
     @Override
-    public UUID getPlayerWhoMayEdit() {
+    public @Nullable UUID getCurrentUser() {
         return controllingPlayer;
     }
-
 
     public float getFOVModifier() {
         float spyglassZoom = 0.1f;
