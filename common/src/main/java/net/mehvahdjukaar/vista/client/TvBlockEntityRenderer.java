@@ -10,6 +10,7 @@ import net.mehvahdjukaar.vista.common.CassetteTape;
 import net.mehvahdjukaar.vista.common.tv.TVBlock;
 import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
+import net.mehvahdjukaar.vista.configs.CommonConfigs;
 import net.mehvahdjukaar.vista.integration.CompatHandler;
 import net.mehvahdjukaar.vista.integration.exposure.ExposureCompatClient;
 import net.minecraft.client.Minecraft;
@@ -51,20 +52,27 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
 
         if (!lod.isMedium()) return;
 
-        if (lod.isPlaneCulled(dir, 0.5f, 0f)) {
+        if (lod.isPlaneCulled(dir, 0.501f, 0f)) {
             return;
         }
 
         float yaw = dir.toYRot();
+        float w = (blockEntity.getConnectionWidth()-1)/2f;
+        float h = (blockEntity.getConnectedHeight()-1)/2f;
         poseStack.translate(0.5, 0.5, 0.5);
         poseStack.mulPose(Axis.YP.rotationDegrees(180 - yaw));
-        poseStack.translate(-0.5, -0.5, -0.5);
+        poseStack.translate(-w, h, -0.5);
+        int screenPixelSize = blockEntity.getScreenPixelSize();
+        float s = screenPixelSize / 32f;
 
-        boolean drawingCamera = LiveFeedRendererManager.LIVE_FEED_BEING_RENDERED != null;
+        int pixelScale = ClientConfigs.SCALE_PIXELS.get() ?
+                blockEntity.getConnectionWidth() : 1;
+
+        poseStack.translate(0,0, -0.001);
 
         VertexConsumer vc = null;
 
-        int screenPixelSize = blockEntity.getScreenPixelSize();
+
         UUID liveFeedId = blockEntity.getLinkedFeedUUID();
         Holder<CassetteTape> tape = blockEntity.getTape();
 
@@ -78,24 +86,17 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
             if (tex != null) {
                 maybeRenderDebug(tex, poseStack, buffer, partialTick, blockEntity);
                 float enderman = blockEntity.getLookingAtEndermanAnimation(partialTick);
-                vc = TapeTextureManager.getFullSpriteVC(tex, buffer, drawingCamera, enderman);
+                vc = TapeTextureManager.getFullSpriteVC(tex, buffer, enderman, pixelScale);
             } else {
-                vc = TapeTextureManager.getDefaultTapeVC(buffer, drawingCamera);
+                vc = TapeTextureManager.getDefaultTapeVC(buffer, pixelScale);
             }
 
         } else if (tape != null) {
-            if (drawingCamera) {
-                Material mat = TapeTextureManager.getMaterialFlat(tape);
-                vc = mat.buffer(buffer, RenderType::text);
-            } else {
-                Material mat = TapeTextureManager.getMaterial(tape);
-
-                vc = mat.buffer(buffer, t -> ModRenderTypes.CAMERA_DRAW_SPRITE.apply(t, mat));
-            }
+            vc = TapeTextureManager.getTapeVC(tape, buffer, pixelScale);
         } else if (CompatHandler.EXPOSURE) {
             ResourceLocation texture = ExposureCompatClient.getPictureTextureForRenderer(stack, blockEntity.getAnimationTick());
             if (texture != null) {
-                vc = TapeTextureManager.getFullSpriteVC(texture, buffer, drawingCamera, 0);
+                vc = TapeTextureManager.getFullSpriteVC(texture, buffer, 0, pixelScale);
             }
         }
         if (vc == null) {
@@ -105,14 +106,15 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
 
         light = LightTexture.FULL_BRIGHT;
 
-        float s = screenPixelSize / 32f;
 
-        poseStack.translate(0.5, 0.5, -0.001);
 
         int lightU = light & 0xFFFF;
         int lightV = (light >> 16) & 0xFFFF;
         VertexUtil.addQuad(vc, poseStack, -s, -s, s, s, lightU, lightV);
     }
+
+    // ========== DEBUG RENDERING ========== //
+
 
     private void maybeRenderDebug(ResourceLocation tex, PoseStack poseStack, MultiBufferSource buffer, float partialTick,
                                   TVBlockEntity tile) {

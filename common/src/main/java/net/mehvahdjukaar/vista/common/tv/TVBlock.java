@@ -1,6 +1,8 @@
 package net.mehvahdjukaar.vista.common.tv;
 
+import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.MapCodec;
+import net.mehvahdjukaar.moonlight.api.block.IOptionalEntityBlock;
 import net.mehvahdjukaar.moonlight.api.util.Utils;
 import net.mehvahdjukaar.moonlight.api.util.math.Direction2D;
 import net.mehvahdjukaar.moonlight.api.util.math.MthUtils;
@@ -10,6 +12,7 @@ import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.common.tv.connection.GridAccessor;
 import net.mehvahdjukaar.vista.common.tv.connection.GridTile;
 import net.mehvahdjukaar.vista.common.tv.connection.RectFinder;
+import net.mehvahdjukaar.vista.common.tv.connection.RectSelection;
 import net.mehvahdjukaar.vista.configs.CommonConfigs;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -38,7 +41,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.HashMap;
 import java.util.Map;
 
-public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, Equipable {
+public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, Equipable, IOptionalEntityBlock {
 
     public static final MapCodec<TVBlock> CODEC = simpleCodec(TVBlock::new);
     public static final EnumProperty<PowerState> POWER_STATE = EnumProperty.create("powered", PowerState.class);
@@ -137,10 +140,15 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
         return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
     }
 
+    @Override
+    public boolean shouldHaveBlockEntity(BlockStateBase state) {
+        TVType conn = state.getValue(CONNECTION);
+        return conn == TVType.SINGLE || conn == TVType.BOTTOM_LEFT;
+    }
 
     @Override
     public @Nullable BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
-        return hasBlockEntity(state) ? new TVBlockEntity(pos, state) : null;
+        return shouldHaveBlockEntity(state) ? new TVBlockEntity(pos, state) : null;
     }
 
     @Override
@@ -159,18 +167,15 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
             //update neighbors
             TVGridAccess gridAccess = new TVGridAccess(level, pos, state);
             Rect2D old = RectFinder.findMaxRect(gridAccess, Vec2i.ZERO, false);
-            gridAccess.setSquare(old);
-            gridAccess.applyChanges();
+                  gridAccess.transform(old, old, null);
+                gridAccess.applyChanges();
         }
     }
 
     @Override
     protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
-        super.onRemove(state, level, pos, newState, movedByPiston);
         if (!state.is(newState.getBlock())) this.shrinkConnection(state, level, pos);
-        if (newState.is(this) && !hasBlockEntity(newState)) {
-            level.removeBlockEntity(pos);
-        }
+        super.onRemove(state, level, pos, newState, movedByPiston);
     }
 
     @Override
@@ -183,9 +188,9 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
         int maxSize = CommonConfigs.MAX_CONNECTED_TV_SIZE.get();
         if (maxSize <= 1) return;
         TVGridAccess gridAccess = new TVGridAccess(level, pos, tvState);
-
-        Rect2D newRec = RectFinder.findMaxExpandedRect(gridAccess, Vec2i.ZERO, maxSize, true);
-        gridAccess.setSquare(newRec);
+        Rect2D old = RectFinder.findMaxRect(gridAccess, Vec2i.ZERO, true);
+        RectSelection newRec = RectFinder.findMaxExpandedRect(gridAccess, Vec2i.ZERO, maxSize, true);
+        gridAccess.transform(old, newRec.selection(), newRec.touchedRect());
         gridAccess.applyChanges();
     }
 
@@ -200,11 +205,7 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
         Direction2D closestDir = closestDirToCenter(old);
         Vec2i newCenter = Vec2i.ZERO.offset(closestDir);
         Rect2D newRec = RectFinder.findMaxRect(gridAccess, newCenter, true);
-        gridAccess.setSquare(newRec);
-        old.subtract(newRec).forEach(p -> {
-            gridAccess.setAt(p, TVType.SINGLE);
-        });
-
+        gridAccess.transform(old, newRec, old);
         gridAccess.applyChanges();
     }
 
@@ -213,11 +214,6 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
         Vec2 myPos = Vec2.ZERO;
         Vec2 diff = center.add(myPos.scale(-1));
         return Direction2D.closest(diff);
-    }
-
-    public static boolean hasBlockEntity(BlockState state) {
-        TVType conn = state.getValue(CONNECTION);
-        return conn == TVType.SINGLE || conn == TVType.BOTTOM_LEFT;
     }
 
     //TODO: make blockstate?
@@ -229,6 +225,7 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
         return false;
     }
 
+
     public static class TVGridAccess implements GridAccessor {
 
         private final BlockPos pos;
@@ -237,11 +234,23 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
 
         private final Map<Vec2i, GridTile> statesCache = new HashMap<>();
         private final Map<Vec2i, GridTile> statesChanged = new HashMap<>();
+        private Pair<ItemStack, Rect2D> cassetteTransfer = null;
 
         public TVGridAccess(Level level, BlockPos pos, BlockState state) {
             this.pos = pos;
             this.facing = state.getValue(FACING);
             this.level = level;
+        }
+
+        @Override
+        public void planBeMove(Rect2D fromRec, Rect2D toRec) {
+            Vec2i from = fromRec.bottomLeft();
+            BlockPos target = MthUtils.relativePos(pos, facing, from.x(), from.y(), 0);
+            if (level.getBlockEntity(target) instanceof TVBlockEntity tv) {
+                cassetteTransfer = Pair.of(tv.getDisplayedItem().copy(), toRec);
+                tv.clearContent();
+                tv.setConnectionSize(1, 1);
+            }
         }
 
         @Override
@@ -284,6 +293,17 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
                 if (bs.getBlock() instanceof TVBlock && conn != null) {
                     level.setBlockAndUpdate(target, bs.setValue(CONNECTION, conn)
                             .setValue(POWER_STATE, power));
+                }
+            }
+
+            if (cassetteTransfer != null) {
+                Rect2D toRec = cassetteTransfer.getSecond();
+                Vec2i to = toRec.bottomLeft();
+                BlockPos target = MthUtils.relativePos(pos, facing, to.x(), to.y(), 0);
+                if (level.getBlockEntity(target) instanceof TVBlockEntity tv) {
+                    tv.setDisplayedItem(cassetteTransfer.getFirst());
+                    tv.setChanged();
+                    tv.setConnectionSize(toRec.width(), toRec.height());
                 }
             }
         }

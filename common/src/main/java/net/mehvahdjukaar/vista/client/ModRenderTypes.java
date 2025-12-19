@@ -4,6 +4,9 @@ import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.datafixers.util.Pair;
+import net.mehvahdjukaar.moonlight.api.misc.TriFunction;
+import net.mehvahdjukaar.moonlight.api.misc.Triplet;
 import net.mehvahdjukaar.vista.VistaModClient;
 import net.minecraft.Util;
 import net.minecraft.client.renderer.RenderStateShard;
@@ -15,6 +18,8 @@ import net.minecraft.resources.ResourceLocation;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -33,17 +38,17 @@ public class ModRenderTypes extends RenderType {
     private static final ShaderStateShard STATIC_SHADER_STATE = new ShaderStateShard(VistaModClient.STATIC_SHADER);
     private static final ShaderStateShard POSTERIZE_SHADER_STATE = new ShaderStateShard(VistaModClient.POSTERIZE_SHADER);
 
-    private static final Function<ResourceLocation, RenderType> CAMERA_DRAW = Util.memoize(
-            (t) -> ModRenderTypes.createCameraDraw(t, 0));
+    private static final BiFunction<ResourceLocation, Integer, RenderType> CAMERA_DRAW = Util.memoize(
+            (t, s) -> ModRenderTypes.createCameraDraw(t, 0, s));
 
 
-    public static RenderType getCameraDraw(ResourceLocation texture, float enderman) {
+    public static RenderType getCameraDraw(ResourceLocation texture, float enderman, int scale) {
         if (enderman > 0f) {
-            return createCameraDraw(texture, enderman);
-        } else return CAMERA_DRAW.apply(texture);
+            return createCameraDraw(texture, enderman, scale);
+        } else return CAMERA_DRAW.apply(texture, scale);
     }
 
-    private static RenderType createCameraDraw(ResourceLocation text, float enderman) {
+    private static RenderType createCameraDraw(ResourceLocation text, float enderman, int scale) {
         CompositeState compositeState = CompositeState.builder()
                 .setShaderState(CAMERA_SHADER_STATE)
                 .setTextureState(new TextureStateShard(text,
@@ -56,7 +61,7 @@ public class ModRenderTypes extends RenderType {
                             ShaderInstance shader = VistaModClient.CAMERA_VIEW_SHADER.get();
                             shader.safeGetUniform("SpriteDimensions")
                                     .set(new Vector4f(0, 0, 1, 1f));
-                            setCameraDrawUniforms(shader, enderman);
+                            setCameraDrawUniforms(shader, enderman, scale);
                         },
                         () -> {
                         }))
@@ -66,7 +71,7 @@ public class ModRenderTypes extends RenderType {
                 1536, true, false, compositeState);
     }
 
-    public static final BiFunction<ResourceLocation, Material, RenderType> CAMERA_DRAW_SPRITE = Util.memoize((text, mat) -> {
+    public static final TriFunction<ResourceLocation, Material, Integer, RenderType> CAMERA_DRAW_SPRITE = memoize((text, mat, scale) -> {
         RenderType.CompositeState compositeState = RenderType.CompositeState.builder()
                 .setShaderState(CAMERA_SHADER_STATE)
                 .setTextureState(new RenderStateShard.TextureStateShard(text,
@@ -79,7 +84,7 @@ public class ModRenderTypes extends RenderType {
                             ShaderInstance shader = VistaModClient.CAMERA_VIEW_SHADER.get();
                             TextureAtlasSprite sprite = mat.sprite();
                             setSpriteDimensions(shader, sprite);
-                            setCameraDrawUniforms(shader, 0);
+                            setCameraDrawUniforms(shader, 0, scale);
                         },
                         () -> {
                         }))
@@ -99,9 +104,9 @@ public class ModRenderTypes extends RenderType {
                 ));
     }
 
-    private static void setCameraDrawUniforms(ShaderInstance shader, float noise) {
+    private static void setCameraDrawUniforms(ShaderInstance shader, float noise, int scale) {
 
-        setFloat(shader, "TriadsPerPixel", 1.37f);
+        setFloat(shader, "TriadsPerPixel", 1.37f * scale);
         setFloat(shader, "Smear", 1f);
         setFloat(shader, "EnableEnergyNormalize", 0.0f);
 
@@ -177,4 +182,23 @@ public class ModRenderTypes extends RenderType {
         ENDERMAN_NOISE.set(intensity);
     }
 
+
+
+    @Deprecated(forRemoval = true)
+    private static <T, U, D, R> TriFunction<T, U, D, R> memoize(final TriFunction<T, U,D, R> memoBiFunction) {
+        return new TriFunction<>() {
+            private final Map<Triplet<T, U, D>, R> cache = new ConcurrentHashMap<>();
+
+            public R apply(T object, U object2, D object3) {
+                return this.cache.computeIfAbsent(Triplet.of(object, object2, object3), (pair) ->
+                        memoBiFunction.apply(pair.left(), pair.middle(), pair.right()));
+            }
+
+            @Override
+            public String toString() {
+                String var10000 = String.valueOf(memoBiFunction);
+                return "memoize/2[function=" + var10000 + ", size=" + this.cache.size() + "]";
+            }
+        };
+    }
 }

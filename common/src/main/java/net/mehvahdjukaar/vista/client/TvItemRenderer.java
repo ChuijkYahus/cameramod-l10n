@@ -21,9 +21,8 @@ public class TvItemRenderer extends ItemStackRenderer {
         Minecraft.getInstance().getBlockRenderer().renderSingleBlock(block.defaultBlockState(), poseStack, buffer, light, overlay);
 
         if (itemDisplayContext == ItemDisplayContext.HEAD) {
-            boolean drawingCamera = LiveFeedRendererManager.LIVE_FEED_BEING_RENDERED != null;
             //TODO: make this using armor layer so we have entity context
-            VertexConsumer vc = TapeTextureManager.getSmileTapeVC(buffer, Minecraft.getInstance().player,  drawingCamera);
+            VertexConsumer vc = TapeTextureManager.getSmileTapeVC(buffer, Minecraft.getInstance().player);
 
             //bugged when looking up. draw shader must be bugged
             int lightU = light & 0xFFFF;

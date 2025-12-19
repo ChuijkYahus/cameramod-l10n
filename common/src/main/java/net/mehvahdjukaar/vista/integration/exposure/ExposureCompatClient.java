@@ -53,45 +53,52 @@ public class ExposureCompatClient {
 
 
         Item item = stack.getItem();
-        if (item instanceof PictureTapeItem pi) {
-            PictureTapeContent content = PictureTapeItem.getContent(stack);
-            int size = content.size();
-            if (size > 0) {
-                ItemStack s = content.getPicture((time / content.playbackSpeed()) % size);
-                //TODO: add maps
-                PhotographItem photographItem = (PhotographItem) s.getItem();
-                Frame frame = photographItem.getFrame(s);
+        switch (item) {
+            case PictureTapeItem pi -> {
+                PictureTapeContent content = PictureTapeItem.getContent(stack);
+                int size = content.size();
+                if (size > 0) {
+                    ItemStack s = content.getPicture((time / content.playbackSpeed()) % size);
+                    //TODO: add maps
+                    PhotographItem photographItem = (PhotographItem) s.getItem();
+                    Frame frame = photographItem.getFrame(s);
 
-                return getFrameTexture(s, frame);
+                    return getFrameTexture(s, frame);
+                }
             }
-        } else if (item instanceof PhotographItem photographItem) {
+            case PhotographItem photographItem -> {
 
-            Frame frame = photographItem.getFrame(stack);
+                Frame frame = photographItem.getFrame(stack);
 
-            return getFrameTexture(stack, frame);
-        } else if (item instanceof StackedPhotographsItem stackedPhotographsItem) {
-            List<ItemAndStack<PhotographItem>> photos = stackedPhotographsItem.getPhotographs(stack);
-            int size = photos.size();
-            if (size > 0) {
-                ItemAndStack<PhotographItem> frameItem =
-                        photos.get((time / TIME_PER_PICTURE) % size);
-                ItemStack s = frameItem.getItemStack();
-                Frame frame = frameItem.getItem().getFrame(s);
-
-                return getFrameTexture(s, frame);
+                return getFrameTexture(stack, frame);
             }
-        } else if (item instanceof AlbumItem album) {
-            List<AlbumPage> content = album.getContent(stack).pages();
-            List<ItemStack> photos = content.stream()
-                    .map(AlbumPage::photograph)
-                    .filter(p -> p.getItem() instanceof PhotographItem)
-                    .toList();
-            if (!photos.isEmpty()) {
-                ItemStack s = photos.get((time / TIME_PER_PICTURE) % photos.size());
-                PhotographItem photographItem = (PhotographItem) s.getItem();
-                Frame frame = photographItem.getFrame(s);
+            case StackedPhotographsItem stackedPhotographsItem -> {
+                List<ItemAndStack<PhotographItem>> photos = stackedPhotographsItem.getPhotographs(stack);
+                int size = photos.size();
+                if (size > 0) {
+                    ItemAndStack<PhotographItem> frameItem =
+                            photos.get((time / TIME_PER_PICTURE) % size);
+                    ItemStack s = frameItem.getItemStack();
+                    Frame frame = frameItem.getItem().getFrame(s);
 
-                return getFrameTexture(s, frame);
+                    return getFrameTexture(s, frame);
+                }
+            }
+            case AlbumItem album -> {
+                List<AlbumPage> content = album.getContent(stack).pages();
+                List<ItemStack> photos = content.stream()
+                        .map(AlbumPage::photograph)
+                        .filter(p -> p.getItem() instanceof PhotographItem)
+                        .toList();
+                if (!photos.isEmpty()) {
+                    ItemStack s = photos.get((time / TIME_PER_PICTURE) % photos.size());
+                    PhotographItem photographItem = (PhotographItem) s.getItem();
+                    Frame frame = photographItem.getFrame(s);
+
+                    return getFrameTexture(s, frame);
+                }
+            }
+            default -> {
             }
         }
         return null;

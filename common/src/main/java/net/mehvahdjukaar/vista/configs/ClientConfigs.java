@@ -23,16 +23,24 @@ public class ClientConfigs {
     public static final Supplier<Double> UPDATE_DISTANCE;
     public static final Supplier<Integer> RESOLUTION_SCALE;
     public static final Supplier<Boolean> RENDER_DEBUG;
+    public static final Supplier<Boolean> SCALE_PIXELS;
 
     static {
         ConfigBuilder builder = ConfigBuilder.create(VistaMod.MOD_ID, ConfigType.CLIENT);
 
         builder.push("television");
-        builder.push("live_feed");
-
+        builder.push("visuals");
         RENDER_DISTANCE = builder
                 .comment("Render distance that television will use when rendering the live feed. Decreasing this will improve the performance of TVs, possibly by a lot")
                 .define("render_distance", 64, 1, 256);
+
+        //TODO: add more
+        SCALE_PIXELS = builder.comment("Make connected tvs have higher pixel density, such that the per block pixel density is constant")
+                .define("constant_pixel_density", true);
+        builder.pop();
+        builder.push("live_feed");
+
+
 
         UPDATE_FPS = builder
                 .gameRestart()

@@ -46,37 +46,46 @@ public class TapeTextureManager {
     }
 
 
-    public static VertexConsumer getTapeVC(Holder<CassetteTape> tapeKey, MultiBufferSource buffer, boolean flat) {
-        Material mat = flat ? getMaterialFlat(tapeKey) : getMaterial(tapeKey);
-        return mat.buffer(buffer, !flat ? t -> ModRenderTypes.CAMERA_DRAW_SPRITE.apply(t, mat) : RenderType::text);
+    public static VertexConsumer getTapeVC(Holder<CassetteTape> tapeKey, MultiBufferSource buffer, int scale) {
+        boolean hasSfx = hasSfx();
+        Material mat = hasSfx ? getMaterial(tapeKey) : getMaterialFlat(tapeKey);
+        return mat.buffer(buffer, hasSfx ? t -> ModRenderTypes.CAMERA_DRAW_SPRITE.apply(t, mat, scale) : RenderType::text);
     }
 
-    public static VertexConsumer getDefaultTapeVC(MultiBufferSource buffer, boolean flat) {
-        Material mat = flat ? DEFAULT_MATERIAL_FLAT : DEFAULT_MATERIAL;
-        return mat.buffer(buffer, !flat ? t -> ModRenderTypes.CAMERA_DRAW_SPRITE.apply(t, mat) : RenderType::text);
+    public static VertexConsumer getDefaultTapeVC(MultiBufferSource buffer, int scale) {
+        boolean hasSfx = hasSfx();
+        Material mat = hasSfx ? DEFAULT_MATERIAL : DEFAULT_MATERIAL_FLAT;
+        return mat.buffer(buffer, hasSfx ? t -> ModRenderTypes.CAMERA_DRAW_SPRITE.apply(t, mat, scale) : RenderType::text);
     }
 
-    public static VertexConsumer getSmileTapeVC(MultiBufferSource buffer, LivingEntity player, boolean flat) {
+    public static VertexConsumer getSmileTapeVC(MultiBufferSource buffer, LivingEntity player) {
+        boolean hasSfx = hasSfx();
         float health = player.getHealth() / player.getMaxHealth();
         Material mat;
         if (health > 0.66f) {
-            mat = flat ? SMILE_MATERIAL_FLAT : SMILE_MATERIAL;
+            mat = hasSfx ? SMILE_MATERIAL : SMILE_MATERIAL_FLAT;
         } else if (health > 0.33f) {
-            mat = flat ? NEUTRAL_MATERIAL_FLAT : NEUTRAL_MATERIAL;
+            mat = hasSfx ? NEUTRAL_MATERIAL : NEUTRAL_MATERIAL_FLAT;
         } else {
-            mat = flat ? SAD_MATERIAL_FLAT : SAD_MATERIAL;
+            mat = hasSfx ? SAD_MATERIAL : SAD_MATERIAL_FLAT;
         }
-        return mat.buffer(buffer, !flat ? t -> ModRenderTypes.CAMERA_DRAW_SPRITE.apply(t, mat) : RenderType::text);
+        return mat.buffer(buffer, hasSfx ? t -> ModRenderTypes.CAMERA_DRAW_SPRITE.apply(t, mat, 1) : RenderType::text);
     }
 
-    public static VertexConsumer getFullSpriteVC(ResourceLocation tex, MultiBufferSource buffer, boolean flat, float enderman) {
-        RenderType rt = !flat ? ModRenderTypes.getCameraDraw(tex, enderman) : RenderType.text(tex);
+    public static VertexConsumer getFullSpriteVC(ResourceLocation tex, MultiBufferSource buffer, float enderman, int scale) {
+        boolean hasSfx = hasSfx();
+
+        RenderType rt = hasSfx ? ModRenderTypes.getCameraDraw(tex, enderman, scale) : RenderType.text(tex);
         return buffer.getBuffer(rt);
     }
 
     public static void onWorldReload() {
         MATERIALS.clear();
         MATERIALS_FLAT.clear();
+    }
+
+    private static boolean hasSfx() {
+        return LiveFeedRendererManager.LIVE_FEED_BEING_RENDERED == null;
     }
 
 

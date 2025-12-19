@@ -73,15 +73,14 @@ public final class RectFinder {
         return true;
     }
 
-
-    public static Rect2D findMaxExpandedRect(GridAccessor grid, Vec2i from, int maxSize, boolean squareOnly) {
+    public static RectSelection findMaxExpandedRect(GridAccessor grid, Vec2i from, int maxSize, boolean squareOnly) {
         return findMaxExpandedRects(grid, from, maxSize, squareOnly)
                 .stream()
-                .max(Comparator.comparingInt(Rect2D::getArea))
-                .orElse(new Rect2D(0, 0, 1, 1));
+                .max(Comparator.comparingInt(r->r.selection().getArea()))
+                .orElse(RectSelection.SINGLE);
     }
 
-    private static Set<Rect2D> findMaxExpandedRects(
+    private static Set<RectSelection> findMaxExpandedRects(
             GridAccessor grid,
             Vec2i from,
             int maxSize,
@@ -89,43 +88,43 @@ public final class RectFinder {
     ) {
         Rect2D start = new Rect2D(from.x(), from.y(), 1, 1);
 
-        Set<ExpandState> visited = new HashSet<>();
-        Set<Rect2D> maximalRects = new HashSet<>();
-        Deque<ExpandState> stack = new ArrayDeque<>();
+        Set<RectSelection> visited = new HashSet<>();
+        Set<RectSelection> maximalRects = new HashSet<>();
+        Deque<RectSelection> stack = new ArrayDeque<>();
 
-        stack.push(new ExpandState(start, null));
+        stack.push(new RectSelection(start, null));
 
         while (!stack.isEmpty()) {
-            ExpandState s = stack.pop();
+            RectSelection s = stack.pop();
             if (!visited.add(s)) continue;
 
             for (Direction2D d : Direction2D.values()) {
-                for (ExpandState next : expand(grid, s, d)) {
+                for (RectSelection next : expand(grid, s, d)) {
                     stack.push(next);
                 }
             }
 
             //validate solution
-            if ((s.selection.width() <= maxSize && s.selection.height() <= maxSize) &&
-                    (!squareOnly || s.selection.isSquare())
-                    && s.selection.contains(s.touchedRect)) {
+            if ((s.selection().width() <= maxSize && s.selection().height() <= maxSize) &&
+                    (!squareOnly || s.selection().isSquare())
+                    && s.selection().contains(s.touchedRect())) {
 
-                maximalRects.add(s.selection);
+                maximalRects.add(s);
             }
         }
 
         return maximalRects;
     }
 
-    private static List<ExpandState> expand(
+    private static List<RectSelection> expand(
             GridAccessor grid,
-            ExpandState state,
+            RectSelection state,
             Direction2D d
     ) {
-        Rect2D nextRect = state.selection.expandToward(d);
-        List<ExpandState> results = new ArrayList<>();
+        Rect2D nextRect = state.selection().expandToward(d);
+        List<RectSelection> results = new ArrayList<>();
 
-        Rect2D touched = state.touchedRect;
+        Rect2D touched = state.touchedRect();
 
         var edge = nextRect.iterateEdge(d);
 
@@ -153,10 +152,8 @@ public final class RectFinder {
         }
 
         // No new selection touched OR it matches existing
-        results.add(new ExpandState(nextRect, touched));
+        results.add(new RectSelection(nextRect, touched));
         return results;
     }
 
-    record ExpandState(Rect2D selection, Rect2D touchedRect) {
-    }
 }

@@ -1,25 +1,12 @@
 package net.mehvahdjukaar.vista.integration.exposure;
 
-import io.github.mortuusars.exposure.ExposureClient;
-import io.github.mortuusars.exposure.client.image.renderable.RenderableImage;
-import io.github.mortuusars.exposure.client.render.image.ImageRenderer;
-import io.github.mortuusars.exposure.client.render.image.RenderedImageInstance;
-import io.github.mortuusars.exposure.client.render.photograph.PhotographStyle;
-import io.github.mortuusars.exposure.world.camera.frame.Frame;
 import io.github.mortuusars.exposure.world.item.AlbumItem;
 import io.github.mortuusars.exposure.world.item.PhotographItem;
 import io.github.mortuusars.exposure.world.item.StackedPhotographsItem;
-import io.github.mortuusars.exposure.world.item.component.album.AlbumPage;
-import io.github.mortuusars.exposure.world.item.util.ItemAndStack;
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-import net.mehvahdjukaar.moonlight.api.misc.TField;
-import net.mehvahdjukaar.moonlight.api.misc.TMethod;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.platform.RegHelper;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.minecraft.core.component.DataComponentType;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -31,7 +18,7 @@ public class ExposureCompat {
 
     public static void init() {
 
-        if(PlatHelper.getPhysicalSide().isClient()){
+        if (PlatHelper.getPhysicalSide().isClient()) {
             ExposureCompatClient.init();
         }
     }
@@ -55,13 +42,11 @@ public class ExposureCompat {
     //TODO: add picture tape item that can be insterted inplace of photops. basically a clone of the album but less functionality. also it holds maps
 
 
-
     public static boolean isPictureItem(ItemStack stack) {
         Item item = stack.getItem();
         return item instanceof PictureTapeItem ||
                 item instanceof PhotographItem || item instanceof StackedPhotographsItem || item instanceof AlbumItem;
     }
-
 
 
 }

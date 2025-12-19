@@ -101,7 +101,7 @@ public class TVBlockEntity extends ItemDisplayTile {
     }
 
     public int getScreenPixelSize() {
-        return 12;
+        return (connectedTvsWidth*16)-4;
     }
 
     @Override
