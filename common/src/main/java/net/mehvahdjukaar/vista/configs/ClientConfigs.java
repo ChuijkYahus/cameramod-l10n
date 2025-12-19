@@ -6,6 +6,7 @@ import net.mehvahdjukaar.moonlight.api.platform.configs.ConfigType;
 import net.mehvahdjukaar.moonlight.api.platform.configs.ModConfigHolder;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.integration.CompatHandler;
+import net.minecraft.client.Minecraft;
 
 import java.util.function.Supplier;
 
@@ -39,7 +40,6 @@ public class ClientConfigs {
                 .define("constant_pixel_density", true);
         builder.pop();
         builder.push("live_feed");
-
 
 
         UPDATE_FPS = builder
@@ -76,7 +76,8 @@ public class ClientConfigs {
         SPEC.forceLoad();
     }
 
-    public static boolean isDebugOn() {
-        return RENDER_DEBUG.get() || PlatHelper.isDev();
+    public static boolean rendersDebug() {
+        return PlatHelper.isDev() || (RENDER_DEBUG.get() ||
+                !Minecraft.getInstance().getEntityRenderDispatcher().shouldRenderHitBoxes());
     }
 }

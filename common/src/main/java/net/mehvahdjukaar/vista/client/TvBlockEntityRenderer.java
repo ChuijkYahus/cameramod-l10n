@@ -27,12 +27,12 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec2;
 
 import java.util.UUID;
 
 public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity> {
 
-    private static final int EDGE_PIXEL_LEN = 4;
 
     public TvBlockEntityRenderer(BlockEntityRendererProvider.Context context) {
     }
@@ -51,8 +51,8 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
     public AABB getRenderBoundingBox(BlockEntity tile) {
         AABB aabb = new AABB(tile.getBlockPos());
         Direction dir = tile.getBlockState().getValue(TVBlock.FACING);
-        int width = ((TVBlockEntity) tile).getConnectionWidth();
-        int height = ((TVBlockEntity) tile).getConnectedHeight();
+        float width = ((TVBlockEntity) tile).getScreenPixelWidth() / 16f;
+        float height = ((TVBlockEntity) tile).getConnectedHeight() / 16f;
         return switch (dir) {
             case NORTH -> aabb.expandTowards(-(width - 1), height - 1, 0);
             case SOUTH -> aabb.expandTowards(0, height - 1, width - 1);
@@ -62,9 +62,6 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
         };
     }
 
-    private static int getTVScreenPixelSize(int connectionLen) {
-        return Math.max(1, connectionLen) * 16 - EDGE_PIXEL_LEN;
-    }
 
     @Override
     public void render(TVBlockEntity blockEntity, float partialTick, PoseStack poseStack, MultiBufferSource buffer,
@@ -75,23 +72,20 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
         Direction dir = blockEntity.getBlockState().getValue(TVBlock.FACING);
 
         LOD lod = LOD.at(blockEntity);
-        int connectionW = blockEntity.getConnectionWidth();
-        int connectionH = blockEntity.getConnectedHeight();
+        int screenSize = blockEntity.getScreenPixelWidth();
+
+        Vec2 screenCenter = blockEntity.getScreenBlockCenter();
 
         if (!lod.isMedium()) return;
-        if (lod.isPlaneCulled(dir, 0.5f, connectionW * 1.5f, 0f)) return;
+        if (lod.isPlaneCulled(dir, 0.5f, screenSize * 1.5f, 0f)) return;
 
         float yaw = dir.toYRot();
-        float w = (connectionW - 1) / 2f;
-        float h = (connectionH - 1) / 2f;
         poseStack.translate(0.5, 0.5, 0.5);
         poseStack.mulPose(Axis.YP.rotationDegrees(180 - yaw));
-        poseStack.translate(-w, h, -0.501);
+        poseStack.translate(-screenCenter.x ,screenCenter.y , -0.501);
 
-        int screenPixelSize = getTVScreenPixelSize(connectionW);
-
-        float s = screenPixelSize / 32f;
-        int pixelEffectRes = ClientConfigs.SCALE_PIXELS.get() ? screenPixelSize : (16 - EDGE_PIXEL_LEN);
+        float s = screenSize / 32f;
+        int pixelEffectRes = ClientConfigs.SCALE_PIXELS.get() ? screenSize : TVBlockEntity.MIN_SCREEN_PIXEL_SIZE;
 
         VertexConsumer vc = null;
 
@@ -104,9 +98,9 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
 
             boolean shouldUpdate = lod.within(ClientConfigs.UPDATE_DISTANCE.get());
             ResourceLocation tex = LiveFeedRendererManager.requestLiveFeedTexture(blockEntity.getLevel(),
-                    liveFeedId, screenPixelSize, shouldUpdate);
+                    liveFeedId, screenSize, shouldUpdate);
             if (tex != null) {
-                maybeRenderDebug(tex, poseStack, buffer, partialTick, blockEntity);
+                if (ClientConfigs.rendersDebug()) renderDebug(tex, poseStack, buffer, partialTick, blockEntity);
                 float enderman = blockEntity.getLookingAtEndermanAnimation(partialTick);
                 vc = TapeTextureManager.getFullSpriteVC(tex, buffer, enderman, pixelEffectRes);
             } else {
@@ -137,11 +131,9 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
     // ========== DEBUG RENDERING ========== //
 
 
-    private void maybeRenderDebug(ResourceLocation tex, PoseStack poseStack, MultiBufferSource buffer, float partialTick,
-                                  TVBlockEntity tile) {
+    private void renderDebug(ResourceLocation tex, PoseStack poseStack, MultiBufferSource buffer, float partialTick,
+                             TVBlockEntity tile) {
 
-        if (!ClientConfigs.isDebugOn() || !Minecraft.getInstance().getEntityRenderDispatcher().shouldRenderHitBoxes())
-            return;
         poseStack.pushPose();
 
         Font font = Minecraft.getInstance().font;

@@ -1,6 +1,5 @@
 package net.mehvahdjukaar.vista.common.tv;
 
-import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.MapCodec;
 import net.mehvahdjukaar.moonlight.api.block.IOptionalEntityBlock;
 import net.mehvahdjukaar.moonlight.api.util.Utils;
@@ -90,7 +89,7 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
         while (type.isConnected(Direction.DOWN, facing)) {
             currentPos = currentPos.below();
             BlockState belowState = level.getBlockState(currentPos);
-            if (!belowState.is(this) || belowState.getValue(FACING) != facing){
+            if (!belowState.is(this) || belowState.getValue(FACING) != facing) {
                 return null;
             }
             type = belowState.getValue(CONNECTION);
@@ -98,7 +97,7 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
         while (type.isConnected(facing.getCounterClockWise(), facing)) {
             currentPos = currentPos.relative(facing.getClockWise());
             BlockState sideState = level.getBlockState(currentPos);
-            if (!sideState.is(this) || sideState.getValue(FACING) != facing){
+            if (!sideState.is(this) || sideState.getValue(FACING) != facing) {
                 return null;
             }
             type = sideState.getValue(CONNECTION);
@@ -163,7 +162,7 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
 
         TVBlockEntity masterTile = getMasterBlockEntity(level, pos, state);
         if (masterTile != null) {
-            return masterTile.interactWithPlayerItem(player, hand, stack);
+            return masterTile.interactWithPlayerItem(player, hand, stack, 0, hitResult);
         }
         return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
     }
@@ -262,7 +261,8 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
 
         private final Map<Vec2i, GridTile> statesCache = new HashMap<>();
         private final Map<Vec2i, GridTile> statesChanged = new HashMap<>();
-        private Pair<ItemStack, Rect2D> cassetteTransfer = null;
+        private ItemStack cassetteTransfer = null;
+        private Rect2D finalTileRect = null;
 
         public TVGridAccess(Level level, BlockPos pos, BlockState state) {
             this.pos = pos;
@@ -275,7 +275,8 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
             Vec2i from = fromRec.bottomLeft();
             BlockPos target = MthUtils.relativePos(pos, facing, from.x(), from.y(), 0);
             if (level.getBlockEntity(target) instanceof TVBlockEntity tv) {
-                cassetteTransfer = Pair.of(tv.getDisplayedItem().copy(), toRec);
+                cassetteTransfer = tv.getDisplayedItem().copy();
+                finalTileRect = toRec;
                 tv.clearContent();
                 tv.setConnectionSize(1, 1);
             }
@@ -323,15 +324,13 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
                             .setValue(POWER_STATE, power));
                 }
             }
-
-            if (cassetteTransfer != null) {
-                Rect2D toRec = cassetteTransfer.getSecond();
-                Vec2i to = toRec.bottomLeft();
+            if (finalTileRect != null) {
+                Vec2i to = finalTileRect.bottomLeft();
                 BlockPos target = MthUtils.relativePos(pos, facing, to.x(), to.y(), 0);
                 if (level.getBlockEntity(target) instanceof TVBlockEntity tv) {
-                    tv.setDisplayedItem(cassetteTransfer.getFirst());
+                    if (cassetteTransfer != null) tv.setDisplayedItem(cassetteTransfer);
                     tv.setChanged();
-                    tv.setConnectionSize(toRec.width(), toRec.height());
+                    tv.setConnectionSize(finalTileRect.width(), finalTileRect.height());
                 }
             }
         }

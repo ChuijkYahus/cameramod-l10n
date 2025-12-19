@@ -51,7 +51,7 @@ public class EndermanFreezeWhenLookedAtThroughTVGoal extends Goal {
     }
 
     private boolean isCameraViewValid() {
-        TVSpectatorView view = television.getPlayerViewHit(target);
+        TVSpectatorView view = television.getPlayerLookingAtFace(target);
         if (view == null) {
             return false;
         }
@@ -60,9 +60,7 @@ public class EndermanFreezeWhenLookedAtThroughTVGoal extends Goal {
         UUID feed = television.getLinkedFeedUUID();
         ViewFinderBlockEntity viewFinder = LiveFeedConnectionManager.findLinkedViewFinder(l, feed);
         if (viewFinder == null) return false;
-        float sW = 12 / 16f; //TODO: make dynamic
-        float sH = 12 / 16f; //TODO: make dynamic
-        return viewFinder.isEndermanBeingLookedAt(view, sW, sH, enderman);
+        return viewFinder.isEndermanBeingLookedAt(view, enderman);
     }
 
     @Override

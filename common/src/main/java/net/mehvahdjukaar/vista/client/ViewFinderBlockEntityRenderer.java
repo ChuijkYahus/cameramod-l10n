@@ -6,6 +6,7 @@ import com.mojang.math.Axis;
 import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlock;
 import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
+import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.model.geom.PartPose;
 import net.minecraft.client.model.geom.builders.CubeListBuilder;
@@ -17,6 +18,7 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.util.Mth;
+import net.minecraft.world.phys.Vec3;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
@@ -44,6 +46,49 @@ public class ViewFinderBlockEntityRenderer implements BlockEntityRenderer<ViewFi
     public void render(ViewFinderBlockEntity tile, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource,
                        int packedLight, int packedOverlay) {
         this.renderModel(tile, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
+
+        if (ClientConfigs.rendersDebug()) {
+            renderDebug(tile, poseStack, bufferSource);
+        }
+    }
+
+    private static void renderDebug(ViewFinderBlockEntity tile, PoseStack poseStack, MultiBufferSource bufferSource) {
+        var player = tile.fakePlayer;
+        if (player != null) {
+            poseStack.pushPose();
+            Vec3 pos = player.getEyePosition().subtract(Vec3.atLowerCornerOf(tile.getBlockPos()));
+            poseStack.translate(pos.x, pos.y, pos.z);
+            PoseStack.Pose pose = poseStack.last();
+            VertexConsumer vc = bufferSource.getBuffer(RenderType.lines());
+            vc.addVertex(pose, 0, 0, 0)
+                    .setColor(255, 0, 255, 255)
+                    .setNormal(pose, 0, 1, 0);
+            vc.addVertex(pose, 0, 1, 0)
+                    .setColor(255, 0, 255, 255)
+                    .setNormal(pose, 0, 1, 0);
+
+            float tileYaw = tile.getYaw();
+            float tilePitch = tile.getPitch();
+            var tileView = Vec3.directionFromRotation(tilePitch, tileYaw).normalize();
+            vc.addVertex(pose, 0, 0, 0)
+                    .setColor(30, 30, 255, 255)
+                    .setNormal(pose, 0, 1, 0);
+            vc.addVertex(pose, (float) tileView.x, (float) tileView.y, (float) tileView.z)
+                    .setColor(30, 30, 255, 255)
+                    .setNormal(pose, 0, 1, 0);
+
+            float headY = player.yHeadRot;
+            float headX = player.xRotO;
+            var view = Vec3.directionFromRotation(headX, headY).normalize();
+            vc.addVertex(pose, 0, 0, 0)
+                    .setColor(30, 255, 30, 255)
+                    .setNormal(pose, 0, 1, 0);
+            vc.addVertex(pose, (float) view.x, (float) view.y, (float) view.z)
+                    .setColor(30, 255, 30, 255)
+                    .setNormal(pose, 0, 1, 0);
+
+            poseStack.popPose();
+        }
     }
 
     public void renderModel(ViewFinderBlockEntity tile, float partialTick, PoseStack poseStack,
@@ -88,16 +133,15 @@ public class ViewFinderBlockEntityRenderer implements BlockEntityRenderer<ViewFi
         poseStack.mulPose(Axis.YP.rotation(yawRad));
         poseStack.mulPose(Axis.XP.rotation(pitchRad));
         poseStack.mulPose(Axis.ZP.rotationDegrees(180));
-        poseStack.scale(0.75f,0.75f,0.75f);
-        poseStack.translate(0.25,0.5,0.25);
+        poseStack.scale(0.75f, 0.75f, 0.75f);
+        poseStack.translate(0.25, 0.5, 0.25);
 
         //ItemStack stack = Items.CREEPER_HEAD.getDefaultInstance();
-      //  Minecraft.getInstance().getItemRenderer()
+        //  Minecraft.getInstance().getItemRenderer()
         //        .renderStatic(stack, ItemDisplayContext.NONE,  packedLight, packedOverlay,poseStack,
-          //              bufferSource, tile.getLevel(), 0);
+        //              bufferSource, tile.getLevel(), 0);
 
         poseStack.popPose();
-
 
 
     }

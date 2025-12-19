@@ -254,8 +254,7 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
     private static final GameProfile VIEW_FINDER_PLAYER = new GameProfile(UUID.fromString("33242C44-27d9-1f22-3d27-99D2C45d1378"),
             "[VIEW_FINDER_ENDERMAN_PLAYER]");
 
-    public boolean angerEndermenBeingLookedAt(List<TVSpectatorView> views, int range,
-                                              float screenW, float screenH, TVBlockEntity fromTV) {
+    public boolean angerEndermenBeingLookedAt(List<TVSpectatorView> views, int range, TVBlockEntity fromTV) {
         if (views.isEmpty()) return false;
         Vec3 lensCenter = Vec3.atCenterOf(worldPosition);
         double rangeSq = (double) range * (double) range;
@@ -267,7 +266,7 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
         if (enderMen.isEmpty()) return false;
         boolean anyAnger = false;
 
-        List<EndermanLookResult> lookResults = computeEndermanLookedAt(views, screenW, screenH, enderMen);
+        List<EndermanLookResult> lookResults = computeEndermanLookedAt(views, enderMen);
         for (var r : lookResults) {
             if (EndermanFreezeWhenLookedAtThroughTVGoal.anger(r.enderman, r.player, this, fromTV)) {
                 anyAnger = true;
@@ -279,19 +278,18 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
     private record EndermanLookResult(Player player, EnderMan enderman) {
     }
 
-
-    public boolean isEndermanBeingLookedAt(TVSpectatorView view, float screenW, float screenH, EnderMan man) {
-        return !computeEndermanLookedAt(List.of(view), screenW, screenH, List.of(man)).isEmpty();
+    public boolean isEndermanBeingLookedAt(TVSpectatorView view, EnderMan man) {
+        return !computeEndermanLookedAt(List.of(view), List.of(man)).isEmpty();
     }
 
-    private List<EndermanLookResult> computeEndermanLookedAt(List<TVSpectatorView> views, float screenW, float screenH,
-                                                             List<EnderMan> enderMen) {
+    public Player fakePlayer;
+    private List<EndermanLookResult> computeEndermanLookedAt(List<TVSpectatorView> views, List<EnderMan> enderMen) {
         List<EndermanLookResult> lookResults = new ArrayList<>();
         Vec3 lensFacing = Vec3.directionFromRotation(this.pitch, this.yaw).normalize();
         Vec3 lensCenter = Vec3.atCenterOf(worldPosition);
 
         // Prepare fake player once
-        Player fakePlayer = FakePlayerManager.get(VIEW_FINDER_PLAYER, level);
+        fakePlayer = FakePlayerManager.get(VIEW_FINDER_PLAYER, level);
         float eyeH = fakePlayer.getEyeHeight();
 
 
@@ -310,7 +308,7 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
             fakePlayer.setPos(t.x, t.y - eyeH, t.z);
 
             // Compute look vector from fake eye to mapped hit
-            Vec3 look = pixelRayDir(localX, localY, screenW, screenH);
+            Vec3 look = pixelRayDir(localX, localY);
 
             //TODO:better math here
             // Convert look vector to yaw/pitch (Minecraft convention)
@@ -336,14 +334,14 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
     }
 
 
-    private Vec3 pixelRayDir(float px, float py, float screenWidth, float screenHeight) {
+    private Vec3 pixelRayDir(float px, float py) {
         // 1) NDC coords in [-1, 1]
         float fovRad = BASE_FOV * getFOVModifier() * Mth.DEG_TO_RAD;
-        float ndcX = (2.0f * px) / screenWidth;
-        float ndcY = (2.0f * py) / screenHeight; // flip Y if needed by your convention
+        float ndcX = (2.0f * px);
+        float ndcY = (2.0f * py); // flip Y if needed by your convention
 
         // 2) camera-space ray direction (z = -1 for right-handed camera looking down -Z)
-        float aspect = screenWidth / screenHeight;
+        float aspect = 1;
         float tanHalfFov = (float) Math.tan(fovRad * 0.5f);
 
         float camX = ndcX * aspect * tanHalfFov;

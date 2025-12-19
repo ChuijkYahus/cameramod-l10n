@@ -186,7 +186,7 @@ public class LiveFeedRendererManager {
     }
 
     private static void setLastUpdatedTime(ResourceLocation textureId, ClientLevel level) {
-        if (ClientConfigs.isDebugOn()) {
+        if (ClientConfigs.rendersDebug()) {
             UPDATE_TIMES.computeIfAbsent(textureId, k -> new RollingBuffer<>(20))
                     .push(level.getGameTime());
         }
