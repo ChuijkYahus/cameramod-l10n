@@ -4,9 +4,8 @@ import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
-import com.mojang.datafixers.util.Pair;
 import net.mehvahdjukaar.moonlight.api.misc.TriFunction;
-import net.mehvahdjukaar.moonlight.api.misc.Triplet;
+import net.mehvahdjukaar.moonlight.api.util.Utils;
 import net.mehvahdjukaar.vista.VistaModClient;
 import net.minecraft.Util;
 import net.minecraft.client.renderer.RenderStateShard;
@@ -18,8 +17,6 @@ import net.minecraft.resources.ResourceLocation;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -71,7 +68,7 @@ public class ModRenderTypes extends RenderType {
                 1536, true, false, compositeState);
     }
 
-    public static final TriFunction<ResourceLocation, Material, Integer, RenderType> CAMERA_DRAW_SPRITE = memoize((text, mat, scale) -> {
+    public static final TriFunction<ResourceLocation, Material, Integer, RenderType> CAMERA_DRAW_SPRITE = Utils.memoize((text, mat, scale) -> {
         RenderType.CompositeState compositeState = RenderType.CompositeState.builder()
                 .setShaderState(CAMERA_SHADER_STATE)
                 .setTextureState(new RenderStateShard.TextureStateShard(text,
@@ -182,23 +179,4 @@ public class ModRenderTypes extends RenderType {
         ENDERMAN_NOISE.set(intensity);
     }
 
-
-
-    @Deprecated(forRemoval = true)
-    private static <T, U, D, R> TriFunction<T, U, D, R> memoize(final TriFunction<T, U,D, R> memoBiFunction) {
-        return new TriFunction<>() {
-            private final Map<Triplet<T, U, D>, R> cache = new ConcurrentHashMap<>();
-
-            public R apply(T object, U object2, D object3) {
-                return this.cache.computeIfAbsent(Triplet.of(object, object2, object3), (pair) ->
-                        memoBiFunction.apply(pair.left(), pair.middle(), pair.right()));
-            }
-
-            @Override
-            public String toString() {
-                String var10000 = String.valueOf(memoBiFunction);
-                return "memoize/2[function=" + var10000 + ", size=" + this.cache.size() + "]";
-            }
-        };
-    }
 }

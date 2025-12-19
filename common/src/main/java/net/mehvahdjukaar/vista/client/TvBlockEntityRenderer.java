@@ -5,27 +5,28 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import net.mehvahdjukaar.moonlight.api.client.util.LOD;
 import net.mehvahdjukaar.moonlight.api.client.util.VertexUtil;
+import net.mehvahdjukaar.moonlight.api.misc.ForgeOverride;
 import net.mehvahdjukaar.moonlight.api.misc.RollingBuffer;
+import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.vista.common.CassetteTape;
 import net.mehvahdjukaar.vista.common.tv.TVBlock;
 import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
-import net.mehvahdjukaar.vista.configs.CommonConfigs;
 import net.mehvahdjukaar.vista.integration.CompatHandler;
 import net.mehvahdjukaar.vista.integration.exposure.ExposureCompatClient;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.client.resources.model.Material;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.phys.AABB;
 
 import java.util.UUID;
 
@@ -40,6 +41,26 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
     }
 
     @Override
+    public boolean shouldRenderOffScreen(TVBlockEntity blockEntity) {
+        return PlatHelper.getPlatform().isFabric();
+    }
+
+    @ForgeOverride
+    public AABB getRenderBoundingBox(BlockEntity tile) {
+        AABB aabb = new AABB(tile.getBlockPos());
+        Direction dir = tile.getBlockState().getValue(TVBlock.FACING);
+        int width = ((TVBlockEntity) tile).getConnectionWidth();
+        int height = ((TVBlockEntity) tile).getConnectedHeight();
+        return switch (dir) {
+            case NORTH -> aabb.expandTowards(-(width - 1), height - 1, 0);
+            case SOUTH -> aabb.expandTowards(0, height - 1, width - 1);
+            case WEST -> aabb.expandTowards(0, height - 1, -(width - 1));
+            case EAST -> aabb.expandTowards(width - 1, height - 1, 0);
+            default -> aabb;
+        };
+    }
+
+    @Override
     public void render(TVBlockEntity blockEntity, float partialTick, PoseStack poseStack, MultiBufferSource buffer,
                        int light, int overlay) {
 
@@ -48,30 +69,28 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
         Direction dir = blockEntity.getBlockState().getValue(TVBlock.FACING);
 
         LOD lod = LOD.at(blockEntity);
-        //TODO: change with tv size
+        int connectionW = blockEntity.getConnectionWidth();
+        int connectionH = blockEntity.getConnectedHeight();
 
         if (!lod.isMedium()) return;
 
-        if (lod.isPlaneCulled(dir, 0.501f, 0f)) {
+        if (lod.isPlaneCulled(dir, 0.5f, 0f)) {
             return;
         }
 
         float yaw = dir.toYRot();
-        float w = (blockEntity.getConnectionWidth()-1)/2f;
-        float h = (blockEntity.getConnectedHeight()-1)/2f;
+        float w = (connectionW - 1) / 2f;
+        float h = (connectionH - 1) / 2f;
         poseStack.translate(0.5, 0.5, 0.5);
         poseStack.mulPose(Axis.YP.rotationDegrees(180 - yaw));
-        poseStack.translate(-w, h, -0.5);
+        poseStack.translate(-w, h, -0.501);
+
         int screenPixelSize = blockEntity.getScreenPixelSize();
+
         float s = screenPixelSize / 32f;
-
-        int pixelScale = ClientConfigs.SCALE_PIXELS.get() ?
-                blockEntity.getConnectionWidth() : 1;
-
-        poseStack.translate(0,0, -0.001);
+        int pixelScale = ClientConfigs.SCALE_PIXELS.get() ? connectionW : 1;
 
         VertexConsumer vc = null;
-
 
         UUID liveFeedId = blockEntity.getLinkedFeedUUID();
         Holder<CassetteTape> tape = blockEntity.getTape();
@@ -105,7 +124,6 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
 
 
         light = LightTexture.FULL_BRIGHT;
-
 
 
         int lightU = light & 0xFFFF;

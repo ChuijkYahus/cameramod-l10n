@@ -75,8 +75,31 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
     }
 
     @Nullable
-    private TVBlockEntity getMasterBlockEntity(Level level, BlockPos pos) {
-        BlockEntity be = level.getBlockEntity(pos);
+    private TVBlockEntity getMasterBlockEntity(Level level, BlockPos pos, BlockState state) {
+        //find bottom left
+        //for block that cant have tile entity first iterate down (depending on the connection state), then left until you either dont reach no more tv blocks or you reach one that has a tile entity
+        TVType type = state.getValue(CONNECTION);
+        Direction facing = state.getValue(FACING);
+        BlockPos currentPos = pos;
+
+        BlockEntity be = level.getBlockEntity(currentPos);
+        if (be instanceof TVBlockEntity tv) {
+            return tv;
+        }
+
+        while (type.isConnected(Direction.DOWN, facing)) {
+            currentPos = currentPos.below();
+            BlockState belowState = level.getBlockState(currentPos);
+            if (!belowState.is(this) || belowState.getValue(FACING) != facing) return null;
+            type = belowState.getValue(CONNECTION);
+        }
+        while (type.isConnected(facing.getClockWise(), facing)) {
+            currentPos = currentPos.relative(facing.getClockWise());
+            BlockState sideState = level.getBlockState(currentPos);
+            if (!sideState.is(this) || sideState.getValue(FACING) != facing) return null;
+            type = sideState.getValue(CONNECTION);
+        }
+        be = level.getBlockEntity(currentPos);
         if (be instanceof TVBlockEntity tv) {
             return tv;
         }
@@ -134,8 +157,9 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
     protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player,
                                               InteractionHand hand, BlockHitResult hitResult) {
 
-        if (level.getBlockEntity(pos) instanceof TVBlockEntity tile) {
-            return tile.interactWithPlayerItem(player, hand, stack);
+        TVBlockEntity masterTile = getMasterBlockEntity(level, pos, state);
+        if (masterTile != null) {
+            return masterTile.interactWithPlayerItem(player, hand, stack);
         }
         return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
     }
@@ -167,8 +191,8 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
             //update neighbors
             TVGridAccess gridAccess = new TVGridAccess(level, pos, state);
             Rect2D old = RectFinder.findMaxRect(gridAccess, Vec2i.ZERO, false);
-                  gridAccess.transform(old, old, null);
-                gridAccess.applyChanges();
+            gridAccess.transform(old, old, null);
+            gridAccess.applyChanges();
         }
     }
 
