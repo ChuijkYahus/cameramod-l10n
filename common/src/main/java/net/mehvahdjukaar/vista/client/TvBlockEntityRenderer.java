@@ -33,7 +33,6 @@ import java.util.UUID;
 
 public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity> {
 
-
     public TvBlockEntityRenderer(BlockEntityRendererProvider.Context context) {
     }
 

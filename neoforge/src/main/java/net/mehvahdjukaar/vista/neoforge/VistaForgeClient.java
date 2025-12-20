@@ -10,6 +10,7 @@ import net.mehvahdjukaar.vista.client.ViewFinderHud;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.texture.atlas.SpriteSourceType;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -43,8 +44,10 @@ public class VistaForgeClient {
     @SubscribeEvent
     public static void onRenderGuiOverlayPre(RenderGuiLayerEvent.Pre event) {
         if (ViewFinderController.isActive()) {
-            var overlay = event.getName();
-            if (overlay == (VanillaGuiLayers.EXPERIENCE_BAR) || overlay == (VanillaGuiLayers.HOTBAR)) {
+            ResourceLocation overlay = event.getName();
+            if (overlay == (VanillaGuiLayers.EXPERIENCE_BAR) ||
+                    overlay == (VanillaGuiLayers.EXPERIENCE_LEVEL) ||
+                    overlay == (VanillaGuiLayers.HOTBAR)) {
                 event.setCanceled(true);
             }
         }

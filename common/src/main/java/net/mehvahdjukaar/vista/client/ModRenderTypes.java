@@ -7,6 +7,7 @@ import com.mojang.blaze3d.vertex.VertexFormat;
 import net.mehvahdjukaar.moonlight.api.misc.TriFunction;
 import net.mehvahdjukaar.moonlight.api.util.Utils;
 import net.mehvahdjukaar.vista.VistaModClient;
+import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.minecraft.Util;
 import net.minecraft.client.renderer.RenderStateShard;
 import net.minecraft.client.renderer.RenderType;
@@ -100,11 +101,11 @@ public class ModRenderTypes extends RenderType {
 
     private static void setCameraDrawUniforms(ShaderInstance shader, float noise, int screenSize) {
         float scale = screenSize / 12f;
-        setFloat(shader, "TriadsPerPixel", 1.37f * scale);
+        setFloat(shader, "TriadsPerPixel", ClientConfigs.PIXEL_DENSITY.get() * scale);
         setFloat(shader, "Smear", 1f);
         setFloat(shader, "EnableEnergyNormalize", 0.0f);
 
-        setFloat(shader, "VignetteIntensity", 1f);
+        setFloat(shader, "VignetteIntensity", ClientConfigs.VIGNETTE.get());
 //TODO: fix these 2 noise not looking the same when at 1
         setFloat(shader, "NoiseIntensity", noise);
     }

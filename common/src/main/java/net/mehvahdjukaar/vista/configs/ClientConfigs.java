@@ -25,6 +25,8 @@ public class ClientConfigs {
     public static final Supplier<Integer> RESOLUTION_SCALE;
     public static final Supplier<Boolean> RENDER_DEBUG;
     public static final Supplier<Boolean> SCALE_PIXELS;
+    public static final Supplier<Float> PIXEL_DENSITY;
+    public static final Supplier<Float> VIGNETTE;
 
     static {
         ConfigBuilder builder = ConfigBuilder.create(VistaMod.MOD_ID, ConfigType.CLIENT);
@@ -35,9 +37,14 @@ public class ClientConfigs {
                 .comment("Render distance that television will use when rendering the live feed. Decreasing this will improve the performance of TVs, possibly by a lot")
                 .define("render_distance", 64, 1, 256);
 
-        //TODO: add more
+        PIXEL_DENSITY = builder
+                .comment("Pixel density of televisions, in pixels per block side")
+                .define("pixel_density", 1.37f, 0.1f, 10);
         SCALE_PIXELS = builder.comment("Make connected tvs have higher pixel density, such that the per block pixel density is constant")
-                .define("constant_pixel_density", true);
+                .define("constant_pixel_density", false);
+        VIGNETTE = builder
+                .comment("Amount of vignette effect applied to television live feed (0 = none, 1 = full)")
+                .define("vignette", 1f, 0f, 1f);
         builder.pop();
         builder.push("live_feed");
 
@@ -52,7 +59,7 @@ public class ClientConfigs {
                 .define("min_update_fps", 4.0, 0, 60); //once every 5 ticks
         THROTTLING_UPDATE_MS = builder
                 .gameRestart()
-                .comment("The maximum number of milliseconds all the logic for updating live feeds can take before throttling begins. Lowering this will improve performance but make the video less smooth. 16.66ms equals to 5fps")
+                .comment("The maximum number of milliseconds all the logic for updating live feeds can take before fps throttling begins. Lowering this will improve performance but make the video less smooth. 16.66ms equals to 5fps")
                 .define("throttling_update_ms", 16.66, 0, 1000000);
 
         UPDATE_DISTANCE = builder

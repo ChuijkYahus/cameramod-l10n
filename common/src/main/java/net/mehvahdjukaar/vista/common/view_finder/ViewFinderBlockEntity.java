@@ -14,6 +14,7 @@ import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
 import net.mehvahdjukaar.vista.common.tv.TVSpectatorView;
 import net.mehvahdjukaar.vista.network.ClientBoundControlViewFinderPacket;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
@@ -122,8 +123,7 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
 
     @Override
     public boolean canPlaceItem(int index, ItemStack stack) {
-        return stack.getItem() instanceof BlockItem bi &&
-                (bi.getBlock() instanceof StainedGlassPaneBlock || bi.getBlock() instanceof SkullBlock);
+        return this.isEmpty() && stack.is(VistaMod.VIEW_FINDER_FILTER);
     }
 
     @Override
@@ -136,8 +136,8 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
         super.setRemoved();
     }
 
-
-    public ItemInteractionResult tryInteracting(Player player, InteractionHand hand, ItemStack stack, BlockPos pos) {
+    public ItemInteractionResult tryInteracting(Player player, InteractionHand hand, ItemStack stack,
+                                                BlockPos pos) {
         ItemInteractionResult itemAdd = this.interactWithPlayerItem(player, hand, stack);
         if (itemAdd.consumesAction()) {
             return itemAdd;
@@ -282,14 +282,13 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
         return !computeEndermanLookedAt(List.of(view), List.of(man)).isEmpty();
     }
 
-    public Player fakePlayer;
     private List<EndermanLookResult> computeEndermanLookedAt(List<TVSpectatorView> views, List<EnderMan> enderMen) {
         List<EndermanLookResult> lookResults = new ArrayList<>();
         Vec3 lensFacing = Vec3.directionFromRotation(this.pitch, this.yaw).normalize();
         Vec3 lensCenter = Vec3.atCenterOf(worldPosition);
 
         // Prepare fake player once
-        fakePlayer = FakePlayerManager.get(VIEW_FINDER_PLAYER, level);
+        Player fakePlayer = FakePlayerManager.get(VIEW_FINDER_PLAYER, level);
         float eyeH = fakePlayer.getEyeHeight();
 
 
@@ -310,8 +309,6 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
             // Compute look vector from fake eye to mapped hit
             Vec3 look = pixelRayDir(localX, localY);
 
-            //TODO:better math here
-            // Convert look vector to yaw/pitch (Minecraft convention)
             //flip look since its inverted
             float yRot = (float) (Math.toDegrees(Math.atan2(look.z, look.x)) + 90);
             double horiz = Math.sqrt(look.x * look.x + look.z * look.z);

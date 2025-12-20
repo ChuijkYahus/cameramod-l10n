@@ -26,6 +26,7 @@ import static net.mehvahdjukaar.vista.VistaMod.MOD_ID;
 public class VistaForge {
 
     public static WeakReference<IEventBus> modBus;
+
     public VistaForge(IEventBus bus) {
         modBus = new WeakReference<>(bus);
         RegHelper.startRegisteringFor(bus);

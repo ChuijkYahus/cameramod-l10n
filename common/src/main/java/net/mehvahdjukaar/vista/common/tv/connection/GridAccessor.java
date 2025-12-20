@@ -36,7 +36,7 @@ public interface GridAccessor {
                 break;
             }
         }
-        if (originBe != null) this.planBeMove(originBe, to);
+        this.planBeMove(originBe, to);
 
         for (int y = bottom; y <= top; y++) {
             for (int x = left; x <= right; x++) {
@@ -56,7 +56,7 @@ public interface GridAccessor {
         }
     }
 
-    void planBeMove(Rect2D from, Rect2D to);
+    void planBeMove(@Nullable Rect2D from, Rect2D to);
 
 }
 

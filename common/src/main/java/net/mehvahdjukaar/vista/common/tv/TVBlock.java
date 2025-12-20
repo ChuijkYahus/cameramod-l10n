@@ -271,12 +271,14 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
         }
 
         @Override
-        public void planBeMove(Rect2D fromRec, Rect2D toRec) {
+        public void planBeMove(@Nullable Rect2D fromRec, Rect2D toRec) {
+            finalTileRect = toRec;
+            if (fromRec == null) return;
             Vec2i from = fromRec.bottomLeft();
             BlockPos target = MthUtils.relativePos(pos, facing, from.x(), from.y(), 0);
             if (level.getBlockEntity(target) instanceof TVBlockEntity tv) {
                 cassetteTransfer = tv.getDisplayedItem().copy();
-                finalTileRect = toRec;
+
                 tv.clearContent();
                 tv.setConnectionSize(1, 1);
             }

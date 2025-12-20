@@ -18,6 +18,7 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.core.component.DataComponentType;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
@@ -112,35 +113,36 @@ public class VistaMod {
     public static final TagKey<CassetteTape> SUPPORTER_TAPES = TagKey.create(
             CASSETTE_TAPE_REGISTRY_KEY, res("supporter_tapes"));
 
+    public static final TagKey<Item> VIEW_FINDER_FILTER = TagKey.create(
+            Registries.ITEM, res("view_finder_filter"));
+
+
     public static void init() {
 
         //TODO:
-        //connection 2x2
         //no adjusted frustum causing to clip through blocks when placed next to it
-        //emderman view through camera
         //view finder scroll bug
         //creative only cassette that targets a video
         //turn table rotation thing
-        //update time fps change with round robin
-        //click sounds and new insert sound
         //turn on shader
         //show tv screen for far away cunks using a static screenshot with pause shaderand pause icon
         //liveleak icon
+        //ball item
         //jittery scroll
         //turn on sound
-        //player holding hand slike when using explosure cameera
+        //player holding hands like when using explosure cameera and cannons
         //shader when you wear a tv. fnaf
         //gifs play independently. No more atlas. sad
         //new cassettes
         //view distance scales with zoom
-        //fix flickering
-        //zoom broken on fabric?
         //check turn table
         //cannon maoeuvering sound
         //view finder maneuvering sound
         //verify the connection system
         //tv glitch shader
         //exposure compat
+        //camera lensens
+
 
         //for gifs maybe we could send the strips to the atlas, then in the shader do the scrolling
         CommonConfigs.init();
