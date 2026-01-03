@@ -23,10 +23,7 @@ import net.minecraft.client.Camera;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.client.renderer.FogRenderer;
-import net.minecraft.client.renderer.GameRenderer;
-import net.minecraft.client.renderer.LevelRenderer;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.*;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.util.VisibleForDebug;
@@ -73,7 +70,8 @@ public class LiveFeedRendererManager {
 
 
     @Nullable
-    public static ResourceLocation requestLiveFeedTexture(Level level, UUID location, int screenSize, boolean requiresUpdate) {
+    public static ResourceLocation requestLiveFeedTexture(Level level, UUID location, int screenSize,
+                                                          boolean requiresUpdate, ResourceLocation postShader) {
         ViewFinderBlockEntity tile = LiveFeedConnectionManager.findLinkedViewFinder(level, location);
         if (tile != null) {
             ResourceLocation feedId = getOrCreateFeedId(location);
@@ -81,7 +79,15 @@ public class LiveFeedRendererManager {
                     () -> new TVLiveFeedTexture(feedId,
                             screenSize * ClientConfigs.RESOLUTION_SCALE.get(),
                             LiveFeedRendererManager::refreshTexture, location));
-            if (!requiresUpdate) texture.unMarkForUpdate();
+
+            ResourceLocation currentShader = texture.getPostShader();
+            if (currentShader != postShader) {
+                texture.setPostShader(postShader);
+                requiresUpdate = true;
+            }
+            if (!requiresUpdate){
+                texture.unMarkForUpdate();
+            }
             if (texture.isInitialized()) {
                 return texture.getTextureLocation();
             } else {
@@ -138,7 +144,7 @@ public class LiveFeedRendererManager {
             setLastUpdatedTime(textureId, level);
 
 
-            UUID uuid = text.associatedUUID;
+            UUID uuid = text.getAssociatedUUID();
             ViewFinderBlockEntity tile = LiveFeedConnectionManager.findLinkedViewFinder(level, uuid);
             if (tile == null) return; //TODO: do something here
 
@@ -168,7 +174,7 @@ public class LiveFeedRendererManager {
             renderLevel(mc, canvas, DUMMY_CAMERA, fov);
             mc.gameRenderer.renderDistance = oldRenderDistance;
 
-            copyWithShader(canvas, renderTarget, ModRenderTypes.POSTERIZE.apply(canvas));
+            applyPostShader(canvas, renderTarget, ModRenderTypes.POSTERIZE.apply(canvas));
 
             LiveFeedRendererManager.LIVE_FEED_BEING_RENDERED = null;
             mainTarget.bindWrite(true);
@@ -252,7 +258,7 @@ public class LiveFeedRendererManager {
                 (float) target.width / (float) target.height, ViewFinderBlockEntity.NEAR_PLANE, depthFar);
     }
 
-    public static void copyWithShader(RenderTarget src, RenderTarget dst, RenderType rt) {
+    public static void applyPostShader(RenderTarget src, RenderTarget dst, RenderType rt) {
         RenderSystem.assertOnRenderThreadOrInit();
 
         if (src == null || dst == null)
@@ -282,7 +288,6 @@ public class LiveFeedRendererManager {
         vc.addVertex(1, 1, 0).setUv(1f, 0f);
         vc.addVertex(-1, 1, 0).setUv(0f, 0f);
         bufferSource.endBatch(rt);
-
     }
 
 }

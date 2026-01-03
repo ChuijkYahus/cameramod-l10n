@@ -17,7 +17,11 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
+import net.minecraft.client.renderer.blockentity.ChestRenderer;
+import net.minecraft.client.renderer.entity.BoatRenderer;
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.vehicle.ChestBoat;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
@@ -109,29 +113,6 @@ public class ViewFinderBlockEntityRenderer implements BlockEntityRenderer<ViewFi
     }
 
 
-    public static LayerDefinition createMesh() {
-        MeshDefinition meshdefinition = new MeshDefinition();
-        PartDefinition partdefinition = meshdefinition.getRoot();
-
-        PartDefinition legs = partdefinition.addOrReplaceChild("legs", CubeListBuilder.create()
-                        .texOffs(0, 36).addBox(5.0F, -4.0F, -2.0F, 2.0F, 10.0F, 4.0F)
-                        .texOffs(12, 36).addBox(-7.0F, -4.0F, -2.0F, 2.0F, 10.0F, 4.0F),
-                PartPose.ZERO);
-
-        PartDefinition head = legs.addOrReplaceChild("head_pivot", CubeListBuilder.create(),
-                PartPose.offsetAndRotation(0.0F, -1.0F, 0.0F, -0.1745F, 0.0F, 0.0F));
-
-        PartDefinition bone = head.addOrReplaceChild("head", CubeListBuilder.create()
-                        .texOffs(0, 16).addBox(-5.0F, -6.0F, -4F, 10.0F, 12.0F, 8.0F),
-                PartPose.ZERO);
-
-        PartDefinition base = partdefinition.addOrReplaceChild("base", CubeListBuilder.create()
-                        .texOffs(0, 0)
-                        .addBox(-7.0F, 6.0F, -7.0F, 14.0F, 2.0F, 14.0F),
-                PartPose.ZERO);
-
-        return LayerDefinition.create(meshdefinition, 64, 64);
-    }
 
     private static void renderDebug(ViewFinderBlockEntity tile, PoseStack poseStack, MultiBufferSource bufferSource) {
       /*

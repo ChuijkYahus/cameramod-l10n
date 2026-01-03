@@ -15,6 +15,7 @@ import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.Material;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.DyeColor;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 
@@ -172,4 +173,7 @@ public class ModRenderTypes extends RenderType {
         shader.safeGetUniform(name).set(value);
     }
 
+    public static RenderType getColorFilter(DyeColor color) {
+        return null;
+    }
 }

@@ -120,6 +120,9 @@ public class VistaMod {
     public static void init() {
 
         //TODO:
+        //amendments mixed pot not saving on servers
+        //amendments dye color stuff not working
+        //divining rod can use maybe has on the blockstate container of a chunk
         //no adjusted frustum causing to clip through blocks when placed next to it
         //view finder scroll bug
         //creative only cassette that targets a video
