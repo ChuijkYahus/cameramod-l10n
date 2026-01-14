@@ -121,7 +121,6 @@ public class VistaMod {
 
         //TODO:
         //amendments mixed pot not saving on servers
-        //amendments dye color stuff not working
         //divining rod can use maybe has on the blockstate container of a chunk
         //no adjusted frustum causing to clip through blocks when placed next to it
         //view finder scroll bug

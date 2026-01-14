@@ -19,7 +19,7 @@ public class ViewFinderModel extends Model {
 
 
     public ViewFinderModel(EntityRendererProvider.Context context) {
-        super(renderType);
+        super(null);
     }
 
     @Override

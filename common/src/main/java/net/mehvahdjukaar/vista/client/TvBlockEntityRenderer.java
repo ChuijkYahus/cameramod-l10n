@@ -137,17 +137,19 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
         VertexUtil.addQuad(vc, poseStack, -s, -s, s, s, lightU, lightV);
     }
 
-    private RenderType getPostShader(TVBlockEntity blockEntity) {
+    private ResourceLocation getPostShader(TVBlockEntity blockEntity) {
         ItemStack filterItem = blockEntity.getDisplayedItem();
         if (filterItem.isEmpty())return null;
         Item item = filterItem.getItem();
         DyeColor color = BlocksColorAPI.getColor(item);
         if (color != null) {
-            return ModRenderTypes.getColorFilter(color);
+          //  return ModRenderTypes.getColorFilter(color);
         }
         if(CompatHandler.SUPPLEMENTARIES){
-            SuppCompat
+            //TODO:
+//            return SuppCompat.getShaderForItem(filterItem);
         }
+        return null;
     }
 
     // ========== DEBUG RENDERING ========== //

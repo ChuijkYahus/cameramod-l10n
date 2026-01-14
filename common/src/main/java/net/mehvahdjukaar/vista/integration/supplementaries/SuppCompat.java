@@ -8,7 +8,6 @@ import net.minecraft.world.item.Item;
 public class SuppCompat {
 
     public static String getShaderForItem(Item item) {
-        ModRenderTypes.POSTERIZE
         return MobHeadShadersManager.INSTANCE.getShaderForItem(item);
     }
 }

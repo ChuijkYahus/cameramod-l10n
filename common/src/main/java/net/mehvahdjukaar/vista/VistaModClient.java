@@ -69,7 +69,7 @@ public class VistaModClient {
     }
 
     private static void registerModelLayers(ClientHelper.ModelLayerEvent event) {
-        event.register(VIEWFINDER_MODEL, ViewFinderBlockEntityRenderer::createMesh);
+        event.register(VIEWFINDER_MODEL, ViewFinderModel::createMesh);
     }
 
     public static Level getLevel() {

@@ -1,3 +1,5 @@
+- You can now look at endermen through tvs (dont you do it)
+- tvs can connect in a square formation to make a larger screen, so long as just at most 1 of them has a casset
 - fixed flickering with distant horizons
 - added distant horizons compat. by default DH LODs are disabled
 - added computer craft compat, allowing to control a view finder with a computer
