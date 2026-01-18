@@ -22,7 +22,7 @@ public class TvItemRenderer extends ItemStackRenderer {
 
         if (itemDisplayContext == ItemDisplayContext.HEAD) {
             //TODO: make this using armor layer so we have entity context
-            VertexConsumer vc = TapeTextureManager.getSmileTapeVC(buffer, Minecraft.getInstance().player);
+            VertexConsumer vc = TapeTextureHelper.getSmileTapeVC(buffer, Minecraft.getInstance().player);
 
             //bugged when looking up. draw shader must be bugged
             int lightU = light & 0xFFFF;

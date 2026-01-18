@@ -111,13 +111,13 @@ subprojects {
     def modLoader = project.name
     def changelogFile = rootProject.file("changelog.md")
     def changelogText = changelogFile.exists() ? changelogFile.text : ""
-    def mcVersions = listGameVersions(minecraft_min_version, minecraft_version)
+    def mcVersions = listGameVersions(minecraft_min_version, minecraft_max_version)
     def cfToken = providers.environmentVariable("CURSEFORGE_TOKEN")
     def mrToken = providers.environmentVariable("MODRINTH_TOKEN")
 
     if (mrToken.isPresent()) {
         modrinth {
-            projectId = mod_id
+            projectId = mr_project_id
             uploadFile = tasks.remapJar
             gameVersions = mcVersions
             if (modLoader == "forge") {
@@ -160,38 +160,10 @@ subprojects {
                     relations {
                         requiredDependency "fabric-api"
                         requiredDependency "selene"
-
-                        optionalDependency "the-bumblezone-fabric"
-                        optionalDependency "decorative-blocks"
-                        optionalDependency("flan")
-                        optionalDependency("multi-item-lib")
-                        optionalDependency("snowy-spirit")
-                        optionalDependency("haunted-harvest")
-                        optionalDependency("model-gap-fix")
-                        optionalDependency("map-atlases")
-                        optionalDependency("farmers-delight-fabric")
                     }
                 } else {
                     relations {
                         requiredDependency("selene")
-
-                        optionalDependency("create")
-                        optionalDependency("quark")
-                        optionalDependency("cc-tweaked")
-                        optionalDependency("waystones")
-                        optionalDependency("roughly-enough-items")
-                        optionalDependency("jei")
-                        optionalDependency("model-gap-fix")
-                        optionalDependency("flywheel")
-                        optionalDependency("configured")
-                        optionalDependency("flan-forge")
-                        optionalDependency("haunted-harvest")
-                        optionalDependency("snowy-spirit")
-                        optionalDependency("map-atlases-forge")
-                        optionalDependency("decorative-blocks")
-                        optionalDependency("farmers-delight")
-                        optionalDependency("the-bumblezone-forge")
-                        optionalDependency("map-atlases-forge")
                     }
                 }
             }
@@ -224,16 +196,44 @@ ext.replaceProperties = [
 ]
 
 // --- Utils
-static def listGameVersions(String minVersion, String maxVersion) {
-// minVersion like "1.20", maxVersion like "1.20.4"
-    def versions = []
-    versions << minVersion
-    int endPatch = Integer.parseInt(maxVersion.split('\\.')[2])
-    for (int i = 1; i <= endPatch; i++) {
-        versions << "${minVersion}.${i}"
+static List<String> listGameVersions(String minInclusive, String maxExclusive) {
+    def min = minInclusive.split('\\.')*.toInteger()
+    def max = maxExclusive.split('\\.')*.toInteger()
+
+    if (min.size() != 3 || max.size() != 3) {
+        throw new IllegalArgumentException("Versions must be in MAJOR.MINOR.PATCH format")
     }
+
+    def versions = []
+
+    int major = min[0]
+    int minor = min[1]
+    int patch = min[2]
+
+    while (true) {
+        // stop when we reach maxExclusive
+        if (major > max[0] ||
+                (major == max[0] && minor > max[1]) ||
+                (major == max[0] && minor == max[1] && patch >= max[2])) {
+            break
+        }
+
+        versions << "${major}.${minor}.${patch}"
+
+        patch++
+        if (patch > 99) {          // optional rollover rule
+            patch = 0
+            minor++
+        }
+    }
+
+    if (versions.isEmpty()) {
+        throw new IllegalStateException("No versions produced for given range")
+    }
+
     return versions
 }
+
 
 tasks.register('buildAndpublishAll') {
     dependsOn ':clean'

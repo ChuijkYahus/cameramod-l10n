@@ -14,7 +14,7 @@ import net.minecraft.world.entity.LivingEntity;
 import java.util.HashMap;
 import java.util.Map;
 
-public class TapeTextureManager {
+public class TapeTextureHelper {
 
     public static final ResourceLocation ATLAS_LOCATION = VistaMod.res("textures/atlas/cassette_tape.png");
     public static final ResourceLocation ATLAS_INFO_LOCATION = VistaMod.res("cassette_tapes");

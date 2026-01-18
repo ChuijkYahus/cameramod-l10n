@@ -84,7 +84,6 @@ public class ClientConfigs {
     }
 
     public static boolean rendersDebug() {
-        return PlatHelper.isDev() || (RENDER_DEBUG.get() ||
-                !Minecraft.getInstance().getEntityRenderDispatcher().shouldRenderHitBoxes());
+        return PlatHelper.isDev() || RENDER_DEBUG.get();
     }
 }

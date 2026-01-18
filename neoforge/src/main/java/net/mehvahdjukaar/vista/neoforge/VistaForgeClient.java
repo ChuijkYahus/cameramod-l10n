@@ -1,25 +1,18 @@
 package net.mehvahdjukaar.vista.neoforge;
 
-import net.mehvahdjukaar.moonlight.api.misc.fake_level.FakeLevelManager;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.client.GifPathSpriteSource;
-import net.mehvahdjukaar.vista.client.TapeTextureManager;
+import net.mehvahdjukaar.vista.client.TapeTextureHelper;
 import net.mehvahdjukaar.vista.client.ViewFinderController;
 import net.mehvahdjukaar.vista.client.ViewFinderHud;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.GameRenderer;
-import net.minecraft.client.renderer.texture.atlas.SpriteSourceType;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.player.Player;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.client.ClientHooks;
 import net.neoforged.neoforge.client.event.*;
 import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
-import net.neoforged.neoforge.event.AnvilUpdateEvent;
-import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 
 @EventBusSubscriber(Dist.CLIENT)
@@ -72,7 +65,7 @@ public class VistaForgeClient {
 
     @SubscribeEvent
     public static void registerAtlases(RegisterMaterialAtlasesEvent event) {
-        event.register(TapeTextureManager.ATLAS_LOCATION, TapeTextureManager.ATLAS_INFO_LOCATION);
+        event.register(TapeTextureHelper.ATLAS_LOCATION, TapeTextureHelper.ATLAS_INFO_LOCATION);
     }
 
     @SubscribeEvent

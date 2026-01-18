@@ -15,12 +15,10 @@ import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.mehvahdjukaar.vista.integration.CompatHandler;
 import net.mehvahdjukaar.vista.integration.exposure.ExposureCompatClient;
-import net.mehvahdjukaar.vista.integration.supplementaries.SuppCompat;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
@@ -30,7 +28,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.block.StainedGlassPaneBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec2;
@@ -111,17 +108,17 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
                     renderDebug(tex, poseStack, buffer, partialTick, blockEntity);
                 }
                 float enderman = blockEntity.getLookingAtEndermanAnimation(partialTick);
-                vc = TapeTextureManager.getFullSpriteVC(tex, buffer, enderman, pixelEffectRes);
+                vc = TapeTextureHelper.getFullSpriteVC(tex, buffer, enderman, pixelEffectRes);
             } else {
-                vc = TapeTextureManager.getDefaultTapeVC(buffer, pixelEffectRes);
+                vc = TapeTextureHelper.getDefaultTapeVC(buffer, pixelEffectRes);
             }
 
         } else if (tape != null) {
-            vc = TapeTextureManager.getTapeVC(tape, buffer, pixelEffectRes);
+            vc = TapeTextureHelper.getTapeVC(tape, buffer, pixelEffectRes);
         } else if (CompatHandler.EXPOSURE) {
             ResourceLocation texture = ExposureCompatClient.getPictureTextureForRenderer(stack, blockEntity.getAnimationTick());
             if (texture != null) {
-                vc = TapeTextureManager.getFullSpriteVC(texture, buffer, 0, pixelEffectRes);
+                vc = TapeTextureHelper.getFullSpriteVC(texture, buffer, 0, pixelEffectRes);
             }
         }
         if (vc == null) {

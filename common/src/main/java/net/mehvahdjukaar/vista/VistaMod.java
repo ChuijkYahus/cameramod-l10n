@@ -5,7 +5,7 @@ import net.mehvahdjukaar.moonlight.api.misc.RegSupplier;
 import net.mehvahdjukaar.moonlight.api.misc.WorldSavedDataType;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.platform.RegHelper;
-import net.mehvahdjukaar.vista.client.TapeTextureManager;
+import net.mehvahdjukaar.vista.client.TapeTextureHelper;
 import net.mehvahdjukaar.vista.common.*;
 import net.mehvahdjukaar.vista.common.tv.TVBlock;
 import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
@@ -158,7 +158,7 @@ public class VistaMod {
         if (PlatHelper.getPhysicalSide().isClient()) {
             VistaModClient.init();
             PlatHelper.addReloadableCommonSetup((ra, dataReload) -> {
-                if (!dataReload) TapeTextureManager.onWorldReload();
+                if (!dataReload) TapeTextureHelper.onWorldReload();
             });
         }
     }

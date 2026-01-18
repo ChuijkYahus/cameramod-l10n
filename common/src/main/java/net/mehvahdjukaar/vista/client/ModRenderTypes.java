@@ -12,6 +12,7 @@ import net.minecraft.Util;
 import net.minecraft.client.renderer.RenderStateShard;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.ShaderInstance;
+import net.minecraft.client.renderer.texture.SimpleTexture;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.Material;
 import net.minecraft.resources.ResourceLocation;
@@ -49,7 +50,7 @@ public class ModRenderTypes extends RenderType {
                 .setShaderState(CAMERA_SHADER_STATE)
                 .setTextureState(new TextureStateShard(text,
                         //TODO: mipmap
-                        false, false))
+                        false, true))
                 .setTransparencyState(NO_TRANSPARENCY)
                 .setLightmapState(LIGHTMAP)
                 .setTexturingState(new TexturingStateShard("set_texel_size",

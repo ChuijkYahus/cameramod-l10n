@@ -17,4 +17,6 @@ accessible method net/minecraft/world/entity/monster/EnderMan isLookingAtMe (Lne
 
 accessible field net/minecraft/client/Camera entity Lnet/minecraft/world/entity/Entity;
 
+accessible field net/minecraft/client/renderer/texture/SpriteContents originalImage Lcom/mojang/blaze3d/platform/NativeImage;
+
 
