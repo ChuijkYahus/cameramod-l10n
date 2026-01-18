@@ -3,7 +3,7 @@ package net.mehvahdjukaar.vista.neoforge;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.client.GifPathSpriteSource;
-import net.mehvahdjukaar.vista.client.TapeTextureHelper;
+import net.mehvahdjukaar.vista.client.textures.CassetteTexturesMaterials;
 import net.mehvahdjukaar.vista.client.ViewFinderController;
 import net.mehvahdjukaar.vista.client.ViewFinderHud;
 import net.minecraft.client.Minecraft;
@@ -65,7 +65,7 @@ public class VistaForgeClient {
 
     @SubscribeEvent
     public static void registerAtlases(RegisterMaterialAtlasesEvent event) {
-        event.register(TapeTextureHelper.ATLAS_LOCATION, TapeTextureHelper.ATLAS_INFO_LOCATION);
+        event.register(CassetteTexturesMaterials.ATLAS_LOCATION, CassetteTexturesMaterials.ATLAS_INFO_LOCATION);
     }
 
     @SubscribeEvent

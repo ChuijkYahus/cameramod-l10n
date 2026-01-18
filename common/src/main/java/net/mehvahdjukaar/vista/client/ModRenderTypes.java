@@ -7,6 +7,8 @@ import com.mojang.blaze3d.vertex.VertexFormat;
 import net.mehvahdjukaar.moonlight.api.misc.TriFunction;
 import net.mehvahdjukaar.moonlight.api.util.Utils;
 import net.mehvahdjukaar.vista.VistaModClient;
+import net.mehvahdjukaar.vista.client.textures.AnimationStripData;
+import net.mehvahdjukaar.vista.client.textures.SimpleAnimatedTexture;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.minecraft.Util;
 import net.minecraft.client.renderer.RenderStateShard;
@@ -68,18 +70,18 @@ public class ModRenderTypes extends RenderType {
                 1536, true, false, compositeState);
     }
 
-    public static final TriFunction<ResourceLocation, Material, Integer, RenderType> CAMERA_DRAW_SPRITE = Utils.memoize((text, mat, scale) -> {
+    public static final BiFunction<SimpleAnimatedTexture, Integer, RenderType> CAMERA_DRAW_SPRITE = Util.memoize((text, scale) -> {
         RenderType.CompositeState compositeState = RenderType.CompositeState.builder()
                 .setShaderState(CAMERA_SHADER_STATE)
-                .setTextureState(new RenderStateShard.TextureStateShard(text,
+                .setTextureState(new RenderStateShard.TextureStateShard(text.getLocation(),
                         //TODO: mipmap
-                        false, false))
+                        false, true))
                 .setTransparencyState(NO_TRANSPARENCY)
                 .setLightmapState(LIGHTMAP)
                 .setTexturingState(new TexturingStateShard("set_texel_size",
                         () -> {
                             ShaderInstance shader = VistaModClient.CAMERA_VIEW_SHADER.get();
-                            TextureAtlasSprite sprite = mat.sprite();
+                            AnimationStripData sprite = text.getStripData();
                             setSpriteDimensions(shader, sprite);
                             setCameraDrawUniforms(shader, 0, scale);
                         },
@@ -91,13 +93,13 @@ public class ModRenderTypes extends RenderType {
                 1536, true, false, compositeState);
     });
 
-    private static void setSpriteDimensions(ShaderInstance shader, TextureAtlasSprite sprite) {
+    private static void setSpriteDimensions(ShaderInstance shader, AnimationStripData sprite) {
         shader.safeGetUniform("SpriteDimensions")
                 .set(new Vector4f(
-                        sprite.getU0(),                     // minU
-                        sprite.getV0(),                     // minV
-                        sprite.getU1() - sprite.getU0(),    // sizeU
-                        sprite.getV1() - sprite.getV0()     // sizeV
+                        0,                     // minU
+                        0,                     // minV
+                        sprite.frameWidth(),    // sizeU
+                        sprite.frameHeight()     // sizeV
                 ));
     }
 
@@ -108,7 +110,7 @@ public class ModRenderTypes extends RenderType {
         setFloat(shader, "EnableEnergyNormalize", 0.0f);
 
         setFloat(shader, "VignetteIntensity", ClientConfigs.VIGNETTE.get());
-//TODO: fix these 2 noise not looking the same when at 1
+        //TODO: fix these 2 noise not looking the same when at 1
         setFloat(shader, "NoiseIntensity", noise);
     }
 

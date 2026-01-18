@@ -1,7 +1,8 @@
-package net.mehvahdjukaar.vista.client;
+package net.mehvahdjukaar.vista.client.textures;
 
-import com.google.gson.Gson;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.resources.FileToIdConverter;
 import net.minecraft.resources.ResourceLocation;
@@ -9,20 +10,19 @@ import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimplePreparableReloadListener;
 import net.minecraft.util.profiling.ProfilerFiller;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public abstract class GifsManager extends SimplePreparableReloadListener<Map<ResourceLocation,ResourceLocation>> {
-    private static GifsManager CURRENT_INSTANCE = null;
-
-    private final Map<ResourceLocation, SimpleAnimatedTexture> knowAnimations = new HashMap<>();
+public class CassetteTexturesManager extends SimplePreparableReloadListener<Map<ResourceLocation, ResourceLocation>> {
+    public static final CassetteTexturesManager INSTANCE = new CassetteTexturesManager("textures/cassette_tape");
 
     private final String directory;
+    private final Map<ResourceLocation, SimpleAnimatedTexture> knowAnimations = new HashMap<>();
 
-    public GifsManager( String directory) {
+    protected CassetteTexturesManager(String directory) {
         this.directory = directory;
-        CURRENT_INSTANCE = this;
     }
 
     @Override
@@ -39,7 +39,7 @@ public abstract class GifsManager extends SimplePreparableReloadListener<Map<Res
     }
 
     @Override
-    protected void apply(Map<ResourceLocation , ResourceLocation> object, ResourceManager resourceManager, ProfilerFiller profiler) {
+    protected void apply(Map<ResourceLocation, ResourceLocation> object, ResourceManager resourceManager, ProfilerFiller profiler) {
         TextureManager manager = Minecraft.getInstance().getTextureManager();
         for (var entry : object.entrySet()) {
             ResourceLocation id = entry.getKey();
@@ -52,6 +52,11 @@ public abstract class GifsManager extends SimplePreparableReloadListener<Map<Res
                 throw new RuntimeException("Failed to load gif animation: " + resLoc, e);
             }
         }
+    }
+
+    @Nullable
+    public SimpleAnimatedTexture getAnimatedTexture(ResourceLocation id) {
+        return knowAnimations.get(id);
     }
 }
 

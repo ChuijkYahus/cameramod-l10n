@@ -5,6 +5,11 @@ import net.mehvahdjukaar.moonlight.api.client.CoreShaderContainer;
 import net.mehvahdjukaar.moonlight.api.misc.EventCalled;
 import net.mehvahdjukaar.moonlight.api.platform.ClientHelper;
 import net.mehvahdjukaar.vista.client.*;
+import net.mehvahdjukaar.vista.client.renderer.TvBlockEntityRenderer;
+import net.mehvahdjukaar.vista.client.renderer.TvItemRenderer;
+import net.mehvahdjukaar.vista.client.renderer.ViewFinderBlockEntityRenderer;
+import net.mehvahdjukaar.vista.client.textures.CassetteTexturesManager;
+import net.mehvahdjukaar.vista.client.textures.LiveFeedTexturesManager;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.geom.ModelLayerLocation;
@@ -40,6 +45,8 @@ public class VistaModClient {
         ClientHelper.addModelLayerRegistration(VistaModClient::registerModelLayers);
         ClientHelper.addItemColorsRegistration(VistaModClient::registerItemColors);
         ClientHelper.addItemRenderersRegistration(VistaModClient::registerItemRenderers);
+
+        ClientHelper.addClientReloadListener(()-> CassetteTexturesManager.INSTANCE, VistaMod.res("gif_manager"));
     }
 
     private static void registerItemRenderers(ClientHelper.ItemRendererEvent event) {
@@ -77,7 +84,7 @@ public class VistaModClient {
     }
 
     public static void onLevelClose() {
-        LiveFeedRendererManager.clear();
+        LiveFeedTexturesManager.clear();
     }
 
     @EventCalled
@@ -92,7 +99,7 @@ public class VistaModClient {
 
     @EventCalled
     public static void onRenderTickEnd(Minecraft minecraft) {
-        LiveFeedRendererManager.onRenderTickEnd();
+        LiveFeedTexturesManager.onRenderTickEnd();
     }
 
 

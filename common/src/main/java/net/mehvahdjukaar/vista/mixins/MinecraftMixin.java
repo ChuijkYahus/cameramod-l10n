@@ -2,7 +2,7 @@ package net.mehvahdjukaar.vista.mixins;
 
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import com.mojang.blaze3d.pipeline.RenderTarget;
-import net.mehvahdjukaar.vista.client.LiveFeedRendererManager;
+import net.mehvahdjukaar.vista.client.textures.LiveFeedTexturesManager;
 import net.minecraft.client.Minecraft;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -19,8 +19,8 @@ public class MinecraftMixin {
 
     @ModifyReturnValue(method = "getMainRenderTarget", at = @At(value = "RETURN"))
     public RenderTarget vista$setCameraTarget(RenderTarget original) {
-        if (LiveFeedRendererManager.LIVE_FEED_BEING_RENDERED != null) {
-            return LiveFeedRendererManager.LIVE_FEED_BEING_RENDERED;
+        if (LiveFeedTexturesManager.LIVE_FEED_BEING_RENDERED != null) {
+            return LiveFeedTexturesManager.LIVE_FEED_BEING_RENDERED;
         }
         return original;
     }

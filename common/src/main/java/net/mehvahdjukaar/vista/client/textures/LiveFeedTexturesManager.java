@@ -1,4 +1,4 @@
-package net.mehvahdjukaar.vista.client;
+package net.mehvahdjukaar.vista.client.textures;
 
 import com.google.common.base.Suppliers;
 import com.google.common.collect.BiMap;
@@ -14,6 +14,8 @@ import net.mehvahdjukaar.moonlight.api.misc.RollingBuffer;
 import net.mehvahdjukaar.moonlight.core.client.DummyCamera;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.VistaPlatStuff;
+import net.mehvahdjukaar.vista.client.AdaptiveUpdateScheduler;
+import net.mehvahdjukaar.vista.client.ModRenderTypes;
 import net.mehvahdjukaar.vista.common.LiveFeedConnectionManager;
 import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
@@ -43,7 +45,7 @@ import java.util.function.Supplier;
 
 import static net.minecraft.client.Minecraft.ON_OSX;
 
-public class LiveFeedRendererManager {
+public class LiveFeedTexturesManager {
 
     private static final Int2ObjectArrayMap<RenderTarget> CANVASES = new Int2ObjectArrayMap<>();
     private static final BiMap<UUID, ResourceLocation> LIVE_FEED_LOCATIONS = HashBiMap.create();
@@ -78,7 +80,7 @@ public class LiveFeedRendererManager {
             TVLiveFeedTexture texture = RenderedTexturesManager.requestTexture(feedId,
                     () -> new TVLiveFeedTexture(feedId,
                             screenSize * ClientConfigs.RESOLUTION_SCALE.get(),
-                            LiveFeedRendererManager::refreshTexture, location));
+                            LiveFeedTexturesManager::refreshTexture, location));
 
             ResourceLocation currentShader = texture.getPostShader();
             if (currentShader != postShader) {
@@ -176,7 +178,7 @@ public class LiveFeedRendererManager {
 
             applyPostShader(canvas, renderTarget, ModRenderTypes.POSTERIZE.apply(canvas));
 
-            LiveFeedRendererManager.LIVE_FEED_BEING_RENDERED = null;
+            LiveFeedTexturesManager.LIVE_FEED_BEING_RENDERED = null;
             mainTarget.bindWrite(true);
 
             //important otherwise we get flicker

@@ -1,20 +1,21 @@
-package net.mehvahdjukaar.vista.client;
+package net.mehvahdjukaar.vista.client.textures;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.mehvahdjukaar.vista.VistaMod;
+import net.mehvahdjukaar.vista.client.ModRenderTypes;
 import net.mehvahdjukaar.vista.common.CassetteTape;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.resources.model.Material;
+import net.minecraft.client.renderer.texture.MissingTextureAtlasSprite;
 import net.minecraft.core.Holder;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.LivingEntity;
+import org.jetbrains.annotations.NotNull;
 
-import java.util.HashMap;
 import java.util.Map;
 
-public class TapeTextureHelper {
+public class CassetteTexturesMaterials {
 
     public static final ResourceLocation ATLAS_LOCATION = VistaMod.res("textures/atlas/cassette_tape.png");
     public static final ResourceLocation ATLAS_INFO_LOCATION = VistaMod.res("cassette_tapes");
@@ -28,10 +29,6 @@ public class TapeTextureHelper {
             Smile.NEUTRAL, NEUTRAL_LOCATION,
             Smile.SAD, SAD_LOCATION
     );
-
-    private static final Map<CassetteMaterialKey, Material> CASSETTE_MATERIALS = new HashMap<>();
-    private static final Map<DefaultMaterialKey, Material> BARS_MATERIAL = new HashMap<>();
-    private static final Map<SmileMaterialKey, Material> SMILE_MATERIAL = new HashMap<>();
 
     private record CassetteMaterialKey(ResourceKey<CassetteTape> tapeKey, int scale, boolean hasSfx) {
     }
@@ -58,28 +55,30 @@ public class TapeTextureHelper {
     }
 
     public static VertexConsumer getTapeVC(Holder<CassetteTape> tapeKey, MultiBufferSource buffer, int scale) {
-        boolean hasSfx = hasSfx();
-        var materialKey = new CassetteMaterialKey(tapeKey.unwrapKey().get(), scale, hasSfx);
-        Material mat = CASSETTE_MATERIALS.computeIfAbsent(materialKey, k ->
-                new Material(ATLAS_LOCATION, tapeKey.value().assetId()));
-        return mat.buffer(buffer, hasSfx ? t -> ModRenderTypes.CAMERA_DRAW_SPRITE.apply(t, mat, scale) : RenderType::text);
+        ResourceLocation tapeTexture = tapeKey.value().assetId();
+        return getTapeVC(buffer, scale, tapeTexture);
     }
 
     public static VertexConsumer getDefaultTapeVC(MultiBufferSource buffer, int scale) {
+        return getTapeVC(buffer, scale, ATLAS_INFO_LOCATION);
+    }
+
+    private static @NotNull VertexConsumer getTapeVC(MultiBufferSource buffer, int scale, ResourceLocation id) {
         boolean hasSfx = hasSfx();
-        var materialKey = new DefaultMaterialKey(scale, hasSfx);
-        Material mat = BARS_MATERIAL.computeIfAbsent(materialKey, k ->
-                new Material(ATLAS_LOCATION, BARS_LOCATION));
-        return mat.buffer(buffer, hasSfx ? t -> ModRenderTypes.CAMERA_DRAW_SPRITE.apply(t, mat, scale) : RenderType::text);
+        SimpleAnimatedTexture animatedText = CassetteTexturesManager.INSTANCE.getAnimatedTexture(id);
+
+        if (animatedText == null) {
+            return buffer.getBuffer(RenderType.entityCutout(MissingTextureAtlasSprite.getLocation()));
+        }
+        RenderType rt = hasSfx ? ModRenderTypes.CAMERA_DRAW_SPRITE.apply(animatedText, scale) : RenderType.text(ATLAS_INFO_LOCATION);
+        VertexConsumer inner = buffer.getBuffer(rt);
+        return new AnimatedTextureVertexConsumer(0, animatedText.getStripData(), inner);
     }
 
     public static VertexConsumer getSmileTapeVC(MultiBufferSource buffer, LivingEntity player) {
-        boolean hasSfx = hasSfx();
         Smile smile = Smile.fromHealth(player);
-        var materialKey = new SmileMaterialKey(smile, hasSfx);
-        Material mat = SMILE_MATERIAL.computeIfAbsent(materialKey, k ->
-                new Material(ATLAS_LOCATION, SMILES.get(smile)));
-        return mat.buffer(buffer, hasSfx ? t -> ModRenderTypes.CAMERA_DRAW_SPRITE.apply(t, mat, 1) : RenderType::text);
+        ResourceLocation id = SMILES.get(smile);
+        return getTapeVC(buffer, 1, id);
     }
 
     public static VertexConsumer getFullSpriteVC(ResourceLocation tex, MultiBufferSource buffer, float enderman, int scale) {
@@ -89,14 +88,8 @@ public class TapeTextureHelper {
         return buffer.getBuffer(rt);
     }
 
-    public static void onWorldReload() {
-        CASSETTE_MATERIALS.clear();
-        BARS_MATERIAL.clear();
-        SMILE_MATERIAL.clear();
-    }
-
     private static boolean hasSfx() {
-        return LiveFeedRendererManager.LIVE_FEED_BEING_RENDERED == null;
+        return LiveFeedTexturesManager.LIVE_FEED_BEING_RENDERED == null;
     }
 
 

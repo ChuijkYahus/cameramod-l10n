@@ -1,7 +1,9 @@
-package net.mehvahdjukaar.vista.client;
+package net.mehvahdjukaar.vista.client.textures;
 
 import net.mehvahdjukaar.moonlight.api.client.texture_renderer.TickableFrameBufferBackedDynamicTexture;
+import net.minecraft.client.model.WitherBossModel;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.inventory.AbstractContainerMenu;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -18,7 +20,6 @@ public class TVLiveFeedTexture extends TickableFrameBufferBackedDynamicTexture {
                              @NotNull Consumer<TVLiveFeedTexture> textureDrawingFunction,
                              UUID id) {
         super(resourceLocation, size, (Consumer) textureDrawingFunction);
-
         this.associatedUUID = id;
         this.postShader = null;
     }

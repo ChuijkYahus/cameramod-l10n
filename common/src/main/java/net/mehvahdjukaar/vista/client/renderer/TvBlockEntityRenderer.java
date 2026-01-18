@@ -1,4 +1,4 @@
-package net.mehvahdjukaar.vista.client;
+package net.mehvahdjukaar.vista.client.renderer;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -9,6 +9,9 @@ import net.mehvahdjukaar.moonlight.api.misc.ForgeOverride;
 import net.mehvahdjukaar.moonlight.api.misc.RollingBuffer;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.set.BlocksColorAPI;
+import net.mehvahdjukaar.vista.client.textures.LiveFeedTexturesManager;
+import net.mehvahdjukaar.vista.client.ModRenderTypes;
+import net.mehvahdjukaar.vista.client.textures.CassetteTexturesMaterials;
 import net.mehvahdjukaar.vista.common.CassetteTape;
 import net.mehvahdjukaar.vista.common.tv.TVBlock;
 import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
@@ -101,24 +104,24 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
             ResourceLocation postShader = getPostShader(blockEntity);
 
             boolean shouldUpdate = lod.within(ClientConfigs.UPDATE_DISTANCE.get());
-            ResourceLocation tex = LiveFeedRendererManager.requestLiveFeedTexture(blockEntity.getLevel(),
+            ResourceLocation tex = LiveFeedTexturesManager.requestLiveFeedTexture(blockEntity.getLevel(),
                     liveFeedId, screenSize, shouldUpdate, postShader);
             if (tex != null) {
                 if (ClientConfigs.rendersDebug()) {
                     renderDebug(tex, poseStack, buffer, partialTick, blockEntity);
                 }
                 float enderman = blockEntity.getLookingAtEndermanAnimation(partialTick);
-                vc = TapeTextureHelper.getFullSpriteVC(tex, buffer, enderman, pixelEffectRes);
+                vc = CassetteTexturesMaterials.getFullSpriteVC(tex, buffer, enderman, pixelEffectRes);
             } else {
-                vc = TapeTextureHelper.getDefaultTapeVC(buffer, pixelEffectRes);
+                vc = CassetteTexturesMaterials.getDefaultTapeVC(buffer, pixelEffectRes);
             }
 
         } else if (tape != null) {
-            vc = TapeTextureHelper.getTapeVC(tape, buffer, pixelEffectRes);
+            vc = CassetteTexturesMaterials.getTapeVC(tape, buffer, pixelEffectRes);
         } else if (CompatHandler.EXPOSURE) {
             ResourceLocation texture = ExposureCompatClient.getPictureTextureForRenderer(stack, blockEntity.getAnimationTick());
             if (texture != null) {
-                vc = TapeTextureHelper.getFullSpriteVC(texture, buffer, 0, pixelEffectRes);
+                vc = CassetteTexturesMaterials.getFullSpriteVC(texture, buffer, 0, pixelEffectRes);
             }
         }
         if (vc == null) {
@@ -159,12 +162,12 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
 
         Font font = Minecraft.getInstance().font;
 
-        poseStack.translate(1, 1.5, 0);
+        poseStack.translate(1, 1.5, -0.1);
         poseStack.mulPose(Axis.YP.rotationDegrees(-180));
         poseStack.scale(1 / 16f, -1 / 16f, 1 / 16f);
         poseStack.scale(0.5f, 0.5f, 0.5f);
 
-        RollingBuffer<Long> lastUpdateTimes = LiveFeedRendererManager.UPDATE_TIMES.get(tex);
+        RollingBuffer<Long> lastUpdateTimes = LiveFeedTexturesManager.UPDATE_TIMES.get(tex);
 
         double averageUpdateinterval = calculateAverageUpdateTime(lastUpdateTimes);
 
@@ -174,7 +177,7 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
                 OverlayTexture.NO_OVERLAY,
                 LightTexture.FULL_BRIGHT);
 
-        double updateMs = LiveFeedRendererManager.SCHEDULER.get().getAverageUpdateTimeMs();
+        double updateMs = LiveFeedTexturesManager.SCHEDULER.get().getAverageUpdateTimeMs();
 
         y -= 9;
         font.drawInBatch(String.format("up ms %.2f", updateMs), 0, y, -1, false, poseStack.last().pose(), buffer, Font.DisplayMode.NORMAL,

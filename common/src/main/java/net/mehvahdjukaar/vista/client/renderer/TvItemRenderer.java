@@ -1,9 +1,10 @@
-package net.mehvahdjukaar.vista.client;
+package net.mehvahdjukaar.vista.client.renderer;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.mehvahdjukaar.moonlight.api.client.ItemStackRenderer;
 import net.mehvahdjukaar.moonlight.api.client.util.VertexUtil;
+import net.mehvahdjukaar.vista.client.textures.CassetteTexturesMaterials;
 import net.mehvahdjukaar.vista.common.TelevisionItem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -22,7 +23,7 @@ public class TvItemRenderer extends ItemStackRenderer {
 
         if (itemDisplayContext == ItemDisplayContext.HEAD) {
             //TODO: make this using armor layer so we have entity context
-            VertexConsumer vc = TapeTextureHelper.getSmileTapeVC(buffer, Minecraft.getInstance().player);
+            VertexConsumer vc = CassetteTexturesMaterials.getSmileTapeVC(buffer, Minecraft.getInstance().player);
 
             //bugged when looking up. draw shader must be bugged
             int lightU = light & 0xFFFF;

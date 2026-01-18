@@ -1,28 +1,19 @@
-package net.mehvahdjukaar.vista.client;
+package net.mehvahdjukaar.vista.client.renderer;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import net.mehvahdjukaar.vista.VistaModClient;
+import net.mehvahdjukaar.vista.client.ViewFinderController;
 import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlock;
 import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.minecraft.client.model.geom.ModelPart;
-import net.minecraft.client.model.geom.PartPose;
-import net.minecraft.client.model.geom.builders.CubeListBuilder;
-import net.minecraft.client.model.geom.builders.LayerDefinition;
-import net.minecraft.client.model.geom.builders.MeshDefinition;
-import net.minecraft.client.model.geom.builders.PartDefinition;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
-import net.minecraft.client.renderer.blockentity.ChestRenderer;
-import net.minecraft.client.renderer.entity.BoatRenderer;
 import net.minecraft.util.Mth;
-import net.minecraft.world.entity.vehicle.ChestBoat;
-import net.minecraft.world.item.Items;
-import net.minecraft.world.phys.Vec3;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
@@ -60,8 +51,7 @@ public class ViewFinderBlockEntityRenderer implements BlockEntityRenderer<ViewFi
     public void renderModel(ViewFinderBlockEntity tile, float partialTick, PoseStack poseStack,
                             MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
 
-        boolean isControlledByLocalInstance = ViewFinderController.isActive() &&
-                ViewFinderController.access.getInternalTile() == tile;
+        boolean isControlledByLocalInstance = ViewFinderController.isActiveFor(tile);
 
         poseStack.pushPose();
         poseStack.translate(0.5, 0.5, 0.5);

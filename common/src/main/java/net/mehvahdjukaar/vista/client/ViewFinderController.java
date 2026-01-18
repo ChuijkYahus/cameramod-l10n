@@ -17,6 +17,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.Vec3;
 import org.lwjgl.glfw.GLFW;
 
@@ -74,6 +75,10 @@ public class ViewFinderController {
 
     public static boolean isActive() {
         return access != null;
+    }
+
+    public static boolean isActiveFor(BlockEntity tile){
+        return access != null && access.getInternalTile() == tile;
     }
 
     public static boolean isActiveAt(BlockPos pos){
