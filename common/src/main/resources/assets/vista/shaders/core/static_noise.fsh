@@ -14,7 +14,6 @@ uniform float GameTime;
 uniform float NoiseIntensity;
 
 uniform float VignetteIntensity;
-uniform vec4 SpriteDimensions;
 
 in float vertexDistance;
 in vec4 vertexColor;
@@ -40,7 +39,7 @@ void main() {
     vec4 tint = vertexColor * ColorModulator * lightMapColor;
     vec4 shaded = noise * tint;
 
-    float vignette = mix(1.0, crt_vignette(SpriteDimensions, texCoord0), clamp(VignetteIntensity, 0.0, 1.0));
+    float vignette = mix(1.0, crt_vignette(texCoord0), clamp(VignetteIntensity, 0.0, 1.0));
     shaded.rgb *= vignette;
 
     // Fog

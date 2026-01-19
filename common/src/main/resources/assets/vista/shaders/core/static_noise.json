@@ -18,7 +18,6 @@
         { "name": "GameTime", "type": "float", "count": 1, "values": [ 0.0 ] },
         { "name": "NoiseIntensity", "type": "float", "count": 1, "values": [ 1.0 ] },
 
-        { "name": "VignetteIntensity", "type": "float", "count": 1, "values": [ 1.0] },
-        { "name": "SpriteDimensions", "type": "float", "count": 4, "values": [ 0.0, 0.0, 1.0, 1.0] }
+        { "name": "VignetteIntensity", "type": "float", "count": 1, "values": [ 1.0] }
     ]
 }
