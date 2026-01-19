@@ -2,7 +2,6 @@
     "vertex": "vista:static_noise",
     "fragment": "vista:static_noise",
     "samplers": [
-        { "name": "Sampler0" },
         { "name": "Sampler2" }
     ],
     "uniforms": [

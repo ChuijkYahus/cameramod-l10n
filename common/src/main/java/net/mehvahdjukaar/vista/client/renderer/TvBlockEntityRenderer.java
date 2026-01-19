@@ -11,7 +11,7 @@ import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.set.BlocksColorAPI;
 import net.mehvahdjukaar.vista.client.textures.LiveFeedTexturesManager;
 import net.mehvahdjukaar.vista.client.ModRenderTypes;
-import net.mehvahdjukaar.vista.client.textures.CassetteTexturesMaterials;
+import net.mehvahdjukaar.vista.client.textures.CassetteVertexConsumers;
 import net.mehvahdjukaar.vista.common.CassetteTape;
 import net.mehvahdjukaar.vista.common.tv.TVBlock;
 import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
@@ -111,17 +111,17 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
                     renderDebug(tex, poseStack, buffer, partialTick, blockEntity);
                 }
                 float enderman = blockEntity.getLookingAtEndermanAnimation(partialTick);
-                vc = CassetteTexturesMaterials.getFullSpriteVC(tex, buffer, enderman, pixelEffectRes);
+                vc = CassetteVertexConsumers.getFullSpriteVC(tex, buffer, enderman, pixelEffectRes);
             } else {
-                vc = CassetteTexturesMaterials.getDefaultTapeVC(buffer, pixelEffectRes);
+                vc = CassetteVertexConsumers.getDefaultTapeVC(buffer, pixelEffectRes);
             }
 
         } else if (tape != null) {
-            vc = CassetteTexturesMaterials.getTapeVC(tape, buffer, pixelEffectRes);
+            vc = CassetteVertexConsumers.getTapeVC(tape, buffer, pixelEffectRes, blockEntity.getAnimationTick());
         } else if (CompatHandler.EXPOSURE) {
             ResourceLocation texture = ExposureCompatClient.getPictureTextureForRenderer(stack, blockEntity.getAnimationTick());
             if (texture != null) {
-                vc = CassetteTexturesMaterials.getFullSpriteVC(texture, buffer, 0, pixelEffectRes);
+                vc = CassetteVertexConsumers.getFullSpriteVC(texture, buffer, 0, pixelEffectRes);
             }
         }
         if (vc == null) {

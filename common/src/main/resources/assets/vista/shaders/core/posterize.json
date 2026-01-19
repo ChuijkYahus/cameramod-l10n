@@ -10,10 +10,6 @@
     { "name": "PostMode", "type": "float", "count": 1, "values": [ 0.0 ] },
     { "name": "PostLevels", "type": "float", "count": 3, "values": [ 36.0, 28.0, 28.0 ] },
     { "name": "DitherScale", "type": "float", "count": 1, "values": [ 1.0 ] },
-    { "name": "DitherStrength", "type": "float", "count": 1, "values": [ 1.0 ] },
-    { "name": "FxaaEdge", "type": "float", "count": 1, "values": [ 0.1 ] },
-    { "name": "FxaaBlend", "type": "float", "count": 1, "values": [ 0.85 ] },
-    { "name": "FxaaSpread", "type": "float", "count": 1, "values": [  1.10 ] },
-    { "name": "FxaaDiagonal", "type": "float", "count": 1, "values": [ 0.25 ] }
+    { "name": "DitherStrength", "type": "float", "count": 1, "values": [ 1.0 ] }
   ]
 }

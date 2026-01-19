@@ -8,17 +8,13 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.MissingTextureAtlasSprite;
 import net.minecraft.core.Holder;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.LivingEntity;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
 
-public class CassetteTexturesMaterials {
-
-    public static final ResourceLocation ATLAS_LOCATION = VistaMod.res("textures/atlas/cassette_tape.png");
-    public static final ResourceLocation ATLAS_INFO_LOCATION = VistaMod.res("cassette_tapes");
+public class CassetteVertexConsumers {
 
     private static final ResourceLocation BARS_LOCATION = VistaMod.res("color_bars");
     private static final ResourceLocation SMILE_LOCATION = VistaMod.res("smile");
@@ -29,15 +25,6 @@ public class CassetteTexturesMaterials {
             Smile.NEUTRAL, NEUTRAL_LOCATION,
             Smile.SAD, SAD_LOCATION
     );
-
-    private record CassetteMaterialKey(ResourceKey<CassetteTape> tapeKey, int scale, boolean hasSfx) {
-    }
-
-    private record DefaultMaterialKey(int scale, boolean hasSfx) {
-    }
-
-    private record SmileMaterialKey(Smile smile, boolean hasSfx) {
-    }
 
     private enum Smile {
         HAPPY, NEUTRAL, SAD;
@@ -54,31 +41,33 @@ public class CassetteTexturesMaterials {
         }
     }
 
-    public static VertexConsumer getTapeVC(Holder<CassetteTape> tapeKey, MultiBufferSource buffer, int scale) {
+    public static VertexConsumer getTapeVC(Holder<CassetteTape> tapeKey, MultiBufferSource buffer, int scale, int tickCount) {
         ResourceLocation tapeTexture = tapeKey.value().assetId();
-        return getTapeVC(buffer, scale, tapeTexture);
+        return getTapeVC(buffer, scale, tapeTexture, tickCount);
     }
 
     public static VertexConsumer getDefaultTapeVC(MultiBufferSource buffer, int scale) {
-        return getTapeVC(buffer, scale, ATLAS_INFO_LOCATION);
+        return getTapeVC(buffer, scale, BARS_LOCATION, 0);
     }
 
-    private static @NotNull VertexConsumer getTapeVC(MultiBufferSource buffer, int scale, ResourceLocation id) {
-        boolean hasSfx = hasSfx();
+    private static @NotNull VertexConsumer getTapeVC(MultiBufferSource buffer, int scale, ResourceLocation id, int tickCount) {
+        boolean hasSfx =  hasSfx();
         SimpleAnimatedTexture animatedText = CassetteTexturesManager.INSTANCE.getAnimatedTexture(id);
 
         if (animatedText == null) {
-            return buffer.getBuffer(RenderType.entityCutout(MissingTextureAtlasSprite.getLocation()));
+            if (id == BARS_LOCATION) {
+                return buffer.getBuffer(RenderType.entityCutout(MissingTextureAtlasSprite.getLocation()));
+            } else return getDefaultTapeVC(buffer, scale);
         }
-        RenderType rt = hasSfx ? ModRenderTypes.CAMERA_DRAW_SPRITE.apply(animatedText, scale) : RenderType.text(ATLAS_INFO_LOCATION);
+        RenderType rt = hasSfx ? ModRenderTypes.CAMERA_DRAW_SPRITE.apply(animatedText, scale) : RenderType.text(animatedText.location());
         VertexConsumer inner = buffer.getBuffer(rt);
-        return new AnimatedTextureVertexConsumer(0, animatedText.getStripData(), inner);
+        return new AnimatedTextureVertexConsumer(tickCount, animatedText.getStripData(), inner);
     }
 
     public static VertexConsumer getSmileTapeVC(MultiBufferSource buffer, LivingEntity player) {
         Smile smile = Smile.fromHealth(player);
         ResourceLocation id = SMILES.get(smile);
-        return getTapeVC(buffer, 1, id);
+        return getTapeVC(buffer, 1, id, player.tickCount);
     }
 
     public static VertexConsumer getFullSpriteVC(ResourceLocation tex, MultiBufferSource buffer, float enderman, int scale) {

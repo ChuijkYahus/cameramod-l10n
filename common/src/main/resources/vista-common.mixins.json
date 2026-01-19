@@ -11,6 +11,7 @@
     "CameraMixin",
     "FrustumMixin",
     "GameRendererMixin",
+    "ItemRendererMixin",
     "KeyboardHandlerMixin",
     "LevelRendererMixin",
     "LocalPlayerMixin",

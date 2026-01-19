@@ -5,25 +5,33 @@ import com.mojang.blaze3d.platform.TextureUtil;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.mehvahdjukaar.vista.client.GifPathSpriteSource;
 import net.minecraft.client.renderer.texture.AbstractTexture;
+import net.minecraft.client.renderer.texture.Dumpable;
 import net.minecraft.client.renderer.texture.SpriteContents;
 import net.minecraft.client.renderer.texture.atlas.SpriteResourceLoader;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.file.Path;
 
 import static net.minecraft.client.renderer.texture.SpriteLoader.DEFAULT_METADATA_SECTIONS;
 
-public class SimpleAnimatedTexture extends AbstractTexture {
+public class SimpleAnimatedTexture extends AbstractTexture implements Dumpable {
     private static final SpriteResourceLoader DEFAULT_LOADER = SpriteResourceLoader.create(DEFAULT_METADATA_SECTIONS);
 
+    private final ResourceLocation fileLocation;
     private final ResourceLocation location;
     private AnimationStripData stripData = AnimationStripData.EMPTY;
 
     public SimpleAnimatedTexture(ResourceLocation location) {
-        this.location = location;
+        this.fileLocation = location;
+        //remove extension
+        this.location = location.withPath(p ->
+                p.substring(0, p.lastIndexOf('.')));
     }
 
     @NotNull
@@ -31,19 +39,17 @@ public class SimpleAnimatedTexture extends AbstractTexture {
         return stripData;
     }
 
-    public ResourceLocation getLocation() {
+    public ResourceLocation location() {
         return location;
+    }
+
+    public ResourceLocation fileLocation() {
+        return fileLocation;
     }
 
     @Override
     public void load(ResourceManager resourceManager) throws IOException {
-        SpriteContents spriteContents;
-        Resource resource = resourceManager.getResourceOrThrow(this.location);
-        if (this.location.getPath().endsWith(".gif")) {
-            spriteContents = GifPathSpriteSource.readGif(resource, this.location);
-        } else {
-            spriteContents = DEFAULT_LOADER.loadSprite(location, resource);
-        }
+        SpriteContents spriteContents = loadContent(resourceManager);
         if (spriteContents == null) return;
 
         this.stripData = AnimationStripData.create(spriteContents);
@@ -57,11 +63,31 @@ public class SimpleAnimatedTexture extends AbstractTexture {
 
     }
 
+    private @Nullable SpriteContents loadContent(ResourceManager resourceManager) throws FileNotFoundException {
+        SpriteContents spriteContents;
+        Resource resource = resourceManager.getResourceOrThrow(this.fileLocation);
+        if (this.fileLocation.getPath().endsWith(".gif")) {
+            spriteContents = GifPathSpriteSource.readGif(resource, this.fileLocation);
+        } else {
+            spriteContents = DEFAULT_LOADER.loadSprite(fileLocation, resource);
+        }
+        return spriteContents;
+    }
+
     private void doLoad(NativeImage image) {
         TextureUtil.prepareImage(this.getId(), 0, image.getWidth(), image.getHeight());
         image.upload(0, 0, 0, 0, 0, image.getWidth(), image.getHeight(),
-                false, false, true, true);
+                false, false, false, true);
     }
 
 
+    @Override
+    public void dumpContents(ResourceLocation resourceLocation, Path path) throws IOException {
+        SpriteContents spriteContents = this.loadContent(
+                net.minecraft.client.Minecraft.getInstance().getResourceManager());
+        if (spriteContents == null) return;
+        String string = resourceLocation.toDebugFileName() + ".png";
+        Path path2 = path.resolve(string);
+        spriteContents.originalImage.writeToFile(path2);
+    }
 }

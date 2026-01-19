@@ -4,8 +4,6 @@ import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
-import net.mehvahdjukaar.moonlight.api.misc.TriFunction;
-import net.mehvahdjukaar.moonlight.api.util.Utils;
 import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.client.textures.AnimationStripData;
 import net.mehvahdjukaar.vista.client.textures.SimpleAnimatedTexture;
@@ -14,15 +12,11 @@ import net.minecraft.Util;
 import net.minecraft.client.renderer.RenderStateShard;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.ShaderInstance;
-import net.minecraft.client.renderer.texture.SimpleTexture;
-import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.client.resources.model.Material;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.DyeColor;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
@@ -73,7 +67,7 @@ public class ModRenderTypes extends RenderType {
     public static final BiFunction<SimpleAnimatedTexture, Integer, RenderType> CAMERA_DRAW_SPRITE = Util.memoize((text, scale) -> {
         RenderType.CompositeState compositeState = RenderType.CompositeState.builder()
                 .setShaderState(CAMERA_SHADER_STATE)
-                .setTextureState(new RenderStateShard.TextureStateShard(text.getLocation(),
+                .setTextureState(new RenderStateShard.TextureStateShard(text.location(),
                         //TODO: mipmap
                         false, true))
                 .setTransparencyState(NO_TRANSPARENCY)
@@ -98,8 +92,8 @@ public class ModRenderTypes extends RenderType {
                 .set(new Vector4f(
                         0,                     // minU
                         0,                     // minV
-                        sprite.frameWidth(),    // sizeU
-                        sprite.frameHeight()     // sizeV
+                        sprite.frameRelativeW(),    // sizeU
+                        sprite.frameRelativeH()     // sizeV
                 ));
     }
 

@@ -59,28 +59,42 @@ vec2 normalizedTriadPerPixel(vec2 atlasSizePx) {
 /* TRIAD space -> UV (no global clamp here; we clamp to sprite rect later) */
 vec2 triadToUV(vec2 triadP, vec2 atlasSizePx) {
     vec2 tpp = normalizedTriadPerPixel(atlasSizePx);
+
+    // convert triad position to frame-local pixels
     vec2 pix = triadP / max(tpp, 1e-6);
-    vec2 perPixelAmount = pix / atlasSizePx;
-    return perPixelAmount;// normalized so all texture sizes have same density
+
+    // frame-local UV (0..1 inside frame)
+    vec2 localUV = pix / (SpriteDimensions.zw * atlasSizePx);
+
+    // infer frame origin from texCoord0
+    vec2 frameOriginUV = floor(texCoord0 / SpriteDimensions.zw) * SpriteDimensions.zw;
+
+    // return absolute UV inside the texture
+    return frameOriginUV + localUV * SpriteDimensions.zw;
 }
 
 
 /* ---- Precise, no-bleed clamp: clamp to edge texel centers ----
-   We clamp in texel units relative to the sprite, to [0.5 .. width-0.5]. */
+   We clamp in texel units relative to the current frame, to [0.5 .. width-0.5]. */
 vec2 clampToSpriteTexelCenters(vec2 uv, vec2 atlasSizePx) {
-    vec2 minUV = SpriteDimensions.xy;
-    vec2 sizeUV = SpriteDimensions.zw;
-    vec2 spritePx = sizeUV * atlasSizePx;
+    // frame size in UVs
+    vec2 frameSizeUV = SpriteDimensions.zw;
 
-    // Convert to texel coords relative to sprite:
-    vec2 p = (uv - minUV) * atlasSizePx;
+    // infer frame origin from texCoord0
+    vec2 frameOriginUV = floor(texCoord0 / frameSizeUV) * frameSizeUV;
 
-    // Safe range is from center of first texel to center of last:
+    // frame size in texels
+    vec2 framePx = frameSizeUV * atlasSizePx;
+
+    // Convert to texel coords relative to frame
+    vec2 p = (uv - frameOriginUV) * atlasSizePx;
+
+    // Safe range: center of first texel → center of last texel
     vec2 lo = vec2(0.5);
-    vec2 hi = max(spritePx - vec2(0.5), lo); // avoid inversion for tiny sprites
+    vec2 hi = max(framePx - vec2(0.5), lo);
 
     p = clamp(p, lo, hi);
-    return minUV + p / atlasSizePx;
+    return frameOriginUV + p / atlasSizePx;
 }
 
 
@@ -162,7 +176,14 @@ vec3 accumulateTriadResponse(vec2 pixelPos, sampler2D srcTexture, vec2 atlasSize
     vec3 triadOut = clamp(sum, 0.0, 1.0);
 
     // Low-frequency fallback (no triad) using the sprite-local UV
-    vec3 fallback = texture(srcTexture, clampToSpriteTexelCenters(texCoord0, atlasSizePx)).rgb;
+    // compute frame-local UVs for fallback
+    vec2 frameSizeUV = SpriteDimensions.zw;
+    vec2 frameOriginUV = floor(texCoord0 / frameSizeUV) * frameSizeUV;
+    vec2 localUV = (texCoord0 - frameOriginUV) / frameSizeUV;
+    vec2 fallbackUV = frameOriginUV + localUV * frameSizeUV;
+
+    vec3 fallback = texture(srcTexture, clampToSpriteTexelCenters(fallbackUV, atlasSizePx)).rgb;
+
 
     // Blend based on aliasing risk: high cpp -> contrast→0 -> prefer fallback
     return mix(fallback, triadOut, contrast);
@@ -189,7 +210,21 @@ float triadContrastScale(vec2 triadPos) {
 
 void main() {
     vec2 atlasSizePx = vec2(textureSize(Sampler0, 0)); // atlas size in texels
-    vec2 pixelPos    = texCoord0 * atlasSizePx;
+
+
+
+    // frame size in UVs (SpriteDimensions.xy)
+    vec2 frameSizeUV = SpriteDimensions.zw;
+
+    // infer frame origin from texCoord0
+    vec2 frameOriginUV = floor(texCoord0 / frameSizeUV) * frameSizeUV;
+
+    // frame-local UVs
+    vec2 localUV = (texCoord0 - frameOriginUV) / frameSizeUV;
+
+    // frame-local pixel position for triad math
+    vec2 pixelPos = localUV * (frameSizeUV * atlasSizePx);
+
 
     vec3 triadRGB = accumulateTriadResponse(pixelPos, Sampler0, atlasSizePx);
 

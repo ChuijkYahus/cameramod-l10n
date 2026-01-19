@@ -4,6 +4,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 
 public class AnimatedTextureVertexConsumer implements VertexConsumer {
 
+
     private final VertexConsumer delegate;
     private final AnimationStripData stripData;
     private final int frameIndex;
