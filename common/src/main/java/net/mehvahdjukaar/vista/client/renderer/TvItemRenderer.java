@@ -18,15 +18,19 @@ public class TvItemRenderer extends ItemStackRenderer {
     @Override
     public void renderByItem(ItemStack itemStack, ItemDisplayContext itemDisplayContext, PoseStack poseStack,
                              MultiBufferSource buffer, int light, int overlay) {
+        poseStack.pushPose();
+        poseStack.translate(0.5, 0.5, 0.5);
         renderTvHead(itemStack, itemDisplayContext, poseStack, buffer, light, overlay,
                 Minecraft.getInstance().player);
+        poseStack.popPose();
     }
 
     public static void renderTvHead(ItemStack itemStack, ItemDisplayContext itemDisplayContext, PoseStack poseStack,
                                      MultiBufferSource buffer, int light, int overlay,
                                      LivingEntity le) {
+        poseStack.pushPose();
         Block block = ((TelevisionItem) itemStack.getItem()).getBlock();
-
+        poseStack.translate(-0.5, -0.5, -0.5);
         Minecraft.getInstance().getBlockRenderer().renderSingleBlock(block.defaultBlockState(), poseStack, buffer, light, overlay);
 
         if (itemDisplayContext == ItemDisplayContext.HEAD) {
@@ -36,10 +40,10 @@ public class TvItemRenderer extends ItemStackRenderer {
             int lightU = light & 0xFFFF;
             int lightV = (light >> 16) & 0xFFFF;
             float s = 6 / 16f;
-            poseStack.pushPose();
             poseStack.translate(0.5, 0.5, -0.005f);
+
             VertexUtil.addQuad(vc, poseStack, -s, -s, s, s, lightU, lightV);
-            poseStack.popPose();
         }
+        poseStack.popPose();
     }
 }

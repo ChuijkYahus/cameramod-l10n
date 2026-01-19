@@ -46,7 +46,7 @@ public class ModRenderTypes extends RenderType {
                 .setShaderState(CAMERA_SHADER_STATE)
                 .setTextureState(new TextureStateShard(text,
                         //TODO: mipmap
-                        false, true))
+                        false, false))
                 .setTransparencyState(NO_TRANSPARENCY)
                 .setLightmapState(LIGHTMAP)
                 .setTexturingState(new TexturingStateShard("set_texel_size",

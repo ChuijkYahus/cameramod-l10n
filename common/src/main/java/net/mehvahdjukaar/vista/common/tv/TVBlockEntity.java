@@ -142,6 +142,7 @@ public class TVBlockEntity extends ItemDisplayTile {
     public void updateClientVisualsOnLoad() {
         super.updateClientVisualsOnLoad();
         cacheState();
+        this.animationTicks = 0;
     }
 
     public ItemInteractionResult interactWithPlayerItem(Player player, InteractionHand handIn, ItemStack stack, int slot,
@@ -151,7 +152,7 @@ public class TVBlockEntity extends ItemDisplayTile {
         if (!current.isEmpty()) {
             level.playSound(player, worldPosition, VistaMod.CASSETTE_EJECT_SOUND.get(),
                     SoundSource.BLOCKS, 1, 1);
-            //pop pop current
+            //pop current
             Vec3 vec3 = hit.getLocation().add(new Vec3(hit.getDirection().step().mul(0.05f)));
 
             vec3 = vec3.offsetRandom(this.level.random, 0.7F);
