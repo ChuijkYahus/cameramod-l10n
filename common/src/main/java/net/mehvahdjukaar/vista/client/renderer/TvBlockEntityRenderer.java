@@ -9,9 +9,9 @@ import net.mehvahdjukaar.moonlight.api.misc.ForgeOverride;
 import net.mehvahdjukaar.moonlight.api.misc.RollingBuffer;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.set.BlocksColorAPI;
-import net.mehvahdjukaar.vista.client.textures.LiveFeedTexturesManager;
 import net.mehvahdjukaar.vista.client.ModRenderTypes;
-import net.mehvahdjukaar.vista.client.textures.CassetteVertexConsumers;
+import net.mehvahdjukaar.vista.client.textures.TvScreenVertexConsumers;
+import net.mehvahdjukaar.vista.client.textures.LiveFeedTexturesManager;
 import net.mehvahdjukaar.vista.common.CassetteTape;
 import net.mehvahdjukaar.vista.common.tv.TVBlock;
 import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
@@ -88,7 +88,7 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
         float yaw = dir.toYRot();
         poseStack.translate(0.5, 0.5, 0.5);
         poseStack.mulPose(Axis.YP.rotationDegrees(180 - yaw));
-        poseStack.translate(-screenCenter.x ,screenCenter.y , -0.501);
+        poseStack.translate(-screenCenter.x, screenCenter.y, -0.501);
 
         float s = screenSize / 32f;
         int pixelEffectRes = ClientConfigs.SCALE_PIXELS.get() ? screenSize : TVBlockEntity.MIN_SCREEN_PIXEL_SIZE;
@@ -112,19 +112,20 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
                     renderDebug(tex, poseStack, buffer, partialTick, blockEntity);
                 }
                 float enderman = blockEntity.getLookingAtEndermanAnimation(partialTick);
-                vc = CassetteVertexConsumers.getFullSpriteVC(tex, buffer, enderman, pixelEffectRes);
+                vc = TvScreenVertexConsumers.getFullSpriteVC(tex, buffer, enderman, pixelEffectRes, switchAnim);
             } else {
-                vc = CassetteVertexConsumers.getDefaultTapeVC(buffer, pixelEffectRes, switchAnim);
+                vc = TvScreenVertexConsumers.getDefaultTapeVC(buffer, pixelEffectRes, switchAnim);
             }
 
         } else if (tape != null) {
-            vc = CassetteVertexConsumers.getTapeVC(tape, buffer, pixelEffectRes, blockEntity.getAnimationTick(), switchAnim);
+            vc = TvScreenVertexConsumers.getTapeVC(tape, buffer, pixelEffectRes, blockEntity.getAnimationTick(), switchAnim);
+
         } else if (CompatHandler.EXPOSURE) {
             ItemStack stack = blockEntity.getDisplayedItem();
 
             ResourceLocation texture = ExposureCompatClient.getPictureTextureForRenderer(stack, blockEntity.getAnimationTick());
             if (texture != null) {
-                vc = CassetteVertexConsumers.getFullSpriteVC(texture, buffer, 0, pixelEffectRes);
+                vc = TvScreenVertexConsumers.getFullSpriteVC(texture, buffer, 0, pixelEffectRes, switchAnim);
             }
         }
         if (vc == null) {
@@ -143,13 +144,13 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
 
     private ResourceLocation getPostShader(TVBlockEntity blockEntity) {
         ItemStack filterItem = blockEntity.getDisplayedItem();
-        if (filterItem.isEmpty())return null;
+        if (filterItem.isEmpty()) return null;
         Item item = filterItem.getItem();
         DyeColor color = BlocksColorAPI.getColor(item);
         if (color != null) {
-          //  return ModRenderTypes.getColorFilter(color);
+            //  return ModRenderTypes.getColorFilter(color);
         }
-        if(CompatHandler.SUPPLEMENTARIES){
+        if (CompatHandler.SUPPLEMENTARIES) {
             //TODO:
 //            return SuppCompat.getShaderForItem(filterItem);
         }

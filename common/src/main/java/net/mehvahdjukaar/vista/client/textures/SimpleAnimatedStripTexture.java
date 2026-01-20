@@ -7,6 +7,7 @@ import net.mehvahdjukaar.vista.client.GifPathSpriteSource;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.client.renderer.texture.Dumpable;
 import net.minecraft.client.renderer.texture.SpriteContents;
+import net.minecraft.client.renderer.texture.SpriteLoader;
 import net.minecraft.client.renderer.texture.atlas.SpriteResourceLoader;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.Resource;
@@ -18,16 +19,14 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Path;
 
-import static net.minecraft.client.renderer.texture.SpriteLoader.DEFAULT_METADATA_SECTIONS;
-
-public class SimpleAnimatedTexture extends AbstractTexture implements Dumpable {
-    private static final SpriteResourceLoader DEFAULT_LOADER = SpriteResourceLoader.create(DEFAULT_METADATA_SECTIONS);
+public class SimpleAnimatedStripTexture extends AbstractTexture implements Dumpable {
+    private static final SpriteResourceLoader DEFAULT_LOADER = SpriteResourceLoader.create(SpriteLoader.DEFAULT_METADATA_SECTIONS);
 
     private final ResourceLocation fileLocation;
     private final ResourceLocation location;
     private AnimationStripData stripData = AnimationStripData.EMPTY;
 
-    public SimpleAnimatedTexture(ResourceLocation location) {
+    public SimpleAnimatedStripTexture(ResourceLocation location) {
         this.fileLocation = location;
         //remove extension
         this.location = location.withPath(p ->

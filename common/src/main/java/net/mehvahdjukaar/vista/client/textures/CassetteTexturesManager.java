@@ -20,7 +20,7 @@ public class CassetteTexturesManager extends SimplePreparableReloadListener<Map<
     public static final CassetteTexturesManager INSTANCE = new CassetteTexturesManager("textures/cassette_tape");
 
     private final String directory;
-    private final Map<ResourceLocation, Supplier<SimpleAnimatedTexture>> knowAnimations = new HashMap<>();
+    private final Map<ResourceLocation, Supplier<SimpleAnimatedStripTexture>> knowAnimations = new HashMap<>();
 
     protected CassetteTexturesManager(String directory) {
         this.directory = directory;
@@ -64,7 +64,7 @@ public class CassetteTexturesManager extends SimplePreparableReloadListener<Map<
             try {
                 knowAnimations.put(
                         id, Suppliers.memoize(() -> {
-                            SimpleAnimatedTexture texture = new SimpleAnimatedTexture(resLoc);
+                            SimpleAnimatedStripTexture texture = new SimpleAnimatedStripTexture(resLoc);
                             manager.register(makeManagerKey(id), texture);
                             return texture;
                         })
@@ -77,7 +77,7 @@ public class CassetteTexturesManager extends SimplePreparableReloadListener<Map<
     }
 
     @Nullable
-    public SimpleAnimatedTexture getAnimatedTexture(ResourceLocation id) {
+    public SimpleAnimatedStripTexture getAnimatedTexture(ResourceLocation id) {
         return knowAnimations.getOrDefault(id, () -> null).get();
     }
 }

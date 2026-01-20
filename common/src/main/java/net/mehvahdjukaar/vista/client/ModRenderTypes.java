@@ -9,7 +9,7 @@ import net.mehvahdjukaar.moonlight.api.util.Utils;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.client.textures.AnimationStripData;
-import net.mehvahdjukaar.vista.client.textures.SimpleAnimatedTexture;
+import net.mehvahdjukaar.vista.client.textures.SimpleAnimatedStripTexture;
 import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.minecraft.Util;
@@ -22,7 +22,6 @@ import net.minecraft.world.item.DyeColor;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 
-import java.util.function.BiFunction;
 import java.util.function.Function;
 
 public class ModRenderTypes extends RenderType {
@@ -37,17 +36,17 @@ public class ModRenderTypes extends RenderType {
     private static final ShaderStateShard STATIC_SHADER_STATE = new ShaderStateShard(VistaModClient.STATIC_SHADER);
     private static final ShaderStateShard POSTERIZE_SHADER_STATE = new ShaderStateShard(VistaModClient.POSTERIZE_SHADER);
 
-    private static final BiFunction<ResourceLocation, Integer, RenderType> CAMERA_DRAW = Util.memoize(
-            (t, s) -> ModRenderTypes.createCameraDraw(t, 0, s));
+    private static final TriFunction<ResourceLocation, Integer, Integer, RenderType> CAMERA_DRAW_RENDER_TYPE = Utils.memoize(
+            (t, s, power) -> ModRenderTypes.createCameraDraw(t, 0, s, power));
 
 
-    public static RenderType getCameraDraw(ResourceLocation texture, float enderman, int scale) {
+    public static RenderType getCameraDraw(ResourceLocation texture, float enderman, int scale, int powerAnim) {
         if (enderman > 0f) {
-            return createCameraDraw(texture, enderman, scale);
-        } else return CAMERA_DRAW.apply(texture, scale);
+            return createCameraDraw(texture, enderman, scale, powerAnim);
+        } else return CAMERA_DRAW_RENDER_TYPE.apply(texture, scale, powerAnim);
     }
 
-    private static RenderType createCameraDraw(ResourceLocation text, float enderman, int scale) {
+    private static RenderType createCameraDraw(ResourceLocation text, float enderman, int scale, int powerAnim) {
         CompositeState compositeState = CompositeState.builder()
                 .setShaderState(CAMERA_SHADER_STATE)
                 .setTextureState(new TextureStateShard(text,
@@ -60,7 +59,7 @@ public class ModRenderTypes extends RenderType {
                             ShaderInstance shader = VistaModClient.CAMERA_VIEW_SHADER.get();
                             shader.safeGetUniform("SpriteDimensions")
                                     .set(new Vector4f(0, 0, 1, 1f));
-                            setCameraDrawUniforms(shader, enderman, scale, 0);
+                            setCameraDrawUniforms(shader, enderman, scale, powerAnim);
                         },
                         () -> {
                         }))
@@ -70,7 +69,7 @@ public class ModRenderTypes extends RenderType {
                 1536, true, false, compositeState);
     }
 
-    public static final TriFunction<SimpleAnimatedTexture, Integer, Integer, RenderType> CAMERA_DRAW_SPRITE = Utils.memoize((text, scale, powerAnim) -> {
+    public static final TriFunction<SimpleAnimatedStripTexture, Integer, Integer, RenderType> ANIMATED_STRIP_RENDER_TYPE = Utils.memoize((text, scale, powerAnim) -> {
         RenderType.CompositeState compositeState = RenderType.CompositeState.builder()
                 .setShaderState(CAMERA_SHADER_STATE)
                 //TODO: mipmap

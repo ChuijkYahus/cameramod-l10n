@@ -4,7 +4,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.mehvahdjukaar.moonlight.api.client.ItemStackRenderer;
 import net.mehvahdjukaar.moonlight.api.client.util.VertexUtil;
-import net.mehvahdjukaar.vista.client.textures.CassetteVertexConsumers;
+import net.mehvahdjukaar.vista.client.textures.TvScreenVertexConsumers;
 import net.mehvahdjukaar.vista.common.TelevisionItem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -34,7 +34,7 @@ public class TvItemRenderer extends ItemStackRenderer {
         Minecraft.getInstance().getBlockRenderer().renderSingleBlock(block.defaultBlockState(), poseStack, buffer, light, overlay);
 
         if (itemDisplayContext == ItemDisplayContext.HEAD) {
-            VertexConsumer vc = CassetteVertexConsumers.getSmileTapeVC(buffer, le);
+            VertexConsumer vc = TvScreenVertexConsumers.getSmileTapeVC(buffer, le);
 
             //bugged when looking up. draw shader must be bugged
             int lightU = light & 0xFFFF;

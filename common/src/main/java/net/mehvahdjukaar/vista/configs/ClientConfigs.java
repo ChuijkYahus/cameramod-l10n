@@ -25,6 +25,7 @@ public class ClientConfigs {
     public static final Supplier<Integer> RESOLUTION_SCALE;
     public static final Supplier<Boolean> RENDER_DEBUG;
     public static final Supplier<Boolean> SCALE_PIXELS;
+    public static final Supplier<Boolean> TURN_OFF_EFFECTS;
     public static final Supplier<Float> PIXEL_DENSITY;
     public static final Supplier<Float> VIGNETTE;
 
@@ -45,6 +46,9 @@ public class ClientConfigs {
         VIGNETTE = builder
                 .comment("Amount of vignette effect applied to television live feed (0 = none, 1 = full)")
                 .define("vignette", 1f, 0f, 1f);
+        TURN_OFF_EFFECTS = builder
+                .comment("Plays an animation when the television is turned off or on")
+                .define("turn_off_animation", true);
         builder.pop();
         builder.push("live_feed");
 

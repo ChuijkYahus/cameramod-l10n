@@ -4,17 +4,19 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.client.ModRenderTypes;
 import net.mehvahdjukaar.vista.common.CassetteTape;
+import net.minecraft.client.GraphicsStatus;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.MissingTextureAtlasSprite;
 import net.minecraft.core.Holder;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.LivingEntity;
-import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
 
-public class CassetteVertexConsumers {
+public class TvScreenVertexConsumers {
 
     private static final ResourceLocation BARS_LOCATION = VistaMod.res("color_bars");
     private static final ResourceLocation SMILE_LOCATION = VistaMod.res("smile");
@@ -41,27 +43,31 @@ public class CassetteVertexConsumers {
         }
     }
 
+    @Nullable
     public static VertexConsumer getTapeVC(Holder<CassetteTape> tapeKey, MultiBufferSource buffer, int scale,
                                            int tickCount, int switchAnim) {
         ResourceLocation tapeTexture = tapeKey.value().assetId();
-        return createVC(buffer, scale, tapeTexture, tickCount, switchAnim);
+        return createAnimatedStripVC(buffer, scale, tapeTexture, tickCount, switchAnim);
     }
 
-    public static VertexConsumer getDefaultTapeVC(MultiBufferSource buffer, int scale,int switchAnim) {
-        return createVC(buffer, scale, BARS_LOCATION, 0, switchAnim);
+    @Nullable
+    public static VertexConsumer getDefaultTapeVC(MultiBufferSource buffer, int scale, int switchAnim) {
+        return createAnimatedStripVC(buffer, scale, BARS_LOCATION, 0, switchAnim);
     }
 
-    private static @NotNull VertexConsumer createVC(MultiBufferSource buffer, int scale,
-                                                    ResourceLocation id, int tickCount, int switchAnim) {
-        boolean hasSfx =  hasSfx();
-        SimpleAnimatedTexture animatedText = CassetteTexturesManager.INSTANCE.getAnimatedTexture(id);
+    private static @Nullable VertexConsumer createAnimatedStripVC(MultiBufferSource buffer, int scale,
+                                                                 ResourceLocation id, int tickCount, int switchAnim) {
+        boolean hasSfx = hasSfx();
+        if (!hasSfx && switchAnim < 0) return null;
+
+        SimpleAnimatedStripTexture animatedText = CassetteTexturesManager.INSTANCE.getAnimatedTexture(id);
 
         if (animatedText == null) {
             if (id == BARS_LOCATION) {
                 return buffer.getBuffer(RenderType.entityCutout(MissingTextureAtlasSprite.getLocation()));
             } else return getDefaultTapeVC(buffer, scale, switchAnim);
         }
-        RenderType rt = hasSfx ? ModRenderTypes.CAMERA_DRAW_SPRITE.apply(animatedText, scale, switchAnim) : RenderType.text(animatedText.location());
+        RenderType rt = hasSfx ? ModRenderTypes.ANIMATED_STRIP_RENDER_TYPE.apply(animatedText, scale, switchAnim) : RenderType.text(animatedText.location());
         VertexConsumer inner = buffer.getBuffer(rt);
         return new AnimatedTextureVertexConsumer(tickCount, animatedText.getStripData(), inner);
     }
@@ -69,18 +75,21 @@ public class CassetteVertexConsumers {
     public static VertexConsumer getSmileTapeVC(MultiBufferSource buffer, LivingEntity player) {
         Smile smile = Smile.fromHealth(player);
         ResourceLocation id = SMILES.get(smile);
-        return createVC(buffer, 1, id, player.tickCount, 0);
+        return createAnimatedStripVC(buffer, 1, id, player.tickCount, 0);
     }
 
-    public static VertexConsumer getFullSpriteVC(ResourceLocation tex, MultiBufferSource buffer, float enderman, int scale) {
+    @Nullable
+    public static VertexConsumer getFullSpriteVC(ResourceLocation tex, MultiBufferSource buffer, float enderman, int scale, int switchAnim) {
         boolean hasSfx = hasSfx();
+        if (!hasSfx && switchAnim < 0) return null;
 
-        RenderType rt = hasSfx ? ModRenderTypes.getCameraDraw(tex, enderman, scale) : RenderType.text(tex);
+        RenderType rt = hasSfx ? ModRenderTypes.getCameraDraw(tex, enderman, scale, switchAnim) : RenderType.text(tex);
         return buffer.getBuffer(rt);
     }
 
     private static boolean hasSfx() {
-        return LiveFeedTexturesManager.LIVE_FEED_BEING_RENDERED == null;
+        return LiveFeedTexturesManager.LIVE_FEED_BEING_RENDERED == null &&
+                Minecraft.getInstance().options.graphicsMode().get() != GraphicsStatus.FAST;
     }
 
 

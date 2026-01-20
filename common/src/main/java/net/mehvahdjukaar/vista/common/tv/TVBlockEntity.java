@@ -6,6 +6,7 @@ import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.common.CassetteTape;
 import net.mehvahdjukaar.vista.common.LiveFeedConnectionManager;
 import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
+import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.mehvahdjukaar.vista.integration.CompatHandler;
 import net.mehvahdjukaar.vista.integration.exposure.ExposureCompat;
 import net.minecraft.core.BlockPos;
@@ -36,7 +37,7 @@ import java.util.UUID;
 
 public class TVBlockEntity extends ItemDisplayTile {
 
-    public static final int SWITCH_ON_ANIMATION_TICKS = 5;
+    public static final int SWITCH_ON_ANIMATION_TICKS = 3;
     public static final int SWITCH_OFF_ANIMATION_TICKS = 10;
     private static final int MAX_LOOKED_ENDERMAN = 20;
     private static final float ENDERMAN_PLAYER_DIST_SQ = 20 * 20;
@@ -189,7 +190,7 @@ public class TVBlockEntity extends ItemDisplayTile {
         if (level.isClientSide) {
             boolean changedState = false;
             if (powered != tile.wasScreenOn) {
-                changedState = true;
+                changedState = true && ClientConfigs.TURN_OFF_EFFECTS.get();
                 tile.wasScreenOn = powered;
             }
 
