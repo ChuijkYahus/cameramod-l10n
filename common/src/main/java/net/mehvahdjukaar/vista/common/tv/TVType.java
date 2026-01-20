@@ -52,7 +52,7 @@ public enum TVType implements StringRepresentable {
     }
 
     public boolean isConnected(Direction fromDir, Direction facingDir){
-        Direction2D dir = Direction2D.from3D(fromDir, horizontalRot(facingDir));
+        Direction2D dir = Direction2D.from3D(fromDir, horizontalRot(facingDir.getOpposite()));
         return isConnected(dir);
     }
 

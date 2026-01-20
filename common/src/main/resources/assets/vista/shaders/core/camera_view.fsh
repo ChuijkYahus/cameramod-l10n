@@ -4,6 +4,7 @@
 
 uniform sampler2D Sampler0;
 
+uniform float SwitchAnimation; // 0 = off, 1 = on
 uniform vec4 ColorModulator;
 uniform float FogStart;
 uniform float FogEnd;
@@ -33,6 +34,7 @@ const int TriadKernelRadius = 1; // 0 => fastest/sharpest (no neighbors)
 in float vertexDistance;
 in vec4 vertexColor;
 in vec4 lightMapColor;
+
 in vec2 texCoord0;
 
 out vec4 fragColor;
@@ -223,7 +225,8 @@ void main() {
     vec2 localUV = (texCoord0 - frameOriginUV) / frameSizeUV;
 
     // frame-local pixel position for triad math
-    vec2 pixelPos = localUV * (frameSizeUV * atlasSizePx);
+    vec2 spriteResolution = frameSizeUV * atlasSizePx;
+    vec2 pixelPos = localUV * spriteResolution;
 
 
     vec3 triadRGB = accumulateTriadResponse(pixelPos, Sampler0, atlasSizePx);
@@ -242,6 +245,15 @@ void main() {
     color.rgb *= vignette;
     // =============================================================
 
-    color *= lightMapColor;
+    if (SwitchAnimation != 0){
+        color = crt_turn_on(
+        color,
+        pixelPos,
+        spriteResolution,
+        SwitchAnimation
+        );
+    }
+
+
     fragColor = linear_fog(color, vertexDistance, FogStart, FogEnd, FogColor);
 }

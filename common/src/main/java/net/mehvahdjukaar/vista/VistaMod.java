@@ -133,7 +133,6 @@ public class VistaMod {
         //turn on sound
         //player holding hands like when using explosure cameera and cannons
         //shader when you wear a tv. fnaf
-        //gifs play independently. No more atlas. sad
         //new cassettes
         //view distance scales with zoom
         //check turn table
@@ -144,8 +143,6 @@ public class VistaMod {
         //exposure compat
         //camera lensens
 
-
-        //for gifs maybe we could send the strips to the atlas, then in the shader do the scrolling
         CommonConfigs.init();
 
         ModNetwork.init();

@@ -44,10 +44,12 @@ public class ViewFinderModel extends Model {
                         .texOffs(0, 16).addBox(-5.0F, -6.0F, -4F, 10.0F, 12.0F, 8.0F),
                 PartPose.ZERO);
 
-        partdefinition.addOrReplaceChild("base", CubeListBuilder.create()
+        PartDefinition base = partdefinition.addOrReplaceChild("base", CubeListBuilder.create()
                         .texOffs(0, 0)
-                        .addBox(-7.0F, 6.0F, -7.0F, 4, 4.0F, 4.0F),
+                        .addBox(-7.0F, 6.0F, -7.0F, 14.0F, 2.0F, 14.0F),
                 PartPose.ZERO);
+
+        //camera lens
 
         return LayerDefinition.create(meshdefinition, 64, 64);
     }

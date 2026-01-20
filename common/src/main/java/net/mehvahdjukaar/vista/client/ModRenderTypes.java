@@ -4,11 +4,16 @@ import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
+import net.mehvahdjukaar.moonlight.api.misc.TriFunction;
+import net.mehvahdjukaar.moonlight.api.util.Utils;
+import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.client.textures.AnimationStripData;
 import net.mehvahdjukaar.vista.client.textures.SimpleAnimatedTexture;
+import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.minecraft.Util;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderStateShard;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.ShaderInstance;
@@ -27,6 +32,7 @@ public class ModRenderTypes extends RenderType {
         super(name, format, mode, bufferSize, affectsCrumbling, sortOnUpload, setupState, clearState);
     }
 
+    private static final ResourceLocation BACKGROUND_TEXTURE = VistaMod.res("textures/block/tv/front/default.png");
     private static final ShaderStateShard CAMERA_SHADER_STATE = new ShaderStateShard(VistaModClient.CAMERA_VIEW_SHADER);
     private static final ShaderStateShard STATIC_SHADER_STATE = new ShaderStateShard(VistaModClient.STATIC_SHADER);
     private static final ShaderStateShard POSTERIZE_SHADER_STATE = new ShaderStateShard(VistaModClient.POSTERIZE_SHADER);
@@ -54,7 +60,7 @@ public class ModRenderTypes extends RenderType {
                             ShaderInstance shader = VistaModClient.CAMERA_VIEW_SHADER.get();
                             shader.safeGetUniform("SpriteDimensions")
                                     .set(new Vector4f(0, 0, 1, 1f));
-                            setCameraDrawUniforms(shader, enderman, scale);
+                            setCameraDrawUniforms(shader, enderman, scale, 0);
                         },
                         () -> {
                         }))
@@ -64,20 +70,22 @@ public class ModRenderTypes extends RenderType {
                 1536, true, false, compositeState);
     }
 
-    public static final BiFunction<SimpleAnimatedTexture, Integer, RenderType> CAMERA_DRAW_SPRITE = Util.memoize((text, scale) -> {
+    public static final TriFunction<SimpleAnimatedTexture, Integer, Integer, RenderType> CAMERA_DRAW_SPRITE = Utils.memoize((text, scale, powerAnim) -> {
         RenderType.CompositeState compositeState = RenderType.CompositeState.builder()
                 .setShaderState(CAMERA_SHADER_STATE)
-                .setTextureState(new RenderStateShard.TextureStateShard(text.location(),
-                        //TODO: mipmap
-                        false, true))
-                .setTransparencyState(NO_TRANSPARENCY)
+                //TODO: mipmap
+                .setTextureState(RenderStateShard.MultiTextureStateShard.builder()
+                        .add(text.location(), false, false)
+                        .add(BACKGROUND_TEXTURE, false, false)
+                        .build())
+                .setTransparencyState(RenderStateShard.TRANSLUCENT_TRANSPARENCY)
                 .setLightmapState(LIGHTMAP)
                 .setTexturingState(new TexturingStateShard("set_texel_size",
                         () -> {
                             ShaderInstance shader = VistaModClient.CAMERA_VIEW_SHADER.get();
                             AnimationStripData sprite = text.getStripData();
                             setSpriteDimensions(shader, sprite);
-                            setCameraDrawUniforms(shader, 0, scale);
+                            setCameraDrawUniforms(shader, 0, scale, powerAnim);
                         },
                         () -> {
                         }))
@@ -97,8 +105,9 @@ public class ModRenderTypes extends RenderType {
                 ));
     }
 
-    private static void setCameraDrawUniforms(ShaderInstance shader, float noise, int screenSize) {
+    private static void setCameraDrawUniforms(ShaderInstance shader, float noise, int screenSize, int powerAnim) {
         float scale = screenSize / 12f;
+        float pt = Minecraft.getInstance().getTimer().getGameTimeDeltaTicks();
         setFloat(shader, "TriadsPerPixel", ClientConfigs.PIXEL_DENSITY.get() * scale);
         setFloat(shader, "Smear", 1f);
         setFloat(shader, "EnableEnergyNormalize", 0.0f);
@@ -106,6 +115,14 @@ public class ModRenderTypes extends RenderType {
         setFloat(shader, "VignetteIntensity", ClientConfigs.VIGNETTE.get());
         //TODO: fix these 2 noise not looking the same when at 1
         setFloat(shader, "NoiseIntensity", noise);
+        float switchAnim = 0;
+        if (powerAnim > 0) {
+            switchAnim =  (powerAnim - pt) / (float) TVBlockEntity.SWITCH_ON_ANIMATION_TICKS;
+        } else if (powerAnim < 0) {
+            switchAnim = (1 + (powerAnim + pt) / (float) TVBlockEntity.SWITCH_OFF_ANIMATION_TICKS);
+        }
+
+        setFloat(shader, "SwitchAnimation", switchAnim);
     }
 
     public static final RenderType NOISE =
@@ -113,7 +130,7 @@ public class ModRenderTypes extends RenderType {
                     1536, true, false,
                     RenderType.CompositeState.builder()
                             .setShaderState(STATIC_SHADER_STATE)
-                            .setTransparencyState(NO_TRANSPARENCY)
+                            .setTransparencyState(RenderStateShard.NO_TRANSPARENCY)
                             .setLightmapState(LIGHTMAP)
                             .setTexturingState(new TexturingStateShard("set_texel_size",
                                     () -> {

@@ -12,6 +12,7 @@ in vec3 Normal;
 
 uniform sampler2D Sampler2;
 
+
 uniform mat4 ModelViewMat;
 uniform mat4 ProjMat;
 uniform int FogShape;
@@ -35,7 +36,6 @@ void main() {
 
     // light map color
     lightMapColor = texelFetch(Sampler2, UV2 / 16, 0);
-
     // pass UV0 unchanged; fragment shader will compute frame-local coords
     texCoord0 = UV0;
 }

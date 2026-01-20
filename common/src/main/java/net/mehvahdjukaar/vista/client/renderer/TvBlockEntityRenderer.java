@@ -20,6 +20,7 @@ import net.mehvahdjukaar.vista.integration.CompatHandler;
 import net.mehvahdjukaar.vista.integration.exposure.ExposureCompatClient;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
@@ -72,7 +73,7 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
     public void render(TVBlockEntity blockEntity, float partialTick, PoseStack poseStack, MultiBufferSource buffer,
                        int light, int overlay) {
 
-        if (!blockEntity.isPowered()) return;
+        if (!blockEntity.isScreenOn()) return;
 
         Direction dir = blockEntity.getBlockState().getValue(TVBlock.FACING);
 
@@ -97,7 +98,7 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
         UUID liveFeedId = blockEntity.getLinkedFeedUUID();
         Holder<CassetteTape> tape = blockEntity.getTape();
 
-        ItemStack stack = blockEntity.getDisplayedItem();
+        int switchAnim = blockEntity.getSwitchAnimationTicks();
 
         if (liveFeedId != null) {
 
@@ -113,12 +114,14 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
                 float enderman = blockEntity.getLookingAtEndermanAnimation(partialTick);
                 vc = CassetteVertexConsumers.getFullSpriteVC(tex, buffer, enderman, pixelEffectRes);
             } else {
-                vc = CassetteVertexConsumers.getDefaultTapeVC(buffer, pixelEffectRes);
+                vc = CassetteVertexConsumers.getDefaultTapeVC(buffer, pixelEffectRes, switchAnim);
             }
 
         } else if (tape != null) {
-            vc = CassetteVertexConsumers.getTapeVC(tape, buffer, pixelEffectRes, blockEntity.getAnimationTick());
+            vc = CassetteVertexConsumers.getTapeVC(tape, buffer, pixelEffectRes, blockEntity.getAnimationTick(), switchAnim);
         } else if (CompatHandler.EXPOSURE) {
+            ItemStack stack = blockEntity.getDisplayedItem();
+
             ResourceLocation texture = ExposureCompatClient.getPictureTextureForRenderer(stack, blockEntity.getAnimationTick());
             if (texture != null) {
                 vc = CassetteVertexConsumers.getFullSpriteVC(texture, buffer, 0, pixelEffectRes);
@@ -129,8 +132,9 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
         }
 
 
-        light = LightTexture.FULL_BRIGHT;
-
+        //technically not correct as tv could be multiple block. just matters for transition so it's probably ok
+        light = LevelRenderer.getLightColor(blockEntity.getLevel(), blockEntity.getBlockPos()
+                .relative(dir));
 
         int lightU = light & 0xFFFF;
         int lightV = (light >> 16) & 0xFFFF;

@@ -34,3 +34,82 @@ vec4 crt_noise(in vec2 uv, in float timeSeed) {
     gold_noise(uv, timeSeed + 0.4)
     );
 }
+
+
+// ==========================================================
+// Helper: returns 0->1 smoothly between startTime and duration
+// ==========================================================
+float animate(float t, float startTime, float duration) {
+    if (duration == 0.0) return 1.0;               // avoid division by zero
+    float a = (t - startTime) / duration;         // normalized offset
+    return clamp(a, 0.0, 1.0);                    // works whether a positive or negative
+}
+
+// ==========================================================
+// Ellipse + dot effect with background replacement
+// ==========================================================
+vec4 crt_turn_on(vec4 inColor,
+    vec2 fragPx,          // sprite-local pixel position
+    vec2 resolutionPx,    // sprite resolution in pixels
+    float t){
+    vec2 uv = (fragPx - 0.5 * resolutionPx) / resolutionPx;
+
+    //anim from t 0 to 1
+    // --- PARAMETERS ---
+    float fadeStart = 0.0;
+    float fadeDuration = 0.20;
+
+    float ryStart = 0.25;
+    float ryEnd = 0.001;
+    float ryAnimStart = 0.30;
+    float ryAnimDuration = 0.2;
+
+
+    float rxStart = 0.25;
+    float rxEnd = 0.0;
+    float rxAnimStart = 0.40;
+    float rxAnimDuration = 0.6;
+
+    float dotStart = 0.2;
+    float dotDuration = 0.8;
+    float dotRadiusMax = 0.1;
+
+    // --- RADII ---
+    float r_y = mix(ryStart, ryEnd, animate(t, ryAnimStart, ryAnimDuration));
+    float r_x = mix(rxStart, rxEnd, animate(t, rxAnimStart, rxAnimDuration));
+
+    vec2 r_in = vec2(r_x, r_y);
+    vec2 r_out = r_in * 10.0;
+
+    // --- ELLIPSE MASK ---
+    vec2 norm = uv / r_out;
+    float d = length(norm);
+
+    vec2 norm_in = uv / r_in;
+    float inside = length(norm_in) < 1.0 ? 1.0 : 0.0;
+    float ellipse = max(inside, smoothstep(1.0, r_in.x / r_out.x, d));
+
+    // White glow color with alpha = coverage
+    vec4 glow = vec4(vec3(ellipse), ellipse);
+
+
+
+    // --- DOT ---
+    float dotT = animate(t, dotStart, dotDuration);
+    if (dotT > 0.0) {
+        float s = sin(dotT * 3.1415926);
+        float radius = dotRadiusMax * s;
+
+        float dist = length(uv);
+        float dot = smoothstep(radius, 0.0, dist);
+
+        glow.rgb += dot;
+        glow.a = max(glow.a, dot);
+    }
+
+    // Fade from previous color to glow
+    float fade = animate(t, fadeStart, fadeDuration);
+    vec4 color = mix(inColor, glow, fade);
+
+    return color;
+}

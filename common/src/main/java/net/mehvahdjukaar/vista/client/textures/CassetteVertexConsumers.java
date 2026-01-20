@@ -41,25 +41,27 @@ public class CassetteVertexConsumers {
         }
     }
 
-    public static VertexConsumer getTapeVC(Holder<CassetteTape> tapeKey, MultiBufferSource buffer, int scale, int tickCount) {
+    public static VertexConsumer getTapeVC(Holder<CassetteTape> tapeKey, MultiBufferSource buffer, int scale,
+                                           int tickCount, int switchAnim) {
         ResourceLocation tapeTexture = tapeKey.value().assetId();
-        return getTapeVC(buffer, scale, tapeTexture, tickCount);
+        return createVC(buffer, scale, tapeTexture, tickCount, switchAnim);
     }
 
-    public static VertexConsumer getDefaultTapeVC(MultiBufferSource buffer, int scale) {
-        return getTapeVC(buffer, scale, BARS_LOCATION, 0);
+    public static VertexConsumer getDefaultTapeVC(MultiBufferSource buffer, int scale,int switchAnim) {
+        return createVC(buffer, scale, BARS_LOCATION, 0, switchAnim);
     }
 
-    private static @NotNull VertexConsumer getTapeVC(MultiBufferSource buffer, int scale, ResourceLocation id, int tickCount) {
+    private static @NotNull VertexConsumer createVC(MultiBufferSource buffer, int scale,
+                                                    ResourceLocation id, int tickCount, int switchAnim) {
         boolean hasSfx =  hasSfx();
         SimpleAnimatedTexture animatedText = CassetteTexturesManager.INSTANCE.getAnimatedTexture(id);
 
         if (animatedText == null) {
             if (id == BARS_LOCATION) {
                 return buffer.getBuffer(RenderType.entityCutout(MissingTextureAtlasSprite.getLocation()));
-            } else return getDefaultTapeVC(buffer, scale);
+            } else return getDefaultTapeVC(buffer, scale, switchAnim);
         }
-        RenderType rt = hasSfx ? ModRenderTypes.CAMERA_DRAW_SPRITE.apply(animatedText, scale) : RenderType.text(animatedText.location());
+        RenderType rt = hasSfx ? ModRenderTypes.CAMERA_DRAW_SPRITE.apply(animatedText, scale, switchAnim) : RenderType.text(animatedText.location());
         VertexConsumer inner = buffer.getBuffer(rt);
         return new AnimatedTextureVertexConsumer(tickCount, animatedText.getStripData(), inner);
     }
@@ -67,7 +69,7 @@ public class CassetteVertexConsumers {
     public static VertexConsumer getSmileTapeVC(MultiBufferSource buffer, LivingEntity player) {
         Smile smile = Smile.fromHealth(player);
         ResourceLocation id = SMILES.get(smile);
-        return getTapeVC(buffer, 1, id, player.tickCount);
+        return createVC(buffer, 1, id, player.tickCount, 0);
     }
 
     public static VertexConsumer getFullSpriteVC(ResourceLocation tex, MultiBufferSource buffer, float enderman, int scale) {

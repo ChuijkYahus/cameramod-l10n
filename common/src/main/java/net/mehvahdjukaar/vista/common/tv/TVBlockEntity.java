@@ -36,6 +36,8 @@ import java.util.UUID;
 
 public class TVBlockEntity extends ItemDisplayTile {
 
+    public static final int SWITCH_ON_ANIMATION_TICKS = 5;
+    public static final int SWITCH_OFF_ANIMATION_TICKS = 10;
     private static final int MAX_LOOKED_ENDERMAN = 20;
     private static final float ENDERMAN_PLAYER_DIST_SQ = 20 * 20;
 
@@ -49,10 +51,13 @@ public class TVBlockEntity extends ItemDisplayTile {
 
     private int soundLoopTicks = 0;
     private int animationTicks = 0;
+    private int switchAnimationTicks = 0;
 
     private boolean lookingAtEnderman = false;
     private int lookingAtEndermanAnimation = 0;
     private int prevLookingAtEndermanAnimation = 0;
+
+    private boolean wasScreenOn = false;
 
 
     public TVBlockEntity(BlockPos pos, BlockState state) {
@@ -126,6 +131,7 @@ public class TVBlockEntity extends ItemDisplayTile {
     }
     //TODO: is this needed? put in renderer?
 
+
     private void cacheState() {
         ItemStack displayedItem = this.getDisplayedItem();
         linkedFeedUuid = displayedItem.get(VistaMod.LINKED_FEED_COMPONENT.get());
@@ -169,10 +175,32 @@ public class TVBlockEntity extends ItemDisplayTile {
         return super.interactWithPlayerItem(player, handIn, stack, slot);
     }
 
+    public int getAnimationTick() {
+        return animationTicks;
+    }
+
+    public int getSwitchAnimationTicks() {
+        //also detect state change here since this gets called in render tick
+        return switchAnimationTicks;
+    }
+
     public static void onTick(Level level, BlockPos pos, BlockState state, TVBlockEntity tile) {
-        boolean powered = tile.isPowered();
+        boolean powered = state.getValue(TVBlock.POWER_STATE).isOn();
         if (level.isClientSide) {
+            boolean changedState = false;
+            if (powered != tile.wasScreenOn) {
+                changedState = true;
+                tile.wasScreenOn = powered;
+            }
+
             if (powered) {
+                //we cant switch power anim here as its too late
+
+                if (changedState) {
+                    tile.switchAnimationTicks = SWITCH_ON_ANIMATION_TICKS;
+                } else if (tile.switchAnimationTicks > 0) {
+                    tile.switchAnimationTicks--;
+                }
                 float duration = tile.getPlayDuration();
                 if (++tile.soundLoopTicks >= (duration)) {
                     tile.soundLoopTicks = 0;
@@ -181,6 +209,11 @@ public class TVBlockEntity extends ItemDisplayTile {
                 }
                 tile.animationTicks++;
             } else {
+                if (changedState) {
+                    tile.switchAnimationTicks = -SWITCH_OFF_ANIMATION_TICKS;
+                } else if (tile.switchAnimationTicks < 0) {
+                    tile.switchAnimationTicks++;
+                }
                 tile.soundLoopTicks = 0;
                 tile.animationTicks = 0;
             }
@@ -232,11 +265,6 @@ public class TVBlockEntity extends ItemDisplayTile {
         return VistaMod.STATIC_SOUND_DURATION;
     }
 
-    public int getAnimationTick() {
-        return animationTicks;
-    }
-
-
     public List<TVSpectatorView> getPlayersLookingAtFace(Collection<? extends Player> players) {
         if (players.isEmpty()) return List.of();
         List<TVSpectatorView> result = new ArrayList<>();
@@ -266,7 +294,7 @@ public class TVBlockEntity extends ItemDisplayTile {
 
     @Nullable
     public TVSpectatorView getPlayerLookingAtFace(Player player) {
-    return getPlayersLookingAtFace(List.of(player)).stream().findFirst().orElse(null);
+        return getPlayersLookingAtFace(List.of(player)).stream().findFirst().orElse(null);
     }
 
     @Nullable
@@ -315,10 +343,8 @@ public class TVBlockEntity extends ItemDisplayTile {
         this.lookingAtEnderman = param > 0;
     }
 
-    //TODO: maybe use this instead of states
-    public boolean isPowered() {
-        BlockState state = this.getBlockState();
-        return state.getValue(TVBlock.POWER_STATE).isOn();
+    public boolean isScreenOn() {
+        return this.wasScreenOn || this.switchAnimationTicks != 0;
     }
 
     private static final int EDGE_PIXEL_LEN = 4;
