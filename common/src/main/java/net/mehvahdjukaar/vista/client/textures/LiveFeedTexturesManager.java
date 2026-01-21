@@ -7,7 +7,6 @@ import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.pipeline.TextureTarget;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
 import net.mehvahdjukaar.moonlight.api.client.texture_renderer.RenderedTexturesManager;
 import net.mehvahdjukaar.moonlight.api.misc.RollingBuffer;
@@ -15,6 +14,7 @@ import net.mehvahdjukaar.moonlight.core.client.DummyCamera;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.VistaPlatStuff;
 import net.mehvahdjukaar.vista.client.AdaptiveUpdateScheduler;
+import net.mehvahdjukaar.vista.client.LevelRendererCameraState;
 import net.mehvahdjukaar.vista.common.LiveFeedConnectionManager;
 import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
@@ -48,9 +48,10 @@ import static net.minecraft.client.Minecraft.ON_OSX;
 public class LiveFeedTexturesManager {
 
     private static final ResourceLocation POSTERIZE_FRAGMENT_SHADER = VistaMod.res("posterize");
-    private static final Int2ObjectArrayMap<RenderTarget> CANVASES = new Int2ObjectArrayMap<>();
     private static final BiMap<UUID, ResourceLocation> LIVE_FEED_LOCATIONS = HashBiMap.create();
     private static final DummyCamera DUMMY_CAMERA = new DummyCamera();
+    @VisibleForDebug
+    public static final Map<ResourceLocation, RollingBuffer<Long>> UPDATE_TIMES = new HashMap<>();
 
     @VisibleForDebug
     public static final Supplier<AdaptiveUpdateScheduler<ResourceLocation>> SCHEDULER =
@@ -61,15 +62,23 @@ public class LiveFeedTexturesManager {
                             .targetBudgetMs(ClientConfigs.THROTTLING_UPDATE_MS.get()) //10% of a frame which at 60fps = 16.6ms is ~1.66ms which should lower fps from 60 to 54. in other words at most a 6fps drop
                             .evictAfterTicks(20 * 5) //5 seconds
 
-                            .guardTargetFps(60) //if we go under 6o fps, be more aggressive
+                            .guardTargetFps(60) //if we go under 60 fps, be more aggressive
                             .build()
             );
 
-
     private static long feedCounter = 0;
-
     @Nullable
-    public static RenderTarget LIVE_FEED_BEING_RENDERED = null;
+    private static RenderTarget lifeFeedBeingRendered = null;
+    @Nullable
+    private static LevelRendererCameraState liveFeedCameraState = null;
+
+    public static RenderTarget getLifeFeedBeingRendered() {
+        return lifeFeedBeingRendered;
+    }
+
+    public static LevelRendererCameraState getLiveFeedCameraState() {
+        return liveFeedCameraState;
+    }
 
 
     @Nullable
@@ -110,18 +119,8 @@ public class LiveFeedTexturesManager {
         return loc;
     }
 
-    public static RenderTarget getOrCreateCanvas(int size) {
-        RenderTarget canvas = CANVASES.get(size);
-        if (canvas == null) {
-            canvas = new TextureTarget(size, size, true, ON_OSX);
-            CANVASES.put(size, canvas);
-        }
-        return canvas;
-    }
-
     @SuppressWarnings("ConstantConditions")
     public static void clear() {
-        CANVASES.clear();
         LIVE_FEED_LOCATIONS.clear();
         DUMMY_CAMERA.entity = null;
     }
@@ -129,10 +128,6 @@ public class LiveFeedTexturesManager {
     public static void onRenderTickEnd() {
         SCHEDULER.get().onEndOfFrame();
     }
-
-    @VisibleForDebug
-    public static final Map<ResourceLocation, RollingBuffer<Long>> UPDATE_TIMES = new HashMap<>();
-
 
     private static void refreshTexture(TVLiveFeedTexture text) {
         Minecraft mc = Minecraft.getInstance();
@@ -161,11 +156,8 @@ public class LiveFeedTexturesManager {
             RenderTarget renderTarget = text.getFrameBuffer();
             RenderTarget mainTarget = mc.getMainRenderTarget();
 
-            int size = text.getWidth();
-            RenderTarget canvas = getOrCreateCanvas(size);
-
-            canvas.bindWrite(true);
-            LIVE_FEED_BEING_RENDERED = canvas;
+            renderTarget.bindWrite(true);
+            lifeFeedBeingRendered = renderTarget;
 
 
             //cache old
@@ -205,7 +197,7 @@ public class LiveFeedTexturesManager {
 
 
 
-            LiveFeedTexturesManager.LIVE_FEED_BEING_RENDERED = null;
+            LiveFeedTexturesManager.lifeFeedBeingRendered = null;
             mainTarget.bindWrite(true);
 
             //important otherwise we get flicker
@@ -268,7 +260,7 @@ public class LiveFeedTexturesManager {
         Matrix4f cameraMatrix = (new Matrix4f()).rotation(cameraRotation);
         //this below is what actually renders everything
         lr.prepareCullFrustum(camera.getPosition(), cameraMatrix, projMatrix);
-        LevelRendererTest.renderLevel(lr, deltaTracker, false, camera, gr,
+        lr.renderLevel( deltaTracker, false, camera, gr,
                 gr.lightTexture(), cameraMatrix, projMatrix);
 
         Matrix4f modelViewMatrix = RenderSystem.getModelViewMatrix();

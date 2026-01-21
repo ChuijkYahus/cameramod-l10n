@@ -19,8 +19,9 @@ public class MinecraftMixin {
 
     @ModifyReturnValue(method = "getMainRenderTarget", at = @At(value = "RETURN"))
     public RenderTarget vista$setCameraTarget(RenderTarget original) {
-        if (LiveFeedTexturesManager.LIVE_FEED_BEING_RENDERED != null) {
-            return LiveFeedTexturesManager.LIVE_FEED_BEING_RENDERED;
+        RenderTarget lf = LiveFeedTexturesManager.getLifeFeedBeingRendered();
+        if (lf != null) {
+            return lf;
         }
         return original;
     }

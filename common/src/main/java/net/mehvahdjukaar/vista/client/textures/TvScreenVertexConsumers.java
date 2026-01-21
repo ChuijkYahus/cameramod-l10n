@@ -88,7 +88,7 @@ public class TvScreenVertexConsumers {
     }
 
     private static boolean hasSfx() {
-        return LiveFeedTexturesManager.LIVE_FEED_BEING_RENDERED == null &&
+        return LiveFeedTexturesManager.getLifeFeedBeingRendered() == null &&
                 Minecraft.getInstance().options.graphicsMode().get() != GraphicsStatus.FAST;
     }
 

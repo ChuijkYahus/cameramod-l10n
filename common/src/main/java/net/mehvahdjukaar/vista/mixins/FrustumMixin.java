@@ -12,7 +12,7 @@ public class FrustumMixin {
 
     @Inject(method = "offsetToFullyIncludeCameraCube", at = @At("HEAD"), cancellable = true)
     public void vista$skipOffsetToFullyIncludeCameraCube(int offset, CallbackInfoReturnable<Frustum> cir) {
-        if (LiveFeedTexturesManager.LIVE_FEED_BEING_RENDERED != null) {
+        if (LiveFeedTexturesManager.getLifeFeedBeingRendered() != null) {
             cir.setReturnValue((Frustum) (Object) this);
         }
     }
