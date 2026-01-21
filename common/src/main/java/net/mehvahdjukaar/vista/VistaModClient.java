@@ -72,7 +72,6 @@ public class VistaModClient {
     private static void registerShaders(ClientHelper.ShaderEvent event) {
         event.register(VistaMod.res("static_noise"), DefaultVertexFormat.NEW_ENTITY, STATIC_SHADER::assign);
         event.register(VistaMod.res("camera_view"), DefaultVertexFormat.NEW_ENTITY, CAMERA_VIEW_SHADER::assign);
-        event.register(VistaMod.res("posterize"), DefaultVertexFormat.POSITION_TEX, POSTERIZE_SHADER::assign);
     }
 
     private static void registerModelLayers(ClientHelper.ModelLayerEvent event) {

@@ -66,6 +66,7 @@ public class TVLiveFeedTexture extends TickableFrameBufferBackedDynamicTexture {
 
             //add extra pass
             if (postFragment != null) {
+
                 RenderTarget swapTarget = postChain.getTempTarget("swap");
                 if (swapTarget == null) {
                     postChain.addTempTarget("swap", getWidth(), getHeight());
@@ -73,6 +74,8 @@ public class TVLiveFeedTexture extends TickableFrameBufferBackedDynamicTexture {
                 postChain.addPass("vista:posterize", myTarget, swapTarget, false);
                 //swap back
                 postChain.addPass("blit", swapTarget, myTarget, false);
+
+
             }
 
             this.postChain.resize(getWidth(), getHeight()); //dumb buts needed to initialize stuff

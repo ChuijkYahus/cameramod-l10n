@@ -77,7 +77,7 @@ public class LiveFeedTexturesManager {
                                                           boolean requiresUpdate, @Nullable ResourceLocation postShader) {
         ViewFinderBlockEntity tile = LiveFeedConnectionManager.findLinkedViewFinder(level, location);
         if (tile != null) {
-//postShader = ResourceLocation.parse("shaders/post/creeper.json");
+        postShader = ResourceLocation.parse("shaders/post/spider.json");
             ResourceLocation feedId = getOrCreateFeedId(location);
             TVLiveFeedTexture texture = RenderedTexturesManager.requestTexture(feedId,
                     () -> new TVLiveFeedTexture(feedId,
@@ -102,7 +102,7 @@ public class LiveFeedTexturesManager {
     }
 
     private static ResourceLocation getOrCreateFeedId(UUID uuid) {
-        var loc = LIVE_FEED_LOCATIONS.get(uuid);
+        ResourceLocation loc = LIVE_FEED_LOCATIONS.get(uuid);
         if (loc == null) {
             loc = VistaMod.res("live_feed_" + feedCounter++);
             LIVE_FEED_LOCATIONS.put(uuid, loc);
@@ -290,38 +290,6 @@ public class LiveFeedTexturesManager {
 
         return matrix4f.perspective(fov * Mth.DEG_TO_RAD,
                 (float) target.width / (float) target.height, ViewFinderBlockEntity.NEAR_PLANE, depthFar);
-    }
-
-    private static void applyPosterizePass(RenderTarget src, RenderTarget dst, RenderType rt) {
-        RenderSystem.assertOnRenderThreadOrInit();
-
-        if (src == null || dst == null)
-            throw new IllegalArgumentException("Source and destination RenderTargets cannot be null");
-        if (src.frameBufferId <= 0 || dst.frameBufferId <= 0)
-            throw new IllegalStateException("Both RenderTargets must have valid framebuffers");
-        if (src.getColorTextureId() <= 0 || dst.getColorTextureId() <= 0)
-            throw new IllegalStateException("Both RenderTargets must have valid color textures");
-        if (src.width != dst.width || src.height != dst.height)
-            throw new IllegalStateException("RenderTarget sizes must match for shader copy");
-
-
-        // Bind destination framebuffer
-        dst.clear(true);
-
-        dst.bindWrite(true);
-
-        RenderSystem.getModelViewMatrix().set(new Matrix4f().identity());
-        RenderSystem.getProjectionMatrix().set(new Matrix4f().identity());
-
-        var bufferSource = Minecraft.getInstance().renderBuffers().bufferSource();
-
-        VertexConsumer vc = bufferSource.getBuffer(rt);
-
-        vc.addVertex(-1, -1, 0).setUv(0f, 1f);
-        vc.addVertex(1, -1, 0).setUv(1f, 1f);
-        vc.addVertex(1, 1, 0).setUv(1f, 0f);
-        vc.addVertex(-1, 1, 0).setUv(0f, 0f);
-        bufferSource.endBatch(rt);
     }
 
 }

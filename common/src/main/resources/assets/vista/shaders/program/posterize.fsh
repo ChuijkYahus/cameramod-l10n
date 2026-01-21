@@ -1,8 +1,6 @@
 #version 150
 
-#moj_import <fog.glsl>
-
-uniform sampler2D Sampler0;
+uniform sampler2D DiffuseSampler;
 
 uniform float PostMode;      // 0 = OKLab, 1 = OKLCh
 uniform vec3 PostLevels;     // x=L or L, y=a/C, z=b/H (depending on mode)
@@ -13,6 +11,7 @@ uniform float DitherStrength;  // NEW: controls dithering intensity (0.0–2.0)
 const float MAX_CHROMA = 0.4;
 
 in vec2 texCoord0;
+in vec2 oneTexel;
 
 out vec4 fragColor;
 
@@ -171,12 +170,11 @@ vec3 posterize_oklab(vec3 srgb, vec2 texelSize) {
 }
 
 void main() {
-    vec2 texelSize = 1.0 / vec2(textureSize(Sampler0, 0));  // width, height of the atlas
     // Use the provided TexelSize (1/width, 1/height) for FXAA
-    vec3 sampled = texture(Sampler0, texCoord0).rgb;
+    vec3 sampled = texture(DiffuseSampler, texCoord0).rgb;
 
     // Apply posterize + dithering (uncomment/leave as-is to enable)
-    sampled = posterize_oklab(sampled, texelSize);
+    sampled = posterize_oklab(sampled, oneTexel);
 
     fragColor = vec4(sampled, 1.0);
 }
