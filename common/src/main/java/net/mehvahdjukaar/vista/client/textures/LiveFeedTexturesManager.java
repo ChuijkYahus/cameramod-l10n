@@ -40,6 +40,7 @@ import org.joml.Quaternionf;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Supplier;
 
@@ -73,9 +74,10 @@ public class LiveFeedTexturesManager {
 
     @Nullable
     public static ResourceLocation requestLiveFeedTexture(Level level, UUID location, int screenSize,
-                                                          boolean requiresUpdate, ResourceLocation postShader) {
+                                                          boolean requiresUpdate, @Nullable ResourceLocation postShader) {
         ViewFinderBlockEntity tile = LiveFeedConnectionManager.findLinkedViewFinder(level, location);
         if (tile != null) {
+postShader = ResourceLocation.parse("shaders/post/creeper.json");
             ResourceLocation feedId = getOrCreateFeedId(location);
             TVLiveFeedTexture texture = RenderedTexturesManager.requestTexture(feedId,
                     () -> new TVLiveFeedTexture(feedId,
@@ -83,11 +85,11 @@ public class LiveFeedTexturesManager {
                             LiveFeedTexturesManager::refreshTexture, location));
 
             ResourceLocation currentShader = texture.getPostShader();
-            if (currentShader != postShader) {
+            if (!Objects.equals(currentShader, postShader)) {
                 texture.setPostShader(postShader);
                 requiresUpdate = true;
             }
-            if (!requiresUpdate){
+            if (!requiresUpdate) {
                 texture.unMarkForUpdate();
             }
             if (texture.isInitialized()) {
@@ -154,6 +156,8 @@ public class LiveFeedTexturesManager {
 
             setupSceneCamera(tile, partialTicks);
 
+
+
             RenderTarget renderTarget = text.getFrameBuffer();
             RenderTarget mainTarget = mc.getMainRenderTarget();
 
@@ -163,6 +167,18 @@ public class LiveFeedTexturesManager {
             canvas.bindWrite(true);
             LIVE_FEED_BEING_RENDERED = canvas;
 
+
+            //cache old
+            float oldRenderDistance = mc.gameRenderer.renderDistance;
+            PostChain oldPostEffect = mc.gameRenderer.postEffect;
+            boolean wasEffectActive = mc.gameRenderer.effectActive;
+
+
+            text.applyPostEffectInplace();
+            mc.gameRenderer.renderDistance = Math.min(oldRenderDistance, ClientConfigs.RENDER_DISTANCE.get());
+
+
+
             //same as field of view modifier
             float fov = ViewFinderBlockEntity.BASE_FOV * tile.getFOVModifier();
 
@@ -171,22 +187,40 @@ public class LiveFeedTexturesManager {
             FogRenderer.setupNoFog();
             RenderSystem.enableCull();
 
-            float oldRenderDistance = mc.gameRenderer.renderDistance;
-            mc.gameRenderer.renderDistance = Math.min(oldRenderDistance, ClientConfigs.RENDER_DISTANCE.get());
-            renderLevel(mc, canvas, DUMMY_CAMERA, fov);
-            mc.gameRenderer.renderDistance = oldRenderDistance;
 
-            applyPostShader(canvas, renderTarget, ModRenderTypes.POSTERIZE.apply(canvas));
+            //set new shader
+
+            renderTarget.bindWrite(false);
+            renderLevel(mc, renderTarget, DUMMY_CAMERA, fov);
+
+       //     applyPosterizePass(canvas, renderTarget, ModRenderTypes.POSTERIZE.apply(canvas));
+
+            if (mc.gameRenderer.postEffect != null && mc.gameRenderer.effectActive) {
+                RenderSystem.disableBlend();
+                RenderSystem.disableDepthTest();
+                RenderSystem.resetTextureMatrix();
+                DeltaTracker deltaTracker = mc.getTimer();
+                mc.gameRenderer.postEffect.process(deltaTracker.getGameTimeDeltaTicks());
+            }//35876, 36289
+
+            mc.getMainRenderTarget().bindWrite(true);
+
+
 
             LiveFeedTexturesManager.LIVE_FEED_BEING_RENDERED = null;
             mainTarget.bindWrite(true);
 
             //important otherwise we get flicker
             RenderSystem.clear(16640, ON_OSX);
+            //restore old post process
+            mc.gameRenderer.postEffect = oldPostEffect;
+            mc.gameRenderer.effectActive = wasEffectActive;
+            mc.gameRenderer.renderDistance = oldRenderDistance;
+
         };
 
         if (CompatHandler.DISTANT_HORIZONS) {
-            runTask = DistantHorizonsCompat.renderWithoutLOD(runTask);
+            runTask = DistantHorizonsCompat.decorateRenderWithoutLOD(runTask);
         }
 
         SCHEDULER.get().runIfShouldUpdate(textureId, runTask);
@@ -236,7 +270,7 @@ public class LiveFeedTexturesManager {
         Matrix4f cameraMatrix = (new Matrix4f()).rotation(cameraRotation);
         //this below is what actually renders everything
         lr.prepareCullFrustum(camera.getPosition(), cameraMatrix, projMatrix);
-        lr.renderLevel(deltaTracker, false, camera, gr,
+        LevelRendererTest.renderLevel(lr, deltaTracker, false, camera, gr,
                 gr.lightTexture(), cameraMatrix, projMatrix);
 
         Matrix4f modelViewMatrix = RenderSystem.getModelViewMatrix();
@@ -260,7 +294,7 @@ public class LiveFeedTexturesManager {
                 (float) target.width / (float) target.height, ViewFinderBlockEntity.NEAR_PLANE, depthFar);
     }
 
-    public static void applyPostShader(RenderTarget src, RenderTarget dst, RenderType rt) {
+    private static void applyPosterizePass(RenderTarget src, RenderTarget dst, RenderType rt) {
         RenderSystem.assertOnRenderThreadOrInit();
 
         if (src == null || dst == null)

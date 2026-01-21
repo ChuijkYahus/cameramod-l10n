@@ -268,15 +268,13 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
 
         List<EndermanLookResult> lookResults = computeEndermanLookedAt(views, enderMen);
         for (var r : lookResults) {
-            if (EndermanFreezeWhenLookedAtThroughTVGoal.anger(r.enderman, r.player, this, fromTV)) {
+            if (EndermanFreezeWhenLookedAtThroughTVGoal.anger(r.enderman(), r.player(), this, fromTV)) {
                 anyAnger = true;
             }
         }
         return anyAnger;
     }
 
-    private record EndermanLookResult(Player player, EnderMan enderman) {
-    }
 
     public boolean isEndermanBeingLookedAt(TVSpectatorView view, EnderMan man) {
         return !computeEndermanLookedAt(List.of(view), List.of(man)).isEmpty();

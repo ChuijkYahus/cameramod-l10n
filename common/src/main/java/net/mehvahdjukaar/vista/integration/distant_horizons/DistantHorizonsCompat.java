@@ -15,7 +15,7 @@ public class DistantHorizonsCompat {
 
     private static Supplier<DHMode> dhMode = () -> DHMode.OFF;
 
-    public static Runnable renderWithoutLOD(Runnable task) {
+    public static Runnable decorateRenderWithoutLOD(Runnable task) {
         return new RunnableWithoutLOD(task);
     }
 

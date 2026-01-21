@@ -52,7 +52,7 @@ public class ModRenderTypes extends RenderType {
                 .setTextureState(new TextureStateShard(text,
                         //TODO: mipmap
                         false, false))
-                .setTransparencyState(NO_TRANSPARENCY)
+                .setTransparencyState(RenderStateShard.TRANSLUCENT_TRANSPARENCY)
                 .setLightmapState(LIGHTMAP)
                 .setTexturingState(new TexturingStateShard("set_texel_size",
                         () -> {
