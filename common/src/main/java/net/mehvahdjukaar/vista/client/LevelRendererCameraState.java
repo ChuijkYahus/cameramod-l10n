@@ -1,17 +1,10 @@
 package net.mehvahdjukaar.vista.client;
 
-import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.SectionOcclusionGraph;
 import net.minecraft.client.renderer.ViewArea;
 import net.minecraft.client.renderer.culling.Frustum;
-import net.minecraft.core.BlockPos;
-import net.minecraft.core.SectionPos;
-import net.minecraft.util.Mth;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3d;
 import org.joml.Vector4f;
@@ -30,20 +23,77 @@ public class LevelRendererCameraState {
     private ViewArea viewArea;
     private int lastViewDistance;
     private Frustum capturedFrustum;
-    private final Vector4f[] frustumPoints = new Vector4f[8];
-    private final Vector3d frustumPos = new Vector3d(0.0F, 0.0F, 0.0F);
-    public final SectionOcclusionGraph sectionOcclusionGraph = new SectionOcclusionGraph();
+    private Vector4f[] frustumPoints;
+    private Vector3d frustumPos;
+    private SectionOcclusionGraph sectionOcclusionGraph;
+
+    private LevelRendererCameraState(){
+
+    }
+
+    public static LevelRendererCameraState createNew() {
+        var instance = new LevelRendererCameraState();
+        instance.frustumPoints = new Vector4f[8];
+        instance.frustumPos = new Vector3d(0.0F, 0.0F, 0.0F);
+        instance.sectionOcclusionGraph = new SectionOcclusionGraph();
+        Minecraft mc = Minecraft.getInstance();
+        LevelRenderer lr = mc.levelRenderer;
+        instance.viewArea = new ViewArea(lr.sectionRenderDispatcher, mc.level,
+                //TODO: change this
+                mc.options.getEffectiveRenderDistance(), lr);
+        return instance;
+    }
+
+    public void copyFrom(LevelRenderer lr) {
+        this.viewArea = lr.viewArea;
+        this.lastViewDistance = lr.lastViewDistance;
+        this.capturedFrustum = lr.capturedFrustum;
+        this.frustumPoints = lr.frustumPoints;
+        this.frustumPos = lr.frustumPos;
+        this.sectionOcclusionGraph = lr.sectionOcclusionGraph;
+        this.lastCameraSectionX = lr.lastCameraSectionX;
+        this.lastCameraSectionY = lr.lastCameraSectionY;
+        this.lastCameraSectionZ = lr.lastCameraSectionZ;
+        this.prevCamX = lr.prevCamX;
+        this.prevCamY = lr.prevCamY;
+        this.prevCamZ = lr.prevCamZ;
+        this.prevCamRotX = lr.prevCamRotX;
+        this.prevCamRotY = lr.prevCamRotY;
+    }
+
+    public static LevelRendererCameraState capture(LevelRenderer lr) {
+        var instance = new LevelRendererCameraState();
+        instance.copyFrom(lr);
+        return instance;
+    }
+
+    public void apply(LevelRenderer lr) {
+        lr.viewArea = this.viewArea;
+        lr.lastViewDistance = this.lastViewDistance;
+        lr.capturedFrustum = this.capturedFrustum;
+        lr.frustumPoints = this.frustumPoints;
+        lr.frustumPos = this.frustumPos;
+        lr.sectionOcclusionGraph = this.sectionOcclusionGraph;
+        lr.lastCameraSectionX = this.lastCameraSectionX;
+        lr.lastCameraSectionY = this.lastCameraSectionY;
+        lr.lastCameraSectionZ = this.lastCameraSectionZ;
+        lr.prevCamX = this.prevCamX;
+        lr.prevCamY = this.prevCamY;
+        lr.prevCamZ = this.prevCamZ;
+        lr.prevCamRotX = this.prevCamRotX;
+        lr.prevCamRotY = this.prevCamRotY;
+    }
 
 
-
-    public static void setupRender(LevelRenderer levelRenderer, Camera camera, Frustum frustum, boolean hasCapturedFrustum, boolean isSpectator) {
+    /*
+    public void setupRender(LevelRenderer levelRenderer, Camera camera, Frustum frustum, boolean hasCapturedFrustum, boolean isSpectator) {
         Vec3 cameraPosition = camera.getPosition();
         Minecraft minecraft = Minecraft.getInstance();
         ClientLevel clientLevel = minecraft.level;
 
         // Check if the effective render distance has changed; if so, mark all chunks as needing update
         if (minecraft.options.getEffectiveRenderDistance() != levelRenderer.lastViewDistance) {
-              levelRenderer.allChanged();
+            levelRenderer.allChanged();
         }
 
         clientLevel.getProfiler().push("camera");
@@ -59,19 +109,19 @@ public class LevelRendererCameraState {
         int cameraSectionZ = SectionPos.posToSectionCoord(playerZ);
 
         // If the camera has moved to a new section, update the renderer's tracking and reposition the view area
-        if (levelRenderer.lastCameraSectionX != cameraSectionX ||
-                levelRenderer.lastCameraSectionY != cameraSectionY ||
-                levelRenderer.lastCameraSectionZ != cameraSectionZ) {
+        if (this.lastCameraSectionX != cameraSectionX ||
+                this.lastCameraSectionY != cameraSectionY ||
+                this.lastCameraSectionZ != cameraSectionZ) {
 
-               levelRenderer.lastCameraSectionX = cameraSectionX;
-               levelRenderer.lastCameraSectionY = cameraSectionY;
-               levelRenderer.lastCameraSectionZ = cameraSectionZ;
+            this.lastCameraSectionX = cameraSectionX;
+            this.lastCameraSectionY = cameraSectionY;
+            this.lastCameraSectionZ = cameraSectionZ;
 
-              levelRenderer.viewArea.repositionCamera(playerX, playerZ);
+            this.viewArea.repositionCamera(playerX, playerZ);
         }
 
         // Update the section render dispatcher with the camera position
-        levelRenderer.sectionRenderDispatcher.setCamera(cameraPosition);
+        this.sectionRenderDispatcher.setCamera(cameraPosition);
 
         clientLevel.getProfiler().popPush("cull");
         minecraft.getProfiler().popPush("culling");
@@ -85,17 +135,17 @@ public class LevelRendererCameraState {
         double cameraUnitZ = Math.floor(cameraPosition.z / 8.0);
 
         // If the camera has moved to a new 8-block unit, invalidate the occlusion graph
-        if (cameraUnitX != levelRenderer.prevCamX ||
-                cameraUnitY != levelRenderer.prevCamY ||
-                cameraUnitZ != levelRenderer.prevCamZ) {
+        if (cameraUnitX != this.prevCamX ||
+                cameraUnitY != this.prevCamY ||
+                cameraUnitZ != this.prevCamZ) {
 
-             levelRenderer.sectionOcclusionGraph.invalidate();
+            this.sectionOcclusionGraph.invalidate();
         }
 
         // Store current 8-block unit for future comparisons
-        levelRenderer.prevCamX = cameraUnitX;
-        levelRenderer.prevCamY = cameraUnitY;
-        levelRenderer.prevCamZ = cameraUnitZ;
+        this.prevCamX = cameraUnitX;
+        this.prevCamY = cameraUnitY;
+        this.prevCamZ = cameraUnitZ;
 
         minecraft.getProfiler().popPush("update");
 
@@ -117,7 +167,7 @@ public class LevelRendererCameraState {
             minecraft.getProfiler().push("section_occlusion_graph");
 
             // Update occlusion graph to determine which sections are visible
-            levelRenderer.sectionOcclusionGraph.update(smartCulling, camera, frustum, levelRenderer.visibleSections);
+            this.sectionOcclusionGraph.update(smartCulling, camera, frustum, this.visibleSections);
             minecraft.getProfiler().pop();
 
             // Divide camera rotation by 2 to track significant rotation changes
@@ -125,18 +175,18 @@ public class LevelRendererCameraState {
             double cameraRotYHalf = Math.floor(camera.getYRot() / 2.0);
 
             // Apply frustum update if the graph changed or camera rotated significantly
-            if (levelRenderer.sectionOcclusionGraph.consumeFrustumUpdate() ||
-                    cameraRotXHalf != levelRenderer.prevCamRotX ||
-                    cameraRotYHalf != levelRenderer.prevCamRotY) {
+            if (this.sectionOcclusionGraph.consumeFrustumUpdate() ||
+                    cameraRotXHalf != this.prevCamRotX ||
+                    cameraRotYHalf != this.prevCamRotY) {
 
-                levelRenderer.applyFrustum(LevelRenderer.offsetFrustum(frustum));
-                levelRenderer.prevCamRotX = cameraRotXHalf;
-                levelRenderer.prevCamRotY = cameraRotYHalf;
+                this.applyFrustum(LevelRenderer.offsetFrustum(frustum));
+                this.prevCamRotX = cameraRotXHalf;
+                this.prevCamRotY = cameraRotYHalf;
             }
         }
 
         minecraft.getProfiler().pop();
     }
 
-
+*/
 }

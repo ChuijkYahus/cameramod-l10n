@@ -4,6 +4,7 @@ import com.google.gson.JsonSyntaxException;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import net.mehvahdjukaar.moonlight.api.client.texture_renderer.TickableFrameBufferBackedDynamicTexture;
 import net.mehvahdjukaar.vista.VistaMod;
+import net.mehvahdjukaar.vista.client.LevelRendererCameraState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.PostChain;
@@ -21,6 +22,7 @@ public class TVLiveFeedTexture extends TickableFrameBufferBackedDynamicTexture {
 
     private final UUID associatedUUID;
 
+    private final LevelRendererCameraState rendererState = LevelRendererCameraState.createNew();
     @Nullable
     private final ResourceLocation postFragment;
     @Nullable
@@ -35,6 +37,10 @@ public class TVLiveFeedTexture extends TickableFrameBufferBackedDynamicTexture {
         this.postChainID = null;
         this.postFragment = postFragment;
         this.recomputePostChain();
+    }
+
+    public LevelRendererCameraState getRendererState() {
+        return rendererState;
     }
 
     public UUID getAssociatedUUID() {

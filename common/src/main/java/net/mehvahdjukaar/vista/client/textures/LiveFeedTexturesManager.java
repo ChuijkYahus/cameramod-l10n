@@ -4,10 +4,8 @@ import com.google.common.base.Suppliers;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.mojang.blaze3d.pipeline.RenderTarget;
-import com.mojang.blaze3d.pipeline.TextureTarget;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
-import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
 import net.mehvahdjukaar.moonlight.api.client.texture_renderer.RenderedTexturesManager;
 import net.mehvahdjukaar.moonlight.api.misc.RollingBuffer;
 import net.mehvahdjukaar.moonlight.core.client.DummyCamera;
@@ -24,7 +22,10 @@ import net.minecraft.client.Camera;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.client.renderer.*;
+import net.minecraft.client.renderer.FogRenderer;
+import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.renderer.LevelRenderer;
+import net.minecraft.client.renderer.PostChain;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.util.VisibleForDebug;
@@ -69,15 +70,9 @@ public class LiveFeedTexturesManager {
     private static long feedCounter = 0;
     @Nullable
     private static RenderTarget lifeFeedBeingRendered = null;
-    @Nullable
-    private static LevelRendererCameraState liveFeedCameraState = null;
 
     public static RenderTarget getLifeFeedBeingRendered() {
         return lifeFeedBeingRendered;
-    }
-
-    public static LevelRendererCameraState getLiveFeedCameraState() {
-        return liveFeedCameraState;
     }
 
 
@@ -86,7 +81,7 @@ public class LiveFeedTexturesManager {
                                                           boolean requiresUpdate, @Nullable ResourceLocation postShader) {
         ViewFinderBlockEntity tile = LiveFeedConnectionManager.findLinkedViewFinder(level, location);
         if (tile != null) {
-        postShader = ResourceLocation.parse("shaders/post/spider.json");
+            //  postShader = ResourceLocation.parse("shaders/post/spider.json");
             ResourceLocation feedId = getOrCreateFeedId(location);
             TVLiveFeedTexture texture = RenderedTexturesManager.requestTexture(feedId,
                     () -> new TVLiveFeedTexture(feedId,
@@ -152,7 +147,6 @@ public class LiveFeedTexturesManager {
             setupSceneCamera(tile, partialTicks);
 
 
-
             RenderTarget renderTarget = text.getFrameBuffer();
             RenderTarget mainTarget = mc.getMainRenderTarget();
 
@@ -170,7 +164,6 @@ public class LiveFeedTexturesManager {
             mc.gameRenderer.renderDistance = Math.min(oldRenderDistance, ClientConfigs.RENDER_DISTANCE.get());
 
 
-
             //same as field of view modifier
             float fov = ViewFinderBlockEntity.BASE_FOV * tile.getFOVModifier();
 
@@ -183,7 +176,17 @@ public class LiveFeedTexturesManager {
             //set new shader
 
             renderTarget.bindWrite(false);
+
+            LevelRendererCameraState oldCameraState = LevelRendererCameraState.capture(mc.levelRenderer);
+            LevelRendererCameraState feedCameraState = text.getRendererState();
+            feedCameraState.apply(mc.levelRenderer);
+
             renderLevel(mc, renderTarget, DUMMY_CAMERA, fov);
+
+            //update and save camera state
+            feedCameraState.copyFrom(mc.levelRenderer);
+            //restore old camera state
+            oldCameraState.apply(mc.levelRenderer);
 
             if (mc.gameRenderer.postEffect != null && mc.gameRenderer.effectActive) {
                 RenderSystem.disableBlend();
@@ -191,10 +194,10 @@ public class LiveFeedTexturesManager {
                 RenderSystem.resetTextureMatrix();
                 DeltaTracker deltaTracker = mc.getTimer();
                 mc.gameRenderer.postEffect.process(deltaTracker.getGameTimeDeltaTicks());
-            }//35876, 36289
+            }
+
 
             mc.getMainRenderTarget().bindWrite(true);
-
 
 
             LiveFeedTexturesManager.lifeFeedBeingRendered = null;
@@ -260,7 +263,7 @@ public class LiveFeedTexturesManager {
         Matrix4f cameraMatrix = (new Matrix4f()).rotation(cameraRotation);
         //this below is what actually renders everything
         lr.prepareCullFrustum(camera.getPosition(), cameraMatrix, projMatrix);
-        lr.renderLevel( deltaTracker, false, camera, gr,
+        lr.renderLevel(deltaTracker, false, camera, gr,
                 gr.lightTexture(), cameraMatrix, projMatrix);
 
         Matrix4f modelViewMatrix = RenderSystem.getModelViewMatrix();

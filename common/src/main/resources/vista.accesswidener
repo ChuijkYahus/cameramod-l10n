@@ -25,49 +25,12 @@ accessible field net/minecraft/client/renderer/texture/SpriteContents$FrameInfo 
 accessible method net/minecraft/client/renderer/GameRenderer loadEffect (Lnet/minecraft/resources/ResourceLocation;)V
 accessible field net/minecraft/client/renderer/GameRenderer postEffect Lnet/minecraft/client/renderer/PostChain;
 accessible field net/minecraft/client/renderer/GameRenderer effectActive Z
+accessible field net/minecraft/client/renderer/LevelRenderer frustumPoints [Lorg/joml/Vector4f;
 
-
-
-#test
-accessible field net/minecraft/client/renderer/LevelRenderer blockEntityRenderDispatcher Lnet/minecraft/client/renderer/blockentity/BlockEntityRenderDispatcher;
-accessible field net/minecraft/client/renderer/LevelRenderer entityRenderDispatcher Lnet/minecraft/client/renderer/entity/EntityRenderDispatcher;
-accessible field net/minecraft/client/renderer/LevelRenderer capturedFrustum Lnet/minecraft/client/renderer/culling/Frustum;
-accessible field net/minecraft/client/renderer/LevelRenderer capturedFrustum Lnet/minecraft/client/renderer/culling/Frustum;
-accessible field net/minecraft/client/renderer/LevelRenderer frustumPos Lorg/joml/Vector3d;
-accessible field net/minecraft/client/renderer/LevelRenderer cullingFrustum Lnet/minecraft/client/renderer/culling/Frustum;
-accessible method net/minecraft/client/renderer/LevelRenderer captureFrustum (Lorg/joml/Matrix4f;Lorg/joml/Matrix4f;DDDLnet/minecraft/client/renderer/culling/Frustum;)V
-accessible method net/minecraft/client/renderer/LevelRenderer setupRender (Lnet/minecraft/client/Camera;Lnet/minecraft/client/renderer/culling/Frustum;ZZ)V
-accessible method net/minecraft/client/renderer/LevelRenderer compileSections (Lnet/minecraft/client/Camera;)V
-accessible method net/minecraft/client/renderer/LevelRenderer renderSectionLayer (Lnet/minecraft/client/renderer/RenderType;DDDLorg/joml/Matrix4f;Lorg/joml/Matrix4f;)V
-accessible field net/minecraft/client/renderer/LevelRenderer renderedEntities I
-accessible field net/minecraft/client/renderer/LevelRenderer culledEntities I
-accessible method net/minecraft/client/renderer/LevelRenderer shouldShowEntityOutlines ()Z
-accessible field net/minecraft/client/renderer/LevelRenderer entityRenderDispatcher Lnet/minecraft/client/renderer/entity/EntityRenderDispatcher;
-accessible field net/minecraft/client/renderer/LevelRenderer renderedEntities I
-accessible field net/minecraft/client/renderer/LevelRenderer destructionProgress Lit/unimi/dsi/fastutil/longs/Long2ObjectMap;
-accessible method net/minecraft/client/renderer/LevelRenderer checkPoseStack (Lcom/mojang/blaze3d/vertex/PoseStack;)V
-accessible method net/minecraft/client/renderer/LevelRenderer renderEntity (Lnet/minecraft/world/entity/Entity;DDDFLcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;)V
-accessible field net/minecraft/client/renderer/LevelRenderer renderBuffers Lnet/minecraft/client/renderer/RenderBuffers;
-accessible field net/minecraft/client/renderer/LevelRenderer blockEntityRenderDispatcher Lnet/minecraft/client/renderer/blockentity/BlockEntityRenderDispatcher;
-accessible field net/minecraft/client/renderer/LevelRenderer globalBlockEntities Ljava/util/Set;
-accessible field net/minecraft/client/renderer/LevelRenderer particlesTarget Lcom/mojang/blaze3d/pipeline/RenderTarget;
-accessible field net/minecraft/client/renderer/LevelRenderer transparencyChain Lnet/minecraft/client/renderer/PostChain;
-accessible field net/minecraft/client/renderer/RenderStateShard PARTICLES_TARGET Lnet/minecraft/client/renderer/RenderStateShard$OutputStateShard;
-accessible method net/minecraft/client/renderer/LevelRenderer renderDebug (Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;Lnet/minecraft/client/Camera;)V
-accessible method net/minecraft/client/renderer/LevelRenderer renderWorldBorder (Lnet/minecraft/client/Camera;)V
-accessible field net/minecraft/client/renderer/LevelRenderer transparencyChain Lnet/minecraft/client/renderer/PostChain;
-accessible method net/minecraft/client/renderer/LevelRenderer renderSnowAndRain (Lnet/minecraft/client/renderer/LightTexture;FDDD)V
-accessible field net/minecraft/client/renderer/RenderStateShard WEATHER_TARGET Lnet/minecraft/client/renderer/RenderStateShard$OutputStateShard;
-accessible method net/minecraft/client/renderer/RenderStateShard setupRenderState ()V
-accessible method net/minecraft/client/renderer/RenderStateShard clearRenderState ()V
-accessible field net/minecraft/client/renderer/LevelRenderer visibleSections Lit/unimi/dsi/fastutil/objects/ObjectArrayList;
-accessible field net/minecraft/client/renderer/LevelRenderer entityEffect Lnet/minecraft/client/renderer/PostChain;
-accessible method net/minecraft/client/renderer/LevelRenderer renderHitOutline (Lcom/mojang/blaze3d/vertex/PoseStack;Lcom/mojang/blaze3d/vertex/VertexConsumer;Lnet/minecraft/world/entity/Entity;DDDLnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/block/state/BlockState;)V
-accessible field net/minecraft/client/renderer/LevelRenderer captureFrustum Z
-accessible method net/minecraft/client/renderer/RenderStateShard setupRenderState ()V
 
 
 #setup render
+accessible field net/minecraft/client/renderer/LevelRenderer capturedFrustum Lnet/minecraft/client/renderer/culling/Frustum;
 accessible field net/minecraft/client/renderer/LevelRenderer lastViewDistance I
 accessible field net/minecraft/client/renderer/LevelRenderer lastCameraSectionY I
 accessible field net/minecraft/client/renderer/LevelRenderer lastCameraSectionX I
@@ -78,6 +41,10 @@ accessible field net/minecraft/client/renderer/LevelRenderer prevCamX D
 accessible field net/minecraft/client/renderer/LevelRenderer prevCamY D
 accessible field net/minecraft/client/renderer/LevelRenderer prevCamZ D
 accessible field net/minecraft/client/renderer/LevelRenderer sectionOcclusionGraph Lnet/minecraft/client/renderer/SectionOcclusionGraph;
+mutable field net/minecraft/client/renderer/LevelRenderer sectionOcclusionGraph Lnet/minecraft/client/renderer/SectionOcclusionGraph;
 accessible method net/minecraft/client/renderer/LevelRenderer applyFrustum (Lnet/minecraft/client/renderer/culling/Frustum;)V
 accessible field net/minecraft/client/renderer/LevelRenderer prevCamRotX D
 accessible field net/minecraft/client/renderer/LevelRenderer prevCamRotY D
+mutable field net/minecraft/client/renderer/LevelRenderer frustumPoints [Lorg/joml/Vector4f;
+mutable field net/minecraft/client/renderer/LevelRenderer frustumPos Lorg/joml/Vector3d;
+accessible field net/minecraft/client/renderer/LevelRenderer frustumPos Lorg/joml/Vector3d;
