@@ -15,7 +15,6 @@ import net.mehvahdjukaar.moonlight.core.client.DummyCamera;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.VistaPlatStuff;
 import net.mehvahdjukaar.vista.client.AdaptiveUpdateScheduler;
-import net.mehvahdjukaar.vista.client.ModRenderTypes;
 import net.mehvahdjukaar.vista.common.LiveFeedConnectionManager;
 import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
@@ -48,6 +47,7 @@ import static net.minecraft.client.Minecraft.ON_OSX;
 
 public class LiveFeedTexturesManager {
 
+    private static final ResourceLocation POSTERIZE_FRAGMENT_SHADER = VistaMod.res("posterize");
     private static final Int2ObjectArrayMap<RenderTarget> CANVASES = new Int2ObjectArrayMap<>();
     private static final BiMap<UUID, ResourceLocation> LIVE_FEED_LOCATIONS = HashBiMap.create();
     private static final DummyCamera DUMMY_CAMERA = new DummyCamera();
@@ -77,16 +77,16 @@ public class LiveFeedTexturesManager {
                                                           boolean requiresUpdate, @Nullable ResourceLocation postShader) {
         ViewFinderBlockEntity tile = LiveFeedConnectionManager.findLinkedViewFinder(level, location);
         if (tile != null) {
-postShader = ResourceLocation.parse("shaders/post/creeper.json");
+//postShader = ResourceLocation.parse("shaders/post/creeper.json");
             ResourceLocation feedId = getOrCreateFeedId(location);
             TVLiveFeedTexture texture = RenderedTexturesManager.requestTexture(feedId,
                     () -> new TVLiveFeedTexture(feedId,
                             screenSize * ClientConfigs.RESOLUTION_SCALE.get(),
-                            LiveFeedTexturesManager::refreshTexture, location));
+                            LiveFeedTexturesManager::refreshTexture, location, POSTERIZE_FRAGMENT_SHADER));
 
             ResourceLocation currentShader = texture.getPostShader();
             if (!Objects.equals(currentShader, postShader)) {
-                texture.setPostShader(postShader);
+                texture.setPostChain(postShader);
                 requiresUpdate = true;
             }
             if (!requiresUpdate) {
@@ -174,7 +174,7 @@ postShader = ResourceLocation.parse("shaders/post/creeper.json");
             boolean wasEffectActive = mc.gameRenderer.effectActive;
 
 
-            text.applyPostEffectInplace();
+            text.applyPostChain();
             mc.gameRenderer.renderDistance = Math.min(oldRenderDistance, ClientConfigs.RENDER_DISTANCE.get());
 
 
@@ -192,8 +192,6 @@ postShader = ResourceLocation.parse("shaders/post/creeper.json");
 
             renderTarget.bindWrite(false);
             renderLevel(mc, renderTarget, DUMMY_CAMERA, fov);
-
-       //     applyPosterizePass(canvas, renderTarget, ModRenderTypes.POSTERIZE.apply(canvas));
 
             if (mc.gameRenderer.postEffect != null && mc.gameRenderer.effectActive) {
                 RenderSystem.disableBlend();
