@@ -4,6 +4,7 @@ import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import net.mehvahdjukaar.moonlight.api.util.math.Vec2i;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.minecraft.client.renderer.texture.SpriteContents;
 import net.minecraft.client.renderer.texture.atlas.SpriteSource;
@@ -16,6 +17,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.ResourceMetadata;
+import net.minecraft.world.phys.Vec2;
 import org.jetbrains.annotations.Nullable;
 
 import javax.imageio.ImageIO;
@@ -82,7 +84,9 @@ public class GifPathSpriteSource implements SpriteSource {
 
             int w = wh[0], h = wh[1];
 
-            NativeImage strip = buildVerticalStrip(frames, w, h);
+            int maxTexHeight = 1024 * 4; // safe for most GPUs
+            NativeImage strip = buildTiledAtlas(frames, w, h, maxTexHeight);
+         //   NativeImage strip = buildVerticalStrip(frames, w, h);
             // strip.writeToFile(new File("temp_image_dump.png")); // debug if needed
 
             AnimationMetadataSection anim = buildAnimationMeta(frameTicks, w, h, frames.size());
@@ -302,6 +306,71 @@ public class GifPathSpriteSource implements SpriteSource {
         return fm;
     }
 
+    private static Vec2i computeAtlasLayout(int frameCount, int frameW, int frameH, int maxWidth, int maxHeight) {
+        // Best fit layout: [rows, cols]
+        int bestRows = 1;
+        int bestCols = frameCount;
+        int minEmpty = frameCount; // minimize empty slots
+
+        // Try all possible column counts first (vertical strips)
+        for (int cols = 1; cols <= frameCount; cols++) {
+            int rows = (int) Math.ceil(frameCount / (double) cols);
+
+            int atlasW = cols * frameW;
+            int atlasH = rows * frameH;
+
+            if (atlasW > maxWidth || atlasH > maxHeight) continue; // too big
+
+            int emptySlots = rows * cols - frameCount;
+
+            // Prefer fewer empty slots; break ties by more vertical orientation (fewer rows)
+            if (emptySlots < minEmpty || (emptySlots == minEmpty && rows < bestRows)) {
+                minEmpty = emptySlots;
+                bestRows = rows;
+                bestCols = cols;
+
+                if (emptySlots == 0) break; // perfect fit
+            }
+        }
+
+        return new Vec2i(bestRows, bestCols);
+    }
+
+    private static NativeImage buildTiledAtlas(
+            List<BufferedImage> frames,
+            int frameW,
+            int frameH,
+            int maxTextureDimension
+    ) {
+        int frameCount = frames.size();
+
+        // --- Compute rows and columns using vertical-strip preference ---
+        Vec2i layout = computeAtlasLayout(frameCount, frameW, frameH, maxTextureDimension, maxTextureDimension);
+        int rows = layout.x();
+        int cols = layout.y();
+
+        int atlasW = cols * frameW;
+        int atlasH = rows * frameH;
+
+        NativeImage out = new NativeImage(
+                NativeImage.Format.RGBA,
+                atlasW,
+                atlasH,
+                true
+        );
+
+        for (int i = 0; i < frameCount; i++) {
+            int col = i / rows;   // vertical strips: fill columns first
+            int row = i % rows;
+
+            int xOff = col * frameW;
+            int yOff = row * frameH;
+
+            copyArgbToAbgr(frames.get(i), out, xOff, yOff, frameW, frameH);
+        }
+
+        return out;
+    }
     private static NativeImage buildVerticalStrip(List<BufferedImage> frames, int w, int h) {
         NativeImage out = new NativeImage(NativeImage.Format.RGBA, w, h * frames.size(), true);
         for (int i = 0; i < frames.size(); i++) {

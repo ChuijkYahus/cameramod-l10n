@@ -15,6 +15,7 @@ import net.mehvahdjukaar.vista.common.tv.connection.RectSelection;
 import net.mehvahdjukaar.vista.configs.CommonConfigs;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -23,7 +24,6 @@ import net.minecraft.world.item.Equipable;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
@@ -94,8 +94,9 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
             }
             type = belowState.getValue(CONNECTION);
         }
-        while (type.isConnected(facing.getCounterClockWise(), facing)) {
-            currentPos = currentPos.relative(facing.getClockWise());
+        Direction myLeft = facing.getClockWise();
+        while (type.isConnected(myLeft, facing)) {
+            currentPos = currentPos.relative(myLeft);
             BlockState sideState = level.getBlockState(currentPos);
             if (!sideState.is(this) || sideState.getValue(FACING) != facing) {
                 return null;
@@ -159,9 +160,10 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
     @Override
     protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player,
                                               InteractionHand hand, BlockHitResult hitResult) {
-        if(level.isClientSide)return ItemInteractionResult.SUCCESS;
+        if (level.isClientSide) return ItemInteractionResult.SUCCESS;
 
         TVBlockEntity masterTile = getMasterBlockEntity(level, pos, state);
+        player.sendSystemMessage(Component.literal("tv found " + masterTile));
         if (masterTile != null) {
             return masterTile.interactWithPlayerItem(player, hand, stack, 0, hitResult);
         }

@@ -51,17 +51,19 @@ public enum TVType implements StringRepresentable {
         return (mask & other.mask) != 0;
     }
 
-    public boolean isConnected(Direction fromDir, Direction facingDir){
-        Direction2D dir = Direction2D.from3D(fromDir, horizontalRot(facingDir.getOpposite()));
+    public boolean isConnected(Direction worldSide, Direction tvFacing){
+        Direction flippedFacing = tvFacing.getOpposite(); //since our states are from the player view not our view
+        Direction2D dir = Direction2D.from3D(worldSide, negativeHorizontalRot(flippedFacing));
         return isConnected(dir);
     }
 
-    private static Rotation horizontalRot(Direction dir){
+    //this is a bug in Direction2d. it should take the facing rotation, not the rotation to go to facing
+    private static Rotation negativeHorizontalRot(Direction dir){
         return switch (dir) {
             case NORTH -> Rotation.NONE;
-            case EAST -> Rotation.CLOCKWISE_90;
-            case SOUTH -> Rotation.CLOCKWISE_180;
-            case WEST -> Rotation.COUNTERCLOCKWISE_90;
+            case EAST -> Rotation.COUNTERCLOCKWISE_90; //-90
+            case SOUTH -> Rotation.CLOCKWISE_180; //-180
+            case WEST -> Rotation.CLOCKWISE_90; //90
             default -> Rotation.NONE;
         };
     }

@@ -55,16 +55,22 @@ public record AnimationStripData(
                     1f, 1f, new SpriteContents.FrameInfo[]{}, 1);
 
     public float getU(float u, int time) {
-        return u;
+        int frameIndex = getFrameIndexFromTime(time);
+
+        int rows = fullHeight / frameHeight;
+        int col = frameIndex / rows;
+
+        return u * frameRelativeW + col * frameRelativeW;
     }
 
-    /**
-     * Frame index → V coordinate
-     */
     public float getV(float v, int time) {
-        return v * frameRelativeH + getFrameIndexFromTime(time) * frameRelativeH;
-    }
+        int frameIndex = getFrameIndexFromTime(time);
 
+        int rows = fullHeight / frameHeight;
+        int row = frameIndex % rows;
+
+        return v * frameRelativeH + row * frameRelativeH;
+    }
     /**
      * Time (ticks) → actual texture frame index
      */
