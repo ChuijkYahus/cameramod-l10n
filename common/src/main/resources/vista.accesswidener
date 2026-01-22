@@ -48,3 +48,4 @@ accessible field net/minecraft/client/renderer/LevelRenderer prevCamRotY D
 mutable field net/minecraft/client/renderer/LevelRenderer frustumPoints [Lorg/joml/Vector4f;
 mutable field net/minecraft/client/renderer/LevelRenderer frustumPos Lorg/joml/Vector3d;
 accessible field net/minecraft/client/renderer/LevelRenderer frustumPos Lorg/joml/Vector3d;
+accessible field net/minecraft/client/renderer/LevelRenderer visibleSections Lit/unimi/dsi/fastutil/objects/ObjectArrayList;

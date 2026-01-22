@@ -186,8 +186,6 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
         boolean powered = level.hasNeighborSignal(pos);
         PowerState oldPower = state.getValue(POWER_STATE);
         PowerState newPower = PowerState.direct(powered);
-        VistaMod.LOGGER.error("Neighbor changed at {}: {} -> {}, {} at {}", pos,
-                oldPower, newPower, neighborBlock, neighborPos);
         if (newPower != oldPower)
             level.setBlock(pos, state.setValue(POWER_STATE, newPower),
                     Block.UPDATE_KNOWN_SHAPE | Block.UPDATE_CLIENTS | Block.UPDATE_NONE);

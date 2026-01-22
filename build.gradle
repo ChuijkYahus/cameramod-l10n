@@ -4,12 +4,15 @@ plugins {
     id "io.github.juuxel.loom-quiltflower" version "1.7.1" apply false
     id "com.matthewprenger.cursegradle" version "1.+"
     id "com.modrinth.minotaur" version "2.+"
+    id "lol.bai.explosion" version "0.3.1" apply false
 }
 
 allprojects {
     apply plugin: "java"
     apply plugin: "architectury-plugin"
     apply plugin: "maven-publish"
+    apply plugin: "lol.bai.explosion"
+
 
     group = mod_group_id
     version = mod_version
@@ -42,7 +45,7 @@ allprojects {
         maven { url = "https://mvn.devos.one/snapshots/" } // Registrate, Porting Lib (snapshots)
         maven { url = "https://maven.terraformersmc.com/" } // TerraformersMC mods
         maven { url = "https://maven.saps.dev/releases" } // FTB Mods
-
+        maven { url = "https://squiddev.cc/maven/" }
         maven { url = "https://maven.theillusivec4.top/" } // Curios API
         maven { url = "https://maven.squiddev.cc" } // CC: Tweaked
         maven { url = "https://maven.su5ed.dev/releases" } // SU5ED mods

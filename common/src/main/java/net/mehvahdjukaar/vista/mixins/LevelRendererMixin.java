@@ -47,11 +47,10 @@ public class LevelRendererMixin {
 
     @Inject(method = "setupRender", at = @At("HEAD"), cancellable = true)
     public void vista$alterSetupRender(Camera camera, Frustum frustum, boolean hasCapturedFrustum, boolean isSpectator, CallbackInfo ci) {
-      //  LevelRendererCameraState cameraState = LiveFeedTexturesManager.getLiveFeedCameraState();
-       // if (cameraState != null) {
-         //   cameraState.setupRender((LevelRenderer) (Object) this, camera, frustum, hasCapturedFrustum, isSpectator);
-         //   ci.cancel();
-      //  }
+      if (LiveFeedTexturesManager.getLifeFeedBeingRendered() != null) {
+          LevelRendererCameraState.setupRender((LevelRenderer) (Object) this, camera, frustum, hasCapturedFrustum, isSpectator);
+          ci.cancel();
+      }
     }
 
 }

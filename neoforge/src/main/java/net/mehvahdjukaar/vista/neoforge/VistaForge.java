@@ -1,5 +1,6 @@
 package net.mehvahdjukaar.vista.neoforge;
 
+import dan200.computercraft.shared.computer.core.ServerContext;
 import net.mehvahdjukaar.moonlight.api.misc.EventCalled;
 import net.mehvahdjukaar.moonlight.api.platform.RegHelper;
 import net.mehvahdjukaar.vista.VistaMod;
@@ -28,6 +29,7 @@ public class VistaForge {
     public static WeakReference<IEventBus> modBus;
 
     public VistaForge(IEventBus bus) {
+
         modBus = new WeakReference<>(bus);
         RegHelper.startRegisteringFor(bus);
         VistaMod.init();

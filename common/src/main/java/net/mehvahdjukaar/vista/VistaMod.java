@@ -119,13 +119,13 @@ public class VistaMod {
     public static void init() {
 
         //TODO:
+        //frustum shenanigans
         //amendments mixed pot not saving on servers
         //divining rod can use maybe has on the blockstate container of a chunk
         //no adjusted frustum causing to clip through blocks when placed next to it
         //view finder scroll bug
         //creative only cassette that targets a video
         //turn table rotation thing
-        //turn on shader
         //show tv screen for far away cunks using a static screenshot with pause shaderand pause icon
         //liveleak icon
         //ball item

@@ -1,10 +1,18 @@
 package net.mehvahdjukaar.vista.client;
 
+import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.SectionOcclusionGraph;
 import net.minecraft.client.renderer.ViewArea;
 import net.minecraft.client.renderer.culling.Frustum;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.SectionPos;
+import net.minecraft.util.Mth;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3d;
 import org.joml.Vector4f;
@@ -27,7 +35,7 @@ public class LevelRendererCameraState {
     private Vector3d frustumPos;
     private SectionOcclusionGraph sectionOcclusionGraph;
 
-    private LevelRendererCameraState(){
+    private LevelRendererCameraState() {
 
     }
 
@@ -85,23 +93,23 @@ public class LevelRendererCameraState {
     }
 
 
-    /*
-    public void setupRender(LevelRenderer levelRenderer, Camera camera, Frustum frustum, boolean hasCapturedFrustum, boolean isSpectator) {
+    public static void setupRender(LevelRenderer lr, Camera camera, Frustum frustum, boolean hasCapturedFrustum, boolean isSpectator) {
         Vec3 cameraPosition = camera.getPosition();
         Minecraft minecraft = Minecraft.getInstance();
         ClientLevel clientLevel = minecraft.level;
 
         // Check if the effective render distance has changed; if so, mark all chunks as needing update
-        if (minecraft.options.getEffectiveRenderDistance() != levelRenderer.lastViewDistance) {
-            levelRenderer.allChanged();
+        if (minecraft.options.getEffectiveRenderDistance() != lr.lastViewDistance) {
+            viewAreaStuffChanged(lr); //never invalidate
         }
 
         clientLevel.getProfiler().push("camera");
 
         // Get player's exact coordinates
-        double playerX = minecraft.player.getX();
-        double playerY = minecraft.player.getY();
-        double playerZ = minecraft.player.getZ();
+        Entity player = camera.entity;
+        double playerX = player.getX();
+        double playerY = player.getY();
+        double playerZ = player.getZ();
 
         // Convert world coordinates to section (chunk) coordinates
         int cameraSectionX = SectionPos.posToSectionCoord(playerX);
@@ -109,19 +117,19 @@ public class LevelRendererCameraState {
         int cameraSectionZ = SectionPos.posToSectionCoord(playerZ);
 
         // If the camera has moved to a new section, update the renderer's tracking and reposition the view area
-        if (this.lastCameraSectionX != cameraSectionX ||
-                this.lastCameraSectionY != cameraSectionY ||
-                this.lastCameraSectionZ != cameraSectionZ) {
+        if (lr.lastCameraSectionX != cameraSectionX ||
+                lr.lastCameraSectionY != cameraSectionY ||
+                lr.lastCameraSectionZ != cameraSectionZ) {
 
-            this.lastCameraSectionX = cameraSectionX;
-            this.lastCameraSectionY = cameraSectionY;
-            this.lastCameraSectionZ = cameraSectionZ;
+            lr.lastCameraSectionX = cameraSectionX;
+            lr.lastCameraSectionY = cameraSectionY;
+            lr.lastCameraSectionZ = cameraSectionZ;
 
-            this.viewArea.repositionCamera(playerX, playerZ);
+            lr.viewArea.repositionCamera(playerX, playerZ);
         }
 
         // Update the section render dispatcher with the camera position
-        this.sectionRenderDispatcher.setCamera(cameraPosition);
+        lr.sectionRenderDispatcher.setCamera(cameraPosition);
 
         clientLevel.getProfiler().popPush("cull");
         minecraft.getProfiler().popPush("culling");
@@ -135,17 +143,17 @@ public class LevelRendererCameraState {
         double cameraUnitZ = Math.floor(cameraPosition.z / 8.0);
 
         // If the camera has moved to a new 8-block unit, invalidate the occlusion graph
-        if (cameraUnitX != this.prevCamX ||
-                cameraUnitY != this.prevCamY ||
-                cameraUnitZ != this.prevCamZ) {
+        if (cameraUnitX != lr.prevCamX ||
+                cameraUnitY != lr.prevCamY ||
+                cameraUnitZ != lr.prevCamZ) {
 
-            this.sectionOcclusionGraph.invalidate();
+            lr.sectionOcclusionGraph.invalidate();
         }
 
         // Store current 8-block unit for future comparisons
-        this.prevCamX = cameraUnitX;
-        this.prevCamY = cameraUnitY;
-        this.prevCamZ = cameraUnitZ;
+        lr.prevCamX = cameraUnitX;
+        lr.prevCamY = cameraUnitY;
+        lr.prevCamZ = cameraUnitZ;
 
         minecraft.getProfiler().popPush("update");
 
@@ -167,7 +175,7 @@ public class LevelRendererCameraState {
             minecraft.getProfiler().push("section_occlusion_graph");
 
             // Update occlusion graph to determine which sections are visible
-            this.sectionOcclusionGraph.update(smartCulling, camera, frustum, this.visibleSections);
+            lr.sectionOcclusionGraph.update(smartCulling, camera, frustum, lr.visibleSections);
             minecraft.getProfiler().pop();
 
             // Divide camera rotation by 2 to track significant rotation changes
@@ -175,18 +183,39 @@ public class LevelRendererCameraState {
             double cameraRotYHalf = Math.floor(camera.getYRot() / 2.0);
 
             // Apply frustum update if the graph changed or camera rotated significantly
-            if (this.sectionOcclusionGraph.consumeFrustumUpdate() ||
-                    cameraRotXHalf != this.prevCamRotX ||
-                    cameraRotYHalf != this.prevCamRotY) {
+            if (lr.sectionOcclusionGraph.consumeFrustumUpdate() ||
+                    cameraRotXHalf != lr.prevCamRotX ||
+                    cameraRotYHalf != lr.prevCamRotY) {
 
-                this.applyFrustum(LevelRenderer.offsetFrustum(frustum));
-                this.prevCamRotX = cameraRotXHalf;
-                this.prevCamRotY = cameraRotYHalf;
+                lr.applyFrustum(LevelRenderer.offsetFrustum(frustum));
+                lr.prevCamRotX = cameraRotXHalf;
+                lr.prevCamRotY = cameraRotYHalf;
             }
         }
 
         minecraft.getProfiler().pop();
     }
 
-*/
+    public static void viewAreaStuffChanged(LevelRenderer lr) {
+        Level level = Minecraft.getInstance().level;
+        Minecraft mc = Minecraft.getInstance();
+
+        lr.lastViewDistance = mc.options.getEffectiveRenderDistance();
+        if (lr.viewArea != null) {
+            lr.viewArea.releaseAllBuffers();
+        }
+
+        //    lr.sectionRenderDispatcher.blockUntilClear();
+
+        lr.viewArea = new ViewArea(lr.sectionRenderDispatcher, level, mc.options.getEffectiveRenderDistance(), lr);
+        lr.sectionOcclusionGraph.waitAndReset(lr.viewArea);
+        lr.visibleSections.clear();
+        Entity entity = mc.getCameraEntity();
+        if (entity != null) {
+            lr.viewArea.repositionCamera(entity.getX(), entity.getZ());
+        }
+
+    }
+
+
 }
