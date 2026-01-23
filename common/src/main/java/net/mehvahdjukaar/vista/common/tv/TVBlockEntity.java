@@ -90,6 +90,10 @@ public class TVBlockEntity extends ItemDisplayTile {
         return connectedTvHeight;
     }
 
+    public  int getConnectedWidth() {
+        return connectedTvsWidth;
+    }
+
     public void setConnectionSize(int width, int height) {
         this.connectedTvsWidth = width;
         this.connectedTvHeight = height;

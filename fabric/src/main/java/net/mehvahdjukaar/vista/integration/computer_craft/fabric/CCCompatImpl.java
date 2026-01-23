@@ -11,6 +11,7 @@ import net.mehvahdjukaar.vista.integration.computer_craft.CCCompat;
 import net.mehvahdjukaar.vista.integration.computer_craft.CassetteBurnerBlockEntity;
 import net.mehvahdjukaar.vista.integration.computer_craft.CassetteBurnerPeripheral;
 import net.mehvahdjukaar.vista.integration.computer_craft.ViewFinderPeripheral;
+import net.minecraft.client.renderer.LevelRenderer;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;

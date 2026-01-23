@@ -1,4 +1,4 @@
-package net.mehvahdjukaar.vista.client;
+package net.mehvahdjukaar.vista.client.textures;
 
 import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.serialization.Codec;
@@ -17,7 +17,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.ResourceMetadata;
-import net.minecraft.world.phys.Vec2;
 import org.jetbrains.annotations.Nullable;
 
 import javax.imageio.ImageIO;

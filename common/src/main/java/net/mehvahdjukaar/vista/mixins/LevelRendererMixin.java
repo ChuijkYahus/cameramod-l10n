@@ -3,8 +3,8 @@ package net.mehvahdjukaar.vista.mixins;
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import com.llamalad7.mixinextras.sugar.Local;
-import net.mehvahdjukaar.vista.client.LevelRendererCameraState;
-import net.mehvahdjukaar.vista.client.textures.LiveFeedTexturesManager;
+import net.mehvahdjukaar.vista.client.renderer.LevelRendererCameraState;
+import net.mehvahdjukaar.vista.client.renderer.VistaLevelRenderer;
 import net.minecraft.client.Camera;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.LevelRenderer;
@@ -20,7 +20,7 @@ public class LevelRendererMixin {
 
     @ModifyReturnValue(method = "shouldShowEntityOutlines", at = @At(value = "RETURN"))
     public boolean vista$disableEntityOutlines(boolean original) {
-        if (LiveFeedTexturesManager.getLifeFeedBeingRendered() != null) {
+        if (VistaLevelRenderer.getLifeFeedBeingRendered() != null) {
             return false;
         }
         return original;
@@ -29,7 +29,7 @@ public class LevelRendererMixin {
     @ModifyExpressionValue(method = "renderLevel", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Camera;isDetached()Z"),
             require = 1)
     public boolean vista$isCameraDetached(boolean original) {
-        if (LiveFeedTexturesManager.getLifeFeedBeingRendered() != null) {
+        if (VistaLevelRenderer.getLifeFeedBeingRendered() != null) {
             return true;
         }
         return original;
@@ -39,7 +39,7 @@ public class LevelRendererMixin {
     @ModifyExpressionValue(method = "renderLevel", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Camera;getEntity()Lnet/minecraft/world/entity/Entity;",
             ordinal = 3), require = 1)
     public Entity vista$getActualPlayer(Entity original, @Local(ordinal = 0) Entity entity) {
-        if (LiveFeedTexturesManager.getLifeFeedBeingRendered() != null && entity instanceof LocalPlayer) {
+        if (VistaLevelRenderer.getLifeFeedBeingRendered() != null && entity instanceof LocalPlayer) {
             return entity;
         }
         return original;
@@ -47,7 +47,7 @@ public class LevelRendererMixin {
 
     @Inject(method = "setupRender", at = @At("HEAD"), cancellable = true)
     public void vista$alterSetupRender(Camera camera, Frustum frustum, boolean hasCapturedFrustum, boolean isSpectator, CallbackInfo ci) {
-      if (LiveFeedTexturesManager.getLifeFeedBeingRendered() != null) {
+      if (VistaLevelRenderer.getLifeFeedBeingRendered() != null) {
           LevelRendererCameraState.setupRender((LevelRenderer) (Object) this, camera, frustum, hasCapturedFrustum, isSpectator);
           ci.cancel();
       }

@@ -3,6 +3,7 @@ package net.mehvahdjukaar.vista.client.textures;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.client.ModRenderTypes;
+import net.mehvahdjukaar.vista.client.renderer.VistaLevelRenderer;
 import net.mehvahdjukaar.vista.common.CassetteTape;
 import net.minecraft.client.GraphicsStatus;
 import net.minecraft.client.Minecraft;
@@ -88,7 +89,7 @@ public class TvScreenVertexConsumers {
     }
 
     private static boolean hasSfx() {
-        return LiveFeedTexturesManager.getLifeFeedBeingRendered() == null &&
+        return VistaLevelRenderer.getLifeFeedBeingRendered() == null &&
                 Minecraft.getInstance().options.graphicsMode().get() != GraphicsStatus.FAST;
     }
 

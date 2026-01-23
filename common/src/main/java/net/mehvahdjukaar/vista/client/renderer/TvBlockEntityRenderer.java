@@ -4,14 +4,17 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import net.mehvahdjukaar.moonlight.api.client.util.LOD;
+import net.mehvahdjukaar.moonlight.api.client.util.RenderUtil;
+import net.mehvahdjukaar.moonlight.api.client.util.RotHlpr;
 import net.mehvahdjukaar.moonlight.api.client.util.VertexUtil;
 import net.mehvahdjukaar.moonlight.api.misc.ForgeOverride;
 import net.mehvahdjukaar.moonlight.api.misc.RollingBuffer;
+import net.mehvahdjukaar.moonlight.api.platform.ClientHelper;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.set.BlocksColorAPI;
 import net.mehvahdjukaar.vista.client.ModRenderTypes;
-import net.mehvahdjukaar.vista.client.textures.TvScreenVertexConsumers;
 import net.mehvahdjukaar.vista.client.textures.LiveFeedTexturesManager;
+import net.mehvahdjukaar.vista.client.textures.TvScreenVertexConsumers;
 import net.mehvahdjukaar.vista.common.CassetteTape;
 import net.mehvahdjukaar.vista.common.tv.TVBlock;
 import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
@@ -32,6 +35,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec2;
@@ -50,15 +54,15 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
 
     @Override
     public boolean shouldRenderOffScreen(TVBlockEntity blockEntity) {
-        return PlatHelper.getPlatform().isFabric();
+        return false;// PlatHelper.getPlatform().isFabric();
     }
 
     @ForgeOverride
     public AABB getRenderBoundingBox(BlockEntity tile) {
         AABB aabb = new AABB(tile.getBlockPos());
         Direction dir = tile.getBlockState().getValue(TVBlock.FACING);
-        float width = ((TVBlockEntity) tile).getScreenPixelWidth() / 16f;
-        float height = ((TVBlockEntity) tile).getConnectedHeight() / 16f;
+        float width = ((TVBlockEntity) tile).getConnectedWidth();
+        float height = ((TVBlockEntity) tile).getConnectedHeight();
         return switch (dir) {
             case NORTH -> aabb.expandTowards(-(width - 1), height - 1, 0);
             case SOUTH -> aabb.expandTowards(0, height - 1, width - 1);
@@ -83,12 +87,15 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
         Vec2 screenCenter = blockEntity.getScreenBlockCenter();
 
         if (!lod.isMedium()) return;
-        if (lod.isPlaneCulled(dir, 0.5f, screenSize * 1.5f, 0f)) return;
+        if (lod.isPlaneCulled(dir, 0.5f, screenSize / 16f * 1.5f, 0f)) return;
 
         float yaw = dir.toYRot();
         poseStack.translate(0.5, 0.5, 0.5);
         poseStack.mulPose(Axis.YP.rotationDegrees(180 - yaw));
         poseStack.translate(-screenCenter.x, screenCenter.y, -0.501);
+
+
+//        renderDebugBox(blockEntity, poseStack, buffer);
 
         float s = screenSize / 32f;
         int pixelEffectRes = ClientConfigs.SCALE_PIXELS.get() ? screenSize : TVBlockEntity.MIN_SCREEN_PIXEL_SIZE;
@@ -142,6 +149,20 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
         VertexUtil.addQuad(vc, poseStack, -s, -s, s, s, lightU, lightV);
     }
 
+    private static void renderDebugBox(TVBlockEntity blockEntity, PoseStack poseStack, MultiBufferSource buffer) {
+        poseStack.pushPose();
+
+        poseStack.mulPose(RotHlpr.Y180);
+        poseStack.scale(7,7,7);
+        poseStack.translate(-0.5, -0.5, -0.5);
+
+        RenderUtil.renderBlock((long)0, poseStack, buffer, Blocks.COBWEB.defaultBlockState(),
+                blockEntity.getLevel(), blockEntity.getBlockPos(), Minecraft.getInstance().getBlockRenderer());
+
+
+        poseStack.popPose();
+    }
+
     private ResourceLocation getPostShader(TVBlockEntity blockEntity) {
         ItemStack filterItem = blockEntity.getDisplayedItem();
         if (filterItem.isEmpty()) return null;
@@ -162,6 +183,10 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
 
     private void renderDebug(ResourceLocation tex, PoseStack poseStack, MultiBufferSource buffer, float partialTick,
                              TVBlockEntity tile) {
+        RollingBuffer<Long> lastUpdateTimes = LiveFeedTexturesManager.UPDATE_TIMES.get(tex);
+        if (lastUpdateTimes == null) {
+            return;
+        }
 
         poseStack.pushPose();
 
@@ -172,7 +197,6 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
         poseStack.scale(1 / 16f, -1 / 16f, 1 / 16f);
         poseStack.scale(0.5f, 0.5f, 0.5f);
 
-        RollingBuffer<Long> lastUpdateTimes = LiveFeedTexturesManager.UPDATE_TIMES.get(tex);
 
         double averageUpdateinterval = calculateAverageUpdateTime(lastUpdateTimes);
 
