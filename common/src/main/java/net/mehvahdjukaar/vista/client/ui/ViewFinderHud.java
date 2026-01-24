@@ -39,7 +39,7 @@ public class ViewFinderHud implements LayeredDraw.Layer {
 
         if (ViewFinderController.isActive()) {
 
-            ViewFinderBlockEntity tile = ViewFinderController.access.getInternalTile();
+            ViewFinderBlockEntity tile = ViewFinderController.getAccess().getInternalTile();
 
             setupOverlayRenderState();
             int screenWidth = graphics.guiWidth();

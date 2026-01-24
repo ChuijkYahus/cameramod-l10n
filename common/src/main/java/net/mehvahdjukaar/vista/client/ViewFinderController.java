@@ -73,6 +73,10 @@ public class ViewFinderController {
         }
     }
 
+    public static ViewFinderAccess getAccess() {
+        return access;
+    }
+
     public static boolean isActive() {
         return access != null;
     }
@@ -120,8 +124,8 @@ public class ViewFinderController {
 
         return true;
     }
-
     // true cancels the thing
+
     @EventCalled
     public static boolean onPlayerRotated(double yawAdd, double pitchAdd) {
         if (isActive()) {
@@ -216,8 +220,8 @@ public class ViewFinderController {
             stopControllingAndSync();
         }
     }
-
     //called by mixin. its cancellable. maybe switch all to this
+
     @EventCalled
     public static boolean onEarlyKeyPress(int key, int scanCode, int action, int modifiers) {
         if (!isActive()) return false;

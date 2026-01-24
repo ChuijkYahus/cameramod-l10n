@@ -9,28 +9,22 @@ import net.mehvahdjukaar.moonlight.api.util.FakePlayerManager;
 import net.mehvahdjukaar.moonlight.api.util.math.MthUtils;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.common.EndermanFreezeWhenLookedAtThroughTVGoal;
-import net.mehvahdjukaar.vista.common.LiveFeedConnectionManager;
+import net.mehvahdjukaar.vista.common.cassette.IFeedProvider;
 import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
 import net.mehvahdjukaar.vista.common.tv.TVSpectatorView;
 import net.mehvahdjukaar.vista.network.ClientBoundControlViewFinderPacket;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
-import net.minecraft.core.GlobalPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.monster.EnderMan;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.SkullBlock;
-import net.minecraft.world.level.block.StainedGlassPaneBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -41,7 +35,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserInteractable {
+public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserInteractable, IFeedProvider {
 
     public static final int MAX_ZOOM = 44;
 
@@ -76,23 +70,9 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
     }
 
     @Override
-    public void setLevel(Level level) {
-        super.setLevel(level);
-        updateLink();
-    }
-
-    private void updateLink() {
-        if (level instanceof ServerLevel sl) {
-            LiveFeedConnectionManager.getInstance(sl)
-                    .linkFeed(this.myUUID, new GlobalPos(level.dimension(), this.worldPosition));
-        }
-    }
-
-    private void removeLink() {
-        if (level instanceof ServerLevel sl) {
-            LiveFeedConnectionManager.getInstance(sl)
-                    .unlinkFeed(this.myUUID);
-        }
+    public void setRemoved() {
+        super.setRemoved();
+        this.removeLink();
     }
 
     @Override
@@ -103,7 +83,13 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
         this.pitch = tag.getFloat("pitch");
         this.locked = tag.getBoolean("locked");
         this.zoom = tag.getInt("zoom");
-        updateLink();
+        this.ensureLinked();
+    }
+
+    @Override
+    public void setLevel(Level level) {
+        super.setLevel(level);
+        this.ensureLinked();
     }
 
     @Override
@@ -129,11 +115,6 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
     @Override
     public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
         return this.saveWithoutMetadata(registries);
-    }
-
-    @Override
-    public void setRemoved() {
-        super.setRemoved();
     }
 
     public ItemInteractionResult tryInteracting(Player player, InteractionHand hand, ItemStack stack,

@@ -1,8 +1,6 @@
-package net.mehvahdjukaar.vista.common;
+package net.mehvahdjukaar.vista.common.cassette;
 
-import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
-import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;

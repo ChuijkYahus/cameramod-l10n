@@ -3,6 +3,7 @@ package net.mehvahdjukaar.vista.common.projector;
 import net.mehvahdjukaar.moonlight.api.client.IScreenProvider;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.client.ui.SignalProjectorScreen;
+import net.mehvahdjukaar.vista.common.cassette.IFeedProvider;
 import net.mehvahdjukaar.vista.integration.CompatHandler;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -18,14 +19,18 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
-public class SignalProjectorBlockEntity extends BlockEntity implements IScreenProvider {
+import java.util.UUID;
+
+public class SignalProjectorBlockEntity extends BlockEntity implements IScreenProvider, IFeedProvider {
 
     public Object ccPeripheral;
 
     private String url = "";
+    private UUID myUUID;
 
     public SignalProjectorBlockEntity(BlockPos pos, BlockState state) {
-        super(VistaMod.SIGNAL_PROJECTOR_TILE.get(), pos, state, 1);
+        super(VistaMod.SIGNAL_PROJECTOR_TILE.get(), pos, state);
+        this.myUUID = UUID.randomUUID();
     }
 
 
@@ -44,16 +49,37 @@ public class SignalProjectorBlockEntity extends BlockEntity implements IScreenPr
         return ClientboundBlockEntityDataPacket.create(this);
     }
 
+
     @Override
-    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.saveAdditional(tag, registries);
-        tag.putString("url", url);
+    public void setRemoved() {
+        super.setRemoved();
+        this.removeLink();
+    }
+
+    @Override
+    public void setLevel(Level level) {
+        super.setLevel(level);
+        this.ensureLinked();
     }
 
     @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
+        this.myUUID = tag.getUUID("UUID");
         this.url = tag.getString("url");
+        this.ensureLinked();
+    }
+
+    @Override
+    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+        super.saveAdditional(tag, registries);
+        tag.putUUID("UUID", myUUID);
+        tag.putString("url", url);
+    }
+
+    @Override
+    public UUID getUUID() {
+        return  myUUID;
     }
 
     public String getUrl() {

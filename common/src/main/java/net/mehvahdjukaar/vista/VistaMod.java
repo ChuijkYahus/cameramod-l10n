@@ -7,10 +7,15 @@ import net.mehvahdjukaar.moonlight.api.misc.WorldSavedDataType;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.platform.RegHelper;
 import net.mehvahdjukaar.vista.common.*;
+import net.mehvahdjukaar.vista.common.cassette.CassetteItem;
+import net.mehvahdjukaar.vista.common.cassette.CassetteTape;
+import net.mehvahdjukaar.vista.common.cassette.CassetteTapeLootFunction;
+import net.mehvahdjukaar.vista.common.cassette.HollowCassetteItem;
 import net.mehvahdjukaar.vista.common.projector.SignalProjectorBlock;
 import net.mehvahdjukaar.vista.common.projector.SignalProjectorBlockEntity;
 import net.mehvahdjukaar.vista.common.tv.TVBlock;
 import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
+import net.mehvahdjukaar.vista.common.tv.TVItem;
 import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlock;
 import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
 import net.mehvahdjukaar.vista.configs.CommonConfigs;
@@ -70,7 +75,7 @@ public class VistaMod {
                     .strength(1.5f)));
 
     public static final Supplier<BlockItem> TV_ITEM = RegHelper.registerItem(res("television"),
-            () -> new TelevisionItem(TV.get(), new Item.Properties()));
+            () -> new TVItem(TV.get(), new Item.Properties()));
 
     public final static Supplier<BlockEntityType<TVBlockEntity>> TV_TILE = RegHelper.registerBlockEntityType(
             res("television"), TVBlockEntity::new, TV);

@@ -1,7 +1,7 @@
 package net.mehvahdjukaar.vista.mixins;
 
 import net.mehvahdjukaar.vista.VistaMod;
-import net.mehvahdjukaar.vista.common.CassetteItem;
+import net.mehvahdjukaar.vista.common.cassette.CassetteItem;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.AnvilMenu;
 import net.minecraft.world.inventory.ContainerLevelAccess;

@@ -1,8 +1,9 @@
-package net.mehvahdjukaar.vista.common;
+package net.mehvahdjukaar.vista.common.cassette;
 
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.VistaModClient;
+import net.mehvahdjukaar.vista.common.LiveFeedConnectionManager;
 import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;

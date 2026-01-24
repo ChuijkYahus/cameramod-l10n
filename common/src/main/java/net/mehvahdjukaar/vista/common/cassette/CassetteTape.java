@@ -1,4 +1,4 @@
-package net.mehvahdjukaar.vista.common;
+package net.mehvahdjukaar.vista.common.cassette;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;

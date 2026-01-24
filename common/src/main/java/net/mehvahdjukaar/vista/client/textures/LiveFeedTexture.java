@@ -112,9 +112,4 @@ public class LiveFeedTexture extends TickableFrameBufferBackedDynamicTexture {
             postChain = null;
         }
     }
-
-    @Override
-    public void dumpToDisk(Path path) {
-
-    }
 }

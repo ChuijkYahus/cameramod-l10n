@@ -4,6 +4,7 @@ import com.mojang.serialization.Codec;
 import net.mehvahdjukaar.moonlight.api.misc.WorldSavedData;
 import net.mehvahdjukaar.moonlight.api.misc.WorldSavedDataType;
 import net.mehvahdjukaar.vista.VistaMod;
+import net.mehvahdjukaar.vista.common.cassette.IFeedProvider;
 import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
@@ -15,7 +16,9 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -82,7 +85,7 @@ public class LiveFeedConnectionManager extends WorldSavedData {
             this.linkedFeeds.entrySet().removeIf(e -> {
                 GlobalPos pos = e.getValue();
                 if (pos.dimension() != level.dimension()) return false;
-                if (level.getBlockEntity(pos.pos()) instanceof ViewFinderBlockEntity) {
+                if (level.getBlockEntity(pos.pos()) instanceof IFeedProvider) {
                     return false;
                 } else {
                     changed.set(true);
@@ -102,6 +105,20 @@ public class LiveFeedConnectionManager extends WorldSavedData {
         return VistaMod.VIEWFINDER_CONNECTION.getData(level);
     }
 
+    @Nullable
+    public static IFeedProvider findLinkedFeedProvider(Level level, @Nullable UUID viewFinderUUID) {
+        if (viewFinderUUID == null) return null;
+        LiveFeedConnectionManager connection = getInstance(level);
+        if (connection == null) return null;
+        GlobalPos gp = connection.getLinkedFeedLocation(viewFinderUUID);
+        if (gp != null && gp.dimension() == level.dimension()) {
+            BlockPos pos = gp.pos();
+            if (level.isLoaded(pos) && level.getBlockEntity(pos) instanceof IFeedProvider be) {
+                return be;
+            }
+        }
+        return null;
+    }
 
     @Nullable
     public static ViewFinderBlockEntity findLinkedViewFinder(Level level, @Nullable UUID viewFinderUUID) {
@@ -116,5 +133,9 @@ public class LiveFeedConnectionManager extends WorldSavedData {
             }
         }
         return null;
+    }
+
+    public Iterable<Map.Entry<UUID,GlobalPos>> getAll() {
+        return linkedFeeds.entrySet();
     }
 }

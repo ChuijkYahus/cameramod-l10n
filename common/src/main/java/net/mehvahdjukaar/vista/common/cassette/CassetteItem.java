@@ -1,4 +1,4 @@
-package net.mehvahdjukaar.vista.common;
+package net.mehvahdjukaar.vista.common.cassette;
 
 import net.mehvahdjukaar.moonlight.api.resources.assets.LangBuilder;
 import net.mehvahdjukaar.vista.VistaMod;

@@ -5,7 +5,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.mehvahdjukaar.moonlight.api.client.ItemStackRenderer;
 import net.mehvahdjukaar.moonlight.api.client.util.VertexUtil;
 import net.mehvahdjukaar.vista.client.textures.TvScreenVertexConsumers;
-import net.mehvahdjukaar.vista.common.TelevisionItem;
+import net.mehvahdjukaar.vista.common.tv.TVItem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.world.entity.LivingEntity;
@@ -29,7 +29,7 @@ public class TvItemRenderer extends ItemStackRenderer {
                                      MultiBufferSource buffer, int light, int overlay,
                                      LivingEntity le) {
         poseStack.pushPose();
-        Block block = ((TelevisionItem) itemStack.getItem()).getBlock();
+        Block block = ((TVItem) itemStack.getItem()).getBlock();
         poseStack.translate(-0.5, -0.5, -0.5);
         Minecraft.getInstance().getBlockRenderer().renderSingleBlock(block.defaultBlockState(), poseStack, buffer, light, overlay);
 

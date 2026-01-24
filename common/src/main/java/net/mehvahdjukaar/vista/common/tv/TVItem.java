@@ -1,4 +1,4 @@
-package net.mehvahdjukaar.vista.common;
+package net.mehvahdjukaar.vista.common.tv;
 
 import net.mehvahdjukaar.moonlight.api.misc.ForgeOverride;
 import net.minecraft.world.entity.monster.EnderMan;
@@ -7,9 +7,9 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 
-public class TelevisionItem extends BlockItem {
+public class TVItem extends BlockItem {
 
-    public TelevisionItem(Block block, Properties properties) {
+    public TVItem(Block block, Properties properties) {
         super(block, properties);
     }
 

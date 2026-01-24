@@ -31,8 +31,8 @@ public class CCCompatImpl {
     public static void registerCap(RegisterCapabilitiesEvent event) {
         event.registerBlockEntity(VIEW_FINDER_CAP, VistaMod.VIEWFINDER_TILE.get(),
                 (tile, object2) -> new ViewFinderPeripheral(tile));
-        event.registerBlockEntity(CASSETTE_BURNER_CAP, CCCompat.CASSETTE_BURNER_TILE.get(),
-                (tile, object2) -> tile.peripheral);
+        event.registerBlockEntity(CASSETTE_BURNER_CAP, VistaMod.SIGNAL_PROJECTOR_TILE.get(),
+                (tile, object2) -> new SignalProjectorPeripheral(tile));
     }
 
 }
