@@ -48,7 +48,7 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
     public static final float NEAR_PLANE = 0.05f;
     public static final float BASE_FOV = 70;
 
-    public Object ccHack = null;
+    public Object ccPeripheral = null;
 
     private UUID myUUID;
 

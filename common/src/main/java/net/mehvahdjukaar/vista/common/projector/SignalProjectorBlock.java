@@ -1,0 +1,57 @@
+package net.mehvahdjukaar.vista.common.projector;
+
+import com.mojang.serialization.MapCodec;
+import net.mehvahdjukaar.moonlight.api.util.Utils;
+import net.mehvahdjukaar.moonlight.core.worldgen.SpawnBoxBlock;
+import net.mehvahdjukaar.supplementaries.client.screens.SpeakerBlockScreen;
+import net.mehvahdjukaar.supplementaries.common.block.blocks.SpeakerBlock;
+import net.mehvahdjukaar.supplementaries.common.block.tiles.SpeakerBlockTile;
+import net.mehvahdjukaar.vista.integration.CompatHandler;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.BaseEntityBlock;
+import net.minecraft.world.level.block.CommandBlock;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.Nullable;
+
+public class SignalProjectorBlock extends BaseEntityBlock {
+
+    public static final MapCodec<SignalProjectorBlock> CODEC = simpleCodec(SignalProjectorBlock::new);
+
+    public SignalProjectorBlock(Properties properties) {
+        super(properties);
+    }
+
+    @Override
+    protected MapCodec<? extends BaseEntityBlock> codec() {
+        return CODEC;
+    }
+
+    @Override
+    public @Nullable BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
+        return new SignalProjectorBlockEntity(pos, state);
+    }
+
+    @Override
+    protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
+        if (level.getBlockEntity(pos) instanceof SignalProjectorBlockEntity tile && tile.canBeEditedBy(player)) {
+            if (player instanceof ServerPlayer serverPlayer) {
+                Utils.openGuiIfPossible(tile, serverPlayer, stack, hitResult.getDirection(), hitResult.getLocation());
+            }
+            return ItemInteractionResult.sidedSuccess(level.isClientSide);
+        }
+        return super.useItemOn(stack, state, level, pos, player, hand, hitResult);
+    }
+
+
+}

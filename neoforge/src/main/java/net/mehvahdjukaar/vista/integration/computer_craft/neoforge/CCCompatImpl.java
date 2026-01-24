@@ -2,31 +2,22 @@ package net.mehvahdjukaar.vista.integration.computer_craft.neoforge;
 
 
 import dan200.computercraft.api.ForgeComputerCraftAPI;
-import dan200.computercraft.api.lua.LuaFunction;
-import dan200.computercraft.api.peripheral.IPeripheral;
-import net.mehvahdjukaar.moonlight.api.misc.TileOrEntityTarget;
 import net.mehvahdjukaar.vista.VistaMod;
-import net.mehvahdjukaar.vista.common.view_finder.ViewFinderAccess;
-import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
 import net.mehvahdjukaar.vista.integration.computer_craft.CCCompat;
-import net.mehvahdjukaar.vista.integration.computer_craft.CassetteBurnerBlockEntity;
-import net.mehvahdjukaar.vista.integration.computer_craft.CassetteBurnerPeripheral;
+import net.mehvahdjukaar.vista.integration.computer_craft.SignalProjectorPeripheral;
 import net.mehvahdjukaar.vista.integration.computer_craft.ViewFinderPeripheral;
 import net.mehvahdjukaar.vista.neoforge.VistaForge;
 import net.minecraft.core.Direction;
 import net.neoforged.neoforge.capabilities.BlockCapability;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
-import org.jetbrains.annotations.Nullable;
-
-import java.util.Objects;
 
 
 public class CCCompatImpl {
 
     protected static final BlockCapability<ViewFinderPeripheral, Direction> VIEW_FINDER_CAP =
             BlockCapability.createSided(VistaMod.res("view_finder"), ViewFinderPeripheral.class);
-    protected static final BlockCapability<CassetteBurnerPeripheral, Direction> CASSETTE_BURNER_CAP =
-            BlockCapability.createSided(VistaMod.res("cassette_burner"), CassetteBurnerPeripheral.class);
+    protected static final BlockCapability<SignalProjectorPeripheral, Direction> CASSETTE_BURNER_CAP =
+            BlockCapability.createSided(VistaMod.res("cassette_burner"), SignalProjectorPeripheral.class);
 
 
     public static void init() {

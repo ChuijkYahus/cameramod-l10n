@@ -4,7 +4,7 @@ import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.client.textures.GifPathSpriteSource;
 import net.mehvahdjukaar.vista.client.ViewFinderController;
-import net.mehvahdjukaar.vista.client.ViewFinderHud;
+import net.mehvahdjukaar.vista.client.ui.ViewFinderHud;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.api.distmarker.Dist;

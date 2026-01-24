@@ -1,11 +1,14 @@
 package net.mehvahdjukaar.vista;
 
+import net.mehvahdjukaar.moonlight.api.MoonlightRegistry;
 import net.mehvahdjukaar.moonlight.api.misc.EventCalled;
 import net.mehvahdjukaar.moonlight.api.misc.RegSupplier;
 import net.mehvahdjukaar.moonlight.api.misc.WorldSavedDataType;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.platform.RegHelper;
 import net.mehvahdjukaar.vista.common.*;
+import net.mehvahdjukaar.vista.common.projector.SignalProjectorBlock;
+import net.mehvahdjukaar.vista.common.projector.SignalProjectorBlockEntity;
 import net.mehvahdjukaar.vista.common.tv.TVBlock;
 import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
 import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlock;
@@ -27,8 +30,10 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.monster.EnderMan;
 import net.minecraft.world.item.*;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.level.storage.loot.functions.LootItemFunctionType;
 import org.apache.logging.log4j.LogManager;
@@ -75,6 +80,15 @@ public class VistaMod {
 
     public static final Supplier<BlockEntityType<ViewFinderBlockEntity>> VIEWFINDER_TILE = RegHelper.registerBlockEntityType(
             res("viewfinder"), ViewFinderBlockEntity::new, VIEWFINDER);
+
+    public static final RegSupplier<SignalProjectorBlock> SIGNAL_PROJECTOR =
+            RegHelper.registerBlockWithItem(VistaMod.res("signal_projector"),
+                    () -> new SignalProjectorBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.COBBLESTONE)));
+
+    public static final RegSupplier<BlockEntityType<SignalProjectorBlockEntity>> SIGNAL_PROJECTOR_TILE =
+            RegHelper.registerBlockEntityType(VistaMod.res("signal_projector"),
+                    SignalProjectorBlockEntity::new,
+                    SIGNAL_PROJECTOR);
 
     public static final Supplier<CassetteItem> CASSETTE = RegHelper.registerItem(res("cassette"),
             () -> new CassetteItem(new Item.Properties()
@@ -154,7 +168,7 @@ public class VistaMod {
         if (PlatHelper.getPhysicalSide().isClient()) {
             VistaModClient.init();
             PlatHelper.addReloadableCommonSetup((ra, dataReload) -> {
-               // if (!dataReload) CassetteTexturesMaterials.onWorldReload();
+                // if (!dataReload) CassetteTexturesMaterials.onWorldReload();
             });
         }
     }
@@ -170,6 +184,14 @@ public class VistaMod {
             event.add(CreativeModeTabs.TOOLS_AND_UTILITIES, stack);
         }
         event.add(CreativeModeTabs.TOOLS_AND_UTILITIES, HOLLOW_CASSETTE.get());
+
+        if (CompatHandler.COMPUTER_CRAFT) {
+            event.add(CreativeModeTabs.FUNCTIONAL_BLOCKS, SIGNAL_PROJECTOR.get());
+        } else {
+            if (event.getTab().hasAnyItems()) {
+                event.add(CreativeModeTabs.OP_BLOCKS, SIGNAL_PROJECTOR.get(), MoonlightRegistry.SPAWN_BOX_BLOCK.get());
+            }
+        }
 
         CompatHandler.addItemsToTabs(event);
     }

@@ -3,6 +3,7 @@ package net.mehvahdjukaar.vista.client.textures;
 import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.platform.TextureUtil;
 import com.mojang.blaze3d.systems.RenderSystem;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.client.renderer.texture.Dumpable;
 import net.minecraft.client.renderer.texture.SpriteContents;
@@ -81,8 +82,7 @@ public class SimpleAnimatedStripTexture extends AbstractTexture implements Dumpa
 
     @Override
     public void dumpContents(ResourceLocation resourceLocation, Path path) throws IOException {
-        SpriteContents spriteContents = this.loadContent(
-                net.minecraft.client.Minecraft.getInstance().getResourceManager());
+        SpriteContents spriteContents = this.loadContent(Minecraft.getInstance().getResourceManager());
         if (spriteContents == null) return;
         String string = resourceLocation.toDebugFileName() + ".png";
         Path path2 = path.resolve(string);

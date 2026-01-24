@@ -2,14 +2,15 @@ package net.mehvahdjukaar.vista.integration.computer_craft;
 
 import dan200.computercraft.api.lua.LuaFunction;
 import dan200.computercraft.api.peripheral.IPeripheral;
+import net.mehvahdjukaar.vista.common.projector.SignalProjectorBlockEntity;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 
-public final class CassetteBurnerPeripheral implements IPeripheral {
-    private final CassetteBurnerBlockEntity tile;
+public final class SignalProjectorPeripheral implements IPeripheral {
+    private final SignalProjectorBlockEntity tile;
 
-    public CassetteBurnerPeripheral(CassetteBurnerBlockEntity tile) {
+    public SignalProjectorPeripheral(SignalProjectorBlockEntity tile) {
         this.tile = tile;
     }
 
@@ -24,13 +25,8 @@ public final class CassetteBurnerPeripheral implements IPeripheral {
     }
 
     @LuaFunction
-    public boolean hasCassette() {
-        return !tile.isEmpty();
-    }
-
-    @LuaFunction
-    public boolean burnCassette(String url) {
-        return tile.setUrl(url);
+    public void setUrl(String url) {
+        tile.setUrl(url);
     }
 
 
@@ -38,7 +34,7 @@ public final class CassetteBurnerPeripheral implements IPeripheral {
     public boolean equals(@Nullable IPeripheral obj) {
         if (obj == this) return true;
         if (obj == null || obj.getClass() != this.getClass()) return false;
-        var that = (CassetteBurnerPeripheral) obj;
+        var that = (SignalProjectorPeripheral) obj;
         return Objects.equals(this.tile, that.tile);
     }
 
