@@ -3,7 +3,6 @@ package net.mehvahdjukaar.vista.client.textures;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
-import com.mojang.blaze3d.pipeline.RenderTarget;
 import net.mehvahdjukaar.moonlight.api.client.texture_renderer.RenderedTexturesManager;
 import net.mehvahdjukaar.moonlight.api.misc.RollingBuffer;
 import net.mehvahdjukaar.moonlight.core.client.DummyCamera;
@@ -62,8 +61,8 @@ public class LiveFeedTexturesManager {
         if (tile != null) {
             //  postShader = ResourceLocation.parse("shaders/post/spider.json");
             ResourceLocation feedId = getOrCreateFeedId(location);
-            TVLiveFeedTexture texture = RenderedTexturesManager.requestTexture(feedId,
-                    () -> new TVLiveFeedTexture(feedId,
+            LiveFeedTexture texture = RenderedTexturesManager.requestTexture(feedId, () ->
+                    new LiveFeedTexture(feedId,
                             screenSize * ClientConfigs.RESOLUTION_SCALE.get(),
                             LiveFeedTexturesManager::refreshTexture, location, POSTERIZE_FRAGMENT_SHADER));
 
@@ -103,7 +102,7 @@ public class LiveFeedTexturesManager {
         SCHEDULER.get().onEndOfFrame();
     }
 
-    private static void refreshTexture(TVLiveFeedTexture text) {
+    private static void refreshTexture(LiveFeedTexture text) {
         Minecraft mc = Minecraft.getInstance();
 
         ClientLevel level = mc.level;

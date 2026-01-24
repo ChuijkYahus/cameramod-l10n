@@ -1,20 +1,11 @@
 package net.mehvahdjukaar.vista.client.renderer;
 
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.SectionOcclusionGraph;
 import net.minecraft.client.renderer.ViewArea;
 import net.minecraft.client.renderer.chunk.SectionRenderDispatcher;
-import net.minecraft.client.renderer.culling.Frustum;
-import net.minecraft.core.BlockPos;
-import net.minecraft.core.SectionPos;
-import net.minecraft.util.Mth;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
 public class LevelRendererCameraState {
@@ -70,20 +61,8 @@ public class LevelRendererCameraState {
     }
 
     public void apply(LevelRenderer lr) {
-        if(this.viewArea == lr.viewArea){
-            this.viewArea = new ViewArea(lr.sectionRenderDispatcher, Minecraft.getInstance().level,
-                    Minecraft.getInstance().options.getEffectiveRenderDistance(), lr);
-
-        }
         lr.viewArea = this.viewArea;
-        if(this.sectionOcclusionGraph == lr.sectionOcclusionGraph){
-            this.sectionOcclusionGraph = new SectionOcclusionGraph();
-            this.sectionOcclusionGraph.waitAndReset(this.viewArea);
-        }
         lr.sectionOcclusionGraph = this.sectionOcclusionGraph;
-        if(this.visibleSections == lr.visibleSections){
-            this.visibleSections = new ObjectArrayList<>(10000);
-        }
         lr.visibleSections = this.visibleSections;
         lr.lastViewDistance = this.lastViewDistance;
         lr.lastCameraSectionX = this.lastCameraSectionX;
@@ -94,6 +73,10 @@ public class LevelRendererCameraState {
         lr.prevCamZ = this.prevCamZ;
         lr.prevCamRotX = this.prevCamRotX;
         lr.prevCamRotY = this.prevCamRotY;
+    }
+
+    public SectionOcclusionGraph getOcclusionGraph() {
+        return sectionOcclusionGraph;
     }
 
 }

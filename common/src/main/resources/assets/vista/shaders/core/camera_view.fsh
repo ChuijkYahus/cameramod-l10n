@@ -34,6 +34,7 @@ const int TriadKernelRadius = 1; // 0 => fastest/sharpest (no neighbors)
 in float vertexDistance;
 in vec4 vertexColor;
 in vec4 lightMapColor;
+in vec2 atlasSizePx;
 
 in vec2 texCoord0;
 
@@ -55,7 +56,10 @@ float triadDistance(vec2 triadA, vec2 triadB) {
 }
 
 vec2 normalizedTriadPerPixel(vec2 atlasSizePx) {
-    return TriadsPerPixel * ((96 / atlasSizePx) / SpriteDimensions.zw);
+    //it works i guess
+    vec2 invFrame = 96.0 / (SpriteDimensions.zw * atlasSizePx);
+    //remove 1 multiplication to have triads per pixels. 2 to be triads per uv
+    return TriadsPerPixel * invFrame * invFrame;
 }
 
 /* TRIAD space -> UV (no global clamp here; we clamp to sprite rect later) */
@@ -211,9 +215,6 @@ float triadContrastScale(vec2 triadPos) {
 }
 
 void main() {
-    vec2 atlasSizePx = vec2(textureSize(Sampler0, 0)); // atlas size in texels
-
-
 
     // frame size in UVs (SpriteDimensions.xy)
     vec2 frameSizeUV = SpriteDimensions.zw;

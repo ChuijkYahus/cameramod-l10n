@@ -17,6 +17,9 @@
   "entrypoints": {
     "main": [
       "net.mehvahdjukaar.vista.fabric.VistaFabric"
+    ],
+    "jei_mod_plugin": [
+      "net.mehvahdjukaar.vista.integration.jei.JEICompat"
     ]
   },
   "mixins": [

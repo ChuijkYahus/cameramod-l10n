@@ -11,6 +11,7 @@ in ivec2 UV2;
 in vec3 Normal;
 
 uniform sampler2D Sampler2;
+uniform sampler2D Sampler0;
 
 
 uniform mat4 ModelViewMat;
@@ -23,7 +24,8 @@ uniform vec3 Light1_Direction;
 out float vertexDistance;
 out vec4 vertexColor;
 out vec4 lightMapColor;
-out vec2 texCoord0; // pass full UV0 to fragment shader
+out vec2 texCoord0;// pass full UV0 to fragment shader
+out vec2 atlasSizePx;
 
 void main() {
     gl_Position = ProjMat * ModelViewMat * vec4(Position, 1.0);
@@ -33,6 +35,8 @@ void main() {
 
     // base vertex color with lighting
     vertexColor = minecraft_mix_light(Light0_Direction, Light1_Direction, Normal, Color);
+
+    atlasSizePx = vec2(textureSize(Sampler0, 0));// atlas size in texels
 
     // light map color
     lightMapColor = texelFetch(Sampler2, UV2 / 16, 0);

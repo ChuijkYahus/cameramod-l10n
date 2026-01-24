@@ -8,15 +8,22 @@ import net.mehvahdjukaar.vista.client.renderer.VistaLevelRenderer;
 import net.minecraft.client.Camera;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.LevelRenderer;
+import net.minecraft.client.renderer.SectionOcclusionGraph;
+import net.minecraft.client.renderer.chunk.SectionRenderDispatcher;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.ChunkPos;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(LevelRenderer.class)
 public class LevelRendererMixin {
+
+    @Shadow
+    public SectionOcclusionGraph sectionOcclusionGraph;
 
     @ModifyReturnValue(method = "shouldShowEntityOutlines", at = @At(value = "RETURN"))
     public boolean vista$disableEntityOutlines(boolean original) {
@@ -47,10 +54,20 @@ public class LevelRendererMixin {
 
     @Inject(method = "setupRender", at = @At("HEAD"), cancellable = true)
     public void vista$alterSetupRender(Camera camera, Frustum frustum, boolean hasCapturedFrustum, boolean isSpectator, CallbackInfo ci) {
-      if (VistaLevelRenderer.getLifeFeedBeingRendered() != null) {
-          LevelRendererCameraState.setupRender((LevelRenderer) (Object) this, camera, frustum, hasCapturedFrustum, isSpectator);
-          ci.cancel();
-      }
+        if (VistaLevelRenderer.getLifeFeedBeingRendered() != null) {
+            VistaLevelRenderer.setupRender((LevelRenderer) (Object) this, camera, frustum, hasCapturedFrustum, isSpectator);
+            ci.cancel();
+        }
+    }
+
+    @Inject(method = "onChunkLoaded", at = @At("HEAD"))
+    public void vista$onChunkLoaded(ChunkPos chunkPos, CallbackInfo ci){
+        VistaLevelRenderer.onChunkLoaded(chunkPos, this.sectionOcclusionGraph);
+    }
+
+    @Inject(method = "addRecentlyCompiledSection", at = @At("HEAD"))
+    public void vista$onRecentlyCompiledSection(SectionRenderDispatcher.RenderSection renderSection, CallbackInfo ci){
+        VistaLevelRenderer.onRecentlyCompiledSection(renderSection, this.sectionOcclusionGraph);
     }
 
 }

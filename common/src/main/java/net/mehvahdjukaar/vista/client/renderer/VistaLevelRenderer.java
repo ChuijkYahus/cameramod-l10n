@@ -3,14 +3,16 @@ package net.mehvahdjukaar.vista.client.renderer;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
+import net.mehvahdjukaar.moonlight.api.misc.WeakHashSet;
 import net.mehvahdjukaar.vista.VistaPlatStuff;
-import net.mehvahdjukaar.vista.client.textures.TVLiveFeedTexture;
+import net.mehvahdjukaar.vista.client.textures.LiveFeedTexture;
 import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
 import net.minecraft.client.Camera;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.*;
+import net.minecraft.client.renderer.chunk.SectionRenderDispatcher;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
@@ -18,15 +20,23 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Display;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
+
 import static net.minecraft.client.Minecraft.ON_OSX;
 
 public class VistaLevelRenderer {
+
+    private static final Set<SectionOcclusionGraph> MANAGED_GRAPHS = new WeakHashSet<>();
+    private static final AtomicReference<SectionOcclusionGraph> MC_OWN_GRAPH = new AtomicReference<>(null);
 
     @Nullable
     public static RenderTarget lifeFeedBeingRendered = null;
@@ -35,7 +45,7 @@ public class VistaLevelRenderer {
         return lifeFeedBeingRendered;
     }
 
-    public static void render(TVLiveFeedTexture text, ViewFinderBlockEntity tile, Camera camera) {
+    public static void render(LiveFeedTexture text, ViewFinderBlockEntity tile, Camera camera) {
         Minecraft mc = Minecraft.getInstance();
         RenderTarget renderTarget = text.getFrameBuffer();
         RenderTarget mainTarget = mc.getMainRenderTarget();
@@ -76,7 +86,12 @@ public class VistaLevelRenderer {
         LevelRendererCameraState feedCameraState = text.getRendererState();
         feedCameraState.apply(mc.levelRenderer);
 
+        MANAGED_GRAPHS.add(feedCameraState.getOcclusionGraph());
+        MC_OWN_GRAPH.set(oldCameraState.getOcclusionGraph());
+
         renderLevel(mc, renderTarget, camera, fov);
+
+        MC_OWN_GRAPH.set(null);
 
         //update and save camera state
         feedCameraState.copyFrom(mc.levelRenderer);
@@ -169,8 +184,6 @@ public class VistaLevelRenderer {
     }
 
 
-
-
     //mixin called stuff
 
     public static void setupRender(LevelRenderer lr, Camera camera, Frustum frustum, boolean hasCapturedFrustum, boolean isSpectator) {
@@ -179,17 +192,21 @@ public class VistaLevelRenderer {
         ClientLevel clientLevel = minecraft.level;
 
         // Check if the effective render distance has changed; if so, mark all chunks as needing update
+        //TODO: change
         if (minecraft.options.getEffectiveRenderDistance() != lr.lastViewDistance) {
             viewAreaStuffChanged(lr); //never invalidate
         }
 
         clientLevel.getProfiler().push("camera");
 
+        SectionOcclusionGraph graph = lr.sectionOcclusionGraph;
+
+
         // Get player's exact coordinates
-        Entity player = camera.entity;
-        double playerX = player.getX();
-        double playerY = player.getY();
-        double playerZ = player.getZ();
+        Entity cameraEntity = camera.entity; //this.minecraft.player
+        double playerX = cameraEntity.getX();
+        double playerY = cameraEntity.getY();
+        double playerZ = cameraEntity.getZ();
 
         // Convert world coordinates to section (chunk) coordinates
         int cameraSectionX = SectionPos.posToSectionCoord(playerX);
@@ -217,17 +234,19 @@ public class VistaLevelRenderer {
         // Camera's block position (rounded to nearest block)
         BlockPos cameraBlockPos = camera.getBlockPosition();
 
+        Player  player = minecraft.player;
         // Compute camera position in 8-block "units" for occlusion checks
-        double cameraUnitX = Math.floor(cameraPosition.x / 8.0);
-        double cameraUnitY = Math.floor(cameraPosition.y / 8.0);
-        double cameraUnitZ = Math.floor(cameraPosition.z / 8.0);
+        double cameraUnitX = Math.floor(player.getX() / 8.0);
+        double cameraUnitY = Math.floor(player.getY() / 8.0);
+        double cameraUnitZ = Math.floor(player.getZ() / 8.0);
 
         // If the camera has moved to a new 8-block unit, invalidate the occlusion graph
         if (cameraUnitX != lr.prevCamX ||
                 cameraUnitY != lr.prevCamY ||
                 cameraUnitZ != lr.prevCamZ) {
-
-            lr.sectionOcclusionGraph.invalidate();
+            //this should never triger for us since the camera never moves
+            graph.invalidate(); //needs full update
+            //update graph if player itself moved so we discard stale far away sections
         }
 
         // Store current 8-block unit for future comparisons
@@ -243,28 +262,30 @@ public class VistaLevelRenderer {
 
             // Disable smart culling for spectators inside solid blocks
             if (isSpectator && clientLevel.getBlockState(cameraBlockPos).isSolidRender(clientLevel, cameraBlockPos)) {
-                smartCulling = false;
+                //    smartCulling = false;
             }
 
             // Adjust entity view scale based on render distance and scaling option
-            double entityViewScale = Mth.clamp(
+            double entityViewScale = Mth.clamp( //TODO: change these
                     (double) minecraft.options.getEffectiveRenderDistance() / 8.0, 1.0, 2.5
             ) * minecraft.options.entityDistanceScaling().get();
             Entity.setViewScale(entityViewScale);
 
-            //  minecraft.getProfiler().push("section_occlusion_graph");
-            SectionOcclusionGraph og = lr.sectionOcclusionGraph;
-            // Update occlusion graph to determine which sections are visible
+            minecraft.getProfiler().push("section_occlusion_graph");
 
-            og.update(smartCulling, camera, frustum, lr.visibleSections);
-            //  minecraft.getProfiler().pop();
+            // Update occlusion graph to determine which sections are visible
+            //needs full update should be performed when new chunks came into view (our camera moved too much compared to the vista cam)
+            graph.update(smartCulling, camera, frustum, lr.visibleSections);
+
+            minecraft.getProfiler().pop();
+
 
             // Divide camera rotation by 2 to track significant rotation changes
             double cameraRotXHalf = Math.floor(camera.getXRot() / 2.0);
             double cameraRotYHalf = Math.floor(camera.getYRot() / 2.0);
 
             // Apply frustum update if the graph changed or camera rotated significantly
-            if (true  || lr.sectionOcclusionGraph.consumeFrustumUpdate() ||
+            if (graph.consumeFrustumUpdate() ||
                     cameraRotXHalf != lr.prevCamRotX ||
                     cameraRotYHalf != lr.prevCamRotY) {
 
@@ -298,4 +319,29 @@ public class VistaLevelRenderer {
 
     }
 
+    //very ugly because these can be called on another thread
+
+    public static void onChunkLoaded(ChunkPos chunkPos, SectionOcclusionGraph sectionOcclusionGraph) {
+        for (SectionOcclusionGraph graph : MANAGED_GRAPHS) {
+            if (graph != sectionOcclusionGraph) {
+                graph.onChunkLoaded(chunkPos);
+            }
+        }
+        SectionOcclusionGraph old = MC_OWN_GRAPH.get();
+        if (old != null && old != sectionOcclusionGraph) {
+            old.onChunkLoaded(chunkPos);
+        }
+    }
+
+    public static void onRecentlyCompiledSection(SectionRenderDispatcher.RenderSection renderSection, SectionOcclusionGraph sectionOcclusionGraph) {
+        for (SectionOcclusionGraph graph : MANAGED_GRAPHS) {
+            if (graph != sectionOcclusionGraph) {
+                graph.onSectionCompiled(renderSection);
+            }
+        }
+        SectionOcclusionGraph old = MC_OWN_GRAPH.get();
+        if (old != null && old != sectionOcclusionGraph) {
+            old.onSectionCompiled(renderSection);
+        }
+    }
 }

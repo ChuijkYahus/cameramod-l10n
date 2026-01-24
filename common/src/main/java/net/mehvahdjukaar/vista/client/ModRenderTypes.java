@@ -69,7 +69,8 @@ public class ModRenderTypes extends RenderType {
                 1536, true, false, compositeState);
     }
 
-    public static final TriFunction<SimpleAnimatedStripTexture, Integer, Integer, RenderType> ANIMATED_STRIP_RENDER_TYPE = Utils.memoize((text, scale, powerAnim) -> {
+    public static final TriFunction<SimpleAnimatedStripTexture, Integer, Integer, RenderType> ANIMATED_STRIP_RENDER_TYPE = Utils.memoize(
+            (text, screenSize, powerAnim) -> {
         RenderType.CompositeState compositeState = RenderType.CompositeState.builder()
                 .setShaderState(CAMERA_SHADER_STATE)
                 //TODO: mipmap
@@ -84,7 +85,7 @@ public class ModRenderTypes extends RenderType {
                             ShaderInstance shader = VistaModClient.CAMERA_VIEW_SHADER.get();
                             AnimationStripData sprite = text.getStripData();
                             setSpriteDimensions(shader, sprite);
-                            setCameraDrawUniforms(shader, 0, scale, powerAnim);
+                            setCameraDrawUniforms(shader, 0, screenSize, powerAnim);
                         },
                         () -> {
                         }))
@@ -104,10 +105,11 @@ public class ModRenderTypes extends RenderType {
                 ));
     }
 
-    private static void setCameraDrawUniforms(ShaderInstance shader, float noise, int screenSize, int powerAnim) {
+    private static void setCameraDrawUniforms(ShaderInstance shader, float noise, float screenSize, int powerAnim) {
         float scale = screenSize / 12f;
         float pt = Minecraft.getInstance().getTimer().getGameTimeDeltaTicks();
-        setFloat(shader, "TriadsPerPixel", ClientConfigs.PIXEL_DENSITY.get() * scale);
+        setFloat(shader, "TriadsPerPixel",
+                ClientConfigs.PIXEL_DENSITY.get() * scale);
         setFloat(shader, "Smear", 1f);
         setFloat(shader, "EnableEnergyNormalize", 0.0f);
 
