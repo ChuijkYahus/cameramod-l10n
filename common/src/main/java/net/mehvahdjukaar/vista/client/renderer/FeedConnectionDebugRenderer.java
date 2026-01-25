@@ -1,7 +1,9 @@
 package net.mehvahdjukaar.vista.client.renderer;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.vista.common.LiveFeedConnectionManager;
+import net.mehvahdjukaar.vista.common.cassette.IFeedProvider;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.LevelRenderer;
@@ -10,9 +12,9 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.debug.DebugRenderer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
-import net.minecraft.core.SectionPos;
-import net.minecraft.util.Mth;
-import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.util.FastColor;
+import net.minecraft.world.level.Level;
 
 import java.util.UUID;
 
@@ -24,21 +26,49 @@ public class FeedConnectionDebugRenderer implements DebugRenderer.SimpleDebugRen
     public void render(PoseStack poseStack, MultiBufferSource buffer, double camX, double camY, double camZ) {
 
         ClientLevel level = Minecraft.getInstance().level;
-        for (var p : LiveFeedConnectionManager.getInstance(level).getAll()) {
+
+        renderAll(poseStack, buffer, camX, camY, camZ, level, level, 0.9f, 0.9f, 0.1f, 0);
+
+        MinecraftServer server = PlatHelper.getCurrentServer();
+        if (server != null) {
+            Level serverLevel = server.getLevel(level.dimension());
+
+            renderAll(poseStack, buffer, camX, camY, camZ, serverLevel, level, 0.1f, 0.9f, 0.4f, 0.1f);
+        }
+    }
+
+    private void renderAll(PoseStack poseStack, MultiBufferSource buffer, double camX, double camY, double camZ,
+                           Level l, ClientLevel level, float red, float green, float blue, float offset) {
+        LiveFeedConnectionManager manager = LiveFeedConnectionManager.getInstance(l);
+
+        for (var p : manager.getAll()) {
 
             GlobalPos from = p.getValue();
             UUID feedId = p.getKey();
             if (from.dimension() == level.dimension()) {
                 BlockPos pos = from.pos();
-                this.highlightPosition(pos, poseStack, camX, camY, camZ, buffer, 0.02 + 0,
-                        1.0F, 0.0F, 0.0F, level);
+                this.highlightPosition(pos, poseStack, camX, camY, camZ, buffer, 0.02 + 0 + offset,
+                        red, green, blue, level);
 
-                int j = Mth.hsvToRgb(1, 0.9F, 0.9F);
+                int j = FastColor.ABGR32.color(255,
+                        (int) (red * 255),
+                        (int) (green * 255),
+                        (int) (blue * 255));
                 DebugRenderer.renderFloatingText(poseStack, buffer,
-                        String.valueOf(feedId),
+                        String.valueOf(feedId.getLeastSignificantBits()),
                         (double) pos.getX() + (double) 0.5F,
-                        (double) pos.getY() + (double) 0.75F,
+                        (double) pos.getY() + (double) 1.25F + (offset * 4),
                         (double) pos.getZ() + (double) 0.5F, j);
+
+                UUID feedProv = manager.getIdOfFeedAt( from);
+                if (feedProv != null) {
+                    j = feedProv.equals(feedId) ? j : 0xffff0000;
+                    DebugRenderer.renderFloatingText(poseStack, buffer,
+                            String.valueOf(feedId.getLeastSignificantBits()),
+                            (double) pos.getX() + (double) 0.5F,
+                            (double) pos.getY() + (double) 1.25F + (offset * 4 + 0.2),
+                            (double) pos.getZ() + (double) 0.5F, j);
+                }
 
             }
         }
@@ -54,8 +84,6 @@ public class FeedConnectionDebugRenderer implements DebugRenderer.SimpleDebugRen
         double h = e + (double) 1.0F + (double) 4.0F * bias;
         double i = f + (double) 1.0F + (double) 4.0F * bias;
         LevelRenderer.renderLineBox(poseStack, buffer.getBuffer(RenderType.lines()), d, e, f, g, h, i, red, green, blue, 0.4F);
-        LevelRenderer.renderVoxelShape(poseStack, buffer.getBuffer(RenderType.lines()),
-                level.getBlockState(pos).getCollisionShape(level, pos, CollisionContext.empty()).move((double) pos.getX(), (double) pos.getY(), (double) pos.getZ()), -camX, -camY, -camZ, red, green, blue, 1.0F, false);
     }
 
 

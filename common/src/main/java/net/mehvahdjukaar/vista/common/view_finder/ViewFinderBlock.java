@@ -5,12 +5,14 @@ import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.util.Utils;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.client.ViewFinderController;
+import net.mehvahdjukaar.vista.common.LiveFeedConnectionManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.GlobalPos;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
@@ -75,7 +77,7 @@ public class ViewFinderBlock extends DirectionalBlock implements EntityBlock {
     @Override
     public BlockState mirror(BlockState state, Mirror mirrorIn) {
         return state.rotate(mirrorIn.getRotation(state.getValue(FACING)));
-              //  .setValue(ROTATE_TILE, state.getValue(ROTATE_TILE).getRotated(Rotation.CLOCKWISE_180));
+        //  .setValue(ROTATE_TILE, state.getValue(ROTATE_TILE).getRotated(Rotation.CLOCKWISE_180));
     }
 
     @Override
@@ -93,6 +95,16 @@ public class ViewFinderBlock extends DirectionalBlock implements EntityBlock {
     public BlockState getStateForPlacement(BlockPlaceContext context) {
         return this.defaultBlockState()
                 .setValue(FACING, context.getClickedFace());
+    }
+
+    @Override
+    protected void onRemove(BlockState oldState, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
+        super.onRemove(oldState, level, pos, newState, movedByPiston);
+        if (oldState.getBlock() instanceof ViewFinderBlock &&
+                !(newState.getBlock() instanceof ViewFinderBlock) &&
+                level instanceof ServerLevel sl) {
+            LiveFeedConnectionManager.getInstance(sl).unlinkFeed(new GlobalPos(level.dimension(), pos));
+        }
     }
 
     @Override
@@ -139,7 +151,7 @@ public class ViewFinderBlock extends DirectionalBlock implements EntityBlock {
         if (context instanceof EntityCollisionContext ec &&
                 ((ec.getEntity() instanceof Player p &&
                         PlatHelper.isAFakePlayer(p)) || ec.getEntity() == null)) {
-           // return Shapes.empty();
+            // return Shapes.empty();
 
         }
         return Shapes.block();

@@ -32,15 +32,15 @@ public class LevelRendererCameraState {
         instance.sectionOcclusionGraph = new SectionOcclusionGraph();
         Minecraft mc = Minecraft.getInstance();
         LevelRenderer lr = mc.levelRenderer;
-        instance.viewArea = new ViewArea(lr.sectionRenderDispatcher, mc.level,
+     //   instance.viewArea = new ViewArea(lr.sectionRenderDispatcher, mc.level,
                 //TODO: change this
-                mc.options.getEffectiveRenderDistance(), lr);
+      //          mc.options.getEffectiveRenderDistance(), lr);
         instance.sectionOcclusionGraph.waitAndReset(instance.viewArea);
         return instance;
     }
 
     public void copyFrom(LevelRenderer lr) {
-        this.viewArea = lr.viewArea;
+       // this.viewArea = lr.viewArea;
         this.lastViewDistance = lr.lastViewDistance;
         this.sectionOcclusionGraph = lr.sectionOcclusionGraph;
         this.lastCameraSectionX = lr.lastCameraSectionX;
@@ -61,7 +61,7 @@ public class LevelRendererCameraState {
     }
 
     public void apply(LevelRenderer lr) {
-        lr.viewArea = this.viewArea;
+      //  lr.viewArea = this.viewArea;
         lr.sectionOcclusionGraph = this.sectionOcclusionGraph;
         lr.visibleSections = this.visibleSections;
         lr.lastViewDistance = this.lastViewDistance;

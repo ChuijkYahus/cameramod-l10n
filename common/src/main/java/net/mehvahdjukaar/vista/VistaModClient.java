@@ -8,6 +8,7 @@ import net.mehvahdjukaar.vista.client.*;
 import net.mehvahdjukaar.vista.client.renderer.TvBlockEntityRenderer;
 import net.mehvahdjukaar.vista.client.renderer.TvItemRenderer;
 import net.mehvahdjukaar.vista.client.renderer.ViewFinderBlockEntityRenderer;
+import net.mehvahdjukaar.vista.client.renderer.VistaLevelRenderer;
 import net.mehvahdjukaar.vista.client.textures.CassetteTexturesManager;
 import net.mehvahdjukaar.vista.client.textures.LiveFeedTexturesManager;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
@@ -47,6 +48,7 @@ public class VistaModClient {
         ClientHelper.addItemRenderersRegistration(VistaModClient::registerItemRenderers);
 
         ClientHelper.addClientReloadListener(()-> CassetteTexturesManager.INSTANCE, VistaMod.res("gif_manager"));
+
     }
 
     private static void registerItemRenderers(ClientHelper.ItemRendererEvent event) {
@@ -84,6 +86,7 @@ public class VistaModClient {
 
     public static void onLevelClose() {
         LiveFeedTexturesManager.clear();
+        VistaLevelRenderer.clear();
     }
 
     @EventCalled

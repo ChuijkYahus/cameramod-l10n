@@ -138,6 +138,8 @@ public class VistaMod {
     public static void init() {
 
         //TODO:
+        //fix recursive rendering by using a canvas buffer
+        //check if view are sections are not duplicated
         //frustum shenanigans
         //amendments mixed pot not saving on servers
         //divining rod can use maybe has on the blockstate container of a chunk

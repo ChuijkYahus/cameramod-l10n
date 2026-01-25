@@ -57,7 +57,7 @@ public class HollowCassetteItem extends Item {
                 Level level = VistaModClient.getLevel();
                 var connection = LiveFeedConnectionManager.getInstance(level);
                 if (connection == null) return;
-                GlobalPos gp = connection.getLinkedFeedLocation(feedId);
+                GlobalPos gp = connection.getFeedLocationFromId(feedId);
                 if (gp == null) {
                     tooltipComponents.add(Component.translatable("tooltip.vista.hollow_cassette.linked_unknown")
                             .withStyle(ChatFormatting.GRAY));

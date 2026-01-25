@@ -1,5 +1,6 @@
 package net.mehvahdjukaar.vista.common;
 
+import com.google.common.collect.HashBiMap;
 import com.mojang.serialization.Codec;
 import net.mehvahdjukaar.moonlight.api.misc.WorldSavedData;
 import net.mehvahdjukaar.moonlight.api.misc.WorldSavedDataType;
@@ -16,9 +17,9 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -28,7 +29,9 @@ public class LiveFeedConnectionManager extends WorldSavedData {
     public static final Codec<LiveFeedConnectionManager> CODEC = Codec.unboundedMap(UUIDUtil.STRING_CODEC, GlobalPos.CODEC)
             .xmap(map -> {
                 LiveFeedConnectionManager storage = new LiveFeedConnectionManager();
-                storage.linkedFeeds.putAll(map);
+                map.forEach((uuid, globalPos) -> {
+                    storage.addFeed(uuid, globalPos, false);
+                });
                 return storage;
             }, storage -> storage.linkedFeeds);
 
@@ -39,9 +42,11 @@ public class LiveFeedConnectionManager extends WorldSavedData {
                     GlobalPos.STREAM_CODEC
             ).map(map -> {
                 LiveFeedConnectionManager storage = new LiveFeedConnectionManager();
-                storage.linkedFeeds.putAll(map);
+                map.forEach((uuid, globalPos) -> {
+                    storage.addFeed(uuid, globalPos, true); //client always follows server rather than what it has. If we do our homework on server side this will always work
+                });
                 return storage;
-            }, storage -> storage.linkedFeeds);
+            }, storage -> new HashMap<>(storage.linkedFeeds));
 
     private LiveFeedConnectionManager() {
     }
@@ -50,14 +55,41 @@ public class LiveFeedConnectionManager extends WorldSavedData {
         return new LiveFeedConnectionManager();
     }
 
-    private final HashMap<UUID, GlobalPos> linkedFeeds = new HashMap<>();
+    private final HashBiMap<UUID, GlobalPos> linkedFeeds = HashBiMap.create();
+
+    private boolean addFeed(UUID viewFinderUUID, GlobalPos projectorPos, boolean trusted) {
+        Set<GlobalPos> keys = linkedFeeds.inverse().keySet();
+        boolean contains = keys.contains(projectorPos);
+        if (contains || trusted) {
+            linkedFeeds.forcePut(viewFinderUUID, projectorPos);
+            return true;
+        }
+        //error
+        return false;
+    }
 
     public void linkFeed(UUID viewFinderUUID, GlobalPos projectorPos) {
         GlobalPos old = linkedFeeds.get(viewFinderUUID);
         if (projectorPos.equals(old)) return;
-        linkedFeeds.put(viewFinderUUID, projectorPos);
-        this.setDirty();
-        this.sync();
+        else if (old != null) {
+            //if the old one is valid we have a problem.
+            //we invalidate the old one if the same id is placed somewhere else
+            linkedFeeds.remove(viewFinderUUID);
+        }
+
+        if (addFeed(viewFinderUUID, projectorPos, true)) {
+            this.setDirty();
+            this.sync();
+        }
+    }
+
+    public void unlinkFeed(GlobalPos projectorPos) {
+        UUID id = linkedFeeds.inverse().get(projectorPos);
+        if (id != null) {
+            linkedFeeds.remove(id);
+            this.setDirty();
+            this.sync();
+        }
     }
 
     public void unlinkFeed(UUID viewFinderUUID) {
@@ -68,10 +100,14 @@ public class LiveFeedConnectionManager extends WorldSavedData {
     }
 
     @Nullable
-    public GlobalPos getLinkedFeedLocation(UUID viewFinderUUID) {
+    public GlobalPos getFeedLocationFromId(UUID viewFinderUUID) {
         return linkedFeeds.get(viewFinderUUID);
     }
 
+    @Nullable
+    public UUID getIdOfFeedAt(GlobalPos from) {
+        return linkedFeeds.inverse().get(from);
+    }
 
     @Override
     public WorldSavedDataType<LiveFeedConnectionManager> getType() {
@@ -85,6 +121,7 @@ public class LiveFeedConnectionManager extends WorldSavedData {
             this.linkedFeeds.entrySet().removeIf(e -> {
                 GlobalPos pos = e.getValue();
                 if (pos.dimension() != level.dimension()) return false;
+                //this causes chunk loading on boot. not good. we must delay validation!!
                 if (level.getBlockEntity(pos.pos()) instanceof IFeedProvider) {
                     return false;
                 } else {
@@ -99,6 +136,7 @@ public class LiveFeedConnectionManager extends WorldSavedData {
         }
     }
 
+
     //static helpers
 
     public static LiveFeedConnectionManager getInstance(Level level) {
@@ -110,7 +148,7 @@ public class LiveFeedConnectionManager extends WorldSavedData {
         if (viewFinderUUID == null) return null;
         LiveFeedConnectionManager connection = getInstance(level);
         if (connection == null) return null;
-        GlobalPos gp = connection.getLinkedFeedLocation(viewFinderUUID);
+        GlobalPos gp = connection.getFeedLocationFromId(viewFinderUUID);
         if (gp != null && gp.dimension() == level.dimension()) {
             BlockPos pos = gp.pos();
             if (level.isLoaded(pos) && level.getBlockEntity(pos) instanceof IFeedProvider be) {
@@ -125,7 +163,7 @@ public class LiveFeedConnectionManager extends WorldSavedData {
         if (viewFinderUUID == null) return null;
         LiveFeedConnectionManager connection = getInstance(level);
         if (connection == null) return null;
-        GlobalPos gp = connection.getLinkedFeedLocation(viewFinderUUID);
+        GlobalPos gp = connection.getFeedLocationFromId(viewFinderUUID);
         if (gp != null && gp.dimension() == level.dimension()) {
             BlockPos pos = gp.pos();
             if (level.isLoaded(pos) && level.getBlockEntity(pos) instanceof ViewFinderBlockEntity be) {
@@ -135,7 +173,9 @@ public class LiveFeedConnectionManager extends WorldSavedData {
         return null;
     }
 
-    public Iterable<Map.Entry<UUID,GlobalPos>> getAll() {
+    public Iterable<Map.Entry<UUID, GlobalPos>> getAll() {
         return linkedFeeds.entrySet();
     }
+
+
 }

@@ -89,7 +89,7 @@ public class TvScreenVertexConsumers {
     }
 
     private static boolean hasSfx() {
-        return VistaLevelRenderer.getLifeFeedBeingRendered() == null &&
+        return VistaLevelRenderer.isRenderingLiveFeed() &&
                 Minecraft.getInstance().options.graphicsMode().get() != GraphicsStatus.FAST;
     }
 

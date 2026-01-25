@@ -49,13 +49,6 @@ public class SignalProjectorBlockEntity extends BlockEntity implements IScreenPr
         return ClientboundBlockEntityDataPacket.create(this);
     }
 
-
-    @Override
-    public void setRemoved() {
-        super.setRemoved();
-        this.removeLink();
-    }
-
     @Override
     public void setLevel(Level level) {
         super.setLevel(level);

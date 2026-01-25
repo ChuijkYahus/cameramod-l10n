@@ -130,6 +130,7 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
 
             ResourceLocation texture = ExposureCompatClient.getPictureTextureForRenderer(stack, blockEntity.getAnimationTick());
             if (texture != null) {
+
                 vc = TvScreenVertexConsumers.getFullSpriteVC(texture, buffer, 0, pixelEffectRes, switchAnim);
             }
         }

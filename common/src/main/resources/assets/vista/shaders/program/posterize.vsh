@@ -17,5 +17,5 @@ void main() {
     oneTexel = 1.0 / InSize;
 
     // Flip vertically by subtracting y from OutSize
-    texCoord0 = vec2(Position.x / OutSize.x, 1.0 - (Position.y / OutSize.y));
+    texCoord0 = vec2(Position.x / OutSize.x, Position.y / OutSize.y);
 }

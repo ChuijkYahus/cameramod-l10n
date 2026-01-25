@@ -7,7 +7,6 @@ import net.mehvahdjukaar.vista.client.renderer.FeedConnectionDebugRenderer;
 import net.mehvahdjukaar.vista.client.textures.GifPathSpriteSource;
 import net.mehvahdjukaar.vista.client.ui.ViewFinderHud;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
-import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec3;
@@ -16,7 +15,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.*;
 import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
-import net.neoforged.neoforge.event.server.ServerStoppingEvent;
+import net.neoforged.neoforge.event.level.LevelEvent;
 
 @EventBusSubscriber(Dist.CLIENT)
 public class VistaForgeClient {
@@ -89,8 +88,8 @@ public class VistaForgeClient {
     }
 
     @SubscribeEvent
-    public static void onServerShuttingDown(ServerStoppingEvent event) {
-        VistaModClient.onLevelClose();
+    public static void onDimensionUnload(LevelEvent.Unload event) {
+        if (event.getLevel().isClientSide()) VistaModClient.onLevelClose();
     }
 
     @SubscribeEvent

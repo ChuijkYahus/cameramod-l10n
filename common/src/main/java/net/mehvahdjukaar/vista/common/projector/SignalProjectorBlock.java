@@ -6,9 +6,13 @@ import net.mehvahdjukaar.moonlight.core.worldgen.SpawnBoxBlock;
 import net.mehvahdjukaar.supplementaries.client.screens.SpeakerBlockScreen;
 import net.mehvahdjukaar.supplementaries.common.block.blocks.SpeakerBlock;
 import net.mehvahdjukaar.supplementaries.common.block.tiles.SpeakerBlockTile;
+import net.mehvahdjukaar.vista.common.LiveFeedConnectionManager;
+import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlock;
 import net.mehvahdjukaar.vista.integration.CompatHandler;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.GlobalPos;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -41,6 +45,17 @@ public class SignalProjectorBlock extends BaseEntityBlock {
     public @Nullable BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new SignalProjectorBlockEntity(pos, state);
     }
+
+    @Override
+    protected void onRemove(BlockState oldState, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
+        super.onRemove(oldState, level, pos, newState, movedByPiston);
+        if (oldState.getBlock() instanceof SignalProjectorBlock &&
+                !(newState.getBlock() instanceof SignalProjectorBlock) &&
+                level instanceof ServerLevel sl) {
+            LiveFeedConnectionManager.getInstance(sl).unlinkFeed(new GlobalPos(level.dimension(), pos));
+        }
+    }
+
 
     @Override
     protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {

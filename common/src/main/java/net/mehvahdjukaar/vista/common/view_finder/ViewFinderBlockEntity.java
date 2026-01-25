@@ -70,12 +70,6 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
     }
 
     @Override
-    public void setRemoved() {
-        super.setRemoved();
-        this.removeLink();
-    }
-
-    @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
         this.myUUID = tag.getUUID("UUID");

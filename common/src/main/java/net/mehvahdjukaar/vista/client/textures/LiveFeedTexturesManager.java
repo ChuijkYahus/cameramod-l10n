@@ -5,7 +5,6 @@ import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import net.mehvahdjukaar.moonlight.api.client.texture_renderer.RenderedTexturesManager;
 import net.mehvahdjukaar.moonlight.api.misc.RollingBuffer;
-import net.mehvahdjukaar.moonlight.core.client.DummyCamera;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.client.AdaptiveUpdateScheduler;
 import net.mehvahdjukaar.vista.client.renderer.VistaLevelRenderer;
@@ -28,7 +27,6 @@ import java.util.UUID;
 import java.util.function.Supplier;
 
 public class LiveFeedTexturesManager {
-    private static final DummyCamera DUMMY_CAMERA = new DummyCamera();
 
     private static final ResourceLocation POSTERIZE_FRAGMENT_SHADER = VistaMod.res("posterize");
     private static final BiMap<UUID, ResourceLocation> LIVE_FEED_LOCATIONS = HashBiMap.create();
@@ -54,7 +52,7 @@ public class LiveFeedTexturesManager {
     @Nullable
     public static ResourceLocation requestLiveFeedTexture(Level level, UUID location, int screenSize,
                                                           boolean requiresUpdate, @Nullable ResourceLocation postShader) {
-        if (VistaLevelRenderer.getLifeFeedBeingRendered() != null) {
+        if (VistaLevelRenderer.isRenderingLiveFeed()) {
             requiresUpdate = false; //suppress recursive updates
         }
         ViewFinderBlockEntity tile = LiveFeedConnectionManager.findLinkedViewFinder(level, location);
@@ -95,7 +93,6 @@ public class LiveFeedTexturesManager {
     @SuppressWarnings("ConstantConditions")
     public static void clear() {
         LIVE_FEED_LOCATIONS.clear();
-        DUMMY_CAMERA.entity = null;
     }
 
     public static void onRenderTickEnd() {
@@ -120,7 +117,7 @@ public class LiveFeedTexturesManager {
             if (tile == null) return; //TODO: do something here
 
 
-            VistaLevelRenderer.render(text, tile, DUMMY_CAMERA);
+            VistaLevelRenderer.render(text, tile);
 
 
         };

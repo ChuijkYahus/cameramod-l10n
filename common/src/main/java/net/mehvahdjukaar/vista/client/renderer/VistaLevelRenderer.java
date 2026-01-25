@@ -1,9 +1,13 @@
 package net.mehvahdjukaar.vista.client.renderer;
 
 import com.mojang.blaze3d.pipeline.RenderTarget;
+import com.mojang.blaze3d.pipeline.TextureTarget;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
+import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
 import net.mehvahdjukaar.moonlight.api.misc.WeakHashSet;
+import net.mehvahdjukaar.moonlight.core.client.DummyCamera;
+import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.VistaPlatStuff;
 import net.mehvahdjukaar.vista.client.textures.LiveFeedTexture;
 import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
@@ -24,9 +28,9 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
-import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
+import org.lwjgl.opengl.GL11;
 
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
@@ -37,28 +41,57 @@ public class VistaLevelRenderer {
 
     private static final Set<SectionOcclusionGraph> MANAGED_GRAPHS = new WeakHashSet<>();
     private static final AtomicReference<SectionOcclusionGraph> MC_OWN_GRAPH = new AtomicReference<>(null);
+    private static final Int2ObjectArrayMap<RenderTarget> CANVASES = new Int2ObjectArrayMap<>();
+    private static final DummyCamera DUMMY_CAMERA = new DummyCamera();
 
-    @Nullable
-    public static RenderTarget lifeFeedBeingRendered = null;
+    private static boolean renderingLiveFeed = false;
 
-    public static RenderTarget getLifeFeedBeingRendered() {
-        return lifeFeedBeingRendered;
+    public static boolean isRenderingLiveFeed() {
+        return renderingLiveFeed;
     }
 
-    public static void render(LiveFeedTexture text, ViewFinderBlockEntity tile, Camera camera) {
+    public static void clear() {
+        if (RenderSystem.isOnRenderThread()) {
+            CANVASES.values().forEach(RenderTarget::destroyBuffers);
+        } else {
+            VistaMod.LOGGER.error("Something called unload level on the wrong thread!");
+            RenderSystem.recordRenderCall(() -> {
+                CANVASES.values().forEach(RenderTarget::destroyBuffers);
+            });
+        }
+        CANVASES.clear();
+        DUMMY_CAMERA.entity = null;
+    }
+
+    private static RenderTarget getOrCreateCanvas(int size) {
+        RenderTarget canvas = CANVASES.get(size);
+        if (canvas == null) {
+            canvas = new TextureTarget(size, size, true, ON_OSX);
+            CANVASES.put(size, canvas);
+        }
+        return canvas;
+    }
+
+    public static void render(LiveFeedTexture text, ViewFinderBlockEntity tile) {
         Minecraft mc = Minecraft.getInstance();
         RenderTarget renderTarget = text.getFrameBuffer();
         RenderTarget mainTarget = mc.getMainRenderTarget();
+        RenderTarget canvas = getOrCreateCanvas(renderTarget.width);
+        mc.mainRenderTarget = canvas;
 
-        lifeFeedBeingRendered = renderTarget;
+        Camera camera = DUMMY_CAMERA;
+        Camera mainCamera = mc.gameRenderer.mainCamera;
+        mc.gameRenderer.mainCamera = camera;
+
+        renderingLiveFeed = true;
 
         float partialTicks = mc.getTimer().getGameTimeDeltaTicks();
+
 
         setupSceneCamera(tile, camera, partialTicks);
 
 
-        renderTarget.bindWrite(true);
-
+        canvas.bindWrite(true);
 
         //cache old
         float oldRenderDistance = mc.gameRenderer.renderDistance;
@@ -79,8 +112,6 @@ public class VistaLevelRenderer {
 
 
         //set new shader
-
-        renderTarget.bindWrite(false);
 
         LevelRendererCameraState oldCameraState = LevelRendererCameraState.capture(mc.levelRenderer);
         LevelRendererCameraState feedCameraState = text.getRendererState();
@@ -107,9 +138,15 @@ public class VistaLevelRenderer {
         }
 
 
-        lifeFeedBeingRendered = null;
+        //swap buffers
+        canvas.bindRead();
+        renderTarget.bindWrite(false);
+        canvas.blitToScreen(renderTarget.width, renderTarget.height);
+        //stop using main buffer mixin
+        renderingLiveFeed = false;
 
-        mc.getMainRenderTarget().bindWrite(true);
+        mc.mainRenderTarget = mainTarget;
+        mc.gameRenderer.mainCamera = mainCamera;
 
         mainTarget.bindWrite(true);
 
@@ -129,9 +166,12 @@ public class VistaLevelRenderer {
         LevelRenderer lr = mc.levelRenderer;
 
         Matrix4f projMatrix = createProjectionMatrix(gr, target, fov);
-        PoseStack poseStack = new PoseStack();
-        projMatrix.mul(poseStack.last().pose());
+        //fix Y inversion
+        projMatrix.scale(1.0f, -1.0f, 1.0f);
+        GL11.glFrontFace(GL11.GL_CW);
         gr.resetProjectionMatrix(projMatrix);
+
+        PoseStack poseStack = new PoseStack();
 
         Quaternionf cameraRotation = camera.rotation().conjugate(new Quaternionf());
         Matrix4f cameraMatrix = (new Matrix4f()).rotation(cameraRotation);
@@ -139,12 +179,15 @@ public class VistaLevelRenderer {
         Vec3 cameraPos = camera.getPosition();
         lr.prepareCullFrustum(cameraPos, cameraMatrix, projMatrix);
 
+
         lr.renderLevel(deltaTracker, false, camera, gr,
                 gr.lightTexture(), cameraMatrix, projMatrix);
 
         Matrix4f modelViewMatrix = RenderSystem.getModelViewMatrix();
 
         VistaPlatStuff.dispatchRenderStageAfterLevel(mc, poseStack, camera, modelViewMatrix, projMatrix);
+
+        GL11.glFrontFace(GL11.GL_CCW);
     }
 
     @SuppressWarnings("ConstantConditions")
@@ -234,7 +277,7 @@ public class VistaLevelRenderer {
         // Camera's block position (rounded to nearest block)
         BlockPos cameraBlockPos = camera.getBlockPosition();
 
-        Player  player = minecraft.player;
+        Player player = minecraft.player;
         // Compute camera position in 8-block "units" for occlusion checks
         double cameraUnitX = Math.floor(player.getX() / 8.0);
         double cameraUnitY = Math.floor(player.getY() / 8.0);

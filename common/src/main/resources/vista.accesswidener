@@ -27,7 +27,10 @@ accessible field net/minecraft/client/renderer/GameRenderer postEffect Lnet/mine
 accessible field net/minecraft/client/renderer/GameRenderer effectActive Z
 accessible field net/minecraft/client/renderer/LevelRenderer frustumPoints [Lorg/joml/Vector4f;
 
-
+accessible field net/minecraft/client/Minecraft mainRenderTarget Lcom/mojang/blaze3d/pipeline/RenderTarget;
+mutable field net/minecraft/client/Minecraft mainRenderTarget Lcom/mojang/blaze3d/pipeline/RenderTarget;
+accessible field net/minecraft/client/renderer/GameRenderer mainCamera Lnet/minecraft/client/Camera;
+mutable field net/minecraft/client/renderer/GameRenderer mainCamera Lnet/minecraft/client/Camera;
 
 #setup render
 accessible field net/minecraft/client/renderer/LevelRenderer capturedFrustum Lnet/minecraft/client/renderer/culling/Frustum;
@@ -51,6 +54,7 @@ accessible field net/minecraft/client/renderer/LevelRenderer frustumPos Lorg/jom
 accessible field net/minecraft/client/renderer/LevelRenderer visibleSections Lit/unimi/dsi/fastutil/objects/ObjectArrayList;
 mutable field net/minecraft/client/renderer/LevelRenderer visibleSections Lit/unimi/dsi/fastutil/objects/ObjectArrayList;
 accessible method net/minecraft/client/renderer/LevelRenderer captureFrustum (Lorg/joml/Matrix4f;Lorg/joml/Matrix4f;DDDLnet/minecraft/client/renderer/culling/Frustum;)V
+
 
 
 #grap

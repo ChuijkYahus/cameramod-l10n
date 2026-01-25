@@ -3,12 +3,12 @@ package net.mehvahdjukaar.vista.fabric;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.fabricmc.fabric.api.event.client.player.ClientPreAttackCallback;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
-import net.fabricmc.fabric.impl.attachment.sync.AttachmentChange;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerWorldEvents;
+import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.VistaModClient;
-import net.mehvahdjukaar.vista.client.textures.GifPathSpriteSource;
 import net.mehvahdjukaar.vista.client.ViewFinderController;
+import net.mehvahdjukaar.vista.client.textures.GifPathSpriteSource;
 import net.mehvahdjukaar.vista.client.ui.ViewFinderHud;
 import net.mehvahdjukaar.vista.mixins.fabric.SpriteSourcesAccessor;
 import net.minecraft.client.DeltaTracker;
@@ -19,8 +19,15 @@ public class VistaFabricClient {
     public static void init() {
         ClientTickEvents.END_CLIENT_TICK.register(VistaModClient::onClientTick);
         HudRenderCallback.EVENT.register(VistaFabricClient::onRenderHud);
-        ServerLifecycleEvents.SERVER_STOPPING.register(s -> {
-            VistaModClient.onLevelClose();
+        ServerWorldEvents.UNLOAD.register((server, world) -> {
+            try {
+                if (PlatHelper.getPhysicalSide().isClient()) {
+                    //got to be careful with classloading
+                    VistaModClient.onLevelClose();
+                }
+            } catch (Exception e) {
+                VistaMod.LOGGER.error("Error unloading Vista client level data", e);
+            }
         });
 
         ClientPreAttackCallback.EVENT.register((minecraft, localPlayer, i) -> {
@@ -39,7 +46,6 @@ public class VistaFabricClient {
     private static void onRenderHud(GuiGraphics graphics, DeltaTracker partialTicks) {
         ViewFinderHud.INSTANCE.render(graphics, partialTicks);
     }
-
 
 
 }
