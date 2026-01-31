@@ -1,18 +1,15 @@
 package net.mehvahdjukaar.vista.common.view_finder;
 
-import com.mojang.authlib.GameProfile;
 import net.mehvahdjukaar.moonlight.api.block.IOneUserInteractable;
 import net.mehvahdjukaar.moonlight.api.block.ItemDisplayTile;
 import net.mehvahdjukaar.moonlight.api.misc.TileOrEntityTarget;
 import net.mehvahdjukaar.moonlight.api.platform.network.NetworkHelper;
 import net.mehvahdjukaar.moonlight.api.set.BlocksColorAPI;
-import net.mehvahdjukaar.moonlight.api.util.FakePlayerManager;
 import net.mehvahdjukaar.moonlight.api.util.math.MthUtils;
 import net.mehvahdjukaar.vista.VistaMod;
-import net.mehvahdjukaar.vista.common.EndermanFreezeWhenLookedAtThroughTVGoal;
+import net.mehvahdjukaar.vista.client.video_source.IVideoSource;
+import net.mehvahdjukaar.vista.client.video_source.ViewFinderVideoSource;
 import net.mehvahdjukaar.vista.common.cassette.IBroadcastProvider;
-import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
-import net.mehvahdjukaar.vista.common.tv.TVSpectatorView;
 import net.mehvahdjukaar.vista.integration.CompatHandler;
 import net.mehvahdjukaar.vista.network.ClientBoundControlViewFinderPacket;
 import net.minecraft.core.BlockPos;
@@ -24,20 +21,14 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.ItemInteractionResult;
-import net.minecraft.world.entity.monster.EnderMan;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.phys.AABB;
-import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
-import org.joml.Vector3f;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 
 public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserInteractable, IBroadcastProvider {
@@ -62,11 +53,18 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
     //not saved
     @Nullable
     private UUID controllingPlayer = null;
+    private IVideoSource videoSource;
 
     public ViewFinderBlockEntity(BlockPos pos, BlockState state) {
         super(VistaMod.VIEWFINDER_TILE.get(), pos, state);
 
         this.myUUID = UUID.randomUUID();
+        this.videoSource = new ViewFinderVideoSource(this);
+    }
+
+    @Override
+    public @Nullable IVideoSource getBroadcastVideoSource() {
+        return this.videoSource;
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, ViewFinderBlockEntity tile) {
@@ -218,8 +216,8 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
         return controllingPlayer;
     }
 
-    public float getFOV(){
-        return  BASE_FOV * getFOVModifier();
+    public float getFOV() {
+        return BASE_FOV * getFOVModifier();
     }
 
     public float getFOVModifier() {

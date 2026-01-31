@@ -3,6 +3,7 @@ package net.mehvahdjukaar.vista.common.projector;
 import net.mehvahdjukaar.moonlight.api.client.IScreenProvider;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.client.ui.SignalProjectorScreen;
+import net.mehvahdjukaar.vista.client.video_source.IVideoSource;
 import net.mehvahdjukaar.vista.common.cassette.IBroadcastProvider;
 import net.mehvahdjukaar.vista.integration.CompatHandler;
 import net.minecraft.core.BlockPos;
@@ -27,12 +28,17 @@ public class SignalProjectorBlockEntity extends BlockEntity implements IScreenPr
 
     private String url = "";
     private UUID myUUID;
+    private IVideoSource videoSource = IVideoSource.EMPTY;
 
     public SignalProjectorBlockEntity(BlockPos pos, BlockState state) {
         super(VistaMod.SIGNAL_PROJECTOR_TILE.get(), pos, state);
         this.myUUID = UUID.randomUUID();
     }
 
+    @Override
+    public @Nullable IVideoSource getBroadcastVideoSource() {
+        return videoSource;
+    }
 
     @Override
     public void openScreen(Level level, Player player, Direction direction, Vec3 pos) {
@@ -62,7 +68,7 @@ public class SignalProjectorBlockEntity extends BlockEntity implements IScreenPr
         this.url = tag.getString("url");
         this.ensureLinked();
 
-        
+
     }
 
     @Override
@@ -74,7 +80,7 @@ public class SignalProjectorBlockEntity extends BlockEntity implements IScreenPr
 
     @Override
     public UUID getUUID() {
-        return  myUUID;
+        return myUUID;
     }
 
     public String getUrl() {
