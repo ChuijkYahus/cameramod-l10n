@@ -10,12 +10,12 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.UUID;
 
-public class FeedVideoSource implements IVideoSource {
+public class BroadcastVideoSource implements IVideoSource {
 
     private final UUID uuid;
     private final TVBlockEntity tv;
 
-    public FeedVideoSource(UUID uuid, TVBlockEntity tv) {
+    public BroadcastVideoSource(UUID uuid, TVBlockEntity tv) {
         this.uuid = uuid;
         this.tv = tv;
     }

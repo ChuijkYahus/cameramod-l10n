@@ -1,24 +1,22 @@
 package net.mehvahdjukaar.vista.common;
 
 import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
-import net.mehvahdjukaar.vista.common.tv.TVSpectatorView;
+import net.mehvahdjukaar.vista.common.tv.TVEndermanObservationController;
 import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.entity.monster.EnderMan;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.EnumSet;
-import java.util.UUID;
 
 public class EndermanFreezeWhenLookedAtThroughTVGoal extends Goal {
     private final EnderMan enderman;
     @Nullable
     private Player target;
 
-    private TVBlockEntity television;
+    private TVEndermanObservationController tvAccess;
 
     public EndermanFreezeWhenLookedAtThroughTVGoal(EnderMan enderman) {
         this.enderman = enderman;
@@ -26,9 +24,9 @@ public class EndermanFreezeWhenLookedAtThroughTVGoal extends Goal {
     }
 
 
-    private void prime(Player player, TVBlockEntity tv) {
+    private void prime(Player player, TVEndermanObservationController tv) {
         this.target = player;
-        this.television = tv;
+        this.tvAccess = tv;
         this.enderman.setBeingStaredAt();
         this.enderman.setTarget(player);
     }
@@ -36,10 +34,10 @@ public class EndermanFreezeWhenLookedAtThroughTVGoal extends Goal {
 
     @Override
     public boolean canUse() {
-        if (television == null) {
+        if (tvAccess == null) {
             return false;
         }
-        if (television.isRemoved()) {
+        if (tvAccess.isInvalid()) {
             return false;
         }
         LivingEntity t = this.enderman.getTarget();
@@ -51,16 +49,8 @@ public class EndermanFreezeWhenLookedAtThroughTVGoal extends Goal {
     }
 
     private boolean isCameraViewValid() {
-        TVSpectatorView view = television.getPlayerLookingAtFace(target);
-        if (view == null) {
-            return false;
-        }
+        return tvAccess.isPlayerLookingAtEnderman(enderman, target);
 
-        Level l = enderman.level();
-        UUID feed = television.getLinkedFeedUUID();
-        ViewFinderBlockEntity viewFinder = BroadcastManager.findLinkedViewFinder(l, feed);
-        if (viewFinder == null) return false;
-        return viewFinder.isEndermanBeingLookedAt(view, enderman);
     }
 
     @Override
@@ -81,7 +71,7 @@ public class EndermanFreezeWhenLookedAtThroughTVGoal extends Goal {
     @Override
     public void stop() {
         super.stop();
-        this.television = null;
+        this.tvAccess = null;
     }
 
     public static boolean anger(EnderMan man, Player player, ViewFinderBlockEntity viewFinder, TVBlockEntity television) {

@@ -103,7 +103,7 @@ public class VistaLevelRenderer {
         mc.gameRenderer.renderDistance = 128;// Math.min(oldRenderDistance, ClientConfigs.RENDER_DISTANCE.get());
 
         //same as field of view modifier
-        float fov = ViewFinderBlockEntity.BASE_FOV * tile.getFOVModifier();
+        float fov = tile.getFOV();
 
 
         RenderSystem.clear(16640, ON_OSX);

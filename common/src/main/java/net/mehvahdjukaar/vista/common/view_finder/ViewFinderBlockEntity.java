@@ -45,7 +45,7 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
     public static final int MAX_ZOOM = 44;
 
     public static final float NEAR_PLANE = 0.05f;
-    public static final float BASE_FOV = 70;
+    private static final float BASE_FOV = 70;
 
     public Object ccPeripheral = null;
 
@@ -218,6 +218,10 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
         return controllingPlayer;
     }
 
+    public float getFOV(){
+        return  BASE_FOV * getFOVModifier();
+    }
+
     public float getFOVModifier() {
         float spyglassZoom = 0.1f;
         float maxZoom = spyglassZoom / 5;
@@ -231,105 +235,6 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
         return normalizedZoom;
     }
 
-    private static final GameProfile VIEW_FINDER_PLAYER = new GameProfile(UUID.fromString("33242C44-27d9-1f22-3d27-99D2C45d1378"),
-            "[VIEW_FINDER_ENDERMAN_PLAYER]");
-
-    public boolean angerEndermenBeingLookedAt(List<TVSpectatorView> views, int range, TVBlockEntity fromTV) {
-        if (views.isEmpty()) return false;
-        Vec3 lensCenter = Vec3.atCenterOf(worldPosition);
-        double rangeSq = (double) range * (double) range;
-
-        AABB aabb = new AABB(worldPosition).inflate(range);
-        List<EnderMan> enderMen = level.getEntitiesOfClass(EnderMan.class, aabb, em ->
-                em.distanceToSqr(lensCenter.x, lensCenter.y, lensCenter.z) < rangeSq
-        );
-        if (enderMen.isEmpty()) return false;
-        boolean anyAnger = false;
-
-        List<EndermanLookResult> lookResults = computeEndermanLookedAt(views, enderMen);
-        for (var r : lookResults) {
-            if (EndermanFreezeWhenLookedAtThroughTVGoal.anger(r.enderman(), r.player(), this, fromTV)) {
-                anyAnger = true;
-            }
-        }
-        return anyAnger;
-    }
-
-
-    public boolean isEndermanBeingLookedAt(TVSpectatorView view, EnderMan man) {
-        return !computeEndermanLookedAt(List.of(view), List.of(man)).isEmpty();
-    }
-
-    private List<EndermanLookResult> computeEndermanLookedAt(List<TVSpectatorView> views, List<EnderMan> enderMen) {
-        List<EndermanLookResult> lookResults = new ArrayList<>();
-        Vec3 lensFacing = Vec3.directionFromRotation(this.pitch, this.yaw).normalize();
-        Vec3 lensCenter = Vec3.atCenterOf(worldPosition);
-
-        // Prepare fake player once
-        Player fakePlayer = FakePlayerManager.get(VIEW_FINDER_PLAYER, level);
-        float eyeH = fakePlayer.getEyeHeight();
-
-
-        // For each view result: map local (x,y) -> destination world point, orient fake player, notify endermen
-        for (TVSpectatorView vr : views) {
-            // local offsets on source screen (meters)
-            float localX = -vr.localHit().x; //flip since tv faces the other way
-            float localY = vr.localHit().y;
-
-            // If your hitPos is *normalized* in [-0.5..0.5], convert here:
-            // localX *= screenSideLength; localY *= screenSideLength;
-
-            // Map local offset onto the destination screen:
-            Vec3 t = lensCenter.add(lensFacing.scale(-NEAR_PLANE));
-            // Place fake player's eye at the destination screen center height (adjust if you want different origin)
-            fakePlayer.setPos(t.x, t.y - eyeH, t.z);
-
-            // Compute look vector from fake eye to mapped hit
-            Vec3 look = pixelRayDir(localX, localY);
-
-            //flip look since its inverted
-            float yRot = (float) (Math.toDegrees(Math.atan2(look.z, look.x)) + 90);
-            double horiz = Math.sqrt(look.x * look.x + look.z * look.z);
-            float xRot = (float) (-Math.toDegrees(Math.atan2(look.y, horiz)));
-
-            fakePlayer.setYRot(yRot + this.yaw);
-            fakePlayer.setYHeadRot(yRot + this.yaw);
-            fakePlayer.setXRot(xRot + this.pitch);
-
-            // Iterate endermen found in AABB and apply tighter checks before calling isLookingAtMe
-            for (EnderMan man : enderMen) {
-                // Now the enderman is in range and in front: trigger the "looking at fake player"
-                if (man.isLookingAtMe(fakePlayer)) {
-                    lookResults.add(new EndermanLookResult(vr.player(), man));
-                }
-            }
-        }
-
-        return lookResults;
-    }
-
-
-    private Vec3 pixelRayDir(float px, float py) {
-        // 1) NDC coords in [-1, 1]
-        float fovRad = BASE_FOV * getFOVModifier() * Mth.DEG_TO_RAD;
-        float ndcX = (2.0f * px);
-        float ndcY = (2.0f * py); // flip Y if needed by your convention
-
-        // 2) camera-space ray direction (z = -1 for right-handed camera looking down -Z)
-        float aspect = 1;
-        float tanHalfFov = (float) Math.tan(fovRad * 0.5f);
-
-        float camX = ndcX * aspect * tanHalfFov;
-        float camY = ndcY * tanHalfFov;
-        // camera-space direction
-        Vector3f dirCam = new Vector3f(camX, camY, -1.0f).normalize();
-
-        // 3) rotate by camera orientation to world space (no translation)
-        // cameraRotation should represent camera->world rotation (inverse of view rotation)
-
-        // 4) return Minecraft Vec3
-        return new Vec3(dirCam.x, dirCam.y, dirCam.z);
-    }
 
     public ResourceLocation getPostShader() {
         ItemStack filterItem = this.getDisplayedItem();

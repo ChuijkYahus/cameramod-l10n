@@ -1,17 +1,13 @@
 package net.mehvahdjukaar.vista.common.tv;
 
 import net.mehvahdjukaar.moonlight.api.block.ItemDisplayTile;
-import net.mehvahdjukaar.moonlight.api.util.math.MthUtils;
 import net.mehvahdjukaar.vista.VistaMod;
-import net.mehvahdjukaar.vista.common.cassette.CassetteTape;
-import net.mehvahdjukaar.vista.common.BroadcastManager;
-import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
+import net.mehvahdjukaar.vista.client.video_source.IVideoSource;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.mehvahdjukaar.vista.integration.CompatHandler;
 import net.mehvahdjukaar.vista.integration.exposure.ExposureCompat;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.Holder;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -30,22 +26,17 @@ import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.UUID;
-
 public class TVBlockEntity extends ItemDisplayTile {
 
     public static final int SWITCH_ON_ANIMATION_TICKS = 3;
     public static final int SWITCH_OFF_ANIMATION_TICKS = 10;
     private static final int MAX_LOOKED_ENDERMAN = 20;
-    private static final float ENDERMAN_PLAYER_DIST_SQ = 20 * 20;
 
     @Nullable
-    private UUID linkedFeedUuid = null;
-    @Nullable
-    private Holder<CassetteTape> tape = null;
+    private TVEndermanObservationController observationController = null;
+
+    //client, I think
+    private IVideoSource videoSource = IVideoSource.EMPTY;
 
     private int connectedTvHeight = 1;
     private int connectedTvsWidth = 1;
@@ -85,28 +76,21 @@ public class TVBlockEntity extends ItemDisplayTile {
         cacheState(); //no called by update client state on first load since level is null..
     }
 
+    public IVideoSource getVideoSource() {
+        return videoSource;
+    }
 
     public int getConnectedHeight() {
         return connectedTvHeight;
     }
 
-    public  int getConnectedWidth() {
+    public int getConnectedWidth() {
         return connectedTvsWidth;
     }
 
     public void setConnectionSize(int width, int height) {
         this.connectedTvsWidth = width;
         this.connectedTvHeight = height;
-    }
-
-    @Nullable
-    public UUID getLinkedFeedUUID() {
-        return linkedFeedUuid;
-    }
-
-    @Nullable
-    public Holder<CassetteTape> getTape() {
-        return tape;
     }
 
     @Override
@@ -139,8 +123,10 @@ public class TVBlockEntity extends ItemDisplayTile {
 
     private void cacheState() {
         ItemStack displayedItem = this.getDisplayedItem();
-        linkedFeedUuid = displayedItem.get(VistaMod.LINKED_FEED_COMPONENT.get());
-        tape = displayedItem.get(VistaMod.CASSETTE_TAPE_COMPONENT.get());
+
+        var uuid = displayedItem.get(VistaMod.LINKED_FEED_COMPONENT.get());
+        this.observationController = new TVEndermanObservationController(uuid, this);
+        this.videoSource = IVideoSource.create(displayedItem);
     }
 
     @Override
@@ -189,160 +175,66 @@ public class TVBlockEntity extends ItemDisplayTile {
         return switchAnimationTicks;
     }
 
-    public static void onTick(Level level, BlockPos pos, BlockState state, TVBlockEntity tile) {
+    public static void onTick(Level world, BlockPos pos, BlockState state, TVBlockEntity tv) {
         boolean powered = state.getValue(TVBlock.POWER_STATE).isOn();
-        if (level.isClientSide) {
+        if (world.isClientSide) {
             boolean changedState = false;
-            if (powered != tile.wasScreenOn) {
+            if (powered != tv.wasScreenOn) {
                 changedState = true && ClientConfigs.TURN_OFF_EFFECTS.get();
-                tile.wasScreenOn = powered;
+                tv.wasScreenOn = powered;
             }
 
             if (powered) {
                 //we cant switch power anim here as its too late
 
                 if (changedState) {
-                    tile.switchAnimationTicks = SWITCH_ON_ANIMATION_TICKS;
-                } else if (tile.switchAnimationTicks > 0) {
-                    tile.switchAnimationTicks--;
+                    tv.switchAnimationTicks = SWITCH_ON_ANIMATION_TICKS;
+                } else if (tv.switchAnimationTicks > 0) {
+                    tv.switchAnimationTicks--;
                 }
-                float duration = tile.getPlayDuration();
-                if (++tile.soundLoopTicks >= (duration)) {
-                    tile.soundLoopTicks = 0;
-                    SoundEvent sound = tile.getPlaySound();
-                    level.playLocalSound(pos, sound, SoundSource.BLOCKS, 1, 1.0f, false);
+                float duration = tv.videoSource.getVideoDuration();
+                if (++tv.soundLoopTicks >= (duration)) {
+                    tv.soundLoopTicks = 0;
+                    SoundEvent sound = tv.videoSource.getVideoSound();
+                    world.playLocalSound(pos, sound, SoundSource.BLOCKS, 1, 1.0f, false);
                 }
-                tile.animationTicks++;
+                tv.animationTicks++;
             } else {
                 if (changedState) {
-                    tile.switchAnimationTicks = -SWITCH_OFF_ANIMATION_TICKS;
-                } else if (tile.switchAnimationTicks < 0) {
-                    tile.switchAnimationTicks++;
+                    tv.switchAnimationTicks = -SWITCH_OFF_ANIMATION_TICKS;
+                } else if (tv.switchAnimationTicks < 0) {
+                    tv.switchAnimationTicks++;
                 }
-                tile.soundLoopTicks = 0;
-                tile.animationTicks = 0;
+                tv.soundLoopTicks = 0;
+                tv.animationTicks = 0;
             }
-            tile.prevLookingAtEndermanAnimation = tile.lookingAtEndermanAnimation;
-            if (tile.lookingAtEnderman) {
-                tile.lookingAtEndermanAnimation = Math.min(MAX_LOOKED_ENDERMAN, tile.lookingAtEndermanAnimation + 1);
+            tv.prevLookingAtEndermanAnimation = tv.lookingAtEndermanAnimation;
+            if (tv.lookingAtEnderman) {
+                tv.lookingAtEndermanAnimation = Math.min(MAX_LOOKED_ENDERMAN, tv.lookingAtEndermanAnimation + 1);
             } else {
-                tile.lookingAtEndermanAnimation = Math.max(0, tile.lookingAtEndermanAnimation - 1);
+                tv.lookingAtEndermanAnimation = Math.max(0, tv.lookingAtEndermanAnimation - 1);
             }
 
 
         } else {
-            if ((level.getGameTime() + pos.asLong()) % 27 == 0) {
+            //stagger updates since this is expensive
+            if ((world.getGameTime() + pos.asLong()) % 27 == 0) {
                 return;
             }
-            boolean canSeeEnderman = false;
-            if (powered && tile.linkedFeedUuid != null) {
+            boolean hasAngeredEntity = false;
+            if (powered && tv.observationController != null) {
                 //server tick logic
-                ViewFinderBlockEntity viewFinder = BroadcastManager.findLinkedViewFinder(level, tile.linkedFeedUuid);
-                if (viewFinder != null) { //stagger updates since this is expensive
-                    var doomScrollingPlayers = tile.getPlayersLookingAtFace(level.players());
-
-                    if (viewFinder.angerEndermenBeingLookedAt(doomScrollingPlayers, 32, tile)) {
-                        canSeeEnderman = true;
-                    }
-                }
+                hasAngeredEntity = tv.observationController.tick();
             }
-            boolean couldSeeEnderman = tile.lookingAtEnderman;
+            boolean couldSeeEnderman = tv.lookingAtEnderman;
             //if changed send block event
-            if (canSeeEnderman != couldSeeEnderman) {
-                tile.lookingAtEnderman = canSeeEnderman;
-                level.blockEvent(pos, state.getBlock(), 1, canSeeEnderman ? 1 : 0);
+            if (hasAngeredEntity != couldSeeEnderman) {
+                tv.lookingAtEnderman = hasAngeredEntity;
+                world.blockEvent(pos, state.getBlock(), 1, hasAngeredEntity ? 1 : 0);
             }
         }
     }
 
-    private SoundEvent getPlaySound() {
-        if (tape != null) {
-            var s = tape.value().soundEvent();
-            if (s.isPresent()) return s.get().value();
-        }
-        return VistaMod.TV_STATIC_SOUND.get();
-    }
-
-    private int getPlayDuration() {
-        if (tape != null) {
-            return tape.value().soundDuration().orElse(VistaMod.STATIC_SOUND_DURATION);
-        }
-        return VistaMod.STATIC_SOUND_DURATION;
-    }
-
-    public List<TVSpectatorView> getPlayersLookingAtFace(Collection<? extends Player> players) {
-        if (players.isEmpty()) return List.of();
-        List<TVSpectatorView> result = new ArrayList<>();
-
-        BlockState state = this.getBlockState();
-        Direction facing = state.getValue(TVBlock.FACING);
-        float screenW = getScreenPixelWidth() / 16f;
-        float screenH = getScreenPixelHeight() / 16f;
-        // Screen center: block center offset half a block in facing direction
-        Vec2 relativeCenter = this.getScreenBlockCenter();
-        Vec3 screenCenterPos = this.worldPosition.getCenter()
-                .add(MthUtils.rotateVec3(new Vec3(relativeCenter.x, relativeCenter.y, 0.5), facing.getOpposite()));
-
-        // Screen normal (points outward from screen). facing is horizontal => normal.y == 0
-        Vec3 screenNormal = new Vec3(facing.step()).normalize();
-
-        Vec3 up = new Vec3(0, 1, 0);
-        Vec3 right = screenNormal.cross(up);
-
-        for (Player player : players) {
-            TVSpectatorView viewResult = getPlayerHit(player, screenCenterPos, screenNormal, right, up, screenW, screenH);
-            if (viewResult != null) result.add(viewResult);
-        }
-
-        return result;
-    }
-
-    @Nullable
-    public TVSpectatorView getPlayerLookingAtFace(Player player) {
-        return getPlayersLookingAtFace(List.of(player)).stream().findFirst().orElse(null);
-    }
-
-    @Nullable
-    private static TVSpectatorView getPlayerHit(Player player, Vec3 screenCenterPos, Vec3 screenNormal,
-                                                Vec3 normalRight, Vec3 normalUp, float sideWidth, float sideHeight) {
-
-        final double EPS = 1e-6;
-        Vec3 eyePos = player.getEyePosition(1.0F);
-
-        // 1) radius check (cheap, no sqrt)
-        Vec3 eyeToCenter = screenCenterPos.subtract(eyePos);
-        double distSq = eyeToCenter.lengthSqr();
-        if (distSq > ENDERMAN_PLAYER_DIST_SQ) return null;
-        eyeToCenter = eyeToCenter.scale(1.0 / Math.sqrt(distSq)); // normalize
-
-        // 2) half-circle in front check (cheap): player must be in front half-space of screen
-        double frontDot = eyeToCenter.dot(screenNormal);
-        if (frontDot > 0.0) return null;
-
-        // 3) get view vector (normalize for stable intersection math)
-        Vec3 playerView = player.getViewVector(1.0F).normalize();
-
-        // 4) ray-plane intersection
-        double denom = playerView.dot(screenNormal);
-        if (Math.abs(denom) < EPS) return null;
-
-        double t = screenCenterPos.subtract(eyePos).dot(screenNormal) / denom;
-        if (t <= 0.0) return null;
-
-        Vec3 hit = eyePos.add(playerView.scale(t));
-
-        // 5) local screen coordinates of hit relative to center
-        Vec3 local = hit.subtract(screenCenterPos);
-        double x = local.dot(normalRight);
-        double y = local.dot(normalUp);
-
-        // 6) bounds check (screen centered at screenCenterPos)
-        if (Math.abs(x) <= (sideWidth / 2f) && Math.abs(y) <= (sideHeight / 2f)) {
-            // distance = t (distance from eye to hit along ray)
-            return new TVSpectatorView(player, new Vec2((float) x / sideWidth, (float) y / sideHeight), t);
-        }
-        return null;
-    }
 
     public void updateEndermanLookAnimation(int param) {
         this.lookingAtEnderman = param > 0;

@@ -1,6 +1,7 @@
 package net.mehvahdjukaar.vista.fabric;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientWorldEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.fabricmc.fabric.api.event.client.player.ClientPreAttackCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerWorldEvents;
@@ -28,6 +29,10 @@ public class VistaFabricClient {
             } catch (Exception e) {
                 VistaMod.LOGGER.error("Error unloading Vista client level data", e);
             }
+        });
+
+        ClientWorldEvents.AFTER_CLIENT_WORLD_CHANGE.register( (minecraft, clientLevel) -> {);
+            VistaModClient.onLevelLoaded(clientLevel);
         });
 
         ClientPreAttackCallback.EVENT.register((minecraft, localPlayer, i) -> {

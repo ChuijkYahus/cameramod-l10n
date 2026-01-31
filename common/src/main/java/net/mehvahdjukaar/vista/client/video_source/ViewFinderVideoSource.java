@@ -32,7 +32,7 @@ public class ViewFinderVideoSource implements IVideoSource {
             if (ClientConfigs.rendersDebug()) {
                 // renderDebug(tex, poseStack, buffer, partialTick, blockEntity);
             }
-            float enderman = tv.getLookingAtEndermanAnimation(partialTick);
+            float enderman = targetScreen.getLookingAtEndermanAnimation(partialTick);
             vc = TvScreenVertexConsumers.getFullSpriteVC(tex, buffer, enderman, pixelEffectRes, switchAnim);
         } else {
             vc = TvScreenVertexConsumers.getMissingTapeVC(buffer, pixelEffectRes, switchAnim);
