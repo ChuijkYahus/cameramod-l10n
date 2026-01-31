@@ -1,10 +1,12 @@
 package net.mehvahdjukaar.vista;
 
+import com.google.common.collect.MapMaker;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import net.mehvahdjukaar.moonlight.api.client.CoreShaderContainer;
 import net.mehvahdjukaar.moonlight.api.misc.EventCalled;
 import net.mehvahdjukaar.moonlight.api.platform.ClientHelper;
-import net.mehvahdjukaar.vista.client.*;
+import net.mehvahdjukaar.vista.client.ViewFinderController;
+import net.mehvahdjukaar.vista.client.ViewFinderModel;
 import net.mehvahdjukaar.vista.client.renderer.TvBlockEntityRenderer;
 import net.mehvahdjukaar.vista.client.renderer.TvItemRenderer;
 import net.mehvahdjukaar.vista.client.renderer.ViewFinderBlockEntityRenderer;
@@ -14,12 +16,18 @@ import net.mehvahdjukaar.vista.client.textures.LiveFeedTexturesManager;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.geom.ModelLayerLocation;
+import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.Input;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.resources.model.Material;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.Map;
+import java.util.WeakHashMap;
 
 import static net.minecraft.client.renderer.texture.TextureAtlas.LOCATION_BLOCKS;
 
@@ -34,6 +42,11 @@ public class VistaModClient {
     public static final Material VIEW_FINDER_MATERIAL = new Material(LOCATION_BLOCKS,
             VistaMod.res("block/viewfinder"));
 
+    //hack since resource key to level mapping isn't guaranteed 1:1. Don't even know if this will be used by any mods because in vanilla it isn't
+    private static final Map<ResourceKey<Level>, Level> KNOWN_LEVELS_BY_DIMENSION = new MapMaker()
+            .weakValues()
+            .makeMap();
+
 
     private static ModelLayerLocation loc(String name) {
         return new ModelLayerLocation(VistaMod.res(name), name);
@@ -47,7 +60,7 @@ public class VistaModClient {
         ClientHelper.addItemColorsRegistration(VistaModClient::registerItemColors);
         ClientHelper.addItemRenderersRegistration(VistaModClient::registerItemRenderers);
 
-        ClientHelper.addClientReloadListener(()-> CassetteTexturesManager.INSTANCE, VistaMod.res("gif_manager"));
+        ClientHelper.addClientReloadListener(() -> CassetteTexturesManager.INSTANCE, VistaMod.res("gif_manager"));
 
     }
 
@@ -78,10 +91,6 @@ public class VistaModClient {
 
     private static void registerModelLayers(ClientHelper.ModelLayerEvent event) {
         event.register(VIEWFINDER_MODEL, ViewFinderModel::createMesh);
-    }
-
-    public static Level getLevel() {
-        return Minecraft.getInstance().level;
     }
 
     public static void onLevelClose() {
@@ -120,4 +129,20 @@ public class VistaModClient {
         }
     }
 
+    public static void onLevelLoaded(ClientLevel cl) {
+        KNOWN_LEVELS_BY_DIMENSION.put(cl.dimension(), cl);
+    }
+
+    public static Level getLocalLevel() {
+        return Minecraft.getInstance().level;
+    }
+
+    @Nullable
+    public static Level getLocalLevelByDimension(ResourceKey<Level> dimension) {
+        Level local = getLocalLevel();
+        if (local != null && local.dimension() == dimension) {
+            return local;
+        }
+        return KNOWN_LEVELS_BY_DIMENSION.get(dimension);
+    }
 }

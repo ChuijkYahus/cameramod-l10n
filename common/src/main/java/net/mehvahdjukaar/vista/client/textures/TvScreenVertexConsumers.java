@@ -52,7 +52,7 @@ public class TvScreenVertexConsumers {
     }
 
     @Nullable
-    public static VertexConsumer getDefaultTapeVC(MultiBufferSource buffer, int scale, int switchAnim) {
+    public static VertexConsumer getMissingTapeVC(MultiBufferSource buffer, int scale, int switchAnim) {
         return createAnimatedStripVC(buffer, scale, BARS_LOCATION, 0, switchAnim);
     }
 
@@ -66,7 +66,7 @@ public class TvScreenVertexConsumers {
         if (animatedText == null) {
             if (id == BARS_LOCATION) {
                 return buffer.getBuffer(RenderType.entityCutout(MissingTextureAtlasSprite.getLocation()));
-            } else return getDefaultTapeVC(buffer, scale, switchAnim);
+            } else return getMissingTapeVC(buffer, scale, switchAnim);
         }
         RenderType rt = hasSfx ? ModRenderTypes.ANIMATED_STRIP_RENDER_TYPE.apply(animatedText, scale, switchAnim) : RenderType.text(animatedText.location());
         VertexConsumer inner = buffer.getBuffer(rt);
@@ -89,7 +89,7 @@ public class TvScreenVertexConsumers {
     }
 
     private static boolean hasSfx() {
-        return VistaLevelRenderer.isRenderingLiveFeed() &&
+        return !VistaLevelRenderer.isRenderingLiveFeed() &&
                 Minecraft.getInstance().options.graphicsMode().get() != GraphicsStatus.FAST;
     }
 

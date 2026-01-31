@@ -49,22 +49,26 @@ float animate(float t, float startTime, float duration) {
 // Ellipse + dot effect with background replacement
 // ==========================================================
 vec4 crt_turn_on(vec4 inColor,
-    vec2 fragPx,          // sprite-local pixel position
-    vec2 resolutionPx,    // sprite resolution in pixels
-    float t){
-    vec2 uv = (fragPx - 0.5 * resolutionPx) / resolutionPx;
+vec2 fragPx,
+vec2 resolutionPx,
+float t)
+{
+    // --------------------------------------------------
+    // PIXEL LOCK (this is the important bit)
+    // --------------------------------------------------
+    vec2 uv = ((floor(fragPx) + 0.5) / resolutionPx) - 0.5;   // center origin, same space as before
 
-    //anim from t 0 to 1
+    //non pixelataed loook:
+    //vec2 uv = (fragPx - 0.5 * resolutionPx) / resolutionPx;
+
     // --- PARAMETERS ---
     float fadeStart = 0.0;
     float fadeDuration = 0.20;
 
-
-    float ryAnimStart = 0.20;
-    float ryAnimDuration = 0.25;
+    float ryAnimStart = 0.15;
+    float ryAnimDuration = 0.40;
     float ryStart = 0.25;
     float ryEnd = 0.001;
-
 
     float rxAnimStart = 0.40;
     float rxAnimDuration = 0.6;
@@ -82,7 +86,7 @@ vec4 crt_turn_on(vec4 inColor,
     vec2 r_in = vec2(r_x, r_y);
     vec2 r_out = r_in * 10.0;
 
-    // --- ELLIPSE MASK ---
+    // --- ELLIPSE MASK (now pixelated) ---
     vec2 norm = uv / r_out;
     float d = length(norm);
 
@@ -90,12 +94,9 @@ vec4 crt_turn_on(vec4 inColor,
     float inside = length(norm_in) < 1.0 ? 1.0 : 0.0;
     float ellipse = max(inside, smoothstep(1.0, r_in.x / r_out.x, d));
 
-    // White glow color with alpha = coverage
     vec4 glow = vec4(vec3(ellipse), ellipse);
 
-
-
-    // --- DOT ---
+    // --- DOT (also pixelated automatically) ---
     float dotT = animate(t, dotStart, dotDuration);
     if (dotT > 0.0) {
         float s = sin(dotT * 3.1415926);
@@ -108,7 +109,6 @@ vec4 crt_turn_on(vec4 inColor,
         glow.a = max(glow.a, dot);
     }
 
-    // Fade from previous color to glow
     float fade = animate(t, fadeStart, fadeDuration);
     vec4 color = mix(inColor, glow, fade);
 

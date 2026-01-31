@@ -3,7 +3,7 @@ package net.mehvahdjukaar.vista.common.projector;
 import net.mehvahdjukaar.moonlight.api.client.IScreenProvider;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.client.ui.SignalProjectorScreen;
-import net.mehvahdjukaar.vista.common.cassette.IFeedProvider;
+import net.mehvahdjukaar.vista.common.cassette.IBroadcastProvider;
 import net.mehvahdjukaar.vista.integration.CompatHandler;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -21,7 +21,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.UUID;
 
-public class SignalProjectorBlockEntity extends BlockEntity implements IScreenProvider, IFeedProvider {
+public class SignalProjectorBlockEntity extends BlockEntity implements IScreenProvider, IBroadcastProvider {
 
     public Object ccPeripheral;
 
@@ -61,6 +61,8 @@ public class SignalProjectorBlockEntity extends BlockEntity implements IScreenPr
         this.myUUID = tag.getUUID("UUID");
         this.url = tag.getString("url");
         this.ensureLinked();
+
+        
     }
 
     @Override

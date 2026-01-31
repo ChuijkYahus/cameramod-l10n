@@ -2,30 +2,20 @@ package net.mehvahdjukaar.vista.common.projector;
 
 import com.mojang.serialization.MapCodec;
 import net.mehvahdjukaar.moonlight.api.util.Utils;
-import net.mehvahdjukaar.moonlight.core.worldgen.SpawnBoxBlock;
-import net.mehvahdjukaar.supplementaries.client.screens.SpeakerBlockScreen;
-import net.mehvahdjukaar.supplementaries.common.block.blocks.SpeakerBlock;
-import net.mehvahdjukaar.supplementaries.common.block.tiles.SpeakerBlockTile;
-import net.mehvahdjukaar.vista.common.LiveFeedConnectionManager;
-import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlock;
-import net.mehvahdjukaar.vista.integration.CompatHandler;
+import net.mehvahdjukaar.vista.common.BroadcastManager;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResult;
 import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseEntityBlock;
-import net.minecraft.world.level.block.CommandBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
 public class SignalProjectorBlock extends BaseEntityBlock {
@@ -52,7 +42,7 @@ public class SignalProjectorBlock extends BaseEntityBlock {
         if (oldState.getBlock() instanceof SignalProjectorBlock &&
                 !(newState.getBlock() instanceof SignalProjectorBlock) &&
                 level instanceof ServerLevel sl) {
-            LiveFeedConnectionManager.getInstance(sl).unlinkFeed(new GlobalPos(level.dimension(), pos));
+            BroadcastManager.getInstance(sl).unlinkFeed(new GlobalPos(level.dimension(), pos));
         }
     }
 

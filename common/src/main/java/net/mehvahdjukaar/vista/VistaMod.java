@@ -56,9 +56,9 @@ public class VistaMod {
         return ResourceLocation.fromNamespaceAndPath(MOD_ID, name);
     }
 
-    public static final WorldSavedDataType<LiveFeedConnectionManager> VIEWFINDER_CONNECTION =
-            RegHelper.registerWorldSavedData(res("viewfinder_connection"), LiveFeedConnectionManager::create,
-                    LiveFeedConnectionManager.CODEC, LiveFeedConnectionManager.STREAM_CODEC);
+    public static final WorldSavedDataType<BroadcastManager> VIEWFINDER_CONNECTION =
+            RegHelper.registerWorldSavedData(res("viewfinder_connection"), BroadcastManager::create,
+                    BroadcastManager.CODEC, BroadcastManager.STREAM_CODEC);
 
     public static final ResourceKey<Registry<CassetteTape>> CASSETTE_TAPE_REGISTRY_KEY =
             ResourceKey.createRegistryKey(res("cassette_tape"));

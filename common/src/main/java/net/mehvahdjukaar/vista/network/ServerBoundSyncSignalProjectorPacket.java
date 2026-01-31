@@ -1,7 +1,6 @@
 package net.mehvahdjukaar.vista.network;
 
 import net.mehvahdjukaar.moonlight.api.platform.network.Message;
-import net.mehvahdjukaar.supplementaries.Supplementaries;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.common.projector.SignalProjectorBlockEntity;
 import net.minecraft.core.BlockPos;
@@ -9,7 +8,6 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.server.network.FilteredText;
 import net.minecraft.world.level.Level;
 
 public record ServerBoundSyncSignalProjectorPacket(
@@ -36,7 +34,7 @@ public record ServerBoundSyncSignalProjectorPacket(
             BlockPos pos = this.pos;
             if (level.hasChunkAt(pos) && level.getBlockEntity(pos) instanceof SignalProjectorBlockEntity proj) {
                 if(!proj.canBeEditedBy(sender)){
-                    Supplementaries.LOGGER.warn("Player {} tried to edit signal projector at {} without permission",
+                    VistaMod.LOGGER.warn("Player {} tried to edit signal projector at {} without permission",
                             sender.getName().getString(), pos);
                     return;
                 }

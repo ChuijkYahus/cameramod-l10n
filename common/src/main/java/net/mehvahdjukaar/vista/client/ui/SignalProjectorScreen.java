@@ -50,6 +50,7 @@ public class SignalProjectorScreen extends Screen {
         String str = this.editBox.getValue();
         //  this.tile.setUrl(str); updated by packet layer
         NetworkHelper.sendToServer(new ServerBoundSyncSignalProjectorPacket(this.tile.getBlockPos(), str));
+
     }
 
     private void onDone() {

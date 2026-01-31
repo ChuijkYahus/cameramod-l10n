@@ -5,24 +5,29 @@ import net.mehvahdjukaar.moonlight.api.block.IOneUserInteractable;
 import net.mehvahdjukaar.moonlight.api.block.ItemDisplayTile;
 import net.mehvahdjukaar.moonlight.api.misc.TileOrEntityTarget;
 import net.mehvahdjukaar.moonlight.api.platform.network.NetworkHelper;
+import net.mehvahdjukaar.moonlight.api.set.BlocksColorAPI;
 import net.mehvahdjukaar.moonlight.api.util.FakePlayerManager;
 import net.mehvahdjukaar.moonlight.api.util.math.MthUtils;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.common.EndermanFreezeWhenLookedAtThroughTVGoal;
-import net.mehvahdjukaar.vista.common.cassette.IFeedProvider;
+import net.mehvahdjukaar.vista.common.cassette.IBroadcastProvider;
 import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
 import net.mehvahdjukaar.vista.common.tv.TVSpectatorView;
+import net.mehvahdjukaar.vista.integration.CompatHandler;
 import net.mehvahdjukaar.vista.network.ClientBoundControlViewFinderPacket;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.monster.EnderMan;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.DyeColor;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
@@ -35,7 +40,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserInteractable, IFeedProvider {
+public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserInteractable, IBroadcastProvider {
 
     public static final int MAX_ZOOM = 44;
 
@@ -326,4 +331,19 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
         return new Vec3(dirCam.x, dirCam.y, dirCam.z);
     }
 
+    public ResourceLocation getPostShader() {
+        ItemStack filterItem = this.getDisplayedItem();
+        if (filterItem.isEmpty()) return null;
+        Item item = filterItem.getItem();
+        DyeColor color = BlocksColorAPI.getColor(item);
+        if (color != null) {
+            //  return ModRenderTypes.getColorFilter(color);
+        }
+        if (CompatHandler.SUPPLEMENTARIES) {
+            //TODO:
+//            return SuppCompat.getShaderForItem(filterItem);
+        }
+        return null;
+
+    }
 }

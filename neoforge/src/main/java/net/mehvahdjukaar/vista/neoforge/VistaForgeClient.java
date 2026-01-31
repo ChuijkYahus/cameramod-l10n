@@ -8,6 +8,7 @@ import net.mehvahdjukaar.vista.client.textures.GifPathSpriteSource;
 import net.mehvahdjukaar.vista.client.ui.ViewFinderHud;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
@@ -20,6 +21,13 @@ import net.neoforged.neoforge.event.level.LevelEvent;
 @EventBusSubscriber(Dist.CLIENT)
 public class VistaForgeClient {
 
+
+    @SubscribeEvent
+    public static void onLevelLoaded(LevelEvent.Load event) {
+        if(event.getLevel() instanceof ClientLevel cl){
+            VistaModClient.onLevelLoaded(cl);
+        }
+    }
     @SubscribeEvent
     public static void onClientEndTick(ClientTickEvent.Post event) {
         VistaModClient.onClientTick(Minecraft.getInstance());

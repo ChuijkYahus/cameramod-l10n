@@ -4,7 +4,7 @@ import net.mehvahdjukaar.moonlight.api.block.ItemDisplayTile;
 import net.mehvahdjukaar.moonlight.api.util.math.MthUtils;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.common.cassette.CassetteTape;
-import net.mehvahdjukaar.vista.common.LiveFeedConnectionManager;
+import net.mehvahdjukaar.vista.common.BroadcastManager;
 import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.mehvahdjukaar.vista.integration.CompatHandler;
@@ -237,7 +237,7 @@ public class TVBlockEntity extends ItemDisplayTile {
             boolean canSeeEnderman = false;
             if (powered && tile.linkedFeedUuid != null) {
                 //server tick logic
-                ViewFinderBlockEntity viewFinder = LiveFeedConnectionManager.findLinkedViewFinder(level, tile.linkedFeedUuid);
+                ViewFinderBlockEntity viewFinder = BroadcastManager.findLinkedViewFinder(level, tile.linkedFeedUuid);
                 if (viewFinder != null) { //stagger updates since this is expensive
                     var doomScrollingPlayers = tile.getPlayersLookingAtFace(level.players());
 

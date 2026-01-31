@@ -7,6 +7,7 @@ import net.mehvahdjukaar.vista.integration.computer_craft.CCCompat;
 import net.mehvahdjukaar.vista.integration.computer_craft.SignalProjectorPeripheral;
 import net.mehvahdjukaar.vista.integration.computer_craft.ViewFinderPeripheral;
 import net.mehvahdjukaar.vista.neoforge.VistaForge;
+import net.minecraft.client.renderer.texture.HttpTexture;
 import net.minecraft.core.Direction;
 import net.neoforged.neoforge.capabilities.BlockCapability;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;

@@ -1,13 +1,9 @@
 package net.mehvahdjukaar.vista.neoforge;
 
-import dan200.computercraft.shared.computer.core.ServerContext;
-import net.mehvahdjukaar.moonlight.api.misc.EventCalled;
 import net.mehvahdjukaar.moonlight.api.platform.RegHelper;
 import net.mehvahdjukaar.vista.VistaMod;
-import net.mehvahdjukaar.vista.VistaModClient;
-import net.mehvahdjukaar.vista.common.LiveFeedConnectionManager;
+import net.mehvahdjukaar.vista.common.BroadcastManager;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.LevelAccessor;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -41,18 +37,6 @@ public class VistaForge {
         var level = event.getLevel();
         if (level instanceof ServerLevel serverLevel) {
             VistaMod.addEntityGoal(event.getEntity(), serverLevel);
-        }
-    }
-
-
-    @SubscribeEvent
-    public void onLevelLoad(LevelEvent.Load event) {
-        LevelAccessor level = event.getLevel();
-        if (level instanceof ServerLevel sl) {
-            LiveFeedConnectionManager conn = LiveFeedConnectionManager.getInstance(sl);
-            if (conn != null) {
-                conn.validateAll(sl);
-            }
         }
     }
 

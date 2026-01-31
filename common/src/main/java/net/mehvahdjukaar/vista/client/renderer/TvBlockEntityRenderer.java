@@ -37,6 +37,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec2;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.UUID;
 
@@ -106,21 +107,8 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
         int switchAnim = blockEntity.getSwitchAnimationTicks();
 
         if (liveFeedId != null) {
-
-            ResourceLocation postShader = getPostShader(blockEntity);
-
             boolean shouldUpdate = lod.within(ClientConfigs.UPDATE_DISTANCE.get());
-            ResourceLocation tex = LiveFeedTexturesManager.requestLiveFeedTexture(blockEntity.getLevel(),
-                    liveFeedId, screenSize, shouldUpdate, postShader);
-            if (tex != null) {
-                if (ClientConfigs.rendersDebug()) {
-                    renderDebug(tex, poseStack, buffer, partialTick, blockEntity);
-                }
-                float enderman = blockEntity.getLookingAtEndermanAnimation(partialTick);
-                vc = TvScreenVertexConsumers.getFullSpriteVC(tex, buffer, enderman, pixelEffectRes, switchAnim);
-            } else {
-                vc = TvScreenVertexConsumers.getDefaultTapeVC(buffer, pixelEffectRes, switchAnim);
-            }
+            vc = getFeed(blockEntity, partialTick, poseStack, buffer, shouldUpdate, liveFeedId, screenSize, pixelEffectRes, switchAnim);
 
         } else if (tape != null) {
             vc = TvScreenVertexConsumers.getTapeVC(tape, buffer, pixelEffectRes, blockEntity.getAnimationTick(), switchAnim);
@@ -148,6 +136,8 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
         VertexUtil.addQuad(vc, poseStack, -s, -s, s, s, lightU, lightV);
     }
 
+
+
     private static void renderDebugBox(TVBlockEntity blockEntity, PoseStack poseStack, MultiBufferSource buffer) {
         poseStack.pushPose();
 
@@ -162,20 +152,6 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
         poseStack.popPose();
     }
 
-    private ResourceLocation getPostShader(TVBlockEntity blockEntity) {
-        ItemStack filterItem = blockEntity.getDisplayedItem();
-        if (filterItem.isEmpty()) return null;
-        Item item = filterItem.getItem();
-        DyeColor color = BlocksColorAPI.getColor(item);
-        if (color != null) {
-            //  return ModRenderTypes.getColorFilter(color);
-        }
-        if (CompatHandler.SUPPLEMENTARIES) {
-            //TODO:
-//            return SuppCompat.getShaderForItem(filterItem);
-        }
-        return null;
-    }
 
     // ========== DEBUG RENDERING ========== //
 

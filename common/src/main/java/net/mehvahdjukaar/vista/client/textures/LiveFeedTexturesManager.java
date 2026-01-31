@@ -8,7 +8,7 @@ import net.mehvahdjukaar.moonlight.api.misc.RollingBuffer;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.client.AdaptiveUpdateScheduler;
 import net.mehvahdjukaar.vista.client.renderer.VistaLevelRenderer;
-import net.mehvahdjukaar.vista.common.LiveFeedConnectionManager;
+import net.mehvahdjukaar.vista.common.BroadcastManager;
 import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.mehvahdjukaar.vista.integration.CompatHandler;
@@ -55,7 +55,7 @@ public class LiveFeedTexturesManager {
         if (VistaLevelRenderer.isRenderingLiveFeed()) {
             requiresUpdate = false; //suppress recursive updates
         }
-        ViewFinderBlockEntity tile = LiveFeedConnectionManager.findLinkedViewFinder(level, location);
+        ViewFinderBlockEntity tile = BroadcastManager.findLinkedViewFinder(level, location);
         if (tile != null) {
             //  postShader = ResourceLocation.parse("shaders/post/spider.json");
             ResourceLocation feedId = getOrCreateFeedId(location);
@@ -113,7 +113,7 @@ public class LiveFeedTexturesManager {
             setLastUpdatedTime(textureId, level);
 
             UUID uuid = text.getAssociatedUUID();
-            ViewFinderBlockEntity tile = LiveFeedConnectionManager.findLinkedViewFinder(level, uuid);
+            ViewFinderBlockEntity tile = BroadcastManager.findLinkedViewFinder(level, uuid);
             if (tile == null) return; //TODO: do something here
 
 

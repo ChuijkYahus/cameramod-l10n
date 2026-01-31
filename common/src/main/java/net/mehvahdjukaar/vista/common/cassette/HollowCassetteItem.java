@@ -3,8 +3,7 @@ package net.mehvahdjukaar.vista.common.cassette;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.VistaModClient;
-import net.mehvahdjukaar.vista.common.LiveFeedConnectionManager;
-import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
+import net.mehvahdjukaar.vista.common.BroadcastManager;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
@@ -31,7 +30,7 @@ public class HollowCassetteItem extends Item {
     public InteractionResult useOn(UseOnContext context) {
         Level level = context.getLevel();
         BlockEntity be = level.getBlockEntity(context.getClickedPos());
-        if (be instanceof ViewFinderBlockEntity feed) {
+        if (be instanceof IBroadcastProvider feed) {
             if (!level.isClientSide) {
 
                 ItemStack stack = context.getItemInHand();
@@ -54,10 +53,10 @@ public class HollowCassetteItem extends Item {
         UUID feedId = stack.get(VistaMod.LINKED_FEED_COMPONENT.get());
         if (feedId != null) {
             if (PlatHelper.getPhysicalSide().isClient()) {
-                Level level = VistaModClient.getLevel();
-                var connection = LiveFeedConnectionManager.getInstance(level);
+                Level level = VistaModClient.getLocalLevel();
+                BroadcastManager connection = BroadcastManager.getInstance(level);
                 if (connection == null) return;
-                GlobalPos gp = connection.getFeedLocationFromId(feedId);
+                GlobalPos gp = connection.getBroadcastOriginById(feedId);
                 if (gp == null) {
                     tooltipComponents.add(Component.translatable("tooltip.vista.hollow_cassette.linked_unknown")
                             .withStyle(ChatFormatting.GRAY));

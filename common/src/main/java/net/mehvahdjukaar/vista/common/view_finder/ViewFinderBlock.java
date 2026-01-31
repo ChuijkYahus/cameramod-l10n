@@ -5,7 +5,7 @@ import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.util.Utils;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.client.ViewFinderController;
-import net.mehvahdjukaar.vista.common.LiveFeedConnectionManager;
+import net.mehvahdjukaar.vista.common.BroadcastManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.GlobalPos;
@@ -103,7 +103,7 @@ public class ViewFinderBlock extends DirectionalBlock implements EntityBlock {
         if (oldState.getBlock() instanceof ViewFinderBlock &&
                 !(newState.getBlock() instanceof ViewFinderBlock) &&
                 level instanceof ServerLevel sl) {
-            LiveFeedConnectionManager.getInstance(sl).unlinkFeed(new GlobalPos(level.dimension(), pos));
+            BroadcastManager.getInstance(sl).unlinkFeed(new GlobalPos(level.dimension(), pos));
         }
     }
 

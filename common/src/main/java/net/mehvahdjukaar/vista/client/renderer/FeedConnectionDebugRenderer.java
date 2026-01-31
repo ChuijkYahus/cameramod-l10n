@@ -2,8 +2,7 @@ package net.mehvahdjukaar.vista.client.renderer;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
-import net.mehvahdjukaar.vista.common.LiveFeedConnectionManager;
-import net.mehvahdjukaar.vista.common.cassette.IFeedProvider;
+import net.mehvahdjukaar.vista.common.BroadcastManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.LevelRenderer;
@@ -39,7 +38,7 @@ public class FeedConnectionDebugRenderer implements DebugRenderer.SimpleDebugRen
 
     private void renderAll(PoseStack poseStack, MultiBufferSource buffer, double camX, double camY, double camZ,
                            Level l, ClientLevel level, float red, float green, float blue, float offset) {
-        LiveFeedConnectionManager manager = LiveFeedConnectionManager.getInstance(l);
+        BroadcastManager manager = BroadcastManager.getInstance(l);
 
         for (var p : manager.getAll()) {
 

@@ -58,7 +58,7 @@ public class EndermanFreezeWhenLookedAtThroughTVGoal extends Goal {
 
         Level l = enderman.level();
         UUID feed = television.getLinkedFeedUUID();
-        ViewFinderBlockEntity viewFinder = LiveFeedConnectionManager.findLinkedViewFinder(l, feed);
+        ViewFinderBlockEntity viewFinder = BroadcastManager.findLinkedViewFinder(l, feed);
         if (viewFinder == null) return false;
         return viewFinder.isEndermanBeingLookedAt(view, enderman);
     }

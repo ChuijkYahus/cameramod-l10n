@@ -4,8 +4,10 @@ import com.google.common.collect.HashBiMap;
 import com.mojang.serialization.Codec;
 import net.mehvahdjukaar.moonlight.api.misc.WorldSavedData;
 import net.mehvahdjukaar.moonlight.api.misc.WorldSavedDataType;
+import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.vista.VistaMod;
-import net.mehvahdjukaar.vista.common.cassette.IFeedProvider;
+import net.mehvahdjukaar.vista.VistaModClient;
+import net.mehvahdjukaar.vista.common.cassette.IBroadcastProvider;
 import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
@@ -21,38 +23,37 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 @SuppressWarnings("unchecked")
-public class LiveFeedConnectionManager extends WorldSavedData {
+public class BroadcastManager extends WorldSavedData {
 
-    public static final Codec<LiveFeedConnectionManager> CODEC = Codec.unboundedMap(UUIDUtil.STRING_CODEC, GlobalPos.CODEC)
+    public static final Codec<BroadcastManager> CODEC = Codec.unboundedMap(UUIDUtil.STRING_CODEC, GlobalPos.CODEC)
             .xmap(map -> {
-                LiveFeedConnectionManager storage = new LiveFeedConnectionManager();
+                BroadcastManager storage = new BroadcastManager();
                 map.forEach((uuid, globalPos) -> {
                     storage.addFeed(uuid, globalPos, false);
                 });
                 return storage;
             }, storage -> storage.linkedFeeds);
 
-    public static final StreamCodec<RegistryFriendlyByteBuf, LiveFeedConnectionManager> STREAM_CODEC =
+    public static final StreamCodec<RegistryFriendlyByteBuf, BroadcastManager> STREAM_CODEC =
             (StreamCodec) ByteBufCodecs.map(
                     i -> new HashMap<>(),
                     UUIDUtil.STREAM_CODEC,
                     GlobalPos.STREAM_CODEC
             ).map(map -> {
-                LiveFeedConnectionManager storage = new LiveFeedConnectionManager();
+                BroadcastManager storage = new BroadcastManager();
                 map.forEach((uuid, globalPos) -> {
                     storage.addFeed(uuid, globalPos, true); //client always follows server rather than what it has. If we do our homework on server side this will always work
                 });
                 return storage;
             }, storage -> new HashMap<>(storage.linkedFeeds));
 
-    private LiveFeedConnectionManager() {
+    private BroadcastManager() {
     }
 
-    public static LiveFeedConnectionManager create(ServerLevel serverLevel) {
-        return new LiveFeedConnectionManager();
+    public static BroadcastManager create(ServerLevel serverLevel) {
+        return new BroadcastManager();
     }
 
     private final HashBiMap<UUID, GlobalPos> linkedFeeds = HashBiMap.create();
@@ -100,8 +101,27 @@ public class LiveFeedConnectionManager extends WorldSavedData {
     }
 
     @Nullable
-    public GlobalPos getFeedLocationFromId(UUID viewFinderUUID) {
+    public GlobalPos getBroadcastOriginById(UUID viewFinderUUID) {
         return linkedFeeds.get(viewFinderUUID);
+    }
+
+    public IBroadcastProvider getBroadcast(UUID feedId, boolean clientSide) {
+        GlobalPos pos = getBroadcastOriginById(feedId);
+        if (pos != null) {
+          Level otherLevel = clientSide ? VistaModClient.getLocalLevelByDimension(pos.dimension()) :
+                  PlatHelper.getCurrentServer().getLevel(pos.dimension());
+            if (otherLevel != null && otherLevel.isLoaded(pos.pos())) {
+                if (otherLevel.getBlockEntity(pos.pos()) instanceof IBroadcastProvider provider) {
+                    return provider;
+                } else {
+                    //clean up
+                    if (!clientSide) {
+                        this.unlinkFeed(feedId);
+                    }
+                }
+            }
+        }
+        return null;
     }
 
     @Nullable
@@ -110,48 +130,25 @@ public class LiveFeedConnectionManager extends WorldSavedData {
     }
 
     @Override
-    public WorldSavedDataType<LiveFeedConnectionManager> getType() {
+    public WorldSavedDataType<BroadcastManager> getType() {
         return VistaMod.VIEWFINDER_CONNECTION;
     }
 
-    public void validateAll(ServerLevel level) {
-        if (!level.isClientSide) {
-            //validate all
-            AtomicBoolean changed = new AtomicBoolean(false);
-            this.linkedFeeds.entrySet().removeIf(e -> {
-                GlobalPos pos = e.getValue();
-                if (pos.dimension() != level.dimension()) return false;
-                //this causes chunk loading on boot. not good. we must delay validation!!
-                if (level.getBlockEntity(pos.pos()) instanceof IFeedProvider) {
-                    return false;
-                } else {
-                    changed.set(true);
-                    this.setDirty();
-                    return true;
-                }
-            });
-            if (changed.get()) {
-                this.sync();
-            }
-        }
-    }
-
-
     //static helpers
 
-    public static LiveFeedConnectionManager getInstance(Level level) {
+    public static BroadcastManager getInstance(Level level) {
         return VistaMod.VIEWFINDER_CONNECTION.getData(level);
     }
 
     @Nullable
-    public static IFeedProvider findLinkedFeedProvider(Level level, @Nullable UUID viewFinderUUID) {
+    public static IBroadcastProvider findLinkedFeedProvider(Level level, @Nullable UUID viewFinderUUID) {
         if (viewFinderUUID == null) return null;
-        LiveFeedConnectionManager connection = getInstance(level);
+        BroadcastManager connection = getInstance(level);
         if (connection == null) return null;
-        GlobalPos gp = connection.getFeedLocationFromId(viewFinderUUID);
+        GlobalPos gp = connection.getBroadcastOriginById(viewFinderUUID);
         if (gp != null && gp.dimension() == level.dimension()) {
             BlockPos pos = gp.pos();
-            if (level.isLoaded(pos) && level.getBlockEntity(pos) instanceof IFeedProvider be) {
+            if (level.isLoaded(pos) && level.getBlockEntity(pos) instanceof IBroadcastProvider be) {
                 return be;
             }
         }
@@ -161,9 +158,9 @@ public class LiveFeedConnectionManager extends WorldSavedData {
     @Nullable
     public static ViewFinderBlockEntity findLinkedViewFinder(Level level, @Nullable UUID viewFinderUUID) {
         if (viewFinderUUID == null) return null;
-        LiveFeedConnectionManager connection = getInstance(level);
+        BroadcastManager connection = getInstance(level);
         if (connection == null) return null;
-        GlobalPos gp = connection.getFeedLocationFromId(viewFinderUUID);
+        GlobalPos gp = connection.getBroadcastOriginById(viewFinderUUID);
         if (gp != null && gp.dimension() == level.dimension()) {
             BlockPos pos = gp.pos();
             if (level.isLoaded(pos) && level.getBlockEntity(pos) instanceof ViewFinderBlockEntity be) {
