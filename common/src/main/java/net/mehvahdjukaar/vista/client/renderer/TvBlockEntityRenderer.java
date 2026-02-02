@@ -101,27 +101,14 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
 
         VertexConsumer vc = null;
 
-        UUID liveFeedId = blockEntity.getLinkedFeedUUID();
-        Holder<CassetteTape> tape = blockEntity.getTape();
 
-        int switchAnim = blockEntity.getSwitchAnimationTicks();
+        boolean shouldUpdate = lod.within(ClientConfigs.UPDATE_DISTANCE.get());
 
-        if (liveFeedId != null) {
-            boolean shouldUpdate = lod.within(ClientConfigs.UPDATE_DISTANCE.get());
-            vc = getFeed(blockEntity, partialTick, poseStack, buffer, shouldUpdate, liveFeedId, screenSize, pixelEffectRes, switchAnim);
+        vc = blockEntity.getVideoSource()
+                .getVideoFrameBuilder(blockEntity, partialTick, buffer, shouldUpdate, screenSize, pixelEffectRes);
 
-        } else if (tape != null) {
-            vc = TvScreenVertexConsumers.getTapeVC(tape, buffer, pixelEffectRes, blockEntity.getAnimationTick(), switchAnim);
 
-        } else if (CompatHandler.EXPOSURE) {
-            ItemStack stack = blockEntity.getDisplayedItem();
 
-            ResourceLocation texture = ExposureCompatClient.getPictureTextureForRenderer(stack, blockEntity.getAnimationTick());
-            if (texture != null) {
-
-                vc = TvScreenVertexConsumers.getFullSpriteVC(texture, buffer, 0, pixelEffectRes, switchAnim);
-            }
-        }
         if (vc == null) {
             vc = buffer.getBuffer(ModRenderTypes.NOISE);
         }

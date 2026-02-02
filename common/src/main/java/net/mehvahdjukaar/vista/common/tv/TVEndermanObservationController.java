@@ -153,7 +153,7 @@ public class TVEndermanObservationController {
 
         List<EndermanLookResult> lookResults = computeEndermanLookedAt(camera, views, enderMen);
         for (var r : lookResults) {
-            if (EndermanFreezeWhenLookedAtThroughTVGoal.anger(r.enderman(), r.player(), camera, myTv)) {
+            if (EndermanFreezeWhenLookedAtThroughTVGoal.anger(r.enderman(), r.player(), this)) {
                 anyAnger = true;
             }
         }

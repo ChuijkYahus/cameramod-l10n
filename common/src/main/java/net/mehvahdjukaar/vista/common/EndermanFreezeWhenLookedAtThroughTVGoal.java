@@ -74,7 +74,7 @@ public class EndermanFreezeWhenLookedAtThroughTVGoal extends Goal {
         this.tvAccess = null;
     }
 
-    public static boolean anger(EnderMan man, Player player, ViewFinderBlockEntity viewFinder, TVBlockEntity television) {
+    public static boolean anger(EnderMan man, Player player, TVEndermanObservationController television) {
         EndermanFreezeWhenLookedAtThroughTVGoal goal = findGoal(man);
         if (goal != null) {
             goal.prime(player, television);

@@ -12,13 +12,17 @@ public interface IVideoSource {
 
     IVideoSource EMPTY = new Empty();
 
-    @Nullable VertexConsumer getVideoFrameBuilder(TVBlockEntity targetScreen, float partialTick, MultiBufferSource buffer, boolean shouldUpdate,
-                                                  int screenSize, int pixelEffectRes, int switchOnAnim);
+    @Nullable VertexConsumer getVideoFrameBuilder(TVBlockEntity targetScreen, float partialTick, MultiBufferSource buffer,
+                                                  boolean shouldUpdate, int screenSize, int pixelEffectRes);
 
     @Nullable
-    SoundEvent getVideoSound();
+    default SoundEvent getVideoSound() {
+        return null;
+    }
 
-    int getVideoDuration();
+    default int getVideoDuration() {
+        return 0;
+    }
 
     static IVideoSource create(ItemStack stack) {
         //we could have also implemented in the item but its better separation like thus
@@ -27,23 +31,15 @@ public interface IVideoSource {
 
             return new CassetteTapeVideoSource(stack);
         }
+        return EMPTY;
     }
 
-      class Empty implements   IVideoSource{
+    class Empty implements IVideoSource {
 
-          @Override
-          public @Nullable VertexConsumer getVideoFrameBuilder(TVBlockEntity targetScreen, float partialTick, MultiBufferSource buffer, boolean shouldUpdate, int screenSize, int pixelEffectRes, int switchOnAnim) {
-              return null;
-          }
-
-          @Override
-          public SoundEvent getVideoSound() {
-              return null;
-          }
-
-          @Override
-          public int getVideoDuration() {
-              return 0;
-          }
-      }
+        @Override
+        public @Nullable VertexConsumer getVideoFrameBuilder(TVBlockEntity targetScreen, float partialTick,
+                                                             MultiBufferSource buffer, boolean shouldUpdate, int screenSize, int pixelEffectRes) {
+            return null;
+        }
+    }
 }

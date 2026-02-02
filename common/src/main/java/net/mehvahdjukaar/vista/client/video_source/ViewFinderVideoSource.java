@@ -21,19 +21,23 @@ public class ViewFinderVideoSource implements IVideoSource {
 
 
     @Override
-    public @Nullable VertexConsumer getVideoFrameBuilder(TVBlockEntity targetScreen, float partialTick, MultiBufferSource buffer, boolean shouldUpdate, int screenSize, int pixelEffectRes, int switchOnAnim) {
+    public @Nullable VertexConsumer getVideoFrameBuilder(TVBlockEntity targetScreen, float partialTick,
+                                                         MultiBufferSource buffer, boolean shouldUpdate,
+                                                         int screenSize, int pixelEffectRes) {
 
         ResourceLocation postShader = viewFinder.getPostShader();
 
         ResourceLocation tex = LiveFeedTexturesManager.requestLiveFeedTexture(viewFinder.getLevel(),
                 viewFinder.getUUID(), screenSize, shouldUpdate, postShader);
 
+        int switchAnim = targetScreen.getSwitchAnimationTicks();
+        VertexConsumer vc;
         if (tex != null) {
             if (ClientConfigs.rendersDebug()) {
                 // renderDebug(tex, poseStack, buffer, partialTick, blockEntity);
             }
-            float enderman = targetScreen.getLookingAtEndermanAnimation(partialTick);
-            vc = TvScreenVertexConsumers.getFullSpriteVC(tex, buffer, enderman, pixelEffectRes, switchAnim);
+            float staticAnim = targetScreen.getLookingAtEndermanAnimation(partialTick);
+            vc = TvScreenVertexConsumers.getFullSpriteVC(tex, buffer, staticAnim, pixelEffectRes, switchAnim);
         } else {
             vc = TvScreenVertexConsumers.getMissingTapeVC(buffer, pixelEffectRes, switchAnim);
         }

@@ -31,7 +31,7 @@ public class VistaFabricClient {
             }
         });
 
-        ClientWorldEvents.AFTER_CLIENT_WORLD_CHANGE.register( (minecraft, clientLevel) -> {);
+        ClientWorldEvents.AFTER_CLIENT_WORLD_CHANGE.register( (minecraft, clientLevel) -> {
             VistaModClient.onLevelLoaded(clientLevel);
         });
 

@@ -20,15 +20,15 @@ public class BroadcastVideoSource implements IVideoSource {
         this.tv = tv;
     }
 
-    public @Nullable VertexConsumer getVideoFrameBuilder(TVBlockEntity targetScreen, float partialTick, MultiBufferSource buffer, boolean shouldUpdate,
-                                                         int screenSize, int pixelEffectRes, int switchAnim) {
+    public @Nullable VertexConsumer getVideoFrameBuilder(TVBlockEntity targetScreen, float partialTick, MultiBufferSource buffer,
+                                                         boolean shouldUpdate, int screenSize, int pixelEffectRes) {
         Level level = tv.getLevel();
         BroadcastManager manager = BroadcastManager.getInstance(level);
         IBroadcastProvider broadcast = manager.getBroadcast(uuid, true);
 
         IVideoSource vfContent = broadcast.getBroadcastVideoSource();
         if (vfContent == null) return null;
-        return vfContent.getVideoFrameBuilder(targetScreen, partialTick, buffer, shouldUpdate, screenSize, pixelEffectRes, switchAnim);
+        return vfContent.getVideoFrameBuilder(targetScreen, partialTick, buffer, shouldUpdate, screenSize, pixelEffectRes);
 
     }
 

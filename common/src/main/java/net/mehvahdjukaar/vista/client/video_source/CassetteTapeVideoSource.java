@@ -2,6 +2,7 @@ package net.mehvahdjukaar.vista.client.video_source;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.mehvahdjukaar.vista.VistaMod;
+import net.mehvahdjukaar.vista.client.textures.TvScreenVertexConsumers;
 import net.mehvahdjukaar.vista.common.cassette.CassetteTape;
 import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -19,7 +20,8 @@ public class CassetteTapeVideoSource implements IVideoSource {
 
     }
 
-    private SoundEvent getVideoSound() {
+    @Override
+    public SoundEvent getVideoSound() {
         if (tape != null) {
             var s = tape.value().soundEvent();
             if (s.isPresent()) return s.get().value();
@@ -27,7 +29,8 @@ public class CassetteTapeVideoSource implements IVideoSource {
         return VistaMod.TV_STATIC_SOUND.get();
     }
 
-    private int getVideoDuration() {
+    @Override
+    public int getVideoDuration() {
         if (tape != null) {
             return tape.value().soundDuration().orElse(VistaMod.STATIC_SOUND_DURATION);
         }
@@ -35,7 +38,11 @@ public class CassetteTapeVideoSource implements IVideoSource {
     }
 
     @Override
-    public @Nullable VertexConsumer getVideoFrameBuilder(TVBlockEntity targetScreen, float partialTick, MultiBufferSource buffer, boolean shouldUpdate, int screenSize, int pixelEffectRes, int switchOnAnim) {
-        return null;
+    public @Nullable VertexConsumer getVideoFrameBuilder(
+            TVBlockEntity targetScreen, float partialTick,
+            MultiBufferSource buffer, boolean shouldUpdate, int screenSize, int pixelEffectRes) {
+        int switchAnim = targetScreen.getSwitchAnimationTicks();
+        int animationTick = targetScreen.getAnimationTick();
+        return TvScreenVertexConsumers.getTapeVC(tape, buffer, pixelEffectRes, animationTick, switchAnim);
     }
 }
