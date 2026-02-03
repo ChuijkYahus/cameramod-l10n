@@ -80,13 +80,13 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
         this.pitch = tag.getFloat("pitch");
         this.locked = tag.getBoolean("locked");
         this.zoom = tag.getInt("zoom");
-        this.ensureLinked();
+        this.ensureLinked(level, getBlockPos());
     }
 
     @Override
     public void setLevel(Level level) {
         super.setLevel(level);
-        this.ensureLinked();
+        this.ensureLinked(level, getBlockPos());
     }
 
     @Override

@@ -8,13 +8,13 @@
     "minecraft:zombie_head",
     "minecraft:piglin_head",
     {
-      "value": "supplementaries:spider_head",
+      "id": "supplementaries:spider_head",
       "required": false
     },
     {
-      "value": "supplementaries:enderman_head",
+      "id": "supplementaries:enderman_head",
       "required": false
     },
-    "c:glass_panes"
+    "#c:glass_panes"
   ]
 }

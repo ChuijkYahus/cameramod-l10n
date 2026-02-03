@@ -77,8 +77,6 @@ accessible field net/minecraft/client/renderer/SectionOcclusionGraph fullUpdateT
 accessible field net/minecraft/client/renderer/SectionOcclusionGraph viewArea Lnet/minecraft/client/renderer/ViewArea;
 accessible field net/minecraft/client/renderer/SectionOcclusionGraph$GraphEvents sectionsToPropagateFrom Ljava/util/concurrent/BlockingQueue;
 accessible field net/minecraft/client/renderer/SectionOcclusionGraph$GraphEvents chunksWhichReceivedNeighbors Lit/unimi/dsi/fastutil/longs/LongSet;
-extendable method net/mehvahdjukaar/vista/client/GraphCopy initializeQueueForFullUpdate (Lnet/minecraft/client/Camera;Ljava/util/Queue;)V
-extendable method net/minecraft/client/renderer/SectionOcclusionGraph initializeQueueForFullUpdate (Lnet/minecraft/client/Camera;Ljava/util/Queue;)V
 accessible method net/minecraft/client/renderer/SectionOcclusionGraph$Node setDirections (BLnet/minecraft/core/Direction;)V
 accessible field net/minecraft/client/renderer/SectionOcclusionGraph$Node directions B
 accessible field net/minecraft/client/renderer/SectionOcclusionGraph DIRECTIONS [Lnet/minecraft/core/Direction;
