@@ -9,8 +9,8 @@ import net.mehvahdjukaar.moonlight.api.client.util.RotHlpr;
 import net.mehvahdjukaar.moonlight.api.client.util.VertexUtil;
 import net.mehvahdjukaar.moonlight.api.misc.ForgeOverride;
 import net.mehvahdjukaar.moonlight.api.misc.RollingBuffer;
-import net.mehvahdjukaar.vista.client.ModRenderTypes;
 import net.mehvahdjukaar.vista.client.textures.LiveFeedTexturesManager;
+import net.mehvahdjukaar.vista.client.video_source.IVideoSource;
 import net.mehvahdjukaar.vista.common.tv.TVBlock;
 import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
@@ -50,13 +50,16 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
         Direction dir = tile.getBlockState().getValue(TVBlock.FACING);
         float width = ((TVBlockEntity) tile).getConnectedWidth();
         float height = ((TVBlockEntity) tile).getConnectedHeight();
-        return switch (dir) {
-            case NORTH -> aabb.expandTowards(-(width - 1), height - 1, 0);
-            case SOUTH -> aabb.expandTowards(0, height - 1, width - 1);
-            case WEST -> aabb.expandTowards(0, height - 1, -(width - 1));
-            case EAST -> aabb.expandTowards(width - 1, height - 1, 0);
-            default -> aabb;
-        };
+        if (dir == Direction.EAST) {
+            return aabb.expandTowards(0, height - 1, -width + 1);
+        } else if (dir == Direction.WEST) {
+            return aabb.expandTowards(0, height - 1, width - 1);
+        } else if (dir == Direction.NORTH) {
+            return aabb.expandTowards(-width + 1, height - 1, 0);
+        } else if (dir == Direction.SOUTH) {
+            return aabb.expandTowards(width-1, height - 1, 0);
+        }
+        return aabb;
     }
 
 
@@ -77,6 +80,7 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
         if (lod.isPlaneCulled(dir, 0.5f, screenSize / 16f * 1.5f, 0f)) return;
 
         float yaw = dir.toYRot();
+        poseStack.pushPose();
         poseStack.translate(0.5, 0.5, 0.5);
         poseStack.mulPose(Axis.YP.rotationDegrees(180 - yaw));
         poseStack.translate(-screenCenter.x, screenCenter.y, -0.501);
@@ -103,6 +107,8 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
         int lightU = light & 0xFFFF;
         int lightV = (light >> 16) & 0xFFFF;
         VertexUtil.addQuad(vc, poseStack, -s, -s, s, s, lightU, lightV);
+
+        poseStack.popPose();
     }
 
 
