@@ -1,9 +1,11 @@
 package net.mehvahdjukaar.vista.client.video_source;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import net.mehvahdjukaar.vista.client.ModRenderTypes;
+import net.mehvahdjukaar.vista.client.textures.TvScreenVertexConsumers;
 import net.mehvahdjukaar.vista.common.BroadcastManager;
 import net.mehvahdjukaar.vista.common.cassette.IBroadcastProvider;
-import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
@@ -13,22 +15,25 @@ import java.util.UUID;
 public class BroadcastVideoSource implements IVideoSource {
 
     private final UUID uuid;
-    private final TVBlockEntity tv;
 
-    public BroadcastVideoSource(UUID uuid, TVBlockEntity tv) {
+    public BroadcastVideoSource(UUID uuid) {
         this.uuid = uuid;
-        this.tv = tv;
     }
 
-    public @Nullable VertexConsumer getVideoFrameBuilder(TVBlockEntity targetScreen, float partialTick, MultiBufferSource buffer,
-                                                         boolean shouldUpdate, int screenSize, int pixelEffectRes) {
-        Level level = tv.getLevel();
+    @Override
+    public VertexConsumer getVideoFrameBuilder(float partialTick, MultiBufferSource buffer,
+                                                         boolean shouldUpdate, int screenSize, int pixelEffectRes,
+                                                         int videoAnimationTick, int switchAnim, float staticAnim) {
+        Level level = Minecraft.getInstance().level;
         BroadcastManager manager = BroadcastManager.getInstance(level);
         IBroadcastProvider broadcast = manager.getBroadcast(uuid, true);
 
         IVideoSource vfContent = broadcast.getBroadcastVideoSource();
-        if (vfContent == null) return null;
-        return vfContent.getVideoFrameBuilder(targetScreen, partialTick, buffer, shouldUpdate, screenSize, pixelEffectRes);
+        if (vfContent == null) {
+            return buffer.getBuffer(ModRenderTypes.NOISE);
+        }
+        return vfContent.getVideoFrameBuilder(partialTick, buffer, shouldUpdate, screenSize, pixelEffectRes,
+                videoAnimationTick, switchAnim, staticAnim);
 
     }
 

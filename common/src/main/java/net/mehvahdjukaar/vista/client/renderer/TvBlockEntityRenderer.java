@@ -9,16 +9,11 @@ import net.mehvahdjukaar.moonlight.api.client.util.RotHlpr;
 import net.mehvahdjukaar.moonlight.api.client.util.VertexUtil;
 import net.mehvahdjukaar.moonlight.api.misc.ForgeOverride;
 import net.mehvahdjukaar.moonlight.api.misc.RollingBuffer;
-import net.mehvahdjukaar.moonlight.api.set.BlocksColorAPI;
 import net.mehvahdjukaar.vista.client.ModRenderTypes;
 import net.mehvahdjukaar.vista.client.textures.LiveFeedTexturesManager;
-import net.mehvahdjukaar.vista.client.textures.TvScreenVertexConsumers;
-import net.mehvahdjukaar.vista.common.cassette.CassetteTape;
 import net.mehvahdjukaar.vista.common.tv.TVBlock;
 import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
-import net.mehvahdjukaar.vista.integration.CompatHandler;
-import net.mehvahdjukaar.vista.integration.exposure.ExposureCompatClient;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.LevelRenderer;
@@ -28,18 +23,11 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.Direction;
-import net.minecraft.core.Holder;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.DyeColor;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec2;
-import org.jetbrains.annotations.Nullable;
-
-import java.util.UUID;
 
 public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity> {
 
@@ -98,21 +86,15 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
 
         float s = screenSize / 32f;
         int pixelEffectRes = ClientConfigs.SCALE_PIXELS.get() ? screenSize : TVBlockEntity.MIN_SCREEN_PIXEL_SIZE;
-
-        VertexConsumer vc = null;
-
-
         boolean shouldUpdate = lod.within(ClientConfigs.UPDATE_DISTANCE.get());
+        int switchAnim = blockEntity.getSwitchAnimationTicks();
+        int videoAnim = blockEntity.getAnimationTick();
+        float staticAnim = blockEntity.getLookingAtEndermanAnimation(partialTick);
 
-        vc = blockEntity.getVideoSource()
-                .getVideoFrameBuilder(blockEntity, partialTick, buffer, shouldUpdate, screenSize, pixelEffectRes);
-
-
-
-        if (vc == null) {
-            vc = buffer.getBuffer(ModRenderTypes.NOISE);
-        }
-
+        VertexConsumer vc = blockEntity.getVideoSource()
+                .getVideoFrameBuilder(partialTick, buffer,
+                        shouldUpdate, screenSize, pixelEffectRes,
+                        videoAnim, switchAnim, staticAnim);
 
         //technically not correct as tv could be multiple block. just matters for transition so it's probably ok
         light = LevelRenderer.getLightColor(blockEntity.getLevel(), blockEntity.getBlockPos()
@@ -124,15 +106,14 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
     }
 
 
-
     private static void renderDebugBox(TVBlockEntity blockEntity, PoseStack poseStack, MultiBufferSource buffer) {
         poseStack.pushPose();
 
         poseStack.mulPose(RotHlpr.Y180);
-        poseStack.scale(7,7,7);
+        poseStack.scale(7, 7, 7);
         poseStack.translate(-0.5, -0.5, -0.5);
 
-        RenderUtil.renderBlock((long)0, poseStack, buffer, Blocks.COBWEB.defaultBlockState(),
+        RenderUtil.renderBlock((long) 0, poseStack, buffer, Blocks.COBWEB.defaultBlockState(),
                 blockEntity.getLevel(), blockEntity.getBlockPos(), Minecraft.getInstance().getBlockRenderer());
 
 

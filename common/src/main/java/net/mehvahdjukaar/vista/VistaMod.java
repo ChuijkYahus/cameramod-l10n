@@ -58,7 +58,7 @@ public class VistaMod {
 
     public static final WorldSavedDataType<BroadcastManager> VIEWFINDER_CONNECTION =
             RegHelper.registerWorldSavedData(res("viewfinder_connection"), BroadcastManager::create,
-                    BroadcastManager.CODEC, BroadcastManager.STREAM_CODEC);
+                    BroadcastManager.CODEC, BroadcastManager.STREAM_CODEC, false);
 
     public static final ResourceKey<Registry<CassetteTape>> CASSETTE_TAPE_REGISTRY_KEY =
             ResourceKey.createRegistryKey(res("cassette_tape"));

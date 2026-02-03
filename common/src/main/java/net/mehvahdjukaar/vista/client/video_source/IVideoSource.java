@@ -1,8 +1,9 @@
 package net.mehvahdjukaar.vista.client.video_source;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import net.mehvahdjukaar.vista.client.ModRenderTypes;
+import net.mehvahdjukaar.vista.client.textures.TvScreenVertexConsumers;
 import net.mehvahdjukaar.vista.common.cassette.CassetteItem;
-import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.item.ItemStack;
@@ -12,8 +13,10 @@ public interface IVideoSource {
 
     IVideoSource EMPTY = new Empty();
 
-    @Nullable VertexConsumer getVideoFrameBuilder(TVBlockEntity targetScreen, float partialTick, MultiBufferSource buffer,
-                                                  boolean shouldUpdate, int screenSize, int pixelEffectRes);
+    VertexConsumer getVideoFrameBuilder(
+            float partialTick, MultiBufferSource buffer,
+            boolean shouldUpdate, int screenSize, int pixelEffectRes,
+            int videoAnimationTick, int switchAnim, float staticAnim);
 
     @Nullable
     default SoundEvent getVideoSound() {
@@ -37,9 +40,8 @@ public interface IVideoSource {
     class Empty implements IVideoSource {
 
         @Override
-        public @Nullable VertexConsumer getVideoFrameBuilder(TVBlockEntity targetScreen, float partialTick,
-                                                             MultiBufferSource buffer, boolean shouldUpdate, int screenSize, int pixelEffectRes) {
-            return null;
+        public VertexConsumer getVideoFrameBuilder(float partialTick, MultiBufferSource buffer, boolean shouldUpdate, int screenSize, int pixelEffectRes, int videoAnimationTick, int switchAnim, float staticAnim) {
+            return TvScreenVertexConsumers.getBarsVC(buffer, pixelEffectRes, switchAnim);
         }
     }
 }

@@ -1,9 +1,9 @@
 package net.mehvahdjukaar.vista.client.video_source;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import net.mehvahdjukaar.vista.client.ModRenderTypes;
 import net.mehvahdjukaar.vista.client.textures.LiveFeedTexturesManager;
 import net.mehvahdjukaar.vista.client.textures.TvScreenVertexConsumers;
-import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
 import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -21,25 +21,25 @@ public class ViewFinderVideoSource implements IVideoSource {
 
 
     @Override
-    public @Nullable VertexConsumer getVideoFrameBuilder(TVBlockEntity targetScreen, float partialTick,
-                                                         MultiBufferSource buffer, boolean shouldUpdate,
-                                                         int screenSize, int pixelEffectRes) {
+    public VertexConsumer getVideoFrameBuilder(
+            float partialTick, MultiBufferSource buffer, boolean shouldUpdate,
+            int screenSize, int pixelEffectRes,
+            int videoAnimationTick, int switchAnim, float staticAnim) {
 
         ResourceLocation postShader = viewFinder.getPostShader();
 
         ResourceLocation tex = LiveFeedTexturesManager.requestLiveFeedTexture(viewFinder.getLevel(),
                 viewFinder.getUUID(), screenSize, shouldUpdate, postShader);
 
-        int switchAnim = targetScreen.getSwitchAnimationTicks();
         VertexConsumer vc;
         if (tex != null) {
             if (ClientConfigs.rendersDebug()) {
                 // renderDebug(tex, poseStack, buffer, partialTick, blockEntity);
             }
-            float staticAnim = targetScreen.getLookingAtEndermanAnimation(partialTick);
-            vc = TvScreenVertexConsumers.getFullSpriteVC(tex, buffer, staticAnim, pixelEffectRes, switchAnim);
+            vc = TvScreenVertexConsumers.getFullSpriteVC(tex, buffer, staticAnim,
+                    pixelEffectRes, switchAnim);
         } else {
-            vc = TvScreenVertexConsumers.getMissingTapeVC(buffer, pixelEffectRes, switchAnim);
+            vc = buffer.getBuffer(ModRenderTypes.NOISE);
         }
         return vc;
     }

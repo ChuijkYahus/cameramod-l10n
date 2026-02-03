@@ -9,7 +9,6 @@ import net.minecraft.client.GraphicsStatus;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.texture.MissingTextureAtlasSprite;
 import net.minecraft.core.Holder;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.LivingEntity;
@@ -44,29 +43,29 @@ public class TvScreenVertexConsumers {
         }
     }
 
-    @Nullable
+
     public static VertexConsumer getTapeVC(Holder<CassetteTape> tapeKey, MultiBufferSource buffer, int scale,
                                            int tickCount, int switchAnim) {
         ResourceLocation tapeTexture = tapeKey.value().assetId();
         return createAnimatedStripVC(buffer, scale, tapeTexture, tickCount, switchAnim);
     }
 
-    @Nullable
-    public static VertexConsumer getMissingTapeVC(MultiBufferSource buffer, int scale, int switchAnim) {
+
+    public static VertexConsumer getBarsVC(MultiBufferSource buffer, int scale, int switchAnim) {
         return createAnimatedStripVC(buffer, scale, BARS_LOCATION, 0, switchAnim);
     }
 
-    private static @Nullable VertexConsumer createAnimatedStripVC(MultiBufferSource buffer, int scale,
-                                                                 ResourceLocation id, int tickCount, int switchAnim) {
+    private static VertexConsumer createAnimatedStripVC(MultiBufferSource buffer, int scale,
+                                                        ResourceLocation id, int tickCount, int switchAnim) {
         boolean hasSfx = hasSfx();
-        if (!hasSfx && switchAnim < 0) return null;
+        if (!hasSfx && switchAnim < 0) {
+            return buffer.getBuffer(ModRenderTypes.NOISE);
+        }
 
         SimpleAnimatedStripTexture animatedText = CassetteTexturesManager.INSTANCE.getAnimatedTexture(id);
 
         if (animatedText == null) {
-            if (id == BARS_LOCATION) {
-                return buffer.getBuffer(RenderType.entityCutout(MissingTextureAtlasSprite.getLocation()));
-            } else return getMissingTapeVC(buffer, scale, switchAnim);
+            return buffer.getBuffer(ModRenderTypes.NOISE);
         }
         RenderType rt = hasSfx ? ModRenderTypes.ANIMATED_STRIP_RENDER_TYPE.apply(animatedText, scale, switchAnim) : RenderType.text(animatedText.location());
         VertexConsumer inner = buffer.getBuffer(rt);
@@ -80,7 +79,8 @@ public class TvScreenVertexConsumers {
     }
 
     @Nullable
-    public static VertexConsumer getFullSpriteVC(ResourceLocation tex, MultiBufferSource buffer, float enderman, int scale, int switchAnim) {
+    public static VertexConsumer getFullSpriteVC(ResourceLocation tex, MultiBufferSource buffer,
+                                                 float enderman, int scale, int switchAnim) {
         boolean hasSfx = hasSfx();
         if (!hasSfx && switchAnim < 0) return null;
 

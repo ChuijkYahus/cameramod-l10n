@@ -27,7 +27,8 @@ import java.util.function.Function;
 public class ModRenderTypes extends RenderType {
 
 
-    public ModRenderTypes(String name, VertexFormat format, VertexFormat.Mode mode, int bufferSize, boolean affectsCrumbling, boolean sortOnUpload, Runnable setupState, Runnable clearState) {
+    public ModRenderTypes(String name, VertexFormat format, VertexFormat.Mode mode, int bufferSize, boolean affectsCrumbling,
+                          boolean sortOnUpload, Runnable setupState, Runnable clearState) {
         super(name, format, mode, bufferSize, affectsCrumbling, sortOnUpload, setupState, clearState);
     }
 
@@ -36,17 +37,20 @@ public class ModRenderTypes extends RenderType {
     private static final ShaderStateShard STATIC_SHADER_STATE = new ShaderStateShard(VistaModClient.STATIC_SHADER);
     private static final ShaderStateShard POSTERIZE_SHADER_STATE = new ShaderStateShard(VistaModClient.POSTERIZE_SHADER);
 
-    private static final TriFunction<ResourceLocation, Integer, Integer, RenderType> CAMERA_DRAW_RENDER_TYPE = Utils.memoize(
-            (t, s, power) -> ModRenderTypes.createCameraDraw(t, 0, s, power));
+    private static final TriFunction<ResourceLocation, Integer, Integer, RenderType> CAMERA_DRAW_RENDER_TYPE =
+            Utils.memoize((t, s, power) ->
+                    ModRenderTypes.createCameraDraw(t, 0, s, power));
 
 
-    public static RenderType getCameraDraw(ResourceLocation texture, float enderman, int scale, int powerAnim) {
-        if (enderman > 0f) {
-            return createCameraDraw(texture, enderman, scale, powerAnim);
+    public static RenderType getCameraDraw(ResourceLocation texture, float staticAnim,
+                                           int scale, int powerAnim) {
+        if (staticAnim > 0f) {
+            return createCameraDraw(texture, staticAnim, scale, powerAnim);
         } else return CAMERA_DRAW_RENDER_TYPE.apply(texture, scale, powerAnim);
     }
 
-    private static RenderType createCameraDraw(ResourceLocation text, float enderman, int scale, int powerAnim) {
+    private static RenderType createCameraDraw(ResourceLocation text, float staticAnim,
+                                               int scale, int powerAnim) {
         CompositeState compositeState = CompositeState.builder()
                 .setShaderState(CAMERA_SHADER_STATE)
                 .setTextureState(new TextureStateShard(text,
@@ -59,7 +63,7 @@ public class ModRenderTypes extends RenderType {
                             ShaderInstance shader = VistaModClient.CAMERA_VIEW_SHADER.get();
                             shader.safeGetUniform("SpriteDimensions")
                                     .set(new Vector4f(0, 0, 1, 1f));
-                            setCameraDrawUniforms(shader, enderman, scale, powerAnim);
+                            setCameraDrawUniforms(shader, staticAnim, scale, powerAnim);
                         },
                         () -> {
                         }))
@@ -69,31 +73,31 @@ public class ModRenderTypes extends RenderType {
                 1536, true, false, compositeState);
     }
 
-    public static final TriFunction<SimpleAnimatedStripTexture, Integer, Integer, RenderType> ANIMATED_STRIP_RENDER_TYPE = Utils.memoize(
-            (text, screenSize, powerAnim) -> {
-        RenderType.CompositeState compositeState = RenderType.CompositeState.builder()
-                .setShaderState(CAMERA_SHADER_STATE)
-                //TODO: mipmap
-                .setTextureState(RenderStateShard.MultiTextureStateShard.builder()
-                        .add(text.location(), false, false)
-                        .add(BACKGROUND_TEXTURE, false, false)
-                        .build())
-                .setTransparencyState(RenderStateShard.TRANSLUCENT_TRANSPARENCY)
-                .setLightmapState(LIGHTMAP)
-                .setTexturingState(new TexturingStateShard("set_texel_size",
-                        () -> {
-                            ShaderInstance shader = VistaModClient.CAMERA_VIEW_SHADER.get();
-                            AnimationStripData sprite = text.getStripData();
-                            setSpriteDimensions(shader, sprite);
-                            setCameraDrawUniforms(shader, 0, screenSize, powerAnim);
-                        },
-                        () -> {
-                        }))
-                .createCompositeState(false);
+    public static final TriFunction<SimpleAnimatedStripTexture, Integer, Integer, RenderType> ANIMATED_STRIP_RENDER_TYPE =
+            Utils.memoize((text, screenSize, powerAnim) -> {
+                RenderType.CompositeState compositeState = RenderType.CompositeState.builder()
+                        .setShaderState(CAMERA_SHADER_STATE)
+                        //TODO: mipmap
+                        .setTextureState(RenderStateShard.MultiTextureStateShard.builder()
+                                .add(text.location(), false, false)
+                                .add(BACKGROUND_TEXTURE, false, false)
+                                .build())
+                        .setTransparencyState(RenderStateShard.TRANSLUCENT_TRANSPARENCY)
+                        .setLightmapState(LIGHTMAP)
+                        .setTexturingState(new TexturingStateShard("set_texel_size",
+                                () -> {
+                                    ShaderInstance shader = VistaModClient.CAMERA_VIEW_SHADER.get();
+                                    AnimationStripData sprite = text.getStripData();
+                                    setSpriteDimensions(shader, sprite);
+                                    setCameraDrawUniforms(shader, 0, screenSize, powerAnim);
+                                },
+                                () -> {
+                                }))
+                        .createCompositeState(false);
 
-        return create("camera_view", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS,
-                1536, true, false, compositeState);
-    });
+                return create("camera_view", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS,
+                        1536, true, false, compositeState);
+            });
 
     private static void setSpriteDimensions(ShaderInstance shader, AnimationStripData sprite) {
         shader.safeGetUniform("SpriteDimensions")
@@ -105,7 +109,8 @@ public class ModRenderTypes extends RenderType {
                 ));
     }
 
-    private static void setCameraDrawUniforms(ShaderInstance shader, float noise, float screenSize, int powerAnim) {
+    private static void setCameraDrawUniforms(ShaderInstance shader, float noise,
+                                              float screenSize, int powerAnim) {
         float scale = screenSize / 12f;
         float pt = Minecraft.getInstance().getTimer().getGameTimeDeltaTicks();
         setFloat(shader, "TriadsPerPixel",
@@ -118,7 +123,7 @@ public class ModRenderTypes extends RenderType {
         setFloat(shader, "NoiseIntensity", noise);
         float switchAnim = 0;
         if (powerAnim > 0) {
-            switchAnim =  (powerAnim - pt) / (float) TVBlockEntity.SWITCH_ON_ANIMATION_TICKS;
+            switchAnim = (powerAnim - pt) / (float) TVBlockEntity.SWITCH_ON_ANIMATION_TICKS;
         } else if (powerAnim < 0) {
             switchAnim = (1 + (powerAnim + pt) / (float) TVBlockEntity.SWITCH_OFF_ANIMATION_TICKS);
         }
