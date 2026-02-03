@@ -85,11 +85,9 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
         poseStack.mulPose(Axis.YP.rotationDegrees(180 - yaw));
         poseStack.translate(-screenCenter.x, screenCenter.y, -0.501);
 
-
-//        renderDebugBox(blockEntity, poseStack, buffer);
-
         float s = screenSize / 32f;
         int pixelEffectRes = ClientConfigs.SCALE_PIXELS.get() ? screenSize : TVBlockEntity.MIN_SCREEN_PIXEL_SIZE;
+
         boolean shouldUpdate = lod.within(ClientConfigs.UPDATE_DISTANCE.get());
         int switchAnim = blockEntity.getSwitchAnimationTicks();
         int videoAnim = blockEntity.getAnimationTick();
@@ -107,21 +105,6 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
         int lightU = light & 0xFFFF;
         int lightV = (light >> 16) & 0xFFFF;
         VertexUtil.addQuad(vc, poseStack, -s, -s, s, s, lightU, lightV);
-
-        poseStack.popPose();
-    }
-
-
-    private static void renderDebugBox(TVBlockEntity blockEntity, PoseStack poseStack, MultiBufferSource buffer) {
-        poseStack.pushPose();
-
-        poseStack.mulPose(RotHlpr.Y180);
-        poseStack.scale(7, 7, 7);
-        poseStack.translate(-0.5, -0.5, -0.5);
-
-        RenderUtil.renderBlock((long) 0, poseStack, buffer, Blocks.COBWEB.defaultBlockState(),
-                blockEntity.getLevel(), blockEntity.getBlockPos(), Minecraft.getInstance().getBlockRenderer());
-
 
         poseStack.popPose();
     }

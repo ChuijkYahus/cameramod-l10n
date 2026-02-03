@@ -22,7 +22,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Supplier;
 
@@ -53,29 +52,29 @@ public class LiveFeedTexturesManager {
     public static ResourceLocation requestLiveFeedTexture(
             Level level, UUID location, int screenSize,
             boolean requiresUpdate, @Nullable ResourceLocation postShader) {
+
+        ViewFinderBlockEntity tile = BroadcastManager.findLinkedViewFinder(level, location);
+        if (tile == null) return null;
+          postShader = ResourceLocation.parse("shaders/post/spider.json");
+        ResourceLocation feedId = getOrCreateFeedId(location);
+        LiveFeedTexture texture = RenderedTexturesManager.requestTexture(feedId, () ->
+                new LiveFeedTexture(feedId,
+                        screenSize * ClientConfigs.RESOLUTION_SCALE.get(),
+                        LiveFeedTexturesManager::refreshTexture, location, POSTERIZE_FRAGMENT_SHADER));
+
+        if (texture.setPostChain(postShader)) {
+            requiresUpdate = true;
+        }
         if (VistaLevelRenderer.isRenderingLiveFeed()) {
             requiresUpdate = false; //suppress recursive updates
         }
-        ViewFinderBlockEntity tile = BroadcastManager.findLinkedViewFinder(level, location);
-        if (tile != null) {
-            //  postShader = ResourceLocation.parse("shaders/post/spider.json");
-            ResourceLocation feedId = getOrCreateFeedId(location);
-            LiveFeedTexture texture = RenderedTexturesManager.requestTexture(feedId, () ->
-                    new LiveFeedTexture(feedId,
-                            screenSize * ClientConfigs.RESOLUTION_SCALE.get(),
-                            LiveFeedTexturesManager::refreshTexture, location, POSTERIZE_FRAGMENT_SHADER));
-
-            if (texture.setPostChain(postShader)) {
-                requiresUpdate = true;
-            }
-            if (!requiresUpdate) {
-                texture.unMarkForUpdate();
-            }
-            if (texture.isInitialized()) {
-                return texture.getTextureLocation();
-            } else {
-                SCHEDULER.get().forceUpdateNextTick(feedId);
-            }
+        if (!requiresUpdate) {
+            texture.unMarkForUpdate();
+        }
+        if (texture.isInitialized()) {
+            return texture.getTextureLocation();
+        } else {
+            SCHEDULER.get().forceUpdateNextTick(feedId);
         }
         return null;
     }

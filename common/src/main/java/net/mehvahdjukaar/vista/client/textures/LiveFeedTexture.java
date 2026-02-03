@@ -8,16 +8,20 @@ import net.mehvahdjukaar.vista.client.renderer.LevelRendererCameraState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.PostChain;
+import net.minecraft.client.renderer.PostPass;
+import net.minecraft.client.renderer.texture.Dumpable;
+import net.minecraft.client.renderer.texture.SpriteContents;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Consumer;
 
-public class LiveFeedTexture extends TickableFrameBufferBackedDynamicTexture {
+public class LiveFeedTexture extends TickableFrameBufferBackedDynamicTexture implements Dumpable {
 
     private static final ResourceLocation EMPTY_PIPELINE = VistaMod.res("shaders/post/empty.json");
 
@@ -66,7 +70,6 @@ public class LiveFeedTexture extends TickableFrameBufferBackedDynamicTexture {
             RenderTarget myTarget = this.getFrameBuffer();
             ResourceLocation chainId = postChainID == null ? EMPTY_PIPELINE : postChainID;
             postChain = new PostChain(mc.getTextureManager(), mc.getResourceManager(), myTarget, chainId);
-
             //add extra pass
             if (postFragment != null) {
 
@@ -79,8 +82,10 @@ public class LiveFeedTexture extends TickableFrameBufferBackedDynamicTexture {
                 postChain.addPass("blit", swapTarget, myTarget, false);
 
             }
-
-            this.postChain.resize(getWidth(), getHeight()); //dumb buts needed to initialize stuff
+            //TODO: fix flicker
+            for (PostPass postPass : postChain.passes) {
+                postPass.setOrthoMatrix(postChain.shaderOrthoMatrix);
+            }
         } catch (IOException ioexception) {
             VistaMod.LOGGER.warn("Failed to load shader: {}", postChainID, ioexception);
             gameRenderer.effectActive = false;
@@ -92,7 +97,7 @@ public class LiveFeedTexture extends TickableFrameBufferBackedDynamicTexture {
 
     public boolean setPostChain(@Nullable ResourceLocation newPostChainId) {
         ResourceLocation currentShader = this.postChainID;
-        if (!Objects.equals(currentShader, newPostChainId)) {
+        if (Objects.equals(currentShader, newPostChainId)) {
             return false;
         }
         this.postChainID = newPostChainId;
@@ -100,7 +105,7 @@ public class LiveFeedTexture extends TickableFrameBufferBackedDynamicTexture {
             postChain.close();
             postChain = null;
         }
-        recomputePostChain();
+        recomputePostChain(); //TODO: fix this making entity stuff not render for a split second
         return true;
     }
 
@@ -111,5 +116,12 @@ public class LiveFeedTexture extends TickableFrameBufferBackedDynamicTexture {
             postChain.close();
             postChain = null;
         }
+    }
+
+    @Override
+    public void dumpContents(ResourceLocation resourceLocation, Path path) throws IOException {
+        String string = resourceLocation.toDebugFileName() + ".png";
+        Path path2 = path.resolve(string);
+        this.getPixels().writeToFile(path2);
     }
 }

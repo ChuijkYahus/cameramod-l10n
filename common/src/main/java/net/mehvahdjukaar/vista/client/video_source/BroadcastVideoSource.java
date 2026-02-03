@@ -11,13 +11,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.UUID;
 
-public class BroadcastVideoSource implements IVideoSource {
-
-    private final UUID uuid;
-
-    public BroadcastVideoSource(UUID uuid) {
-        this.uuid = uuid;
-    }
+public record BroadcastVideoSource(UUID uuid) implements IVideoSource {
 
     @Override
     public @NotNull VertexConsumer getVideoFrameBuilder(float partialTick, MultiBufferSource buffer,
