@@ -58,7 +58,7 @@ public class SignalProjectorBlockEntity extends BlockEntity implements IScreenPr
     @Override
     public void setLevel(Level level) {
         super.setLevel(level);
-        this.ensureLinked();
+        this.ensureLinked(level, getBlockPos());
     }
 
     @Override
@@ -66,7 +66,7 @@ public class SignalProjectorBlockEntity extends BlockEntity implements IScreenPr
         super.loadAdditional(tag, registries);
         this.myUUID = tag.getUUID("UUID");
         this.url = tag.getString("url");
-        this.ensureLinked();
+        this.ensureLinked(level, getBlockPos());
 
 
     }

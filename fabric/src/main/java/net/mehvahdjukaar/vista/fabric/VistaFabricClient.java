@@ -22,7 +22,7 @@ public class VistaFabricClient {
         HudRenderCallback.EVENT.register(VistaFabricClient::onRenderHud);
         ServerWorldEvents.UNLOAD.register((server, world) -> {
             try {
-                if (PlatHelper.getPhysicalSide().isClient()) {
+                if (world.isClientSide) {
                     //got to be careful with classloading
                     VistaModClient.onLevelClose();
                 }

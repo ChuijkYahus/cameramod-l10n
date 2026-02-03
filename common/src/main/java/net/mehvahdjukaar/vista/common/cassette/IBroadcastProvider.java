@@ -5,32 +5,28 @@ import net.mehvahdjukaar.vista.common.BroadcastManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.UUID;
 
 public interface IBroadcastProvider {
 
-    default void ensureLinked() {
-        if (this.getLevel() instanceof ServerLevel sl) {
+    default void ensureLinked(Level level, BlockPos pos) {
+        if (level instanceof ServerLevel sl) {
             BroadcastManager.getInstance(sl)
-                    .linkFeed(this.getUUID(), new GlobalPos(sl.dimension(), this.getBlockPos()));
+                    .linkFeed(this.getUUID(), new GlobalPos(sl.dimension(), pos));
         }
     }
 
-    default void removeLink() {
-        if (getLevel() instanceof ServerLevel sl) {
+    default void removeLink(Level level) {
+        if (level instanceof ServerLevel sl) {
             BroadcastManager.getInstance(sl)
                     .unlinkFeed(this.getUUID());
         }
     }
 
-    BlockPos getBlockPos();
-
     UUID getUUID();
-
-    Object getLevel();
-
 
     @Nullable IVideoSource getBroadcastVideoSource();
 }

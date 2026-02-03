@@ -196,7 +196,9 @@ public class TVBlockEntity extends ItemDisplayTile {
                 if (++tv.soundLoopTicks >= (duration)) {
                     tv.soundLoopTicks = 0;
                     SoundEvent sound = tv.videoSource.getVideoSound();
-                    world.playLocalSound(pos, sound, SoundSource.BLOCKS, 1, 1.0f, false);
+                    if (sound != null) {
+                        world.playLocalSound(pos, sound, SoundSource.BLOCKS, 1, 1.0f, false);
+                    }
                 }
                 tv.animationTicks++;
             } else {
