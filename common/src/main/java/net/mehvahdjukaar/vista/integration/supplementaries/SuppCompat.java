@@ -7,7 +7,8 @@ import net.minecraft.world.item.Item;
 
 public class SuppCompat {
 
-    public static String getShaderForItem(Item item) {
-        return MobHeadShadersManager.INSTANCE.getShaderForItem(item);
+    public static ResourceLocation getShaderForItem(Item item) {
+        String shaderForItem = MobHeadShadersManager.INSTANCE.getShaderForItem(item);
+        return shaderForItem == null ? null : ResourceLocation.parse(shaderForItem);
     }
 }

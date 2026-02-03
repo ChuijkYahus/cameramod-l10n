@@ -50,8 +50,9 @@ public class LiveFeedTexturesManager {
 
 
     @Nullable
-    public static ResourceLocation requestLiveFeedTexture(Level level, UUID location, int screenSize,
-                                                          boolean requiresUpdate, @Nullable ResourceLocation postShader) {
+    public static ResourceLocation requestLiveFeedTexture(
+            Level level, UUID location, int screenSize,
+            boolean requiresUpdate, @Nullable ResourceLocation postShader) {
         if (VistaLevelRenderer.isRenderingLiveFeed()) {
             requiresUpdate = false; //suppress recursive updates
         }

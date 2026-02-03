@@ -193,7 +193,7 @@ public class ModRenderTypes extends RenderType {
         shader.safeGetUniform(name).set(value);
     }
 
-    public static RenderType getColorFilter(DyeColor color) {
-        return null;
+    public static ResourceLocation getColoredShader(DyeColor c) {
+        return VistaMod.res("shaders/post/" + c.getSerializedName() + "_tint");
     }
 }

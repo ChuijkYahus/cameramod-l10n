@@ -234,19 +234,4 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
     }
 
 
-    public ResourceLocation getPostShader() {
-        ItemStack filterItem = this.getDisplayedItem();
-        if (filterItem.isEmpty()) return null;
-        Item item = filterItem.getItem();
-        DyeColor color = BlocksColorAPI.getColor(item);
-        if (color != null) {
-            //  return ModRenderTypes.getColorFilter(color);
-        }
-        if (CompatHandler.SUPPLEMENTARIES) {
-            //TODO:
-//            return SuppCompat.getShaderForItem(filterItem);
-        }
-        return null;
-
-    }
 }
