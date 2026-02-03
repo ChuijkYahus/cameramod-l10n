@@ -1,18 +1,20 @@
 package net.mehvahdjukaar.vista.client.video_source;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import net.mehvahdjukaar.vista.client.ModRenderTypes;
+import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.client.textures.TvScreenVertexConsumers;
 import net.mehvahdjukaar.vista.common.cassette.CassetteItem;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.item.ItemStack;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public interface IVideoSource {
 
     IVideoSource EMPTY = new Empty();
 
+    @NotNull
     VertexConsumer getVideoFrameBuilder(
             float partialTick, MultiBufferSource buffer,
             boolean shouldUpdate, int screenSize, int pixelEffectRes,
@@ -28,11 +30,11 @@ public interface IVideoSource {
     }
 
     static IVideoSource create(ItemStack stack) {
-        //we could have also implemented in the item but its better separation like thus
-
+        //we could have also implemented in the item but its better separation like this
         if (stack.getItem() instanceof CassetteItem) {
-
             return new CassetteTapeVideoSource(stack);
+        } else if (stack.has(VistaMod.LINKED_FEED_COMPONENT.get())) {
+            return new BroadcastVideoSource(stack.get(VistaMod.LINKED_FEED_COMPONENT.get()));
         }
         return EMPTY;
     }
@@ -40,7 +42,7 @@ public interface IVideoSource {
     class Empty implements IVideoSource {
 
         @Override
-        public VertexConsumer getVideoFrameBuilder(float partialTick, MultiBufferSource buffer, boolean shouldUpdate, int screenSize, int pixelEffectRes, int videoAnimationTick, int switchAnim, float staticAnim) {
+        public @NotNull VertexConsumer getVideoFrameBuilder(float partialTick, MultiBufferSource buffer, boolean shouldUpdate, int screenSize, int pixelEffectRes, int videoAnimationTick, int switchAnim, float staticAnim) {
             return TvScreenVertexConsumers.getBarsVC(buffer, pixelEffectRes, switchAnim);
         }
     }

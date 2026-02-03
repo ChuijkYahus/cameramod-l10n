@@ -20,18 +20,9 @@ public class VistaFabricClient {
     public static void init() {
         ClientTickEvents.END_CLIENT_TICK.register(VistaModClient::onClientTick);
         HudRenderCallback.EVENT.register(VistaFabricClient::onRenderHud);
-        ServerWorldEvents.UNLOAD.register((server, world) -> {
-            try {
-                if (world.isClientSide) {
-                    //got to be careful with classloading
-                    VistaModClient.onLevelClose();
-                }
-            } catch (Exception e) {
-                VistaMod.LOGGER.error("Error unloading Vista client level data", e);
-            }
-        });
 
         ClientWorldEvents.AFTER_CLIENT_WORLD_CHANGE.register( (minecraft, clientLevel) -> {
+            VistaModClient.onLevelClose();
             VistaModClient.onLevelLoaded(clientLevel);
         });
 

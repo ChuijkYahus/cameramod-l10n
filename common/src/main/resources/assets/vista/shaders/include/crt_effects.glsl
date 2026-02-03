@@ -65,18 +65,18 @@ float t)
     float fadeStart = 0.0;
     float fadeDuration = 0.20;
 
-    float ryAnimStart = 0.15;
-    float ryAnimDuration = 0.40;
+    float ryAnimStart = 0.1;
+    float ryAnimDuration = 0.3;
     float ryStart = 0.25;
-    float ryEnd = 0.001;
+    float ryEnd = 0.0005;
 
-    float rxAnimStart = 0.40;
-    float rxAnimDuration = 0.6;
+    float rxAnimStart = 0.38;
+    float rxAnimDuration = 0.62;
     float rxStart = 0.25;
     float rxEnd = 0.0;
 
-    float dotStart = 0.2;
-    float dotDuration = 0.8;
+    float dotStart = 0.1;
+    float dotDuration = 0.9;
     float dotRadiusMax = 0.1;
 
     // --- RADII ---

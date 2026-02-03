@@ -8,7 +8,7 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.core.Holder;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.item.ItemStack;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 
 public class CassetteTapeVideoSource implements IVideoSource {
 
@@ -37,7 +37,7 @@ public class CassetteTapeVideoSource implements IVideoSource {
     }
 
     @Override
-    public VertexConsumer getVideoFrameBuilder(
+    public @NotNull VertexConsumer getVideoFrameBuilder(
             float partialTick, MultiBufferSource buffer, boolean shouldUpdate, int screenSize, int pixelEffectRes,
             int animationTick, int switchAnim, float staticAnim) {
 

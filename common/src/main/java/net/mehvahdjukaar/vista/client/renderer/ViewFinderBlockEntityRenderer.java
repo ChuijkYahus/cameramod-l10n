@@ -2,7 +2,6 @@ package net.mehvahdjukaar.vista.client.renderer;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.mojang.math.Axis;
 import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.client.ViewFinderController;
 import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlock;
@@ -102,12 +101,13 @@ public class ViewFinderBlockEntityRenderer implements BlockEntityRenderer<ViewFi
         this.model.render(poseStack, builder, packedLight, packedOverlay);
 
         ItemStack lens = tile.getDisplayedItem();
-        if (!isControlledByLocalInstance && !lens.isEmpty()) {
+        if (!isControlledByLocalInstance && !lens.isEmpty() &&
+                !VistaLevelRenderer.isViewFinderRenderingLiveFeed(tile)) {
 
             this.base.visible = false;
             this.legsVisual.visible = false;
             this.head.visible = false;
-            this .lens.visible = true;
+            this.lens.visible = true;
 
 
             Material material = VistaModClient.VIEW_FINDER_LENS_MATERIAL.apply(lens.getItem());
@@ -130,16 +130,16 @@ public class ViewFinderBlockEntityRenderer implements BlockEntityRenderer<ViewFi
                 PartPose.ZERO);
 
         legs.addOrReplaceChild("legs_visual", CubeListBuilder.create()
-                .texOffs(0, 36).addBox(5.0F, -4.0F, -2.0F, 2.0F, 10.0F, 4.0F)
-                .texOffs(12, 36).addBox(-7.0F, -4.0F, -2.0F, 2.0F, 10.0F, 4.0F),
+                        .texOffs(0, 36).addBox(5.0F, -4.0F, -2.0F, 2.0F, 10.0F, 4.0F)
+                        .texOffs(12, 36).addBox(-7.0F, -4.0F, -2.0F, 2.0F, 10.0F, 4.0F),
                 PartPose.ZERO);
 
         PartDefinition pivot = legs.addOrReplaceChild("head_pivot", CubeListBuilder.create(),
                 PartPose.offsetAndRotation(0.0F, -1.0F, 0.0F, -0.1745F, 0.0F, 0.0F));
 
-       pivot.addOrReplaceChild("head", CubeListBuilder.create()
+        pivot.addOrReplaceChild("head", CubeListBuilder.create()
                         .texOffs(0, 16)
-                       .addBox(-5.0F, -6.0F, -4F, 10.0F, 12.0F, 8.0F),
+                        .addBox(-5.0F, -6.0F, -4F, 10.0F, 12.0F, 8.0F),
                 PartPose.ZERO);
 
         partdefinition.addOrReplaceChild("base", CubeListBuilder.create()
@@ -151,7 +151,7 @@ public class ViewFinderBlockEntityRenderer implements BlockEntityRenderer<ViewFi
         pivot.addOrReplaceChild("lens", CubeListBuilder.create()
                         .texOffs(0, 0)
                         .addBox(-2.0F, -3.0F, -6.0F, 4.0F, 4.0F, 2.0F),
-                PartPose.rotation(0,Mth.PI, 0));
+                PartPose.rotation(0, Mth.PI, 0));
 
         return LayerDefinition.create(meshdefinition, 64, 64);
     }

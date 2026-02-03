@@ -1,20 +1,6 @@
 {
   "replace": false,
   "values": [
-    "minecraft:skeleton_skull",
-    "minecraft:wither_skeleton_skull",
-    "minecraft:dragon_head",
-    "minecraft:creeper_head",
-    "minecraft:zombie_head",
-    "minecraft:piglin_head",
-    {
-      "id": "supplementaries:spider_head",
-      "required": false
-    },
-    {
-      "id": "supplementaries:enderman_head",
-      "required": false
-    },
     "#c:glass_panes"
   ]
 }

@@ -13,7 +13,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
-import java.nio.file.Path;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Consumer;
 
@@ -48,10 +48,6 @@ public class LiveFeedTexture extends TickableFrameBufferBackedDynamicTexture {
         return associatedUUID;
     }
 
-    public @Nullable ResourceLocation getPostShader() {
-        return postChainID;
-    }
-
     public void applyPostChain() {
         GameRenderer gameRenderer = Minecraft.getInstance().gameRenderer;
         if (postChain != null) {
@@ -82,7 +78,6 @@ public class LiveFeedTexture extends TickableFrameBufferBackedDynamicTexture {
                 //swap back
                 postChain.addPass("blit", swapTarget, myTarget, false);
 
-
             }
 
             this.postChain.resize(getWidth(), getHeight()); //dumb buts needed to initialize stuff
@@ -95,13 +90,18 @@ public class LiveFeedTexture extends TickableFrameBufferBackedDynamicTexture {
         }
     }
 
-    public void setPostChain(@Nullable ResourceLocation postChainId) {
-        this.postChainID = postChainId;
+    public boolean setPostChain(@Nullable ResourceLocation newPostChainId) {
+        ResourceLocation currentShader = this.postChainID;
+        if (!Objects.equals(currentShader, newPostChainId)) {
+            return false;
+        }
+        this.postChainID = newPostChainId;
         if (postChain != null) {
             postChain.close();
             postChain = null;
         }
         recomputePostChain();
+        return true;
     }
 
     @Override

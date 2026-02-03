@@ -17,6 +17,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
 
@@ -35,7 +36,7 @@ public class TVEndermanObservationController {
     private final UUID broadcastUUID;
     private final TVBlockEntity myTv;
 
-    public TVEndermanObservationController(UUID broadcastUUID, TVBlockEntity tv) {
+    public TVEndermanObservationController(@NotNull UUID broadcastUUID, TVBlockEntity tv) {
         this.broadcastUUID = broadcastUUID;
         this.myTv = tv;
     }

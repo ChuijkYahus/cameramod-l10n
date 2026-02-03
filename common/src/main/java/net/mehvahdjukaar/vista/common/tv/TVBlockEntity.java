@@ -24,6 +24,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class TVBlockEntity extends ItemDisplayTile {
@@ -73,9 +74,9 @@ public class TVBlockEntity extends ItemDisplayTile {
         super.loadAdditional(tag, registries);
         this.connectedTvsWidth = Math.max(1, tag.getInt("ConnectionWidth"));
         this.connectedTvHeight = Math.max(1, tag.getInt("ConnectionHeight"));
-        cacheState(); //no called by update client state on first load since level is null..
     }
 
+    @NotNull
     public IVideoSource getVideoSource() {
         return videoSource;
     }
@@ -118,35 +119,28 @@ public class TVBlockEntity extends ItemDisplayTile {
         return stack.is(VistaMod.CASSETTE.get()) || stack.is(VistaMod.HOLLOW_CASSETTE.get()) ||
                 (CompatHandler.EXPOSURE && ExposureCompat.isPictureItem(stack));
     }
-    //TODO: is this needed? put in renderer?
-
-
-    private void cacheState() {
-        ItemStack displayedItem = this.getDisplayedItem();
-
-        var uuid = displayedItem.get(VistaMod.LINKED_FEED_COMPONENT.get());
-        this.observationController = new TVEndermanObservationController(uuid, this);
-        this.videoSource = IVideoSource.create(displayedItem);
-    }
 
     @Override
     public void updateTileOnInventoryChanged() {
         super.updateTileOnInventoryChanged();
-        cacheState();
+        ItemStack displayedItem = this.getDisplayedItem();
+
+        var uuid = displayedItem.get(VistaMod.LINKED_FEED_COMPONENT.get());
+        this.observationController = uuid == null ? null : new TVEndermanObservationController(uuid, this);
     }
 
     @Override
     public void updateClientVisualsOnLoad() {
         super.updateClientVisualsOnLoad();
-        cacheState();
+        this.videoSource = IVideoSource.create(this.getDisplayedItem());
         this.animationTicks = 0;
     }
 
-    public ItemInteractionResult interactWithPlayerItem(Player player, InteractionHand handIn, ItemStack stack, int slot,
-                                                        BlockHitResult hit) {
+    public ItemInteractionResult interactWithPlayerItem(
+            Player player, InteractionHand handIn, ItemStack stack, int slot, BlockHitResult hit) {
 
         ItemStack current = this.getDisplayedItem();
-        if (!current.isEmpty()) {
+        if (!current.isEmpty() && (canPlaceItem(0, stack) || stack.isEmpty())) {
             level.playSound(player, worldPosition, VistaMod.CASSETTE_EJECT_SOUND.get(),
                     SoundSource.BLOCKS, 1, 1);
             //pop current

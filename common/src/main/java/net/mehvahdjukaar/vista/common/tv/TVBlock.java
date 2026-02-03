@@ -163,7 +163,6 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
         if (level.isClientSide) return ItemInteractionResult.SUCCESS;
 
         TVBlockEntity masterTile = getMasterBlockEntity(level, pos, state);
-        player.sendSystemMessage(Component.literal("tv found " + masterTile));
         if (masterTile != null) {
             return masterTile.interactWithPlayerItem(player, hand, stack, 0, hitResult);
         }

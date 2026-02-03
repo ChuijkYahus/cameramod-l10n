@@ -22,7 +22,9 @@ import java.util.function.Consumer;
 public class VistaDynamicResources extends DynamicClientResourceProvider {
 
     public VistaDynamicResources() {
-        super(VistaMod.res("color_shaders"), PackGenerationStrategy.REGEN_ON_EVERY_RELOAD);
+        super(VistaMod.res("color_shaders"),
+
+                PackGenerationStrategy.CACHED);
     }
 
     @Override
@@ -179,7 +181,7 @@ public class VistaDynamicResources extends DynamicClientResourceProvider {
 
                 // add to resource sink
                 resourceSink.addJson(
-                        VistaMod.res("shaders/post/" + c.getSerializedName() + "_tint"),
+                        VistaMod.res("shaders/post/" + c.getSerializedName() + "_tint.json"),
                         json,
                         ResType.GENERIC
                 );

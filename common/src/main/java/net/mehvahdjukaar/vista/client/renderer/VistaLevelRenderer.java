@@ -44,10 +44,14 @@ public class VistaLevelRenderer {
     private static final Int2ObjectArrayMap<RenderTarget> CANVASES = new Int2ObjectArrayMap<>();
     private static final DummyCamera DUMMY_CAMERA = new DummyCamera();
 
-    private static boolean renderingLiveFeed = false;
+    private static ViewFinderBlockEntity renderingLiveFeedVF = null;
 
     public static boolean isRenderingLiveFeed() {
-        return renderingLiveFeed;
+        return renderingLiveFeedVF != null;
+    }
+
+    public static boolean isViewFinderRenderingLiveFeed(ViewFinderBlockEntity vf) {
+        return renderingLiveFeedVF == vf;
     }
 
     public static void clear() {
@@ -83,7 +87,7 @@ public class VistaLevelRenderer {
         Camera mainCamera = mc.gameRenderer.mainCamera;
         mc.gameRenderer.mainCamera = camera;
 
-        renderingLiveFeed = true;
+        renderingLiveFeedVF = tile;
 
         float partialTicks = mc.getTimer().getGameTimeDeltaTicks();
 
@@ -143,7 +147,7 @@ public class VistaLevelRenderer {
         renderTarget.bindWrite(false);
         canvas.blitToScreen(renderTarget.width, renderTarget.height);
         //stop using main buffer mixin
-        renderingLiveFeed = false;
+        renderingLiveFeedVF = null;
 
         mc.mainRenderTarget = mainTarget;
         mc.gameRenderer.mainCamera = mainCamera;

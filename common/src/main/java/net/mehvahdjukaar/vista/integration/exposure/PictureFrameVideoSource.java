@@ -14,13 +14,14 @@ import io.github.mortuusars.exposure.world.item.component.album.AlbumPage;
 import io.github.mortuusars.exposure.world.item.util.ItemAndStack;
 import net.mehvahdjukaar.moonlight.api.misc.TField;
 import net.mehvahdjukaar.moonlight.api.misc.TMethod;
+import net.mehvahdjukaar.vista.client.ModRenderTypes;
 import net.mehvahdjukaar.vista.client.textures.TvScreenVertexConsumers;
 import net.mehvahdjukaar.vista.client.video_source.IVideoSource;
-import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -47,13 +48,20 @@ public class PictureFrameVideoSource implements IVideoSource {
     }
 
     @Override
-    public @Nullable VertexConsumer getVideoFrameBuilder(TVBlockEntity targetScreen, float partialTick, MultiBufferSource buffer, boolean shouldUpdate, int screenSize, int pixelEffectRes) {
+    public @NotNull VertexConsumer getVideoFrameBuilder(
+            float partialTick, MultiBufferSource buffer, boolean shouldUpdate, int screenSize, int pixelEffectRes,
+            int videoAnimationTick, int switchAnim, float staticAnim) {
 
-        ResourceLocation texture = getPictureTextureForRenderer(pictureStack, targetScreen.getAnimationTick());
+        VertexConsumer vc = null;
+        ResourceLocation texture = getPictureTextureForRenderer(pictureStack, videoAnimationTick);
         if (texture != null) {
-            return TvScreenVertexConsumers.getFullSpriteVC(texture, buffer, 0, pixelEffectRes, targetScreen.getSwitchAnimationTicks());
+            vc = TvScreenVertexConsumers.getFullSpriteVC(texture, buffer, 0,
+                    pixelEffectRes, switchAnim);
         }
-        return null;
+        if (vc == null) {
+            vc = buffer.getBuffer(ModRenderTypes.NOISE);
+        }
+        return vc;
     }
 
 

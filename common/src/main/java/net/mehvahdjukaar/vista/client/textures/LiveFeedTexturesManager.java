@@ -65,9 +65,7 @@ public class LiveFeedTexturesManager {
                             screenSize * ClientConfigs.RESOLUTION_SCALE.get(),
                             LiveFeedTexturesManager::refreshTexture, location, POSTERIZE_FRAGMENT_SHADER));
 
-            ResourceLocation currentShader = texture.getPostShader();
-            if (!Objects.equals(currentShader, postShader)) {
-                texture.setPostChain(postShader);
+            if (texture.setPostChain(postShader)) {
                 requiresUpdate = true;
             }
             if (!requiresUpdate) {

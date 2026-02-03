@@ -4,26 +4,23 @@ import net.mehvahdjukaar.moonlight.api.block.IOneUserInteractable;
 import net.mehvahdjukaar.moonlight.api.block.ItemDisplayTile;
 import net.mehvahdjukaar.moonlight.api.misc.TileOrEntityTarget;
 import net.mehvahdjukaar.moonlight.api.platform.network.NetworkHelper;
-import net.mehvahdjukaar.moonlight.api.set.BlocksColorAPI;
 import net.mehvahdjukaar.moonlight.api.util.math.MthUtils;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.client.video_source.IVideoSource;
 import net.mehvahdjukaar.vista.client.video_source.ViewFinderVideoSource;
 import net.mehvahdjukaar.vista.common.cassette.IBroadcastProvider;
 import net.mehvahdjukaar.vista.integration.CompatHandler;
+import net.mehvahdjukaar.vista.integration.supplementaries.SuppCompat;
 import net.mehvahdjukaar.vista.network.ClientBoundControlViewFinderPacket;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.DyeColor;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
@@ -53,7 +50,7 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
     //not saved
     @Nullable
     private UUID controllingPlayer = null;
-    private IVideoSource videoSource;
+    private final ViewFinderVideoSource videoSource;
 
     public ViewFinderBlockEntity(BlockPos pos, BlockState state) {
         super(VistaMod.VIEWFINDER_TILE.get(), pos, state);
@@ -70,6 +67,12 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
     public static void tick(Level level, BlockPos pos, BlockState state, ViewFinderBlockEntity tile) {
         tile.prevYaw = tile.yaw;
         tile.prevPitch = tile.pitch;
+    }
+
+    @Override
+    public void updateClientVisualsOnLoad() {
+        super.updateClientVisualsOnLoad();
+        videoSource.onItemChanged();
     }
 
     @Override
@@ -106,7 +109,8 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
 
     @Override
     public boolean canPlaceItem(int index, ItemStack stack) {
-        return this.isEmpty() && stack.is(VistaMod.VIEW_FINDER_FILTER);
+        return this.isEmpty() && stack.is(VistaMod.VIEW_FINDER_FILTER) ||
+                (CompatHandler.SUPPLEMENTARIES && SuppCompat.getShaderForItem(stack.getItem()) != null);
     }
 
     @Override

@@ -42,7 +42,7 @@ public class ClientConfigs {
                 .comment("Pixel density of televisions, in pixels per block side")
                 .define("pixel_density", 1.37f, 0.1f, 10);
         SCALE_PIXELS = builder.comment("Make connected tvs have higher pixel density, such that the per block pixel density is constant")
-                .define("constant_pixel_density", false);
+                .define("constant_pixel_density", true);
         VIGNETTE = builder
                 .comment("Amount of vignette effect applied to television live feed (0 = none, 1 = full)")
                 .define("vignette", 1f, 0f, 1f);

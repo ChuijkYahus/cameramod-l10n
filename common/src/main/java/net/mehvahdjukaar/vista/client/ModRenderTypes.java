@@ -194,6 +194,6 @@ public class ModRenderTypes extends RenderType {
     }
 
     public static ResourceLocation getColoredShader(DyeColor c) {
-        return VistaMod.res("shaders/post/" + c.getSerializedName() + "_tint");
+        return VistaMod.res("shaders/post/" + c.getSerializedName() + "_tint.json");
     }
 }

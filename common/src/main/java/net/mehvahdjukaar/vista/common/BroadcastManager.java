@@ -105,6 +105,7 @@ public class BroadcastManager extends WorldSavedData {
         return linkedFeeds.get(viewFinderUUID);
     }
 
+    @Nullable
     public IBroadcastProvider getBroadcast(UUID feedId, boolean clientSide) {
         GlobalPos pos = getBroadcastOriginById(feedId);
         if (pos != null) {

@@ -14,12 +14,11 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import org.jetbrains.annotations.NotNull;
 
 public class ViewFinderVideoSource implements IVideoSource {
 
-
     private final ViewFinderBlockEntity viewFinder;
-
     private ResourceLocation postShader = null;
 
     public ViewFinderVideoSource(ViewFinderBlockEntity viewFinder) {
@@ -33,8 +32,6 @@ public class ViewFinderVideoSource implements IVideoSource {
         if (filterItem.isEmpty()) {
             return;
         }
-        // previsto superminimo assorbibile? ogni quanto apprendistato?
-        // 25? 5500. mensa? computer?
         Item item = filterItem.getItem();
         DyeColor color = BlocksColorAPI.getColor(item);
         if (color != null) {
@@ -46,7 +43,7 @@ public class ViewFinderVideoSource implements IVideoSource {
 
 
     @Override
-    public VertexConsumer getVideoFrameBuilder(
+    public @NotNull VertexConsumer getVideoFrameBuilder(
             float partialTick, MultiBufferSource buffer, boolean shouldUpdate,
             int screenSize, int pixelEffectRes,
             int videoAnimationTick, int switchAnim, float staticAnim) {
@@ -54,14 +51,15 @@ public class ViewFinderVideoSource implements IVideoSource {
         ResourceLocation tex = LiveFeedTexturesManager.requestLiveFeedTexture(viewFinder.getLevel(),
                 viewFinder.getUUID(), screenSize, shouldUpdate, postShader);
 
-        VertexConsumer vc;
+        VertexConsumer vc = null;
         if (tex != null) {
             if (ClientConfigs.rendersDebug()) {
                 // renderDebug(tex, poseStack, buffer, partialTick, blockEntity);
             }
             vc = TvScreenVertexConsumers.getFullSpriteVC(tex, buffer, staticAnim,
                     pixelEffectRes, switchAnim);
-        } else {
+        }
+        if (vc == null) {
             vc = buffer.getBuffer(ModRenderTypes.NOISE);
         }
         return vc;
