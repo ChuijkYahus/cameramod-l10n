@@ -12,6 +12,7 @@ import net.minecraft.core.GlobalPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
@@ -67,6 +68,23 @@ public class ViewFinderBlock extends DirectionalBlock implements EntityBlock {
         return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
     }
 
+    @Override
+    public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) {
+        super.setPlacedBy(level, pos, state, placer, stack);
+        if (placer != null && level.getBlockEntity(pos) instanceof ViewFinderBlockEntity cannon) {
+            Direction dir = Direction.orderedByNearest(placer)[0];
+            Direction myDir = state.getValue(FACING).getOpposite();
+            var access = ViewFinderAccess.block(cannon);
+            if (dir.getAxis() == Direction.Axis.Y) {
+                float pitch = dir == Direction.UP ? -90 : 90;
+                cannon.setPitch(access, (myDir.getOpposite() == dir ? pitch + 180 : pitch));
+
+            } else {
+                float yaw = dir.toYRot();
+                cannon.setYaw(access, (myDir.getOpposite() == dir ? yaw + 180 : yaw));
+            }
+        }
+    }
 
     @Override
     public BlockState rotate(BlockState state, Rotation rot) {

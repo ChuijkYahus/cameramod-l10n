@@ -104,7 +104,7 @@ public interface ViewFinderAccess {
     static ViewFinderAccess find(Level level, TileOrEntityTarget target) {
         var obj = target.getTarget(level);
         if (obj instanceof ViewFinderBlockEntity cannon) {
-            return new Block(cannon);
+            return block(cannon);
         } else if (obj instanceof ViewFinderAccess cannon) {
             return cannon;
         }

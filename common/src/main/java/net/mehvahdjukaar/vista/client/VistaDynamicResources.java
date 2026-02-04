@@ -31,7 +31,7 @@ public class VistaDynamicResources extends DynamicClientResourceProvider {
     protected void regenerateDynamicAssets(Consumer<ResourceGenTask> consumer) {
         consumer.accept((resourceManager, resourceSink) -> {
             for (var c : DyeColor.values()) {
-                int intValue = c.getTextureDiffuseColor(); // assumed 0xRRGGBB
+                int intValue = c.getTextColor(); // assumed 0xRRGGBB
                 // unpack sRGB 0..1
                 float sr = ((intValue >> 16) & 0xFF) / 255f;
                 float sg = ((intValue >> 8) & 0xFF) / 255f;

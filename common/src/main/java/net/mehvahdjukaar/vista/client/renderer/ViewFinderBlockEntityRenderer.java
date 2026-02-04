@@ -150,7 +150,7 @@ public class ViewFinderBlockEntityRenderer implements BlockEntityRenderer<ViewFi
         //camera lens
         pivot.addOrReplaceChild("lens", CubeListBuilder.create()
                         .texOffs(0, 0)
-                        .addBox(-2.0F, -3.0F, -6.0F, 4.0F, 4.0F, 2.0F),
+                        .addBox(-3.0F, -4.0F, -5.0F, 6.0F, 6.0F, 1.0F),
                 PartPose.rotation(0, Mth.PI, 0));
 
         return LayerDefinition.create(meshdefinition, 64, 64);

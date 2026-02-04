@@ -55,7 +55,6 @@ public class LiveFeedTexturesManager {
 
         ViewFinderBlockEntity tile = BroadcastManager.findLinkedViewFinder(level, location);
         if (tile == null) return null;
-          postShader = ResourceLocation.parse("shaders/post/spider.json");
         ResourceLocation feedId = getOrCreateFeedId(location);
         LiveFeedTexture texture = RenderedTexturesManager.requestTexture(feedId, () ->
                 new LiveFeedTexture(feedId,

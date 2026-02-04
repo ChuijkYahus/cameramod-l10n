@@ -41,7 +41,6 @@ public class VistaLevelRenderer {
 
     private static final Set<SectionOcclusionGraph> MANAGED_GRAPHS = new WeakHashSet<>();
     private static final AtomicReference<SectionOcclusionGraph> MC_OWN_GRAPH = new AtomicReference<>(null);
-    private static final Int2ObjectArrayMap<RenderTarget> CANVASES = new Int2ObjectArrayMap<>();
     private static final DummyCamera DUMMY_CAMERA = new DummyCamera();
 
     private static ViewFinderBlockEntity renderingLiveFeedVF = null;
@@ -55,32 +54,13 @@ public class VistaLevelRenderer {
     }
 
     public static void clear() {
-        if (RenderSystem.isOnRenderThread()) {
-            CANVASES.values().forEach(RenderTarget::destroyBuffers);
-        } else {
-            VistaMod.LOGGER.error("Something called unload level on the wrong thread!");
-            RenderSystem.recordRenderCall(() -> {
-                CANVASES.values().forEach(RenderTarget::destroyBuffers);
-            });
-        }
-        CANVASES.clear();
         DUMMY_CAMERA.entity = null;
-    }
-
-    private static RenderTarget getOrCreateCanvas(int size) {
-        RenderTarget canvas = CANVASES.get(size);
-        if (canvas == null) {
-            canvas = new TextureTarget(size, size, true, ON_OSX);
-            CANVASES.put(size, canvas);
-        }
-        return canvas;
     }
 
     public static void render(LiveFeedTexture text, ViewFinderBlockEntity tile) {
         Minecraft mc = Minecraft.getInstance();
-        RenderTarget renderTarget = text.getFrameBuffer();
         RenderTarget mainTarget = mc.getMainRenderTarget();
-        RenderTarget canvas = getOrCreateCanvas(renderTarget.width);
+        RenderTarget canvas = text.getBackBuffer();
         mc.mainRenderTarget = canvas;
 
         Camera camera = DUMMY_CAMERA;
@@ -124,7 +104,7 @@ public class VistaLevelRenderer {
         MANAGED_GRAPHS.add(feedCameraState.getOcclusionGraph());
         MC_OWN_GRAPH.set(oldCameraState.getOcclusionGraph());
 
-        renderLevel(mc, renderTarget, camera, fov);
+        renderLevel(mc, canvas, camera, fov);
 
         MC_OWN_GRAPH.set(null);
 
@@ -143,9 +123,6 @@ public class VistaLevelRenderer {
 
 
         //swap buffers
-        canvas.bindRead();
-        renderTarget.bindWrite(false);
-        canvas.blitToScreen(renderTarget.width, renderTarget.height);
         //stop using main buffer mixin
         renderingLiveFeedVF = null;
 
@@ -190,7 +167,6 @@ public class VistaLevelRenderer {
         Matrix4f modelViewMatrix = RenderSystem.getModelViewMatrix();
 
         VistaPlatStuff.dispatchRenderStageAfterLevel(mc, poseStack, camera, modelViewMatrix, projMatrix);
-
         GL11.glFrontFace(GL11.GL_CCW);
     }
 
