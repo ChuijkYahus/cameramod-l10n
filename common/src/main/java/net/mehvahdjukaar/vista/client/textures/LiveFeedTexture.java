@@ -97,7 +97,7 @@ public class LiveFeedTexture extends TickableFrameBufferBackedDynamicTexture imp
                 }
                 postChain.addPass("vista:posterize", canvasTarget, swapTarget, false);
                 //swap back
-                postChain.addPass("blit", swapTarget, myTarget, false);
+                postChain.addPass("vista:blit_flip_y", swapTarget, myTarget, false);
 
             }
             //TODO: fix flicker

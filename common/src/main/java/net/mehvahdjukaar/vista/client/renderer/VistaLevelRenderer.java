@@ -148,8 +148,6 @@ public class VistaLevelRenderer {
 
         Matrix4f projMatrix = createProjectionMatrix(gr, target, fov);
         //fix Y inversion
-        projMatrix.scale(1.0f, -1.0f, 1.0f);
-        GL11.glFrontFace(GL11.GL_CW);
         gr.resetProjectionMatrix(projMatrix);
 
         PoseStack poseStack = new PoseStack();
@@ -160,14 +158,12 @@ public class VistaLevelRenderer {
         Vec3 cameraPos = camera.getPosition();
         lr.prepareCullFrustum(cameraPos, cameraMatrix, projMatrix);
 
-
         lr.renderLevel(deltaTracker, false, camera, gr,
                 gr.lightTexture(), cameraMatrix, projMatrix);
 
         Matrix4f modelViewMatrix = RenderSystem.getModelViewMatrix();
 
         VistaPlatStuff.dispatchRenderStageAfterLevel(mc, poseStack, camera, modelViewMatrix, projMatrix);
-        GL11.glFrontFace(GL11.GL_CCW);
     }
 
     @SuppressWarnings("ConstantConditions")
