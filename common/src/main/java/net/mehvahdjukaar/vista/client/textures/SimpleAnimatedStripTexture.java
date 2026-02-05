@@ -3,21 +3,30 @@ package net.mehvahdjukaar.vista.client.textures;
 import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.platform.TextureUtil;
 import com.mojang.blaze3d.systems.RenderSystem;
+import net.mehvahdjukaar.moonlight.api.util.math.Vec2i;
+import net.mehvahdjukaar.vista.VistaMod;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.client.renderer.texture.Dumpable;
 import net.minecraft.client.renderer.texture.SpriteContents;
 import net.minecraft.client.renderer.texture.SpriteLoader;
 import net.minecraft.client.renderer.texture.atlas.SpriteResourceLoader;
+import net.minecraft.client.resources.metadata.animation.AnimationMetadataSection;
+import net.minecraft.client.resources.metadata.animation.FrameSize;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
+import net.minecraft.server.packs.resources.ResourceMetadata;
+import net.minecraft.util.Mth;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Path;
+
+import static net.mehvahdjukaar.vista.client.textures.GifPathSpriteSource.computeAtlasLayout;
 
 public class SimpleAnimatedStripTexture extends AbstractTexture implements Dumpable {
     private static final SpriteResourceLoader DEFAULT_LOADER = SpriteResourceLoader.create(SpriteLoader.DEFAULT_METADATA_SECTIONS);
@@ -63,14 +72,10 @@ public class SimpleAnimatedStripTexture extends AbstractTexture implements Dumpa
     }
 
     private @Nullable SpriteContents loadContent(ResourceManager resourceManager) throws FileNotFoundException {
-        SpriteContents spriteContents;
         Resource resource = resourceManager.getResourceOrThrow(this.fileLocation);
-        if (this.fileLocation.getPath().endsWith(".gif")) {
-            spriteContents = GifPathSpriteSource.readGif(resource, this.fileLocation);
-        } else {
-            spriteContents = DEFAULT_LOADER.loadSprite(fileLocation, resource);
-        }
-        return spriteContents;
+        SpriteResourceLoader loader = fileLocation.getPath().endsWith(".gif") ?
+                GifPathSpriteSource.GIF_CONTENT_LOADER : PNG_STRIP_LOADER;
+        return loader.loadSprite(fileLocation, resource);
     }
 
     private void doLoad(NativeImage image) {
@@ -88,4 +93,92 @@ public class SimpleAnimatedStripTexture extends AbstractTexture implements Dumpa
         Path path2 = path.resolve(string);
         spriteContents.originalImage.writeToFile(path2);
     }
+
+
+    //same as default logic
+    private static final SpriteResourceLoader PNG_STRIP_LOADER = (resourceLocation, resource) -> {
+        ResourceMetadata resourceMetadata;
+        try {
+            resourceMetadata = resource.metadata().copySections(SpriteLoader.DEFAULT_METADATA_SECTIONS);
+        } catch (Exception e) {
+            VistaMod.LOGGER.error("Unable to parse metadata from {}", resourceLocation, e);
+            return null;
+        }
+
+        NativeImage nativeImage;
+        try (InputStream inputStream = resource.open()) {
+            nativeImage = NativeImage.read(inputStream);
+        } catch (IOException e) {
+            VistaMod.LOGGER.error("Using missing texture, unable to load {}", resourceLocation, e);
+            return null;
+        }
+
+        AnimationMetadataSection metadata =
+                resourceMetadata.getSection(AnimationMetadataSection.SERIALIZER)
+                        .orElse(AnimationMetadataSection.EMPTY);
+
+        FrameSize frameSize = metadata.calculateFrameSize(nativeImage.getWidth(), nativeImage.getHeight());
+        int frameW = frameSize.width();
+        int frameH = frameSize.height();
+
+        if (!Mth.isMultipleOf(nativeImage.getWidth(), frameW) ||
+                !Mth.isMultipleOf(nativeImage.getHeight(), frameH)) {
+
+            VistaMod.LOGGER.error("Image {} size {},{} is not multiple of frame size {},{}",
+                    resourceLocation, nativeImage.getWidth(), nativeImage.getHeight(), frameW, frameH);
+            nativeImage.close();
+            return null;
+        }
+
+        int framesX = nativeImage.getWidth() / frameW;
+        int framesY = nativeImage.getHeight() / frameH;
+        int frameCount = framesX * framesY;
+
+        int maxDim = RenderSystem.maxSupportedTextureSize() / 2;
+
+        if (nativeImage.getWidth() <= maxDim && nativeImage.getHeight() <= maxDim) {
+            return new SpriteContents(resourceLocation, frameSize, nativeImage, resourceMetadata);
+        }
+
+        NativeImage atlas = buildTileAtlasFromStrip(
+                nativeImage, frameW, frameH, frameCount, maxDim
+        );
+
+        nativeImage.close();
+        return new SpriteContents(resourceLocation, frameSize, atlas, resourceMetadata);
+    };
+
+    private static NativeImage buildTileAtlasFromStrip(
+            NativeImage originalImage,
+            int frameW,
+            int frameH,
+            int frameCount,
+            int maxTextureSize
+    ) {
+        // Layout computed from frameCount, frameW/H, maxTextureSize
+        Vec2i layout = computeAtlasLayout(frameCount, frameW, frameH, maxTextureSize, maxTextureSize);
+        int rows = layout.x(); // number of rows per column
+        int cols = layout.y(); // number of columns
+
+        int atlasW = cols * frameW;
+        int atlasH = rows * frameH;
+
+        NativeImage out = new NativeImage(NativeImage.Format.RGBA, atlasW, atlasH, true);
+
+        for (int i = 0; i < frameCount; i++) {
+            // COLUMN-MAJOR indexing: fill columns first
+            int row = i % rows;
+            int col = i / rows;
+
+            int xOff = col * frameW;
+            int yOff = row * frameH;
+
+            // Source is vertical strip
+            originalImage.copyRect(out, 0, i * frameH, xOff, yOff, frameW, frameH, false, false);
+        }
+
+        return out;
+    }
+
+
 }

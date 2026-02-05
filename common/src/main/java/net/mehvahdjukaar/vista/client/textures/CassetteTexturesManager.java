@@ -1,17 +1,27 @@
 package net.mehvahdjukaar.vista.client.textures;
 
 import com.google.common.base.Suppliers;
+import com.mojang.blaze3d.platform.NativeImage;
+import net.mehvahdjukaar.vista.VistaMod;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.texture.SpriteContents;
+import net.minecraft.client.renderer.texture.SpriteLoader;
 import net.minecraft.client.renderer.texture.TextureManager;
+import net.minecraft.client.resources.metadata.animation.AnimationMetadataSection;
+import net.minecraft.client.resources.metadata.animation.FrameSize;
 import net.minecraft.resources.FileToIdConverter;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
+import net.minecraft.server.packs.resources.ResourceMetadata;
 import net.minecraft.server.packs.resources.SimplePreparableReloadListener;
+import net.minecraft.util.Mth;
 import net.minecraft.util.profiling.ProfilerFiller;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -80,5 +90,6 @@ public class CassetteTexturesManager extends SimplePreparableReloadListener<Map<
     public SimpleAnimatedStripTexture getAnimatedTexture(ResourceLocation id) {
         return knowAnimations.getOrDefault(id, () -> null).get();
     }
+
 }
 

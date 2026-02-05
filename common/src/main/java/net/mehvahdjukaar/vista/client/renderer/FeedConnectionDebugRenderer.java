@@ -24,7 +24,6 @@ public class FeedConnectionDebugRenderer implements DebugRenderer.SimpleDebugRen
     @Override
     public void render(PoseStack poseStack, MultiBufferSource buffer, double camX, double camY, double camZ) {
 
-        if(true)return;
         ClientLevel level = Minecraft.getInstance().level;
 
         renderAll(poseStack, buffer, camX, camY, camZ, level, level, 0.9f, 0.9f, 0.1f, 0);

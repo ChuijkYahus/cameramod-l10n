@@ -10,8 +10,10 @@ public record AnimationStripData(
         int frameWidth,
         int frameHeight,
         int frameCount,
-        int fullWidth,
-        int fullHeight,
+        int atlasWidth,
+        int atlasHeight,
+        int atlasColumns,
+        int atlasRows,
         float frameRelativeH,
         float frameRelativeW,
         SpriteContents.FrameInfo[] frameInfos,
@@ -19,18 +21,19 @@ public record AnimationStripData(
 ) {
 
     public static AnimationStripData create(SpriteContents spriteContents) {
-        float invFullH = 1f / spriteContents.originalImage.getHeight();
-        float invFullW = 1f / spriteContents.originalImage.getWidth();
+        int atlasH = spriteContents.originalImage.getHeight();
+        int atlasW = spriteContents.originalImage.getWidth();
+        int spriteW = spriteContents.width();
+        int spriteH = spriteContents.height();
+        float invFullH = 1f / atlasH;
+        float invFullW = 1f / atlasW;
 
         //calculate average time per frame
         SpriteContents.AnimatedTexture animatedTexture = spriteContents.animatedTexture;
         SpriteContents.FrameInfo[] times = new SpriteContents.FrameInfo[]{};
         if (animatedTexture != null) {
             List<SpriteContents.FrameInfo> allTimes = new ArrayList<>(animatedTexture.frames);
-            //if all frames are equal we just add 1
-            if (allTimes.stream().allMatch(f -> f.equals(allTimes.getFirst()))) {
-                times = new SpriteContents.FrameInfo[]{allTimes.getFirst()};
-            } else times = allTimes.toArray(new SpriteContents.FrameInfo[0]);
+            times = allTimes.toArray(new SpriteContents.FrameInfo[0]);
         }
 
         int totalDuration = Arrays.stream(times)
@@ -38,13 +41,15 @@ public record AnimationStripData(
                 .sum();
 
         return new AnimationStripData(
-                spriteContents.width(),
-                spriteContents.height(),
+                spriteW,
+                spriteH,
                 spriteContents.getFrameCount(),
-                spriteContents.originalImage.getWidth(),
-                spriteContents.originalImage.getHeight(),
-                spriteContents.height() * invFullH,
-                spriteContents.width() * invFullW,
+                atlasW,
+                atlasH,
+                atlasW / spriteW,
+                atlasH / spriteH,
+                spriteH * invFullH,
+                spriteW * invFullW,
                 times,
                 totalDuration
         );
@@ -52,13 +57,12 @@ public record AnimationStripData(
 
     public static final AnimationStripData EMPTY =
             new AnimationStripData(16, 16, 1, 16, 16,
-                    1f, 1f, new SpriteContents.FrameInfo[]{}, 1);
+                    1,1,1f, 1f, new SpriteContents.FrameInfo[]{}, 1);
 
     public float getU(float u, int time) {
         int frameIndex = getFrameIndexFromTime(time);
 
-        int rows = fullHeight / frameHeight;
-        int col = frameIndex / rows;
+        int col = frameIndex / atlasRows;
 
         return u * frameRelativeW + col * frameRelativeW;
     }
@@ -66,8 +70,7 @@ public record AnimationStripData(
     public float getV(float v, int time) {
         int frameIndex = getFrameIndexFromTime(time);
 
-        int rows = fullHeight / frameHeight;
-        int row = frameIndex % rows;
+        int row = frameIndex % atlasRows;
 
         return v * frameRelativeH + row * frameRelativeH;
     }

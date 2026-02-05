@@ -1,12 +1,14 @@
 package net.mehvahdjukaar.vista.client.textures;
 
 import com.mojang.blaze3d.platform.NativeImage;
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.mehvahdjukaar.moonlight.api.util.math.Vec2i;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.minecraft.client.renderer.texture.SpriteContents;
+import net.minecraft.client.renderer.texture.atlas.SpriteResourceLoader;
 import net.minecraft.client.renderer.texture.atlas.SpriteSource;
 import net.minecraft.client.renderer.texture.atlas.SpriteSourceType;
 import net.minecraft.client.resources.metadata.animation.AnimationFrame;
@@ -17,7 +19,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.ResourceMetadata;
-import org.jetbrains.annotations.Nullable;
 
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
@@ -59,7 +60,8 @@ public class GifPathSpriteSource implements SpriteSource {
             if (optional.isEmpty()) {
                 VistaMod.LOGGER.warn("Unable to find texture {}", id);
             } else {
-                output.add(id, spriteLoader -> readGif(optional.get(), id));
+                output.add(id, spriteLoader ->
+                        GIF_CONTENT_LOADER.loadSprite(id, optional.get()));
             }
         });
     }
@@ -70,7 +72,7 @@ public class GifPathSpriteSource implements SpriteSource {
     }
 
 
-    public static @Nullable SpriteContents readGif(Resource resource, ResourceLocation id) {
+    public static final SpriteResourceLoader GIF_CONTENT_LOADER = (ResourceLocation id, Resource resource) -> {
         try (InputStream inputStream = resource.open();
              ImageInputStream imageStream = ImageIO.createImageInputStream(inputStream)) {
 
@@ -83,9 +85,9 @@ public class GifPathSpriteSource implements SpriteSource {
 
             int w = wh[0], h = wh[1];
 
-            int maxTexHeight = 1024 * 4; // safe for most GPUs
-            NativeImage strip = buildTiledAtlas(frames, w, h, maxTexHeight);
-         //   NativeImage strip = buildVerticalStrip(frames, w, h);
+            int maxTextureSize = RenderSystem.maxSupportedTextureSize() / 2;
+            NativeImage strip = buildTiledAtlas(frames, w, h, maxTextureSize);
+            // NativeImage strip = buildVerticalStrip(frames, w, h);
             // strip.writeToFile(new File("temp_image_dump.png")); // debug if needed
 
             AnimationMetadataSection anim = buildAnimationMeta(frameTicks, w, h, frames.size());
@@ -100,7 +102,7 @@ public class GifPathSpriteSource implements SpriteSource {
             VistaMod.LOGGER.error("unable to build animated strip for {}", id, e);
         }
         return null;
-    }
+    };
 
     // --- helpers ---
 
@@ -305,7 +307,7 @@ public class GifPathSpriteSource implements SpriteSource {
         return fm;
     }
 
-    private static Vec2i computeAtlasLayout(int frameCount, int frameW, int frameH, int maxWidth, int maxHeight) {
+    public static Vec2i computeAtlasLayout(int frameCount, int frameW, int frameH, int maxWidth, int maxHeight) {
         // Best fit layout: [rows, cols]
         int bestRows = 1;
         int bestCols = frameCount;
@@ -339,12 +341,12 @@ public class GifPathSpriteSource implements SpriteSource {
             List<BufferedImage> frames,
             int frameW,
             int frameH,
-            int maxTextureDimension
+            int maxTextureSize
     ) {
         int frameCount = frames.size();
 
         // --- Compute rows and columns using vertical-strip preference ---
-        Vec2i layout = computeAtlasLayout(frameCount, frameW, frameH, maxTextureDimension, maxTextureDimension);
+        Vec2i layout = computeAtlasLayout(frameCount, frameW, frameH, maxTextureSize, maxTextureSize);
         int rows = layout.x();
         int cols = layout.y();
 
@@ -370,6 +372,7 @@ public class GifPathSpriteSource implements SpriteSource {
 
         return out;
     }
+
     private static NativeImage buildVerticalStrip(List<BufferedImage> frames, int w, int h) {
         NativeImage out = new NativeImage(NativeImage.Format.RGBA, w, h * frames.size(), true);
         for (int i = 0; i < frames.size(); i++) {
@@ -400,13 +403,13 @@ public class GifPathSpriteSource implements SpriteSource {
         // Ensure ticks size >= frames (GIF metadata should match, but be safe)
         if (ticks.size() < frameCount) {
             // pad with last value
-            int last = ticks.isEmpty() ? 1 : Math.max(1, ticks.get(ticks.size() - 1));
+            int last = ticks.isEmpty() ? 1 : Math.max(1, ticks.getLast());
             while (ticks.size() < frameCount) ticks.add(last);
         }
 
         // Check if all frames have the same duration
         boolean uniform = true;
-        int first = Math.max(1, ticks.get(0));
+        int first = Math.max(1, ticks.getFirst());
         for (int i = 1; i < frameCount; i++) {
             if (!ticks.get(i).equals(first)) {
                 uniform = false;

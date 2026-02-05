@@ -90,17 +90,16 @@ public class LiveFeedTexture extends TickableFrameBufferBackedDynamicTexture imp
             postChain = new PostChain(mc.getTextureManager(), mc.getResourceManager(), canvasTarget, chainId);
             //add extra pass
             if (postFragment != null) {
-
                 RenderTarget swapTarget = postChain.getTempTarget("swap");
                 if (swapTarget == null) {
                     postChain.addTempTarget("swap", getWidth(), getHeight());
                 }
-                postChain.addPass("vista:posterize", canvasTarget, swapTarget, false);
+                postChain.addPass(postFragment.toString(), canvasTarget, swapTarget, false);
                 //swap back
                 postChain.addPass("vista:blit_flip_y", swapTarget, myTarget, false);
-
+            }else{
+                postChain.addPass("vista:blit_flip_y", canvasTarget, myTarget, false);
             }
-            //TODO: fix flicker
             for (PostPass postPass : postChain.passes) {
                 postPass.setOrthoMatrix(postChain.shaderOrthoMatrix);
             }
@@ -120,7 +119,7 @@ public class LiveFeedTexture extends TickableFrameBufferBackedDynamicTexture imp
         }
         this.postChainID = newPostChainId;
 
-        RenderSystem.recordRenderCall(() -> recomputePostChain()); //TODO: fix this making entity stuff not render for a split second
+        RenderSystem.recordRenderCall(this::recomputePostChain); //TODO: fix this making entity stuff not render for a split second
         return true;
     }
 
@@ -142,6 +141,7 @@ public class LiveFeedTexture extends TickableFrameBufferBackedDynamicTexture imp
     public void dumpContents(ResourceLocation resourceLocation, Path path) throws IOException {
         String string = resourceLocation.toDebugFileName() + ".png";
         Path path2 = path.resolve(string);
+        this.download();
         this.getPixels().writeToFile(path2);
     }
 }

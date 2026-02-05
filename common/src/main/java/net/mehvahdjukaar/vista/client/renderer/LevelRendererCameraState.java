@@ -19,7 +19,7 @@ public class LevelRendererCameraState {
     private double prevCamRotX = Double.MIN_VALUE;
     private double prevCamRotY = Double.MIN_VALUE;
     @Nullable
-    private ViewArea viewArea;
+    private ViewArea viewArea; //same as the actual one as this doesnt change actualy. unless we want to add it in the fufture to make far away cameras load
     private int lastViewDistance;
     private SectionOcclusionGraph sectionOcclusionGraph;
     private ObjectArrayList<SectionRenderDispatcher.RenderSection> visibleSections = new ObjectArrayList<>(10000);
