@@ -5,7 +5,9 @@ import net.mehvahdjukaar.moonlight.api.misc.RegSupplier;
 import net.mehvahdjukaar.moonlight.api.misc.WorldSavedDataType;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.platform.RegHelper;
-import net.mehvahdjukaar.vista.common.*;
+import net.mehvahdjukaar.vista.common.BroadcastManager;
+import net.mehvahdjukaar.vista.common.EndermanFreezeWhenLookedAtThroughTVGoal;
+import net.mehvahdjukaar.vista.common.ModLootOverrides;
 import net.mehvahdjukaar.vista.common.cassette.CassetteItem;
 import net.mehvahdjukaar.vista.common.cassette.CassetteTape;
 import net.mehvahdjukaar.vista.common.cassette.CassetteTapeLootFunction;
@@ -39,7 +41,6 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
-import net.minecraft.world.level.lighting.LightEngine;
 import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.level.storage.loot.functions.LootItemFunctionType;
 import org.apache.logging.log4j.LogManager;
@@ -137,6 +138,10 @@ public class VistaMod {
 
 
     public static void init() {
+
+        if (CompatHandler.IRIS) {
+            VistaMod.LOGGER.error("IRIS mod detected. Vista WILL have visual issues and degraded performance. This is not something that I can fix. Trust me I tried but it's inherently due to how Iris was made and should be handled there.");
+        }
 
         //TODO:
         //fix recursive rendering by using a canvas buffer

@@ -14,6 +14,7 @@ public class CompatHandler {
     public static final boolean DISTANT_HORIZONS = PlatHelper.isModLoaded("distanthorizons");
     public static final boolean COMPUTER_CRAFT = PlatHelper.isModLoaded("computercraft");
     public static final boolean SUPPLEMENTARIES = PlatHelper.isModLoaded("supplementaries");
+    public static final boolean IRIS = PlatHelper.isModLoaded("iris") || PlatHelper.isModLoaded("oculus");
 
     public static void init() {
         if (EXPOSURE) ExposureCompat.init();

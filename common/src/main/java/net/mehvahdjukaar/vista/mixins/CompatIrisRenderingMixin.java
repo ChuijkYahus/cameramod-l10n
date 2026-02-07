@@ -1,24 +1,24 @@
 package net.mehvahdjukaar.vista.mixins;
 
+import com.llamalad7.mixinextras.injector.v2.WrapWithCondition;
 import net.irisshaders.iris.mixin.LevelRendererAccessor;
+import net.irisshaders.iris.pipeline.CompositeRenderer;
 import net.irisshaders.iris.pipeline.IrisRenderingPipeline;
+import net.irisshaders.iris.shadows.ShadowRenderer;
 import net.mehvahdjukaar.vista.client.renderer.VistaLevelRenderer;
 import net.minecraft.client.Camera;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Pseudo;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Pseudo
 @Mixin(IrisRenderingPipeline.class)
 public class CompatIrisRenderingMixin {
 
-    @Inject(method = "renderShadows", at = @At("HEAD"), cancellable = true)
-    private void vista$cockblockIrisShadowGlobalStateMessBugs(LevelRendererAccessor worldRenderer, Camera playerCamera, CallbackInfo ci) {
-        //we do this to prevent iris from rendering shadows when we are doing our custom rendering pass for the viewfinder
-        if (VistaLevelRenderer.isRenderingLiveFeed()) {
-            ci.cancel();
-        }
+    @WrapWithCondition(method = "renderShadows", at = @At(value = "INVOKE", target = "Lnet/irisshaders/iris/shadows/ShadowRenderer;renderShadows(Lnet/irisshaders/iris/mixin/LevelRendererAccessor;Lnet/minecraft/client/Camera;)V"))
+    private boolean vista$cockblockIrisShadowGlobalStateMessBugs(ShadowRenderer instance, LevelRendererAccessor fullyBufferedMultiBufferSource, Camera camera) {
+        return !VistaLevelRenderer.isRenderingLiveFeed();
     }
 }
