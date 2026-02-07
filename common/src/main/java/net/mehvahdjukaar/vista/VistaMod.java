@@ -1,6 +1,5 @@
 package net.mehvahdjukaar.vista;
 
-import net.mehvahdjukaar.moonlight.api.MoonlightRegistry;
 import net.mehvahdjukaar.moonlight.api.misc.EventCalled;
 import net.mehvahdjukaar.moonlight.api.misc.RegSupplier;
 import net.mehvahdjukaar.moonlight.api.misc.WorldSavedDataType;
@@ -20,6 +19,7 @@ import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlock;
 import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
 import net.mehvahdjukaar.vista.configs.CommonConfigs;
 import net.mehvahdjukaar.vista.integration.CompatHandler;
+import net.mehvahdjukaar.vista.integration.supplementaries.SuppCompat;
 import net.mehvahdjukaar.vista.network.ModNetwork;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
@@ -39,6 +39,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.lighting.LightEngine;
 import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.level.storage.loot.functions.LootItemFunctionType;
 import org.apache.logging.log4j.LogManager;
@@ -196,7 +197,7 @@ public class VistaMod {
             event.add(CreativeModeTabs.FUNCTIONAL_BLOCKS, SIGNAL_PROJECTOR.get());
         } else {
             if (event.getTab().hasAnyItems()) {
-                event.add(CreativeModeTabs.OP_BLOCKS, SIGNAL_PROJECTOR.get(), MoonlightRegistry.SPAWN_BOX_BLOCK.get());
+                event.add(CreativeModeTabs.OP_BLOCKS, SIGNAL_PROJECTOR.get());
             }
         }
 
@@ -212,4 +213,7 @@ public class VistaMod {
     }
 
 
+    public static boolean funny() {
+        return CompatHandler.SUPPLEMENTARIES && SuppCompat.isFunny();
+    }
 }

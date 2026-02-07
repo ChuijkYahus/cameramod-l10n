@@ -3,9 +3,17 @@ package net.mehvahdjukaar.vista.client.textures;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
+import com.mojang.blaze3d.pipeline.RenderTarget;
+import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.BufferUploader;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.VertexFormat;
 import net.mehvahdjukaar.moonlight.api.client.texture_renderer.RenderedTexturesManager;
 import net.mehvahdjukaar.moonlight.api.misc.RollingBuffer;
 import net.mehvahdjukaar.vista.VistaMod;
+import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.client.AdaptiveUpdateScheduler;
 import net.mehvahdjukaar.vista.client.renderer.VistaLevelRenderer;
 import net.mehvahdjukaar.vista.common.BroadcastManager;
@@ -15,6 +23,9 @@ import net.mehvahdjukaar.vista.integration.CompatHandler;
 import net.mehvahdjukaar.vista.integration.distant_horizons.DistantHorizonsCompat;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.renderer.ShaderInstance;
+import net.minecraft.client.renderer.texture.AbstractTexture;
+import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.VisibleForDebug;
 import net.minecraft.world.level.Level;
@@ -22,6 +33,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Supplier;
 
@@ -116,6 +128,10 @@ public class LiveFeedTexturesManager {
 
             VistaLevelRenderer.render(text, tile);
 
+            if (VistaMod.funny()) {
+                drawOverlay(text.getFrameBuffer(), VistaModClient.LL_LOGO);
+            }
+
 
         };
 
@@ -134,5 +150,34 @@ public class LiveFeedTexturesManager {
                     .push(level.getGameTime());
         }
     }
+
+    private static void drawOverlay(RenderTarget frameBuffer, ResourceLocation overlayTexture) {
+        Minecraft mc = Minecraft.getInstance();
+        var oldTarget = mc.getMainRenderTarget();
+        frameBuffer.bindWrite(true);
+
+        AbstractTexture texture = mc.getTextureManager().getTexture(overlayTexture);
+
+        RenderSystem.assertOnRenderThread();
+        GlStateManager._colorMask(true, true, true, true);
+        GlStateManager._disableDepthTest();
+        GlStateManager._depthMask(false);
+        GlStateManager._enableBlend();
+
+        ShaderInstance shaderInstance = Objects.requireNonNull(mc.gameRenderer.blitShader, "Blit shader not loaded");
+        shaderInstance.setSampler("DiffuseSampler", texture.getId());
+        shaderInstance.apply();
+        BufferBuilder bufferBuilder = RenderSystem.renderThreadTesselator().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.BLIT_SCREEN);
+        bufferBuilder.addVertex(0.0F, 0.0F, 0.0F);
+        bufferBuilder.addVertex(1.0F, 0.0F, 0.0F);
+        bufferBuilder.addVertex(1.0F, 1.0F, 0.0F);
+        bufferBuilder.addVertex(0.0F, 1.0F, 0.0F);
+        BufferUploader.draw(bufferBuilder.buildOrThrow());
+        shaderInstance.clear();
+        GlStateManager._depthMask(true);
+        GlStateManager._colorMask(true, true, true, true);
+        oldTarget.bindWrite(true);
+    }
+
 
 }

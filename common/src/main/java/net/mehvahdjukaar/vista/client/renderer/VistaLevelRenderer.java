@@ -1,13 +1,10 @@
 package net.mehvahdjukaar.vista.client.renderer;
 
 import com.mojang.blaze3d.pipeline.RenderTarget;
-import com.mojang.blaze3d.pipeline.TextureTarget;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.PoseStack;
-import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
+import com.mojang.blaze3d.vertex.*;
 import net.mehvahdjukaar.moonlight.api.misc.WeakHashSet;
 import net.mehvahdjukaar.moonlight.core.client.DummyCamera;
-import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.VistaPlatStuff;
 import net.mehvahdjukaar.vista.client.textures.LiveFeedTexture;
 import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
@@ -30,7 +27,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
-import org.lwjgl.opengl.GL11;
 
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
@@ -55,9 +51,13 @@ public class VistaLevelRenderer {
 
     public static void clear() {
         DUMMY_CAMERA.entity = null;
+        MC_OWN_GRAPH.set(null);
+        MANAGED_GRAPHS.clear();
+        renderingLiveFeedVF = null;
     }
 
     public static void render(LiveFeedTexture text, ViewFinderBlockEntity tile) {
+
         Minecraft mc = Minecraft.getInstance();
         RenderTarget mainTarget = mc.getMainRenderTarget();
         RenderTarget canvas = text.getBackBuffer();
@@ -120,7 +120,6 @@ public class VistaLevelRenderer {
             DeltaTracker deltaTracker = mc.getTimer();
             mc.gameRenderer.postEffect.process(deltaTracker.getGameTimeDeltaTicks());
         }
-
 
         //swap buffers
         //stop using main buffer mixin

@@ -39,6 +39,7 @@ import java.util.Map;
 import java.util.function.Function;
 
 public class VistaModClient {
+
     private static final ResourceLocation SHULKER_SHEET = ResourceLocation.withDefaultNamespace("textures/atlas/shulker_boxes.png");
 
     public static final CoreShaderContainer POSTERIZE_SHADER = new CoreShaderContainer(GameRenderer::getPositionTexColorShader);
@@ -46,6 +47,8 @@ public class VistaModClient {
     public static final CoreShaderContainer STATIC_SHADER = new CoreShaderContainer(GameRenderer::getPositionColorShader);
 
     public static final ModelLayerLocation VIEWFINDER_MODEL = loc("viewfinder");
+
+    public static final ResourceLocation LL_LOGO = VistaMod.res("textures/entity/view_finder/ll.png");
 
     public static final Material VIEW_FINDER_MATERIAL = new Material(SHULKER_SHEET,
             VistaMod.res("entity/view_finder/viewfinder"));
