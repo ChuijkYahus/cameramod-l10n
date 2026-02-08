@@ -13,11 +13,12 @@ import net.minecraft.client.model.geom.builders.CubeListBuilder;
 import net.minecraft.client.model.geom.builders.LayerDefinition;
 import net.minecraft.client.model.geom.builders.MeshDefinition;
 import net.minecraft.client.model.geom.builders.PartDefinition;
+import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
-import net.minecraft.client.resources.model.Material;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
 import org.joml.Quaternionf;
@@ -110,15 +111,18 @@ public class ViewFinderBlockEntityRenderer implements BlockEntityRenderer<ViewFi
             this.lens.visible = true;
 
 
-            Material material = VistaModClient.VIEW_FINDER_LENS_MATERIAL.apply(lens.getItem());
-            VertexConsumer builder2 = material.buffer(bufferSource, RenderType::entitySolid);
-            this.model.render(poseStack, builder2, packedLight, packedOverlay);
+            ResourceLocation lensTexture = VistaModClient.VIEW_FINDER_LENS_TEXTURES.apply(lens.getItem());
+            VertexConsumer lensBuilder = bufferSource.getBuffer(RenderType.entityCutout(lensTexture));
+            this.model.render(poseStack, lensBuilder, packedLight, packedOverlay);
 
+            ResourceLocation emissiveTexture = VistaModClient.VIEW_FINDER_LENS_EMISSIVE_TEXTURES.apply(lens.getItem());
+            if (emissiveTexture != null) {
+                VertexConsumer emissiveBuilder = bufferSource.getBuffer(RenderType.eyes(emissiveTexture));
+                //int eyeLight = LightTexture.pack(LightTexture.FULL_BLOCK, LightTexture.sky(packedLight));
+                this.model.render(poseStack, emissiveBuilder, packedLight, packedOverlay);
+            }
         }
-
         poseStack.popPose();
-
-
     }
 
 

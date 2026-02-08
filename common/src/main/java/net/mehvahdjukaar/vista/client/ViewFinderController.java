@@ -169,6 +169,14 @@ public class ViewFinderController {
         return true;
     }
 
+    private static void toggleLock() {
+        ViewFinderBlockEntity tile = access.getInternalTile();
+        tile.setLocked(!tile.isLocked());
+
+        needsToUpdateServer = true;
+
+    }
+
     @EventCalled
     public static boolean onPlayerAttack() {
         if (!isActive()) return false;
@@ -181,14 +189,6 @@ public class ViewFinderController {
         if (!isActive()) return false;
         toggleLock();
         return true;
-    }
-
-    private static void toggleLock() {
-        ViewFinderBlockEntity tile = access.getInternalTile();
-        tile.setLocked(!tile.isLocked());
-
-        needsToUpdateServer = true;
-
     }
 
     @EventCalled
@@ -220,8 +220,8 @@ public class ViewFinderController {
             stopControllingAndSync();
         }
     }
-    //called by mixin. its cancellable. maybe switch all to this
 
+    //called by mixin. its cancellable. maybe switch all to this
     @EventCalled
     public static boolean onEarlyKeyPress(int key, int scanCode, int action, int modifiers) {
         if (!isActive()) return false;

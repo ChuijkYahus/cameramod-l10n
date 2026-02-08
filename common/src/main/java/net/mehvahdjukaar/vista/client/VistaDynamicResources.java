@@ -22,9 +22,7 @@ import java.util.function.Consumer;
 public class VistaDynamicResources extends DynamicClientResourceProvider {
 
     public VistaDynamicResources() {
-        super(VistaMod.res("color_shaders"),
-
-                PackGenerationStrategy.CACHED);
+        super(VistaMod.res("color_shaders"), PackGenerationStrategy.CACHED);
     }
 
     @Override

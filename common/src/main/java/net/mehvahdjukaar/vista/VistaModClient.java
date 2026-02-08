@@ -5,10 +5,8 @@ import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import net.mehvahdjukaar.moonlight.api.client.CoreShaderContainer;
 import net.mehvahdjukaar.moonlight.api.misc.EventCalled;
 import net.mehvahdjukaar.moonlight.api.platform.ClientHelper;
-import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.platform.RegHelper;
 import net.mehvahdjukaar.moonlight.api.util.Utils;
-import net.mehvahdjukaar.supplementaries.dynamicpack.ModClientDynamicResources;
 import net.mehvahdjukaar.vista.client.ViewFinderController;
 import net.mehvahdjukaar.vista.client.VistaDynamicResources;
 import net.mehvahdjukaar.vista.client.renderer.TvBlockEntityRenderer;
@@ -25,8 +23,6 @@ import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.Input;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.GameRenderer;
-import net.minecraft.client.renderer.Sheets;
-import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.resources.model.Material;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
@@ -52,12 +48,22 @@ public class VistaModClient {
 
     public static final Material VIEW_FINDER_MATERIAL = new Material(SHULKER_SHEET,
             VistaMod.res("entity/view_finder/viewfinder"));
-    public static final Function<Item, Material> VIEW_FINDER_LENS_MATERIAL = Util.memoize(item ->
+    public static final Function<Item, ResourceLocation> VIEW_FINDER_LENS_TEXTURES = Util.memoize(item ->
     {
         ResourceLocation id = Utils.getID(item);
         String path = id.getNamespace().equals("minecraft") ? id.getPath() : id.getNamespace() + "/" + id.getPath();
-        return new Material(SHULKER_SHEET, VistaMod.res("entity/view_finder/lenses/" + path));
+        return VistaMod.res("entity/view_finder/lenses/" + path);
     });
+    public static final Function<Item, @Nullable ResourceLocation> VIEW_FINDER_LENS_EMISSIVE_TEXTURES = Util.memoize(item ->
+    {
+        ResourceLocation id = Utils.getID(item);
+        if (id.getPath().equals("spider_head") || id.getPath().equals("dragon_head")) {
+            String path = id.getNamespace().equals("minecraft") ? id.getPath() : id.getNamespace() + "/" + id.getPath();
+            return VistaMod.res("entity/view_finder/lenses/" + path + "_emissive");
+        }
+        return null;
+    });
+
 
     //hack since resource key to level mapping isn't guaranteed 1:1. Don't even know if this will be used by any mods because in vanilla it isn't
     private static final Map<ResourceKey<Level>, Level> KNOWN_LEVELS_BY_DIMENSION = new MapMaker()
