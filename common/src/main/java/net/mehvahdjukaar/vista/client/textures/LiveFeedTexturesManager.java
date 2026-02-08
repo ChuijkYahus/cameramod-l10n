@@ -15,6 +15,7 @@ import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.client.AdaptiveUpdateScheduler;
 import net.mehvahdjukaar.vista.client.renderer.VistaLevelRenderer;
 import net.mehvahdjukaar.vista.common.BroadcastManager;
+import net.mehvahdjukaar.vista.common.cassette.IBroadcastProvider;
 import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
 import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
@@ -126,11 +127,20 @@ public class LiveFeedTexturesManager {
             setLastUpdatedTime(textureId, level);
 
             UUID uuid = text.getAssociatedUUID();
-            ViewFinderBlockEntity tile = BroadcastManager.findLinkedViewFinder(level, uuid);
-            if (tile == null) return; //TODO: do something here
+            BroadcastManager manager = BroadcastManager.getInstance(level);
+            IBroadcastProvider provider = manager.getBroadcast(uuid, true); //touch the feed to make sure it's still valid and linked
+            if (!(provider instanceof ViewFinderBlockEntity vf)) {
+                if(!text.isInactive()){
+                    text.setInactive(true);
+                    drawOverlay(text.getFrameBuffer(), VistaModClient.PAUSE_OVERLAY);
+                }
+                return;
+            }
+
+            text.setInactive(false);
 
 
-            VistaLevelRenderer.render(text, tile);
+            VistaLevelRenderer.render(text, vf);
 
             if (ClientConfigs.DRAW_DATE.get() || VistaMod.isFunny()) {
                 LocalDateTime now = LocalDateTime.now();

@@ -38,6 +38,7 @@ public class LiveFeedTexture extends TickableFrameBufferBackedDynamicTexture imp
     @Nullable
     private ResourceLocation postChainID;
     private PostChain postChain;
+    private boolean inactive = false;
 
 
     public LiveFeedTexture(ResourceLocation resourceLocation, int size,
@@ -143,5 +144,13 @@ public class LiveFeedTexture extends TickableFrameBufferBackedDynamicTexture imp
         Path path2 = path.resolve(string);
         this.download();
         this.getPixels().writeToFile(path2);
+    }
+
+   public boolean isInactive () {
+        return inactive;
+    }
+
+    public void setInactive(boolean inactive) {
+        this.inactive = inactive;
     }
 }
