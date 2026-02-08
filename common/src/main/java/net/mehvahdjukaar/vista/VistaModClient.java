@@ -44,22 +44,21 @@ public class VistaModClient {
 
     public static final ModelLayerLocation VIEWFINDER_MODEL = loc("viewfinder");
 
-    public static final ResourceLocation LL_LOGO = VistaMod.res("textures/entity/view_finder/ll.png");
+    public static final ResourceLocation LL_LOGO = VistaMod.res("textures/cassette_tape/liveleak.png");
 
     public static final Material VIEW_FINDER_MATERIAL = new Material(SHULKER_SHEET,
             VistaMod.res("entity/view_finder/viewfinder"));
+
     public static final Function<Item, ResourceLocation> VIEW_FINDER_LENS_TEXTURES = Util.memoize(item ->
     {
         ResourceLocation id = Utils.getID(item);
-        String path = id.getNamespace().equals("minecraft") ? id.getPath() : id.getNamespace() + "/" + id.getPath();
-        return VistaMod.res("entity/view_finder/lenses/" + path);
+        return VistaMod.res("textures/entity/view_finder/lenses/" + id.getPath() + ".png");
     });
     public static final Function<Item, @Nullable ResourceLocation> VIEW_FINDER_LENS_EMISSIVE_TEXTURES = Util.memoize(item ->
     {
         ResourceLocation id = Utils.getID(item);
         if (id.getPath().equals("spider_head") || id.getPath().equals("dragon_head")) {
-            String path = id.getNamespace().equals("minecraft") ? id.getPath() : id.getNamespace() + "/" + id.getPath();
-            return VistaMod.res("entity/view_finder/lenses/" + path + "_emissive");
+            return VistaMod.res("entity/view_finder/lenses/" + id.getPath() + "_emissive");
         }
         return null;
     });

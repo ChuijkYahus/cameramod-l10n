@@ -12,6 +12,7 @@ import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import net.mehvahdjukaar.moonlight.api.client.texture_renderer.RenderedTexturesManager;
 import net.mehvahdjukaar.moonlight.api.misc.RollingBuffer;
+import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.client.AdaptiveUpdateScheduler;
@@ -128,7 +129,7 @@ public class LiveFeedTexturesManager {
 
             VistaLevelRenderer.render(text, tile);
 
-            if (VistaMod.funny()) {
+            if (VistaMod.funny() || PlatHelper.isDev()) {
                 drawOverlay(text.getFrameBuffer(), VistaModClient.LL_LOGO);
             }
 
