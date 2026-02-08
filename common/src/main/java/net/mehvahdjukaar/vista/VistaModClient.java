@@ -57,7 +57,7 @@ public class VistaModClient {
     public static final Function<Item, @Nullable ResourceLocation> VIEW_FINDER_LENS_EMISSIVE_TEXTURES = Util.memoize(item ->
     {
         ResourceLocation id = Utils.getID(item);
-        if (id.getPath().equals("spider_head") || id.getPath().equals("dragon_head")) {
+        if (id.getPath().equals("spider_head") || id.getPath().equals("dragon_head") || id.getPath().equals("enderman_head")) {
             return VistaMod.res("textures/entity/view_finder/lenses/" + id.getPath() + "_emissive.png");
         }
         return null;
