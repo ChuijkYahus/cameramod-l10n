@@ -1,5 +1,6 @@
 package net.mehvahdjukaar.vista.mixins.fabric;
 
+import net.irisshaders.iris.mixin.MixinLevelRenderer;
 import net.mehvahdjukaar.vista.client.ViewFinderController;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.gui.Gui;
