@@ -1,1 +1,5 @@
-fixed render debug
+- swapped static and color bars textures for missing feed and missing content tv states
+- tvs that have a view finder thats far away and have an active texture will display a pause overlay
+- added funny live leak easter egg
+- endermen will be angered when looked at through at TV, just like SCP 096
+- view finders can apply post shaders to their feed. This is done with glass panes or with mob heads when supplementaries is on

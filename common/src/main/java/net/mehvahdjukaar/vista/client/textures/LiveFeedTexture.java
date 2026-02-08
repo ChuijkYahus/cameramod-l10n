@@ -38,6 +38,7 @@ public class LiveFeedTexture extends TickableFrameBufferBackedDynamicTexture imp
     @Nullable
     private ResourceLocation postChainID;
     private PostChain postChain;
+    private boolean inactive = false;
 
 
     public LiveFeedTexture(ResourceLocation resourceLocation, int size,
@@ -50,7 +51,7 @@ public class LiveFeedTexture extends TickableFrameBufferBackedDynamicTexture imp
         //can cause flicker?
         this.backBuffer = new TextureTarget(size, size, true, ON_OSX);
 //this too?
-        this.recomputePostChain();
+        RenderSystem.recordRenderCall(this::recomputePostChain);
     }
 
     public LevelRendererCameraState getRendererState() {
@@ -119,7 +120,7 @@ public class LiveFeedTexture extends TickableFrameBufferBackedDynamicTexture imp
         }
         this.postChainID = newPostChainId;
 
-        RenderSystem.recordRenderCall(this::recomputePostChain); //TODO: fix this making entity stuff not render for a split second
+        RenderSystem.recordRenderCall(this::recomputePostChain);
         return true;
     }
 
@@ -143,5 +144,13 @@ public class LiveFeedTexture extends TickableFrameBufferBackedDynamicTexture imp
         Path path2 = path.resolve(string);
         this.download();
         this.getPixels().writeToFile(path2);
+    }
+
+   public boolean isInactive () {
+        return inactive;
+    }
+
+    public void setInactive(boolean inactive) {
+        this.inactive = inactive;
     }
 }

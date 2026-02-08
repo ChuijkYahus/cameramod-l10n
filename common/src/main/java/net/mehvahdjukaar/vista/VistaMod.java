@@ -218,7 +218,7 @@ public class VistaMod {
     }
 
 
-    public static boolean funny() {
-        return CompatHandler.SUPPLEMENTARIES && SuppCompat.isFunny();
+    public static boolean isFunny() {
+        return  PlatHelper.isDev() || (CompatHandler.SUPPLEMENTARIES && SuppCompat.isFunny());
     }
 }

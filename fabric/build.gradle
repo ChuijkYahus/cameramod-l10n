@@ -85,6 +85,10 @@ dependencies {
 
     modApi("net.mehvahdjukaar:moonlight-fabric:${moonlight_version}")
 
+    modRuntimeOnly("net.mehvahdjukaar:supplementaries-fabric:${supplementaries_version}"){
+        transitive = false
+    }
+
 
     modCompileOnly("curse.maven:sodium-394468:6382649")
     modCompileOnly("curse.maven:irisshaders-455508:6213635")

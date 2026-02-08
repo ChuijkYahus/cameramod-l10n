@@ -5,11 +5,9 @@ import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.BufferUploader;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.blaze3d.vertex.*;
 import net.mehvahdjukaar.moonlight.api.client.texture_renderer.RenderedTexturesManager;
 import net.mehvahdjukaar.moonlight.api.misc.RollingBuffer;
 import net.mehvahdjukaar.vista.VistaMod;
@@ -17,20 +15,27 @@ import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.client.AdaptiveUpdateScheduler;
 import net.mehvahdjukaar.vista.client.renderer.VistaLevelRenderer;
 import net.mehvahdjukaar.vista.common.BroadcastManager;
+import net.mehvahdjukaar.vista.common.cassette.IBroadcastProvider;
+import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
 import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.mehvahdjukaar.vista.integration.CompatHandler;
 import net.mehvahdjukaar.vista.integration.distant_horizons.DistantHorizonsCompat;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.renderer.LightTexture;
+import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.renderer.texture.AbstractTexture;
-import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.VisibleForDebug;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Matrix4f;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -122,14 +127,31 @@ public class LiveFeedTexturesManager {
             setLastUpdatedTime(textureId, level);
 
             UUID uuid = text.getAssociatedUUID();
-            ViewFinderBlockEntity tile = BroadcastManager.findLinkedViewFinder(level, uuid);
-            if (tile == null) return; //TODO: do something here
+            BroadcastManager manager = BroadcastManager.getInstance(level);
+            IBroadcastProvider provider = manager.getBroadcast(uuid, true); //touch the feed to make sure it's still valid and linked
+            if (!(provider instanceof ViewFinderBlockEntity vf)) {
+                if(!text.isInactive()){
+                    text.setInactive(true);
+                    drawOverlay(text.getFrameBuffer(), VistaModClient.PAUSE_OVERLAY);
+                }
+                return;
+            }
+
+            text.setInactive(false);
 
 
-            VistaLevelRenderer.render(text, tile);
+            VistaLevelRenderer.render(text, vf);
 
-            if (VistaMod.funny()) {
-                drawOverlay(text.getFrameBuffer(), VistaModClient.LL_LOGO);
+            if (ClientConfigs.DRAW_DATE.get() || VistaMod.isFunny()) {
+                LocalDateTime now = LocalDateTime.now();
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM/dd HH:mm:ss");
+                String cctvTimestamp = now.format(formatter);
+                drawText(text.getFrameBuffer(), cctvTimestamp, 2, 4, false, true);
+            }
+
+
+            if (VistaMod.isFunny()) {
+                drawOverlay(text.getFrameBuffer(), VistaModClient.LL_OVERLAY);
             }
 
 
@@ -151,10 +173,42 @@ public class LiveFeedTexturesManager {
         }
     }
 
+
+    private static void drawText(RenderTarget frameBuffer, String text,
+                                 int x, int y, boolean shadow, boolean background) {
+        Minecraft mc = Minecraft.getInstance();
+        RenderTarget oldTarget = mc.getMainRenderTarget();
+        frameBuffer.bindWrite(true);
+
+        Font font = mc.font;
+        MultiBufferSource.BufferSource bf = mc.renderBuffers().bufferSource();
+
+        RenderSystem.backupProjectionMatrix();
+        float baseScale = TVBlockEntity.MIN_SCREEN_PIXEL_SIZE * ClientConfigs.RESOLUTION_SCALE.get();
+        float size = baseScale * (frameBuffer.width / baseScale);
+        Matrix4f matrix4f = new Matrix4f().setOrtho(
+                0.0F, size, 0.0F, size, -1, 1);
+        RenderSystem.setProjectionMatrix(matrix4f, VertexSorting.ORTHOGRAPHIC_Z);
+        GlStateManager._disableCull(); //since we render backwards or something
+
+        Lighting.setupFor3DItems();
+        int backColor = !background ? 0 : (int) (0.25F * 255.0F) << 24;
+
+        font.drawInBatch(text, x, y, -1, shadow, new Matrix4f(),
+                bf, Font.DisplayMode.NORMAL, backColor, LightTexture.FULL_BRIGHT);
+
+        bf.endBatch();
+
+        RenderSystem.restoreProjectionMatrix();
+        oldTarget.bindWrite(true);
+    }
+
+
     private static void drawOverlay(RenderTarget frameBuffer, ResourceLocation overlayTexture) {
         Minecraft mc = Minecraft.getInstance();
-        var oldTarget = mc.getMainRenderTarget();
+        RenderTarget oldTarget = mc.getMainRenderTarget();
         frameBuffer.bindWrite(true);
+
 
         AbstractTexture texture = mc.getTextureManager().getTexture(overlayTexture);
 
@@ -163,6 +217,7 @@ public class LiveFeedTexturesManager {
         GlStateManager._disableDepthTest();
         GlStateManager._depthMask(false);
         GlStateManager._enableBlend();
+
 
         ShaderInstance shaderInstance = Objects.requireNonNull(mc.gameRenderer.blitShader, "Blit shader not loaded");
         shaderInstance.setSampler("DiffuseSampler", texture.getId());

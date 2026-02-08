@@ -18,6 +18,7 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
+import net.minecraft.client.renderer.entity.EndermanRenderer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
@@ -112,12 +113,12 @@ public class ViewFinderBlockEntityRenderer implements BlockEntityRenderer<ViewFi
 
 
             ResourceLocation lensTexture = VistaModClient.VIEW_FINDER_LENS_TEXTURES.apply(lens.getItem());
-            VertexConsumer lensBuilder = bufferSource.getBuffer(RenderType.entityCutout(lensTexture));
+            VertexConsumer lensBuilder = bufferSource.getBuffer(RenderType.entityCutoutNoCull(lensTexture));
             this.model.render(poseStack, lensBuilder, packedLight, packedOverlay);
 
             ResourceLocation emissiveTexture = VistaModClient.VIEW_FINDER_LENS_EMISSIVE_TEXTURES.apply(lens.getItem());
             if (emissiveTexture != null) {
-                VertexConsumer emissiveBuilder = bufferSource.getBuffer(RenderType.eyes(emissiveTexture));
+                VertexConsumer emissiveBuilder = bufferSource.getBuffer(RenderType.breezeEyes(emissiveTexture));
                 //int eyeLight = LightTexture.pack(LightTexture.FULL_BLOCK, LightTexture.sky(packedLight));
                 this.model.render(poseStack, emissiveBuilder, packedLight, packedOverlay);
             }

@@ -9,6 +9,7 @@ import net.mehvahdjukaar.moonlight.api.client.util.RotHlpr;
 import net.mehvahdjukaar.moonlight.api.client.util.VertexUtil;
 import net.mehvahdjukaar.moonlight.api.misc.ForgeOverride;
 import net.mehvahdjukaar.moonlight.api.misc.RollingBuffer;
+import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.vista.client.textures.LiveFeedTexturesManager;
 import net.mehvahdjukaar.vista.client.video_source.IVideoSource;
 import net.mehvahdjukaar.vista.common.tv.TVBlock;
@@ -21,6 +22,7 @@ import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
+import net.minecraft.client.renderer.blockentity.SignRenderer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
@@ -41,7 +43,7 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
 
     @Override
     public boolean shouldRenderOffScreen(TVBlockEntity blockEntity) {
-        return false;// PlatHelper.getPlatform().isFabric();
+        return  PlatHelper.getPlatform().isFabric();
     }
 
     @ForgeOverride
@@ -76,14 +78,14 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
 
         Vec2 screenCenter = blockEntity.getScreenBlockCenter();
 
-        if (!lod.isMedium()) return;
+        //if (!lod.isMedium()) return;
         if (lod.isPlaneCulled(dir, 0.5f, screenSize / 16f * 1.5f, 0f)) return;
 
         float yaw = dir.toYRot();
         poseStack.pushPose();
         poseStack.translate(0.5, 0.5, 0.5);
         poseStack.mulPose(Axis.YP.rotationDegrees(180 - yaw));
-        poseStack.translate(-screenCenter.x, screenCenter.y, -0.501);
+        poseStack.translate(-screenCenter.x, screenCenter.y, -0.505);
 
         float s = screenSize / 32f;
         int pixelEffectRes = ClientConfigs.SCALE_PIXELS.get() ? screenSize : TVBlockEntity.MIN_SCREEN_PIXEL_SIZE;
