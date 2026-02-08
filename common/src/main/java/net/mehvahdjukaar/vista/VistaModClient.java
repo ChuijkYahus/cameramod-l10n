@@ -58,7 +58,7 @@ public class VistaModClient {
     {
         ResourceLocation id = Utils.getID(item);
         if (id.getPath().equals("spider_head") || id.getPath().equals("dragon_head")) {
-            return VistaMod.res("entity/view_finder/lenses/" + id.getPath() + "_emissive");
+            return VistaMod.res("textures/entity/view_finder/lenses/" + id.getPath() + "_emissive.png");
         }
         return null;
     });

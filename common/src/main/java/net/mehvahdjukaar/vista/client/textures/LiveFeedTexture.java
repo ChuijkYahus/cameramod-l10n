@@ -50,7 +50,7 @@ public class LiveFeedTexture extends TickableFrameBufferBackedDynamicTexture imp
         //can cause flicker?
         this.backBuffer = new TextureTarget(size, size, true, ON_OSX);
 //this too?
-        this.recomputePostChain();
+        RenderSystem.recordRenderCall(this::recomputePostChain);
     }
 
     public LevelRendererCameraState getRendererState() {
@@ -119,7 +119,7 @@ public class LiveFeedTexture extends TickableFrameBufferBackedDynamicTexture imp
         }
         this.postChainID = newPostChainId;
 
-        RenderSystem.recordRenderCall(this::recomputePostChain); //TODO: fix this making entity stuff not render for a split second
+        RenderSystem.recordRenderCall(this::recomputePostChain);
         return true;
     }
 
