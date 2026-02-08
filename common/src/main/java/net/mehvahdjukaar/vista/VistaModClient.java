@@ -44,7 +44,8 @@ public class VistaModClient {
 
     public static final ModelLayerLocation VIEWFINDER_MODEL = loc("viewfinder");
 
-    public static final ResourceLocation LL_LOGO = VistaMod.res("textures/cassette_tape/liveleak.png");
+    public static final ResourceLocation LL_OVERLAY = VistaMod.res("textures/cassette_tape/liveleak.png");
+    public static final ResourceLocation PAUSE_OVERLAY = VistaMod.res("textures/cassette_tape/pause.png");
 
     public static final Material VIEW_FINDER_MATERIAL = new Material(SHULKER_SHEET,
             VistaMod.res("entity/view_finder/viewfinder"));

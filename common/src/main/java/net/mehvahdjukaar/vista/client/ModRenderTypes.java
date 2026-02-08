@@ -38,15 +38,6 @@ public class ModRenderTypes extends RenderType {
     private static final ShaderStateShard POSTERIZE_SHADER_STATE = new ShaderStateShard(VistaModClient.POSTERIZE_SHADER);
 
 
-    public static final RenderType LL_TEX = create(VistaMod.res("text").toString(),
-            DefaultVertexFormat.POSITION,
-            VertexFormat.Mode.QUADS, 10000, false, true,
-            RenderType.CompositeState.builder()
-                    .setShaderState(new ShaderStateShard(() -> Minecraft.getInstance().gameRenderer.blitShader))
-                    .setTextureState(new RenderStateShard.TextureStateShard(VistaModClient.LL_LOGO, false, false))
-                    .createCompositeState(false));
-
-
     private static final TriFunction<ResourceLocation, Integer, Integer, RenderType> CAMERA_DRAW_RENDER_TYPE =
             Utils.memoize((t, s, power) ->
                     ModRenderTypes.createCameraDraw(t, 0, s, power));

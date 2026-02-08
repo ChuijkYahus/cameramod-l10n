@@ -21,131 +21,182 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 
 @SuppressWarnings("unchecked")
-public class BroadcastManager extends WorldSavedData {
+public final class BroadcastManager extends WorldSavedData {
 
-    public static final Codec<BroadcastManager> CODEC = Codec.unboundedMap(UUIDUtil.STRING_CODEC, GlobalPos.CODEC)
-            .xmap(map -> {
-                BroadcastManager storage = new BroadcastManager();
-                map.forEach((uuid, globalPos) -> {
-                    storage.addFeed(uuid, globalPos, false);
-                });
-                return storage;
-            }, storage -> storage.linkedFeeds);
+    public static BroadcastManager create(ServerLevel serverLevel) {
+        return new BroadcastManager();
+    }
+
+    public static final Codec<BroadcastManager> CODEC =
+            Codec.unboundedMap(UUIDUtil.STRING_CODEC, GlobalPos.CODEC)
+                    .xmap(
+                            map -> {
+                                BroadcastManager storage = new BroadcastManager();
+                                map.forEach((uuid, pos) -> storage.addFeedInternal(uuid, pos, false));
+                                storage.publishSnapshot();
+                                return storage;
+                            },
+                            storage -> storage.snapshot
+                    );
 
     public static final StreamCodec<RegistryFriendlyByteBuf, BroadcastManager> STREAM_CODEC =
             (StreamCodec) ByteBufCodecs.map(
                     i -> new HashMap<>(),
                     UUIDUtil.STREAM_CODEC,
                     GlobalPos.STREAM_CODEC
-            ).map(map -> {
-                BroadcastManager storage = new BroadcastManager();
-                map.forEach((uuid, globalPos) -> {
-                    storage.addFeed(uuid, globalPos, true); //client always follows server rather than what it has. If we do our homework on server side this will always work
-                });
-                return storage;
-            }, storage -> new HashMap<>(storage.linkedFeeds));
+            ).map(
+                    map -> {
+                        BroadcastManager storage = new BroadcastManager();
+                        map.forEach((uuid, pos) -> storage.addFeedInternal(uuid, pos, true));
+                        storage.publishSnapshot();
+                        return storage;
+                    },
+                    storage ->  new HashMap<>(storage.snapshot)
+            );
 
-    private BroadcastManager() {
+    /* -------------------- STATE -------------------- */
+
+    private final Object lock = new Object();
+    private final HashBiMap<UUID, GlobalPos> uuidToPos = HashBiMap.create(); //thread safe, mutable
+    private volatile Map<UUID, GlobalPos> snapshot = Map.of(); //fast read only
+
+    private BroadcastManager() {}
+
+    /* -------------------- INTERNALS -------------------- */
+
+    private void publishSnapshot() {
+        snapshot = Map.copyOf(uuidToPos);
     }
 
-    public static BroadcastManager create(ServerLevel serverLevel) {
-        return new BroadcastManager();
-    }
+    private boolean addFeedInternal(UUID viewFinderUUID, GlobalPos projectorPos, boolean trusted) {
+        boolean changed = false;
 
-    private final HashBiMap<UUID, GlobalPos> linkedFeeds = HashBiMap.create();
-
-    private boolean addFeed(UUID viewFinderUUID, GlobalPos projectorPos, boolean trusted) {
-        Set<GlobalPos> keys = linkedFeeds.inverse().keySet();
-        boolean contains = keys.contains(projectorPos);
-        if (contains || trusted) {
-            linkedFeeds.forcePut(viewFinderUUID, projectorPos);
-            return true;
+        synchronized (lock) {
+            boolean occupied = uuidToPos.inverse().containsKey(projectorPos);
+            if (!occupied || trusted) {
+                uuidToPos.forcePut(viewFinderUUID, projectorPos);
+                publishSnapshot();
+                changed = true;
+            }
         }
-        //error
-        return false;
+
+        return changed;
     }
+
+    /* -------------------- PUBLIC API (WRITES) -------------------- */
 
     public void linkFeed(UUID viewFinderUUID, GlobalPos projectorPos) {
-        GlobalPos old = linkedFeeds.get(viewFinderUUID);
-        if (projectorPos.equals(old)) return;
-        else if (old != null) {
-            //if the old one is valid we have a problem.
-            //we invalidate the old one if the same id is placed somewhere else
-            linkedFeeds.remove(viewFinderUUID);
+        boolean changed = false;
+
+        synchronized (lock) {
+            GlobalPos old = uuidToPos.get(viewFinderUUID);
+            if (!projectorPos.equals(old)) {
+                uuidToPos.forcePut(viewFinderUUID, projectorPos);
+                publishSnapshot();
+                changed = true;
+            }
         }
 
-        if (addFeed(viewFinderUUID, projectorPos, true)) {
-            this.setDirty();
-            this.sync();
+        if (changed) {
+            setDirty();
+            sync();
         }
     }
 
     public void unlinkFeed(GlobalPos projectorPos) {
-        UUID id = linkedFeeds.inverse().get(projectorPos);
-        if (id != null) {
-            linkedFeeds.remove(id);
-            this.setDirty();
-            this.sync();
+        boolean changed = false;
+
+        synchronized (lock) {
+            UUID id = uuidToPos.inverse().remove(projectorPos);
+            if (id != null) {
+                publishSnapshot();
+                changed = true;
+            }
+        }
+
+        if (changed) {
+            setDirty();
+            sync();
         }
     }
 
     public void unlinkFeed(UUID viewFinderUUID) {
-        if (linkedFeeds.remove(viewFinderUUID) != null) {
-            this.setDirty();
-            this.sync();
+        boolean changed = false;
+
+        synchronized (lock) {
+            if (uuidToPos.remove(viewFinderUUID) != null) {
+                publishSnapshot();
+                changed = true;
+            }
+        }
+
+        if (changed) {
+            setDirty();
+            sync();
         }
     }
 
+    /* -------------------- PUBLIC API (READS – FAST) -------------------- */
+
     @Nullable
     public GlobalPos getBroadcastOriginById(UUID viewFinderUUID) {
-        return linkedFeeds.get(viewFinderUUID);
+        return snapshot.get(viewFinderUUID);
     }
 
     @Nullable
-    public IBroadcastProvider getBroadcast(UUID feedId, boolean clientSide) {
-        GlobalPos pos = getBroadcastOriginById(feedId);
-        if (pos != null) {
-          Level otherLevel = clientSide ? VistaModClient.getLocalLevelByDimension(pos.dimension()) :
-                  PlatHelper.getCurrentServer().getLevel(pos.dimension());
-            if (otherLevel != null && otherLevel.isLoaded(pos.pos())) {
-                if (otherLevel.getBlockEntity(pos.pos()) instanceof IBroadcastProvider provider) {
-                    return provider;
-                } else {
-                    //clean up
-                    if (!clientSide) {
-                        this.unlinkFeed(feedId);
-                    }
-                }
+    public UUID getIdOfFeedAt(GlobalPos from) {
+        for (var e : snapshot.entrySet()) {
+            if (e.getValue().equals(from)) {
+                return e.getKey();
             }
         }
         return null;
     }
 
-    @Nullable
-    public UUID getIdOfFeedAt(GlobalPos from) {
-        return linkedFeeds.inverse().get(from);
+    public Iterable<Map.Entry<UUID, GlobalPos>> getAll() {
+        return snapshot.entrySet();
     }
+
+    @Nullable
+    public IBroadcastProvider getBroadcast(UUID feedId, boolean clientSide) {
+        GlobalPos pos = snapshot.get(feedId);
+        if (pos == null) return null;
+
+        Level otherLevel = clientSide
+                ? VistaModClient.getLocalLevelByDimension(pos.dimension())
+                : PlatHelper.getCurrentServer().getLevel(pos.dimension());
+
+        if (otherLevel != null && otherLevel.isLoaded(pos.pos())) {
+            if (otherLevel.getBlockEntity(pos.pos()) instanceof IBroadcastProvider provider) {
+                return provider;
+            } else if (!clientSide) {
+                unlinkFeed(feedId);
+            }
+        }
+        return null;
+    }
+
+    /* -------------------- WORLD DATA -------------------- */
 
     @Override
     public WorldSavedDataType<BroadcastManager> getType() {
         return VistaMod.VIEWFINDER_CONNECTION;
     }
 
-    //static helpers
-
     public static BroadcastManager getInstance(Level level) {
         return VistaMod.VIEWFINDER_CONNECTION.getData(level);
     }
 
+    @Deprecated(forRemoval = true)
     @Nullable
     public static IBroadcastProvider findLinkedFeedProvider(Level level, @Nullable UUID viewFinderUUID) {
         if (viewFinderUUID == null) return null;
         BroadcastManager connection = getInstance(level);
         if (connection == null) return null;
+
         GlobalPos gp = connection.getBroadcastOriginById(viewFinderUUID);
         if (gp != null && gp.dimension() == level.dimension()) {
             BlockPos pos = gp.pos();
@@ -156,11 +207,13 @@ public class BroadcastManager extends WorldSavedData {
         return null;
     }
 
+    @Deprecated(forRemoval = true)
     @Nullable
     public static ViewFinderBlockEntity findLinkedViewFinder(Level level, @Nullable UUID viewFinderUUID) {
         if (viewFinderUUID == null) return null;
         BroadcastManager connection = getInstance(level);
         if (connection == null) return null;
+
         GlobalPos gp = connection.getBroadcastOriginById(viewFinderUUID);
         if (gp != null && gp.dimension() == level.dimension()) {
             BlockPos pos = gp.pos();
@@ -170,10 +223,4 @@ public class BroadcastManager extends WorldSavedData {
         }
         return null;
     }
-
-    public Iterable<Map.Entry<UUID, GlobalPos>> getAll() {
-        return linkedFeeds.entrySet();
-    }
-
-
 }
