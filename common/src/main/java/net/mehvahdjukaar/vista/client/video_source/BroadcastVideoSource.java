@@ -1,7 +1,7 @@
 package net.mehvahdjukaar.vista.client.video_source;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import net.mehvahdjukaar.vista.client.ModRenderTypes;
+import net.mehvahdjukaar.vista.client.VistaRenderTypes;
 import net.mehvahdjukaar.vista.common.BroadcastManager;
 import net.mehvahdjukaar.vista.common.cassette.IBroadcastProvider;
 import net.minecraft.client.Minecraft;
@@ -22,11 +22,11 @@ public record BroadcastVideoSource(UUID uuid) implements IVideoSource {
         IBroadcastProvider broadcast = manager.getBroadcast(uuid, true);
 
         if (broadcast == null) {
-            return buffer.getBuffer(ModRenderTypes.NOISE);
+            return buffer.getBuffer(VistaRenderTypes.NOISE);
         }
         IVideoSource vfContent = broadcast.getBroadcastVideoSource();
         if (vfContent == null) {
-            return buffer.getBuffer(ModRenderTypes.NOISE);
+            return buffer.getBuffer(VistaRenderTypes.NOISE);
         }
         return vfContent.getVideoFrameBuilder(partialTick, buffer, shouldUpdate, screenSize, pixelEffectRes,
                 videoAnimationTick, switchAnim, staticAnim);

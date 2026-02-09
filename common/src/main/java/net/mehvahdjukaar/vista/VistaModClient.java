@@ -46,17 +46,18 @@ public class VistaModClient {
 
     public static final ResourceLocation LL_OVERLAY = VistaMod.res("textures/cassette_tape/liveleak.png");
     public static final ResourceLocation PAUSE_OVERLAY = VistaMod.res("textures/cassette_tape/pause.png");
+    public static final ResourceLocation DISCONNECT_OVERLAY = VistaMod.res("textures/cassette_tape/disconnect.png");
+    public static final ResourceLocation LOADING_OVERLAY = VistaMod.res("textures/cassette_tape/loading.png");
 
     public static final Material VIEW_FINDER_MATERIAL = new Material(SHULKER_SHEET,
             VistaMod.res("entity/view_finder/viewfinder"));
 
-    public static final Function<Item, ResourceLocation> VIEW_FINDER_LENS_TEXTURES = Util.memoize(item ->
-    {
+    public static final Function<Item, ResourceLocation> VIEW_FINDER_LENS_TEXTURES = Util.memoize(item -> {
         ResourceLocation id = Utils.getID(item);
         return VistaMod.res("textures/entity/view_finder/lenses/" + id.getPath() + ".png");
     });
-    public static final Function<Item, @Nullable ResourceLocation> VIEW_FINDER_LENS_EMISSIVE_TEXTURES = Util.memoize(item ->
-    {
+
+    public static final Function<Item, @Nullable ResourceLocation> VIEW_FINDER_LENS_EMISSIVE_TEXTURES = Util.memoize(item -> {
         ResourceLocation id = Utils.getID(item);
         if (id.getPath().equals("spider_head") || id.getPath().equals("dragon_head") || id.getPath().equals("enderman_head")) {
             return VistaMod.res("textures/entity/view_finder/lenses/" + id.getPath() + "_emissive.png");

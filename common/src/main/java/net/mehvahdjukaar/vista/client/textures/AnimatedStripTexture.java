@@ -28,17 +28,16 @@ import java.nio.file.Path;
 
 import static net.mehvahdjukaar.vista.client.textures.GifPathSpriteSource.computeAtlasLayout;
 
-public class SimpleAnimatedStripTexture extends AbstractTexture implements Dumpable {
-    private static final SpriteResourceLoader DEFAULT_LOADER = SpriteResourceLoader.create(SpriteLoader.DEFAULT_METADATA_SECTIONS);
+public class AnimatedStripTexture extends AbstractTexture implements Dumpable {
 
     private final ResourceLocation fileLocation;
-    private final ResourceLocation location;
+    private final ResourceLocation textureId;
     private AnimationStripData stripData = AnimationStripData.EMPTY;
 
-    public SimpleAnimatedStripTexture(ResourceLocation location) {
+    public AnimatedStripTexture(ResourceLocation location) {
         this.fileLocation = location;
         //remove extension
-        this.location = location.withPath(p ->
+        this.textureId = location.withPath(p ->
                 p.substring(0, p.lastIndexOf('.')));
     }
 
@@ -47,12 +46,8 @@ public class SimpleAnimatedStripTexture extends AbstractTexture implements Dumpa
         return stripData;
     }
 
-    public ResourceLocation location() {
-        return location;
-    }
-
-    public ResourceLocation fileLocation() {
-        return fileLocation;
+    public ResourceLocation textureId() {
+        return textureId;
     }
 
     @Override
@@ -74,7 +69,7 @@ public class SimpleAnimatedStripTexture extends AbstractTexture implements Dumpa
     private @Nullable SpriteContents loadContent(ResourceManager resourceManager) throws FileNotFoundException {
         Resource resource = resourceManager.getResourceOrThrow(this.fileLocation);
         SpriteResourceLoader loader = fileLocation.getPath().endsWith(".gif") ?
-                GifPathSpriteSource.GIF_CONTENT_LOADER : PNG_STRIP_LOADER;
+                GifPathSpriteSource.GIF_CONTENT_LOADER : RESHAPING_PNG_STRIP_LOADER;
         return loader.loadSprite(fileLocation, resource);
     }
 
@@ -95,8 +90,8 @@ public class SimpleAnimatedStripTexture extends AbstractTexture implements Dumpa
     }
 
 
-    //same as default logic
-    private static final SpriteResourceLoader PNG_STRIP_LOADER = (resourceLocation, resource) -> {
+    //same as default logic but with reshaping capability
+    private static final SpriteResourceLoader RESHAPING_PNG_STRIP_LOADER = (resourceLocation, resource) -> {
         ResourceMetadata resourceMetadata;
         try {
             resourceMetadata = resource.metadata().copySections(SpriteLoader.DEFAULT_METADATA_SECTIONS);

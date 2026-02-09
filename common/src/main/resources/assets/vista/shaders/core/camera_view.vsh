@@ -5,9 +5,9 @@
 
 in vec3 Position;
 in vec4 Color;
-in vec2 UV0;
-in ivec2 UV1;
-in ivec2 UV2;
+in vec2 UV0;  //texture uv
+in ivec2 UV1; //overlay uv
+in ivec2 UV2; //lightmap uv
 in vec3 Normal;
 
 uniform sampler2D Sampler2;
@@ -24,7 +24,8 @@ uniform vec3 Light1_Direction;
 out float vertexDistance;
 out vec4 vertexColor;
 out vec4 lightMapColor;
-out vec2 texCoord0;// pass full UV0 to fragment shader
+out vec2 texCoord0;// texture coord
+out vec2 texCoord1;// overlay coord
 out vec2 atlasSizePx;
 
 void main() {
@@ -42,4 +43,7 @@ void main() {
     lightMapColor = texelFetch(Sampler2, UV2 / 16, 0);
     // pass UV0 unchanged; fragment shader will compute frame-local coords
     texCoord0 = UV0;
+    texCoord2 = UV1;
+
+
 }

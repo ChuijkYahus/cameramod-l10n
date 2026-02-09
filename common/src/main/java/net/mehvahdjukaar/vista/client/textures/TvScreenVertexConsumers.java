@@ -2,7 +2,7 @@ package net.mehvahdjukaar.vista.client.textures;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.mehvahdjukaar.vista.VistaMod;
-import net.mehvahdjukaar.vista.client.ModRenderTypes;
+import net.mehvahdjukaar.vista.client.VistaRenderTypes;
 import net.mehvahdjukaar.vista.client.renderer.VistaLevelRenderer;
 import net.mehvahdjukaar.vista.common.cassette.CassetteTape;
 import net.minecraft.client.GraphicsStatus;
@@ -52,24 +52,25 @@ public class TvScreenVertexConsumers {
 
 
     public static VertexConsumer getBarsVC(MultiBufferSource buffer, int scale, int switchAnim) {
-        return createAnimatedStripVC(buffer, scale, BARS_LOCATION, 0, switchAnim);
+        return createAnimatedStripVC(buffer, scale, BARS_LOCATION, 0, switchAnim, null);
     }
 
     private static VertexConsumer createAnimatedStripVC(MultiBufferSource buffer, int scale,
-                                                        ResourceLocation id, int tickCount, int switchAnim) {
+                                                        ResourceLocation id, int tickCount,
+                                                        int switchAnim, @Nullable ResourceLocation overlay) {
         boolean hasSfx = hasSfx();
         if (!hasSfx && switchAnim < 0) {
-            return buffer.getBuffer(ModRenderTypes.NOISE);
+            return buffer.getBuffer(VistaRenderTypes.NOISE);
         }
 
-        SimpleAnimatedStripTexture animatedText = CassetteTexturesManager.INSTANCE.getAnimatedTexture(id);
+        AnimatedStripTexture animatedText = CassetteTexturesManager.INSTANCE.getAnimatedTexture(id);
 
         if (animatedText == null) {
-            return buffer.getBuffer(ModRenderTypes.NOISE);
+            return buffer.getBuffer(VistaRenderTypes.NOISE);
         }
-        RenderType rt = hasSfx ? ModRenderTypes.ANIMATED_STRIP_RENDER_TYPE.apply(animatedText, scale, switchAnim) : RenderType.text(animatedText.location());
+        RenderType rt = hasSfx ? VistaRenderTypes.crtRenderType(animatedText, scale, switchAnim, overlay) : RenderType.text(animatedText.textureId());
         VertexConsumer inner = buffer.getBuffer(rt);
-        return new AnimatedTextureVertexConsumer(tickCount, animatedText.getStripData(), inner);
+        return new AnimatedStripVertexConsumer(tickCount, animatedText.getStripData(), inner);
     }
 
     public static VertexConsumer getSmileTapeVC(MultiBufferSource buffer, LivingEntity player) {
@@ -84,7 +85,7 @@ public class TvScreenVertexConsumers {
         boolean hasSfx = hasSfx();
         if (!hasSfx && switchAnim < 0) return null;
 
-        RenderType rt = hasSfx ? ModRenderTypes.getCameraDraw(tex, enderman, scale, switchAnim) : RenderType.text(tex);
+        RenderType rt = hasSfx ? VistaRenderTypes.crtRenderType(tex,scale, switchAnim, enderman) : RenderType.text(tex);
         return buffer.getBuffer(rt);
     }
 

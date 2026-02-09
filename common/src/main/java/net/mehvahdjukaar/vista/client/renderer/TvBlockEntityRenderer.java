@@ -4,14 +4,13 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import net.mehvahdjukaar.moonlight.api.client.util.LOD;
-import net.mehvahdjukaar.moonlight.api.client.util.RenderUtil;
-import net.mehvahdjukaar.moonlight.api.client.util.RotHlpr;
 import net.mehvahdjukaar.moonlight.api.client.util.VertexUtil;
 import net.mehvahdjukaar.moonlight.api.misc.ForgeOverride;
 import net.mehvahdjukaar.moonlight.api.misc.RollingBuffer;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
+import net.mehvahdjukaar.vista.VistaModClient;
+import net.mehvahdjukaar.vista.client.VistaRenderTypes;
 import net.mehvahdjukaar.vista.client.textures.LiveFeedTexturesManager;
-import net.mehvahdjukaar.vista.client.video_source.IVideoSource;
 import net.mehvahdjukaar.vista.common.tv.TVBlock;
 import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
@@ -22,14 +21,14 @@ import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
-import net.minecraft.client.renderer.blockentity.SignRenderer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.client.resources.model.Material;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec2;
+import org.joml.Vector3f;
 
 public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity> {
 
@@ -43,7 +42,7 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
 
     @Override
     public boolean shouldRenderOffScreen(TVBlockEntity blockEntity) {
-        return  PlatHelper.getPlatform().isFabric();
+        return PlatHelper.getPlatform().isFabric();
     }
 
     @ForgeOverride
@@ -59,7 +58,7 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
         } else if (dir == Direction.NORTH) {
             return aabb.expandTowards(-width + 1, height - 1, 0);
         } else if (dir == Direction.SOUTH) {
-            return aabb.expandTowards(width-1, height - 1, 0);
+            return aabb.expandTowards(width - 1, height - 1, 0);
         }
         return aabb;
     }
@@ -94,21 +93,47 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
         int switchAnim = blockEntity.getSwitchAnimationTicks();
         int videoAnim = blockEntity.getAnimationTick();
         float staticAnim = blockEntity.getLookingAtEndermanAnimation(partialTick);
+        boolean paused = blockEntity.isPaused();
 
         VertexConsumer vc = blockEntity.getVideoSource()
                 .getVideoFrameBuilder(partialTick, buffer,
                         shouldUpdate, screenSize, pixelEffectRes,
-                        videoAnim, switchAnim, staticAnim);
+                        videoAnim, switchAnim, staticAnim, paused);
 
         //technically not correct as tv could be multiple block. just matters for transition so it's probably ok
-        light = LevelRenderer.getLightColor(blockEntity.getLevel(), blockEntity.getBlockPos()
-                .relative(dir));
+        light = LevelRenderer.getLightColor(blockEntity.getLevel(), blockEntity.getBlockPos().relative(dir));
 
-        int lightU = light & 0xFFFF;
-        int lightV = (light >> 16) & 0xFFFF;
-        VertexUtil.addQuad(vc, poseStack, -s, -s, s, s, lightU, lightV);
+        addQuad(vc, poseStack, -s, -s, s, s, light);
 
         poseStack.popPose();
+    }
+
+    private static void addQuad(VertexConsumer builder, PoseStack poseStack,
+                               float x0, float y0,
+                               float x1, float y1,
+                               int light) {
+        int lu = light & 0xFFFF;
+        int lv = (light >> 16) & 0xFFFF;
+        PoseStack.Pose last = poseStack.last();
+        Vector3f normal = last.normal().transform(new Vector3f(0, 0, -1));
+        vert(builder, poseStack, x0, y1, 1, 0, 0, 15, lu, lv, normal);
+        vert(builder, poseStack, x1, y1, 0, 0, lu, 15, 15, lv, normal);
+        vert(builder, poseStack, x1, y0, 0, 1, lu, 15, 0, lv, normal);
+        vert(builder, poseStack, x0, y0, 1, 1, lu, lv, 0, 0, normal);
+    }
+
+    private static void vert(VertexConsumer builder, PoseStack poseStack,
+                             float x, float y,
+                             float u, float v,
+                             int oU, int oA,
+                             int lu, int lv, Vector3f normal) {
+        //not chained because of MC263524
+        builder.addVertex(poseStack.last().pose(), x, y, 0);
+        builder.setColor(1.0f, 1.0f, 1.0f, 1.0f);
+        builder.setUv(u, v);
+        builder.setUv1(oU, oA);
+        builder.setUv2(lu, lv);
+        builder.setNormal(normal.x, normal.y, normal.z);
     }
 
 

@@ -2,7 +2,7 @@ package net.mehvahdjukaar.vista.client.video_source;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.mehvahdjukaar.moonlight.api.set.BlocksColorAPI;
-import net.mehvahdjukaar.vista.client.ModRenderTypes;
+import net.mehvahdjukaar.vista.client.VistaRenderTypes;
 import net.mehvahdjukaar.vista.client.textures.LiveFeedTexturesManager;
 import net.mehvahdjukaar.vista.client.textures.TvScreenVertexConsumers;
 import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
@@ -16,12 +16,12 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
-public class ViewFinderVideoSource implements IVideoSource {
+public class LiveFeedVideoSource implements IVideoSource {
 
     private final ViewFinderBlockEntity viewFinder;
     private ResourceLocation postShader = null;
 
-    public ViewFinderVideoSource(ViewFinderBlockEntity viewFinder) {
+    public LiveFeedVideoSource(ViewFinderBlockEntity viewFinder) {
         this.viewFinder = viewFinder;
     }
 
@@ -35,7 +35,7 @@ public class ViewFinderVideoSource implements IVideoSource {
         Item item = filterItem.getItem();
         DyeColor color = BlocksColorAPI.getColor(item);
         if (color != null) {
-            this.postShader = ModRenderTypes.getColoredShader(color);
+            this.postShader = VistaRenderTypes.getColoredShader(color);
         } else if (CompatHandler.SUPPLEMENTARIES) {
             this.postShader = SuppCompat.getShaderForItem(filterItem.getItem());
         }
@@ -48,7 +48,7 @@ public class ViewFinderVideoSource implements IVideoSource {
             int screenSize, int pixelEffectRes,
             int videoAnimationTick, int switchAnim, float staticAnim) {
 
-        ResourceLocation tex = LiveFeedTexturesManager.requestLiveFeedTexture(viewFinder.getLevel(),
+        ResourceLocation tex = LiveFeedTexturesManager.requestLiveFeedTexture(
                 viewFinder.getUUID(), screenSize, shouldUpdate, postShader);
 
         VertexConsumer vc = null;
@@ -60,7 +60,7 @@ public class ViewFinderVideoSource implements IVideoSource {
                     pixelEffectRes, switchAnim);
         }
         if (vc == null) {
-            vc = buffer.getBuffer(ModRenderTypes.NOISE);
+            vc = buffer.getBuffer(VistaRenderTypes.NOISE);
         }
         return vc;
     }

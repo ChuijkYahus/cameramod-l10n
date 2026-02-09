@@ -2,14 +2,13 @@ package net.mehvahdjukaar.vista.client.textures;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
-public class AnimatedTextureVertexConsumer implements VertexConsumer {
-
+public class AnimatedStripVertexConsumer implements VertexConsumer {
 
     private final VertexConsumer delegate;
     private final AnimationStripData stripData;
     private final int frameIndex;
 
-    public AnimatedTextureVertexConsumer(int frameIndex, AnimationStripData stripData, VertexConsumer delegate) {
+    public AnimatedStripVertexConsumer(int frameIndex, AnimationStripData stripData, VertexConsumer delegate) {
         this.frameIndex = frameIndex;
         this.stripData = stripData;
         this.delegate = delegate;

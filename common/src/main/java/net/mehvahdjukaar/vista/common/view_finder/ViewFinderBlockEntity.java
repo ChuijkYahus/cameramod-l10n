@@ -7,7 +7,7 @@ import net.mehvahdjukaar.moonlight.api.platform.network.NetworkHelper;
 import net.mehvahdjukaar.moonlight.api.util.math.MthUtils;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.client.video_source.IVideoSource;
-import net.mehvahdjukaar.vista.client.video_source.ViewFinderVideoSource;
+import net.mehvahdjukaar.vista.client.video_source.LiveFeedVideoSource;
 import net.mehvahdjukaar.vista.common.cassette.IBroadcastProvider;
 import net.mehvahdjukaar.vista.integration.CompatHandler;
 import net.mehvahdjukaar.vista.integration.supplementaries.SuppCompat;
@@ -50,13 +50,13 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
     //not saved
     @Nullable
     private UUID controllingPlayer = null;
-    private final ViewFinderVideoSource videoSource;
+    private final LiveFeedVideoSource videoSource;
 
     public ViewFinderBlockEntity(BlockPos pos, BlockState state) {
         super(VistaMod.VIEWFINDER_TILE.get(), pos, state);
 
         this.myUUID = UUID.randomUUID();
-        this.videoSource = new ViewFinderVideoSource(this);
+        this.videoSource = new LiveFeedVideoSource(this);
     }
 
     @Override

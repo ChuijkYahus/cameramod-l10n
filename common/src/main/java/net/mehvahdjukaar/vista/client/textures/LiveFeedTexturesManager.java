@@ -66,12 +66,9 @@ public class LiveFeedTexturesManager {
 
 
     @Nullable
-    public static ResourceLocation requestLiveFeedTexture(
-            Level level, UUID location, int screenSize,
+    public static ResourceLocation requestLiveFeedTexture(UUID location, int screenSize,
             boolean requiresUpdate, @Nullable ResourceLocation postShader) {
 
-        ViewFinderBlockEntity tile = BroadcastManager.findLinkedViewFinder(level, location);
-        if (tile == null) return null;
         ResourceLocation feedId = getOrCreateFeedId(location);
         LiveFeedTexture texture = RenderedTexturesManager.requestTexture(feedId, () ->
                 new LiveFeedTexture(feedId,
@@ -130,15 +127,13 @@ public class LiveFeedTexturesManager {
             BroadcastManager manager = BroadcastManager.getInstance(level);
             IBroadcastProvider provider = manager.getBroadcast(uuid, true); //touch the feed to make sure it's still valid and linked
             if (!(provider instanceof ViewFinderBlockEntity vf)) {
-                if(!text.isInactive()){
-                    text.setInactive(true);
-                    drawOverlay(text.getFrameBuffer(), VistaModClient.PAUSE_OVERLAY);
+                if(!text.isDisconnected()){
+                    text.setDisconnected(true);
+                    drawOverlay(text.getFrameBuffer(), VistaModClient.DISCONNECT_OVERLAY);
                 }
                 return;
             }
-
-            text.setInactive(false);
-
+            text.setDisconnected(false);
 
             VistaLevelRenderer.render(text, vf);
 

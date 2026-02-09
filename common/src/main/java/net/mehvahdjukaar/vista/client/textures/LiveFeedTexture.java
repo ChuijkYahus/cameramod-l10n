@@ -38,7 +38,7 @@ public class LiveFeedTexture extends TickableFrameBufferBackedDynamicTexture imp
     @Nullable
     private ResourceLocation postChainID;
     private PostChain postChain;
-    private boolean inactive = false;
+    private boolean disconnected = false;
 
 
     public LiveFeedTexture(ResourceLocation resourceLocation, int size,
@@ -146,11 +146,11 @@ public class LiveFeedTexture extends TickableFrameBufferBackedDynamicTexture imp
         this.getPixels().writeToFile(path2);
     }
 
-   public boolean isInactive () {
-        return inactive;
+   public boolean isDisconnected() {
+        return disconnected;
     }
 
-    public void setInactive(boolean inactive) {
-        this.inactive = inactive;
+    public void setDisconnected(boolean inactive) {
+        this.disconnected = inactive;
     }
 }

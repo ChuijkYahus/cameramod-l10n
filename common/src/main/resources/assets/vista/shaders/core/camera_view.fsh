@@ -3,6 +3,7 @@
 #moj_import <vista:crt_effects.glsl>
 
 uniform sampler2D Sampler0;
+uniform sampler2D Sampler1;
 
 uniform float SwitchAnimation; // 0 = off, 1 = on
 uniform vec4 ColorModulator;
@@ -13,8 +14,8 @@ uniform vec4 FogColor;
 uniform float GameTime;
 uniform float NoiseIntensity;
 
-/* SpriteDimensions = (minU, minV, sizeU, sizeV) in normalized UVs. First 2 are unused */
-uniform vec4 SpriteDimensions;
+/* SpriteDimensions = (sizeU, sizeV) in normalized UVs. First 2 are unused */
+uniform vec2 SpriteDimensions;
 
 /* ===================== KNOBS ===================== */
 // 1.0 ≈ one triad per texel; >1 = denser triads; <1 = larger triads
@@ -57,7 +58,7 @@ float triadDistance(vec2 triadA, vec2 triadB) {
 
 vec2 normalizedTriadPerPixel(vec2 atlasSizePx) {
     //it works i guess
-    vec2 invFrame = 96.0 / (SpriteDimensions.zw * atlasSizePx);
+    vec2 invFrame = 96.0 / (SpriteDimensions.xy * atlasSizePx);
     //remove 1 multiplication to have triads per pixels. 2 to be triads per uv
     return TriadsPerPixel * invFrame * invFrame;
 }
@@ -70,13 +71,13 @@ vec2 triadToUV(vec2 triadP, vec2 atlasSizePx) {
     vec2 pix = triadP / max(tpp, 1e-6);
 
     // frame-local UV (0..1 inside frame)
-    vec2 localUV = pix / (SpriteDimensions.zw * atlasSizePx);
+    vec2 localUV = pix / (SpriteDimensions.xy * atlasSizePx);
 
     // infer frame origin from texCoord0
-    vec2 frameOriginUV = floor(texCoord0 / SpriteDimensions.zw) * SpriteDimensions.zw;
+    vec2 frameOriginUV = floor(texCoord0 / SpriteDimensions.xy) * SpriteDimensions.xy;
 
     // return absolute UV inside the texture
-    return frameOriginUV + localUV * SpriteDimensions.zw;
+    return frameOriginUV + localUV * SpriteDimensions.xy;
 }
 
 
@@ -84,7 +85,7 @@ vec2 triadToUV(vec2 triadP, vec2 atlasSizePx) {
    We clamp in texel units relative to the current frame, to [0.5 .. width-0.5]. */
 vec2 clampToSpriteTexelCenters(vec2 uv, vec2 atlasSizePx) {
     // frame size in UVs
-    vec2 frameSizeUV = SpriteDimensions.zw;
+    vec2 frameSizeUV = SpriteDimensions.xy;
 
     // infer frame origin from texCoord0
     vec2 frameOriginUV = floor(texCoord0 / frameSizeUV) * frameSizeUV;
@@ -183,7 +184,7 @@ vec3 accumulateTriadResponse(vec2 pixelPos, sampler2D srcTexture, vec2 atlasSize
 
     // Low-frequency fallback (no triad) using the sprite-local UV
     // compute frame-local UVs for fallback
-    vec2 frameSizeUV = SpriteDimensions.zw;
+    vec2 frameSizeUV = SpriteDimensions.xy;
     vec2 frameOriginUV = floor(texCoord0 / frameSizeUV) * frameSizeUV;
     vec2 localUV = (texCoord0 - frameOriginUV) / frameSizeUV;
     vec2 fallbackUV = frameOriginUV + localUV * frameSizeUV;
@@ -217,7 +218,7 @@ float triadContrastScale(vec2 triadPos) {
 void main() {
 
     // frame size in UVs (SpriteDimensions.xy)
-    vec2 frameSizeUV = SpriteDimensions.zw;
+    vec2 frameSizeUV = SpriteDimensions.xy;
 
     // infer frame origin from texCoord0
     vec2 frameOriginUV = floor(texCoord0 / frameSizeUV) * frameSizeUV;

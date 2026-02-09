@@ -14,7 +14,7 @@ import io.github.mortuusars.exposure.world.item.component.album.AlbumPage;
 import io.github.mortuusars.exposure.world.item.util.ItemAndStack;
 import net.mehvahdjukaar.moonlight.api.misc.TField;
 import net.mehvahdjukaar.moonlight.api.misc.TMethod;
-import net.mehvahdjukaar.vista.client.ModRenderTypes;
+import net.mehvahdjukaar.vista.client.VistaRenderTypes;
 import net.mehvahdjukaar.vista.client.textures.TvScreenVertexConsumers;
 import net.mehvahdjukaar.vista.client.video_source.IVideoSource;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -59,7 +59,7 @@ public class PictureFrameVideoSource implements IVideoSource {
                     pixelEffectRes, switchAnim);
         }
         if (vc == null) {
-            vc = buffer.getBuffer(ModRenderTypes.NOISE);
+            vc = buffer.getBuffer(VistaRenderTypes.NOISE);
         }
         return vc;
     }

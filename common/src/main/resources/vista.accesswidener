@@ -35,6 +35,7 @@ mutable field net/minecraft/client/Minecraft mainRenderTarget Lcom/mojang/blaze3
 accessible field net/minecraft/client/renderer/GameRenderer mainCamera Lnet/minecraft/client/Camera;
 mutable field net/minecraft/client/renderer/GameRenderer mainCamera Lnet/minecraft/client/Camera;
 
+#TODO cleanup these
 #setup render
 accessible field net/minecraft/client/renderer/LevelRenderer capturedFrustum Lnet/minecraft/client/renderer/culling/Frustum;
 accessible field net/minecraft/client/renderer/LevelRenderer lastViewDistance I

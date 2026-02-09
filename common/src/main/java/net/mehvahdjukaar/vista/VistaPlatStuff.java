@@ -19,29 +19,4 @@ public class VistaPlatStuff {
         throw new AssertionError();
     }
 
-    private static final Field VANILLA_PIPELINE_FIELD = Arrays.stream(LevelRenderer.class.getDeclaredFields())
-            .filter(f -> f.getType().equals(WorldRenderingPipeline.class))
-            .findFirst().orElseThrow(() -> new RuntimeException("Failed to find vanilla pipeline field!"));
-
-
-    private static final ThreadLocal<WorldRenderingPipeline> IRIS_PIPELINE_CACHE = new ThreadLocal<>();
-
-    public static void setVanillaPipeline(LevelRenderer lr) {
-        VANILLA_PIPELINE_FIELD.setAccessible(true);
-        try {
-            IRIS_PIPELINE_CACHE.set((WorldRenderingPipeline) VANILLA_PIPELINE_FIELD.get(lr));
-            VANILLA_PIPELINE_FIELD.set(lr, new VanillaRenderingPipeline());
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public static void restoreVanillaPipeline(LevelRenderer lr) {
-        VANILLA_PIPELINE_FIELD.setAccessible(true);
-        try {
-            VANILLA_PIPELINE_FIELD.set(lr, IRIS_PIPELINE_CACHE.get());
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException(e);
-        }
-    }
 }
