@@ -36,6 +36,9 @@ public class TVBlockEntity extends ItemDisplayTile {
     @Nullable
     private TVEndermanObservationController observationController = null;
 
+    private boolean paused = false;
+    private int videoPlaybackTicks = 0;
+
     //client, I think
     private IVideoSource videoSource = IVideoSource.EMPTY;
 
@@ -43,7 +46,6 @@ public class TVBlockEntity extends ItemDisplayTile {
     private int connectedTvsWidth = 1;
 
     private int soundLoopTicks = 0;
-    private int animationTicks = 0;
     private int switchAnimationTicks = 0;
 
     private boolean lookingAtEnderman = false;
@@ -67,6 +69,8 @@ public class TVBlockEntity extends ItemDisplayTile {
         super.saveAdditional(compound, registries);
         compound.putInt("ConnectionWidth", connectedTvsWidth);
         compound.putInt("ConnectionHeight", connectedTvHeight);
+        compound.putBoolean("Paused", paused);
+        compound.putInt("VideoPlaybackTicks", videoPlaybackTicks);
     }
 
     @Override
@@ -74,6 +78,8 @@ public class TVBlockEntity extends ItemDisplayTile {
         super.loadAdditional(tag, registries);
         this.connectedTvsWidth = Math.max(1, tag.getInt("ConnectionWidth"));
         this.connectedTvHeight = Math.max(1, tag.getInt("ConnectionHeight"));
+        this.paused = tag.getBoolean("Paused");
+        this.videoPlaybackTicks = tag.getInt("VideoPlaybackTicks");
     }
 
     @NotNull
@@ -92,6 +98,10 @@ public class TVBlockEntity extends ItemDisplayTile {
     public void setConnectionSize(int width, int height) {
         this.connectedTvsWidth = width;
         this.connectedTvHeight = height;
+    }
+
+    public boolean isPaused() {
+        return paused;
     }
 
     @Override
@@ -124,6 +134,10 @@ public class TVBlockEntity extends ItemDisplayTile {
     public void updateTileOnInventoryChanged() {
         super.updateTileOnInventoryChanged();
         ItemStack displayedItem = this.getDisplayedItem();
+        if (displayedItem.isEmpty()) {
+            this.paused = false;
+            this.videoPlaybackTicks = 0;
+        }
 
         var uuid = displayedItem.get(VistaMod.LINKED_FEED_COMPONENT.get());
         this.observationController = uuid == null ? null : new TVEndermanObservationController(uuid, this);
@@ -133,11 +147,18 @@ public class TVBlockEntity extends ItemDisplayTile {
     public void updateClientVisualsOnLoad() {
         super.updateClientVisualsOnLoad();
         this.videoSource = IVideoSource.create(this.getDisplayedItem());
-        this.animationTicks = 0;
+        this.videoPlaybackTicks = 0;
     }
 
     public ItemInteractionResult interactWithPlayerItem(
             Player player, InteractionHand handIn, ItemStack stack, int slot, BlockHitResult hit) {
+
+        boolean powered = this.getBlockState().getValue(TVBlock.POWER_STATE).isOn();
+        if (powered && player.isSecondaryUseActive()) {
+            this.paused = !this.paused;
+            this.setChanged();
+            return ItemInteractionResult.sidedSuccess(this.level.isClientSide);
+        }
 
         ItemStack current = this.getDisplayedItem();
         if (!current.isEmpty() && (canPlaceItem(0, stack) || stack.isEmpty())) {
@@ -161,7 +182,7 @@ public class TVBlockEntity extends ItemDisplayTile {
     }
 
     public int getAnimationTick() {
-        return animationTicks;
+        return videoPlaybackTicks;
     }
 
     public int getSwitchAnimationTicks() {
@@ -194,7 +215,7 @@ public class TVBlockEntity extends ItemDisplayTile {
                         world.playLocalSound(pos, sound, SoundSource.BLOCKS, 1, 1.0f, false);
                     }
                 }
-                tv.animationTicks++;
+                tv.videoPlaybackTicks++;
             } else {
                 if (changedState) {
                     tv.switchAnimationTicks = -SWITCH_OFF_ANIMATION_TICKS;
@@ -202,7 +223,7 @@ public class TVBlockEntity extends ItemDisplayTile {
                     tv.switchAnimationTicks++;
                 }
                 tv.soundLoopTicks = 0;
-                tv.animationTicks = 0;
+                tv.videoPlaybackTicks = 0;
             }
             tv.prevLookingAtEndermanAnimation = tv.lookingAtEndermanAnimation;
             if (tv.lookingAtEnderman) {

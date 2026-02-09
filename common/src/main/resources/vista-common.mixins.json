@@ -5,11 +5,12 @@
   "package": "net.mehvahdjukaar.vista.mixins",
   "mixins": [
     "AnvilMenuMixin",
+    "CompatIrisMixin",
     "PlayerMixin"
   ],
   "client": [
-    "CompatIrisRenderingMixin",
     "CameraMixin",
+    "CompatIrisRenderingMixin",
     "FrustumMixin",
     "GameRendererMixin",
     "ItemRendererMixin",

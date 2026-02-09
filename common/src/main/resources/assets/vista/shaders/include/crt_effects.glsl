@@ -48,11 +48,7 @@ float animate(float t, float startTime, float duration) {
 // ==========================================================
 // Ellipse + dot effect with background replacement
 // ==========================================================
-vec4 crt_turn_on(vec4 inColor,
-vec2 fragPx,
-vec2 resolutionPx,
-float t)
-{
+vec4 crt_turn_on(vec4 inColor, vec2 fragPx, vec2 resolutionPx, float t) {
     // --------------------------------------------------
     // PIXEL LOCK (this is the important bit)
     // --------------------------------------------------
@@ -113,4 +109,34 @@ float t)
     vec4 color = mix(inColor, glow, fade);
 
     return color;
+}
+
+// ===================== VHS PAUSE HELPERS =====================
+
+// ---- knobs ----
+#define VHS_LINE_JITTER_AMPLITUDE    0.006
+#define VHS_FRAME_JITTER_AMPLITUDE   0.003
+#define VHS_COLOR_NOISE_STRENGTH     0.10
+
+// ----------------
+
+float vhs_rand(vec2 co) {
+    return fract(sin(dot(co, vec2(12.9898, 78.233))) * 43758.5453);
+}
+
+// ===================== VHS Pause UV Distortion =====================
+// Returns clamped 0..1 UVs suitable for texture sampling
+
+vec2 vhs_pause_uv(in vec2 uv) {
+
+    // Horizontal per-scanline jitter
+    float lineNoise = vhs_rand(vec2(iTime, fragCoord.y));
+    uv.x += (lineNoise - 0.5) * VHS_LINE_JITTER_AMPLITUDE;
+
+    // Vertical frame jitter
+    float frameNoise = vhs_rand(vec2(iTime, 0.0));
+    uv.y += (frameNoise - 0.5) * VHS_FRAME_JITTER_AMPLITUDE;
+
+    // Clamp = last valid in-bounds sample
+    return clamp(uv, vec2(0.0), vec2(1.0));
 }
