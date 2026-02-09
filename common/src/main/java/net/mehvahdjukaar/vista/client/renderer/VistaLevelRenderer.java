@@ -2,7 +2,7 @@ package net.mehvahdjukaar.vista.client.renderer;
 
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.*;
+import com.mojang.blaze3d.vertex.PoseStack;
 import net.mehvahdjukaar.moonlight.api.misc.WeakHashSet;
 import net.mehvahdjukaar.moonlight.core.client.DummyCamera;
 import net.mehvahdjukaar.vista.VistaPlatStuff;
