@@ -31,13 +31,13 @@ import static net.mehvahdjukaar.vista.client.textures.GifPathSpriteSource.comput
 public class AnimatedStripTexture extends AbstractTexture implements Dumpable {
 
     private final ResourceLocation fileLocation;
-    private final ResourceLocation textureId;
+    private final ResourceLocation textureLocation;
     private AnimationStripData stripData = AnimationStripData.EMPTY;
 
     public AnimatedStripTexture(ResourceLocation location) {
         this.fileLocation = location;
         //remove extension
-        this.textureId = location.withPath(p ->
+        this.textureLocation = location.withPath(p ->
                 p.substring(0, p.lastIndexOf('.')));
     }
 
@@ -46,8 +46,8 @@ public class AnimatedStripTexture extends AbstractTexture implements Dumpable {
         return stripData;
     }
 
-    public ResourceLocation textureId() {
-        return textureId;
+    public ResourceLocation getTextureLocation() {
+        return textureLocation;
     }
 
     @Override

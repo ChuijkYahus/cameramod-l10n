@@ -17,6 +17,7 @@ import net.mehvahdjukaar.moonlight.api.misc.TMethod;
 import net.mehvahdjukaar.vista.client.VistaRenderTypes;
 import net.mehvahdjukaar.vista.client.textures.TvScreenVertexConsumers;
 import net.mehvahdjukaar.vista.client.video_source.IVideoSource;
+import net.mehvahdjukaar.vista.common.tv.IntAnimationState;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
@@ -48,15 +49,16 @@ public class PictureFrameVideoSource implements IVideoSource {
     }
 
     @Override
-    public @NotNull VertexConsumer getVideoFrameBuilder(
-            float partialTick, MultiBufferSource buffer, boolean shouldUpdate, int screenSize, int pixelEffectRes,
-            int videoAnimationTick, int switchAnim, float staticAnim) {
+    public @NotNull VertexConsumer getVideoFrameBuilder(float partialTick, MultiBufferSource buffer,
+                                                        boolean shouldUpdate, int screenSize, int pixelEffectRes,
+                                                        int videoAnimationTick, boolean paused,
+                                                        IntAnimationState switchAnim, IntAnimationState staticAnim) {
 
         VertexConsumer vc = null;
         ResourceLocation texture = getPictureTextureForRenderer(pictureStack, videoAnimationTick);
         if (texture != null) {
-            vc = TvScreenVertexConsumers.getFullSpriteVC(texture, buffer, 0,
-                    pixelEffectRes, switchAnim);
+        //    vc = TvScreenVertexConsumers.getLiveFeedVC( buffer,texture, 0, paused,
+          //          pixelEffectRes, switchAnim);
         }
         if (vc == null) {
             vc = buffer.getBuffer(VistaRenderTypes.NOISE);

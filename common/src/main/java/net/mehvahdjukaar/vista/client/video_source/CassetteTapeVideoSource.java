@@ -2,8 +2,10 @@ package net.mehvahdjukaar.vista.client.video_source;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.mehvahdjukaar.vista.VistaMod;
+import net.mehvahdjukaar.vista.client.VistaRenderTypes;
 import net.mehvahdjukaar.vista.client.textures.TvScreenVertexConsumers;
 import net.mehvahdjukaar.vista.common.cassette.CassetteTape;
+import net.mehvahdjukaar.vista.common.tv.IntAnimationState;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.core.Holder;
 import net.minecraft.sounds.SoundEvent;
@@ -39,8 +41,11 @@ public class CassetteTapeVideoSource implements IVideoSource {
     @Override
     public @NotNull VertexConsumer getVideoFrameBuilder(
             float partialTick, MultiBufferSource buffer, boolean shouldUpdate, int screenSize, int pixelEffectRes,
-            int animationTick, int switchAnim, float staticAnim) {
+            int animationTick, boolean paused,
+            IntAnimationState switchAnim, IntAnimationState staticAnim) {
 
-        return TvScreenVertexConsumers.getTapeVC(tape, buffer, pixelEffectRes, animationTick, switchAnim);
+        VertexConsumer vc = TvScreenVertexConsumers.getTapeVC(buffer, tape, pixelEffectRes, animationTick, paused, switchAnim);
+        if (vc == null) return buffer.getBuffer(VistaRenderTypes.NOISE);
+        return vc;
     }
 }

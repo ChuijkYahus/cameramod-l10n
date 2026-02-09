@@ -4,6 +4,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.mehvahdjukaar.vista.client.VistaRenderTypes;
 import net.mehvahdjukaar.vista.common.BroadcastManager;
 import net.mehvahdjukaar.vista.common.cassette.IBroadcastProvider;
+import net.mehvahdjukaar.vista.common.tv.IntAnimationState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.world.level.Level;
@@ -16,7 +17,8 @@ public record BroadcastVideoSource(UUID uuid) implements IVideoSource {
     @Override
     public @NotNull VertexConsumer getVideoFrameBuilder(float partialTick, MultiBufferSource buffer,
                                                         boolean shouldUpdate, int screenSize, int pixelEffectRes,
-                                                        int videoAnimationTick, int switchAnim, float staticAnim) {
+                                                        int videoAnimationTick, boolean paused,
+                                                        IntAnimationState switchAnim, IntAnimationState staticAnim) {
         Level level = Minecraft.getInstance().level;
         BroadcastManager manager = BroadcastManager.getInstance(level);
         IBroadcastProvider broadcast = manager.getBroadcast(uuid, true);
@@ -29,7 +31,7 @@ public record BroadcastVideoSource(UUID uuid) implements IVideoSource {
             return buffer.getBuffer(VistaRenderTypes.NOISE);
         }
         return vfContent.getVideoFrameBuilder(partialTick, buffer, shouldUpdate, screenSize, pixelEffectRes,
-                videoAnimationTick, switchAnim, staticAnim);
+                videoAnimationTick, paused, switchAnim, staticAnim);
 
     }
 

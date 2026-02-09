@@ -37,7 +37,7 @@ void main() {
 
     // Lighting / material tinting
     vec4 tint = vertexColor * ColorModulator * lightMapColor;
-    vec4 shaded = noise * tint;
+    vec4 shaded = NoiseIntensity * noise * tint;
 
     float vignette = mix(1.0, crt_vignette(texCoord0), clamp(VignetteIntensity, 0.0, 1.0));
     shaded.rgb *= vignette;

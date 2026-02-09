@@ -3,8 +3,10 @@ package net.mehvahdjukaar.vista.client.video_source;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.mehvahdjukaar.moonlight.api.set.BlocksColorAPI;
 import net.mehvahdjukaar.vista.client.VistaRenderTypes;
+import net.mehvahdjukaar.vista.client.textures.LiveFeedTexture;
 import net.mehvahdjukaar.vista.client.textures.LiveFeedTexturesManager;
 import net.mehvahdjukaar.vista.client.textures.TvScreenVertexConsumers;
+import net.mehvahdjukaar.vista.common.tv.IntAnimationState;
 import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.mehvahdjukaar.vista.integration.CompatHandler;
@@ -46,9 +48,10 @@ public class LiveFeedVideoSource implements IVideoSource {
     public @NotNull VertexConsumer getVideoFrameBuilder(
             float partialTick, MultiBufferSource buffer, boolean shouldUpdate,
             int screenSize, int pixelEffectRes,
-            int videoAnimationTick, int switchAnim, float staticAnim) {
+            int videoAnimationTick, boolean paused,
+            IntAnimationState switchAnim, IntAnimationState staticAnim) {
 
-        ResourceLocation tex = LiveFeedTexturesManager.requestLiveFeedTexture(
+        LiveFeedTexture tex = LiveFeedTexturesManager.requestLiveFeedTexture(
                 viewFinder.getUUID(), screenSize, shouldUpdate, postShader);
 
         VertexConsumer vc = null;
@@ -56,8 +59,7 @@ public class LiveFeedVideoSource implements IVideoSource {
             if (ClientConfigs.rendersDebug()) {
                 // renderDebug(tex, poseStack, buffer, partialTick, blockEntity);
             }
-            vc = TvScreenVertexConsumers.getFullSpriteVC(tex, buffer, staticAnim,
-                    pixelEffectRes, switchAnim);
+            vc = TvScreenVertexConsumers.getLiveFeedVC(buffer, tex, pixelEffectRes, paused, switchAnim, staticAnim);
         }
         if (vc == null) {
             vc = buffer.getBuffer(VistaRenderTypes.NOISE);

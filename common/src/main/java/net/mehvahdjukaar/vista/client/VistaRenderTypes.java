@@ -6,8 +6,10 @@ import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.VistaModClient;
-import net.mehvahdjukaar.vista.client.textures.AnimationStripData;
 import net.mehvahdjukaar.vista.client.textures.AnimatedStripTexture;
+import net.mehvahdjukaar.vista.client.textures.AnimationStripData;
+import net.mehvahdjukaar.vista.client.textures.LiveFeedTexture;
+import net.mehvahdjukaar.vista.common.tv.IntAnimationState;
 import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.minecraft.Util;
@@ -25,7 +27,7 @@ import java.util.function.Function;
 public class VistaRenderTypes extends RenderType {
 
     private VistaRenderTypes(String name, VertexFormat format, VertexFormat.Mode mode, int bufferSize, boolean affectsCrumbling,
-                            boolean sortOnUpload, Runnable setupState, Runnable clearState) {
+                             boolean sortOnUpload, Runnable setupState, Runnable clearState) {
         super(name, format, mode, bufferSize, affectsCrumbling, sortOnUpload, setupState, clearState);
     }
 
@@ -57,19 +59,15 @@ public class VistaRenderTypes extends RenderType {
     });
 
     private record CrtKey(ResourceLocation texture, float frameW, float frameH, int scale,
-                          int turnOnAnim, int staticAnim, @Nullable ResourceLocation overlayTexture) {
+                          IntAnimationState turnOnAnim, IntAnimationState staticAnim,
+                          @Nullable ResourceLocation overlayTexture) {
     }
 
-    public static RenderType crtRenderType(ResourceLocation texture, int scale, int turnOnAnim, int staticAnim,
-                                           @Nullable ResourceLocation overlay) {
-        CrtKey key = new CrtKey(texture, 1, 1, scale, turnOnAnim, staticAnim, overlay);
-        return CRT_RENDER_TYPE.apply(key);
-    }
 
-    public static RenderType crtRenderType(AnimatedStripTexture strip, int scale, int turnOnAnim, @Nullable ResourceLocation overlay) {
-        AnimationStripData stripData = strip.getStripData();
-        CrtKey key = new CrtKey(strip.textureId(), stripData.frameRelativeW(), stripData.frameRelativeH(), scale,
-                turnOnAnim, 0, overlay);
+    public static RenderType crtRenderType(
+            ResourceLocation id, int scale, float frameW, float frameH, IntAnimationState turnOnAnim, IntAnimationState staticAnim,
+            @Nullable ResourceLocation overlay) {
+        CrtKey key = new CrtKey(id, frameW, frameH, scale, turnOnAnim, staticAnim, overlay);
         return CRT_RENDER_TYPE.apply(key);
     }
 
@@ -110,17 +108,8 @@ public class VistaRenderTypes extends RenderType {
         setFloat(shader, "EnableEnergyNormalize", 0.0f);
 
         setFloat(shader, "VignetteIntensity", ClientConfigs.VIGNETTE.get());
-        //TODO: fix these 2 noise not looking the same when at 1
-        setFloat(shader, "NoiseIntensity", key.staticAnim);
-        float switchAnim = 0;
-        int powerAnim = key.turnOnAnim;
-        if (powerAnim > 0) {
-            switchAnim = (powerAnim - pt) / (float) TVBlockEntity.SWITCH_ON_ANIMATION_TICKS;
-        } else if (powerAnim < 0) {
-            switchAnim = (1 + (powerAnim + pt) / (float) TVBlockEntity.SWITCH_OFF_ANIMATION_TICKS);
-        }
-
-        setFloat(shader, "SwitchAnimation", switchAnim);
+        setFloat(shader, "NoiseIntensity", key.staticAnim.getValue(pt));
+        setFloat(shader, "SwitchAnimation", key.turnOnAnim.getValue(pt));
     }
 
     public static final RenderType NOISE =

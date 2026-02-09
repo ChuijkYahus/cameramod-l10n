@@ -5,7 +5,6 @@
   "package": "net.mehvahdjukaar.vista.mixins",
   "mixins": [
     "AnvilMenuMixin",
-    "CompatIrisMixin",
     "PlayerMixin"
   ],
   "client": [

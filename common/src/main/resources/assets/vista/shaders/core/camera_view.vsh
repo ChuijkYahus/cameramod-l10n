@@ -43,7 +43,7 @@ void main() {
     lightMapColor = texelFetch(Sampler2, UV2 / 16, 0);
     // pass UV0 unchanged; fragment shader will compute frame-local coords
     texCoord0 = UV0;
-    texCoord2 = UV1;
+    texCoord1 = UV1;
 
 
 }

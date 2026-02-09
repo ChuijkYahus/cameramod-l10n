@@ -2,9 +2,11 @@ package net.mehvahdjukaar.vista.client.textures;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.mehvahdjukaar.vista.VistaMod;
+import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.client.VistaRenderTypes;
 import net.mehvahdjukaar.vista.client.renderer.VistaLevelRenderer;
 import net.mehvahdjukaar.vista.common.cassette.CassetteTape;
+import net.mehvahdjukaar.vista.common.tv.IntAnimationState;
 import net.minecraft.client.GraphicsStatus;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -43,51 +45,72 @@ public class TvScreenVertexConsumers {
         }
     }
 
-
-    public static VertexConsumer getTapeVC(Holder<CassetteTape> tapeKey, MultiBufferSource buffer, int scale,
-                                           int tickCount, int switchAnim) {
+    @Nullable
+    public static VertexConsumer getTapeVC(MultiBufferSource buffer, Holder<CassetteTape> tapeKey, int scale,
+                                           int tickCount, boolean paused, IntAnimationState switchAnim) {
         ResourceLocation tapeTexture = tapeKey.value().assetId();
-        return createAnimatedStripVC(buffer, scale, tapeTexture, tickCount, switchAnim);
-    }
-
-
-    public static VertexConsumer getBarsVC(MultiBufferSource buffer, int scale, int switchAnim) {
-        return createAnimatedStripVC(buffer, scale, BARS_LOCATION, 0, switchAnim, null);
-    }
-
-    private static VertexConsumer createAnimatedStripVC(MultiBufferSource buffer, int scale,
-                                                        ResourceLocation id, int tickCount,
-                                                        int switchAnim, @Nullable ResourceLocation overlay) {
-        boolean hasSfx = hasSfx();
-        if (!hasSfx && switchAnim < 0) {
-            return buffer.getBuffer(VistaRenderTypes.NOISE);
-        }
-
-        AnimatedStripTexture animatedText = CassetteTexturesManager.INSTANCE.getAnimatedTexture(id);
-
-        if (animatedText == null) {
-            return buffer.getBuffer(VistaRenderTypes.NOISE);
-        }
-        RenderType rt = hasSfx ? VistaRenderTypes.crtRenderType(animatedText, scale, switchAnim, overlay) : RenderType.text(animatedText.textureId());
-        VertexConsumer inner = buffer.getBuffer(rt);
-        return new AnimatedStripVertexConsumer(tickCount, animatedText.getStripData(), inner);
-    }
-
-    public static VertexConsumer getSmileTapeVC(MultiBufferSource buffer, LivingEntity player) {
-        Smile smile = Smile.fromHealth(player);
-        ResourceLocation id = SMILES.get(smile);
-        return createAnimatedStripVC(buffer, 1, id, player.tickCount, 0);
+        return createAnimatedStripVC(buffer, tapeTexture, scale, tickCount, paused, switchAnim);
     }
 
     @Nullable
-    public static VertexConsumer getFullSpriteVC(ResourceLocation tex, MultiBufferSource buffer,
-                                                 float enderman, int scale, int switchAnim) {
-        boolean hasSfx = hasSfx();
-        if (!hasSfx && switchAnim < 0) return null;
+    public static VertexConsumer getBarsVC(MultiBufferSource buffer, int scale, IntAnimationState switchAnim) {
+        return createAnimatedStripVC(buffer, BARS_LOCATION, scale, 0, false, switchAnim);
+    }
 
-        RenderType rt = hasSfx ? VistaRenderTypes.crtRenderType(tex,scale, switchAnim, enderman) : RenderType.text(tex);
+    @Nullable
+    public static VertexConsumer getSmileTapeVC(MultiBufferSource buffer, LivingEntity player) {
+        Smile smile = Smile.fromHealth(player);
+        ResourceLocation id = SMILES.get(smile);
+        int scale = 1;//always on a 1x1 tv
+        return createAnimatedStripVC(buffer, id, scale, player.tickCount, false, IntAnimationState.NO_ANIM);
+    }
+
+    @Nullable
+    private static VertexConsumer createAnimatedStripVC(MultiBufferSource buffer,
+                                                        ResourceLocation id,
+                                                        int scale, int tickCount,
+                                                        boolean paused,
+                                                        IntAnimationState switchAnim) {
+        boolean hasSfx = hasSfx();
+        if (!hasSfx && switchAnim.isDecreasing()) return null;
+
+        AnimatedStripTexture animatedStrip = CassetteTexturesManager.INSTANCE.getAnimatedTexture(id);
+        if (animatedStrip == null) return null;
+
+        ResourceLocation overlay = paused ? VistaModClient.PAUSE_OVERLAY : null;
+
+        ResourceLocation textureId = animatedStrip.getTextureLocation();
+        AnimationStripData stripData = animatedStrip.getStripData();
+        RenderType rt = hasSfx ?
+                VistaRenderTypes.crtRenderType(textureId, scale,
+                        stripData.frameRelativeW(),
+                        stripData.frameRelativeH(),
+                        switchAnim, IntAnimationState.NO_ANIM,
+                        overlay) :
+                RenderType.text(textureId);
+        VertexConsumer inner = buffer.getBuffer(rt);
+        return new AnimatedStripVertexConsumer(tickCount, stripData, inner);
+    }
+
+    @Nullable
+    public static VertexConsumer getLiveFeedVC(MultiBufferSource buffer,
+                                               LiveFeedTexture tex,
+                                               int scale, boolean paused,
+                                               IntAnimationState switchAnim,
+                                               IntAnimationState enderman) {
+        boolean hasSfx = hasSfx();
+        if (!hasSfx && switchAnim.isDecreasing()) return null;
+        ResourceLocation overlay = paused ? VistaModClient.PAUSE_OVERLAY : null;
+
+        ResourceLocation textureId = tex.getTextureLocation();
+        RenderType rt = hasSfx ?
+                VistaRenderTypes.crtRenderType(textureId, scale,
+                        1, 1, switchAnim,
+                        enderman, overlay) :
+                RenderType.text(textureId);
         return buffer.getBuffer(rt);
     }
+
 
     private static boolean hasSfx() {
         return !VistaLevelRenderer.isRenderingLiveFeed() &&

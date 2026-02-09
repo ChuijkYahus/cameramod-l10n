@@ -13,7 +13,6 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -29,8 +28,6 @@ import org.jetbrains.annotations.Nullable;
 
 public class TVBlockEntity extends ItemDisplayTile {
 
-    public static final int SWITCH_ON_ANIMATION_TICKS = 3;
-    public static final int SWITCH_OFF_ANIMATION_TICKS = 10;
     private static final int MAX_LOOKED_ENDERMAN = 20;
 
     @Nullable
@@ -46,22 +43,14 @@ public class TVBlockEntity extends ItemDisplayTile {
     private int connectedTvsWidth = 1;
 
     private int soundLoopTicks = 0;
-    private int switchAnimationTicks = 0;
-
-    private boolean lookingAtEnderman = false;
-    private int lookingAtEndermanAnimation = 0;
-    private int prevLookingAtEndermanAnimation = 0;
-
-    private boolean wasScreenOn = false;
+    public final IntAnimationState poweredOnAnimation = new IntAnimationState(3, 9);
+    public final IntAnimationState endermanAnimation = new IntAnimationState(20, 20);
+    private boolean isLookingAtEnderman = false;
+    private boolean wasLastPowered = false;
 
 
     public TVBlockEntity(BlockPos pos, BlockState state) {
         super(VistaMod.TV_TILE.get(), pos, state);
-    }
-
-    public float getLookingAtEndermanAnimation(float partialTicks) {
-        return Mth.lerp(partialTicks, prevLookingAtEndermanAnimation, lookingAtEndermanAnimation)
-                / MAX_LOOKED_ENDERMAN;
     }
 
     @Override
@@ -181,32 +170,17 @@ public class TVBlockEntity extends ItemDisplayTile {
         return super.interactWithPlayerItem(player, handIn, stack, slot);
     }
 
-    public int getAnimationTick() {
+    public int getPlaybackTicks() {
         return videoPlaybackTicks;
-    }
-
-    public int getSwitchAnimationTicks() {
-        //also detect state change here since this gets called in render tick
-        return switchAnimationTicks;
     }
 
     public static void onTick(Level world, BlockPos pos, BlockState state, TVBlockEntity tv) {
         boolean powered = state.getValue(TVBlock.POWER_STATE).isOn();
         if (world.isClientSide) {
-            boolean changedState = false;
-            if (powered != tv.wasScreenOn) {
-                changedState = true && ClientConfigs.TURN_OFF_EFFECTS.get();
-                tv.wasScreenOn = powered;
-            }
+            tv.wasLastPowered = powered;
 
             if (powered) {
-                //we cant switch power anim here as its too late
-
-                if (changedState) {
-                    tv.switchAnimationTicks = SWITCH_ON_ANIMATION_TICKS;
-                } else if (tv.switchAnimationTicks > 0) {
-                    tv.switchAnimationTicks--;
-                }
+                if (ClientConfigs.TURN_OFF_EFFECTS.get()) tv.poweredOnAnimation.increment();
                 float duration = tv.videoSource.getVideoDuration();
                 if (++tv.soundLoopTicks >= (duration)) {
                     tv.soundLoopTicks = 0;
@@ -217,19 +191,14 @@ public class TVBlockEntity extends ItemDisplayTile {
                 }
                 tv.videoPlaybackTicks++;
             } else {
-                if (changedState) {
-                    tv.switchAnimationTicks = -SWITCH_OFF_ANIMATION_TICKS;
-                } else if (tv.switchAnimationTicks < 0) {
-                    tv.switchAnimationTicks++;
-                }
+                tv.poweredOnAnimation.decrement();
                 tv.soundLoopTicks = 0;
                 tv.videoPlaybackTicks = 0;
             }
-            tv.prevLookingAtEndermanAnimation = tv.lookingAtEndermanAnimation;
-            if (tv.lookingAtEnderman) {
-                tv.lookingAtEndermanAnimation = Math.min(MAX_LOOKED_ENDERMAN, tv.lookingAtEndermanAnimation + 1);
+            if (tv.isLookingAtEnderman) {
+                tv.endermanAnimation.increment();
             } else {
-                tv.lookingAtEndermanAnimation = Math.max(0, tv.lookingAtEndermanAnimation - 1);
+                tv.endermanAnimation.decrement();
             }
 
 
@@ -243,10 +212,10 @@ public class TVBlockEntity extends ItemDisplayTile {
                 //server tick logic
                 hasAngeredEntity = tv.observationController.tick();
             }
-            boolean couldSeeEnderman = tv.lookingAtEnderman;
+            boolean couldSeeEnderman = tv.isLookingAtEnderman;
             //if changed send block event
             if (hasAngeredEntity != couldSeeEnderman) {
-                tv.lookingAtEnderman = hasAngeredEntity;
+                tv.isLookingAtEnderman = hasAngeredEntity;
                 world.blockEvent(pos, state.getBlock(), 1, hasAngeredEntity ? 1 : 0);
             }
         }
@@ -254,11 +223,11 @@ public class TVBlockEntity extends ItemDisplayTile {
 
 
     public void updateEndermanLookAnimation(int param) {
-        this.lookingAtEnderman = param > 0;
+        this.isLookingAtEnderman = param > 0;
     }
 
-    public boolean isScreenOn() {
-        return this.wasScreenOn || this.switchAnimationTicks != 0;
+    public boolean isScreenOn(float partialTicks) {
+        return this.wasLastPowered || this.poweredOnAnimation.getValue(partialTicks) != 0;
     }
 
     private static final int EDGE_PIXEL_LEN = 4;

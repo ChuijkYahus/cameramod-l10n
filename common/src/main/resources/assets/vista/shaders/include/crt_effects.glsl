@@ -111,32 +111,51 @@ vec4 crt_turn_on(vec4 inColor, vec2 fragPx, vec2 resolutionPx, float t) {
     return color;
 }
 
-// ===================== VHS PAUSE HELPERS =====================
+// ===================== VHS PAUSE EFFECT =====================
 
-// ---- knobs ----
+// Knobs
 #define VHS_LINE_JITTER_AMPLITUDE    0.006
 #define VHS_FRAME_JITTER_AMPLITUDE   0.003
 #define VHS_COLOR_NOISE_STRENGTH     0.10
+#define VHS_SCANLINE_COUNT          480.0   // logical tape lines
 
-// ----------------
-
-float vhs_rand(vec2 co) {
+// RNG
+float vhs_rand(vec2 co)
+{
     return fract(sin(dot(co, vec2(12.9898, 78.233))) * 43758.5453);
 }
 
-// ===================== VHS Pause UV Distortion =====================
-// Returns clamped 0..1 UVs suitable for texture sampling
+// --------------------
+// Single self-contained function
+// uv: normalized 0–1
+// tex: sampler2D (iChannel0 style)
+// --------------------
+vec3 vhs_pause(in vec2 uv, sampler2D tex, float iTime)
+{
+    // Reconstruct scanline
+    float scanline = floor(uv.y * VHS_SCANLINE_COUNT);
 
-vec2 vhs_pause_uv(in vec2 uv) {
-
-    // Horizontal per-scanline jitter
-    float lineNoise = vhs_rand(vec2(iTime, fragCoord.y));
+    // Horizontal per-line jitter
+    float lineNoise = vhs_rand(vec2(iTime, scanline));
     uv.x += (lineNoise - 0.5) * VHS_LINE_JITTER_AMPLITUDE;
 
     // Vertical frame jitter
     float frameNoise = vhs_rand(vec2(iTime, 0.0));
     uv.y += (frameNoise - 0.5) * VHS_FRAME_JITTER_AMPLITUDE;
 
-    // Clamp = last valid in-bounds sample
-    return clamp(uv, vec2(0.0), vec2(1.0));
+    // Clamp UVs to 0..1 (last valid sample)
+    uv = clamp(uv, 0.0, 1.0);
+
+    // Sample texture (Shadertoy Y-flip)
+    vec3 color = texture(tex, vec2(uv.x, 1.0 - uv.y)).rgb;
+
+    // Apply per-scanline chromatic noise
+    vec3 noise;
+    noise.r = vhs_rand(vec2(scanline, iTime));
+    noise.g = vhs_rand(vec2(scanline, iTime + 1.0));
+    noise.b = vhs_rand(vec2(scanline, iTime + 2.0));
+
+    color += (noise - 0.5) * VHS_COLOR_NOISE_STRENGTH;
+
+    return color;
 }

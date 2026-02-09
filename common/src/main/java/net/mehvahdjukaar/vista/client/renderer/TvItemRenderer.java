@@ -4,6 +4,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.mehvahdjukaar.moonlight.api.client.ItemStackRenderer;
 import net.mehvahdjukaar.moonlight.api.client.util.VertexUtil;
+import net.mehvahdjukaar.vista.client.VistaRenderTypes;
 import net.mehvahdjukaar.vista.client.textures.TvScreenVertexConsumers;
 import net.mehvahdjukaar.vista.common.tv.TVItem;
 import net.minecraft.client.Minecraft;
@@ -26,8 +27,8 @@ public class TvItemRenderer extends ItemStackRenderer {
     }
 
     public static void renderTvHead(ItemStack itemStack, ItemDisplayContext itemDisplayContext, PoseStack poseStack,
-                                     MultiBufferSource buffer, int light, int overlay,
-                                     LivingEntity le) {
+                                    MultiBufferSource buffer, int light, int overlay,
+                                    LivingEntity le) {
         poseStack.pushPose();
         Block block = ((TVItem) itemStack.getItem()).getBlock();
         poseStack.translate(-0.5, -0.5, -0.5);
@@ -35,6 +36,7 @@ public class TvItemRenderer extends ItemStackRenderer {
 
         if (itemDisplayContext == ItemDisplayContext.HEAD) {
             VertexConsumer vc = TvScreenVertexConsumers.getSmileTapeVC(buffer, le);
+            if (vc == null) vc = buffer.getBuffer(VistaRenderTypes.NOISE);
 
             //bugged when looking up. draw shader must be bugged
             int lightU = light & 0xFFFF;

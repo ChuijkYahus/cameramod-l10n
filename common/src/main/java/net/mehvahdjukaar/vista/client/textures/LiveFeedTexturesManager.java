@@ -66,7 +66,7 @@ public class LiveFeedTexturesManager {
 
 
     @Nullable
-    public static ResourceLocation requestLiveFeedTexture(UUID location, int screenSize,
+    public static LiveFeedTexture requestLiveFeedTexture(UUID location, int screenSize,
             boolean requiresUpdate, @Nullable ResourceLocation postShader) {
 
         ResourceLocation feedId = getOrCreateFeedId(location);
@@ -85,7 +85,7 @@ public class LiveFeedTexturesManager {
             texture.unMarkForUpdate();
         }
         if (texture.isInitialized()) {
-            return texture.getTextureLocation();
+            return texture;
         } else {
             SCHEDULER.get().forceUpdateNextTick(feedId);
         }

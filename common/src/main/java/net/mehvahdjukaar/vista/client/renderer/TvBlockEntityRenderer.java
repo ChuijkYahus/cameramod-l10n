@@ -4,13 +4,11 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import net.mehvahdjukaar.moonlight.api.client.util.LOD;
-import net.mehvahdjukaar.moonlight.api.client.util.VertexUtil;
 import net.mehvahdjukaar.moonlight.api.misc.ForgeOverride;
 import net.mehvahdjukaar.moonlight.api.misc.RollingBuffer;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
-import net.mehvahdjukaar.vista.VistaModClient;
-import net.mehvahdjukaar.vista.client.VistaRenderTypes;
 import net.mehvahdjukaar.vista.client.textures.LiveFeedTexturesManager;
+import net.mehvahdjukaar.vista.common.tv.IntAnimationState;
 import net.mehvahdjukaar.vista.common.tv.TVBlock;
 import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
@@ -22,7 +20,6 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.client.resources.model.Material;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -68,7 +65,7 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
     public void render(TVBlockEntity blockEntity, float partialTick, PoseStack poseStack, MultiBufferSource buffer,
                        int light, int overlay) {
 
-        if (!blockEntity.isScreenOn()) return;
+        if (!blockEntity.isScreenOn(partialTick)) return;
 
         Direction dir = blockEntity.getBlockState().getValue(TVBlock.FACING);
 
@@ -90,15 +87,15 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
         int pixelEffectRes = ClientConfigs.SCALE_PIXELS.get() ? screenSize : TVBlockEntity.MIN_SCREEN_PIXEL_SIZE;
 
         boolean shouldUpdate = lod.within(ClientConfigs.UPDATE_DISTANCE.get());
-        int switchAnim = blockEntity.getSwitchAnimationTicks();
-        int videoAnim = blockEntity.getAnimationTick();
-        float staticAnim = blockEntity.getLookingAtEndermanAnimation(partialTick);
+        IntAnimationState switchAnim = blockEntity.poweredOnAnimation;
+        IntAnimationState staticAnim = blockEntity.endermanAnimation;
+        int videoTicks = blockEntity.getPlaybackTicks();
         boolean paused = blockEntity.isPaused();
 
         VertexConsumer vc = blockEntity.getVideoSource()
                 .getVideoFrameBuilder(partialTick, buffer,
                         shouldUpdate, screenSize, pixelEffectRes,
-                        videoAnim, switchAnim, staticAnim, paused);
+                        videoTicks, paused, switchAnim, staticAnim);
 
         //technically not correct as tv could be multiple block. just matters for transition so it's probably ok
         light = LevelRenderer.getLightColor(blockEntity.getLevel(), blockEntity.getBlockPos().relative(dir));
@@ -171,7 +168,7 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
         font.drawInBatch(String.format("up ms %.2f", updateMs), 0, y, -1, false, poseStack.last().pose(), buffer, Font.DisplayMode.NORMAL,
                 OverlayTexture.NO_OVERLAY, LightTexture.FULL_BRIGHT);
 
-        float endermanAnim = tile.getLookingAtEndermanAnimation(partialTick);
+        float endermanAnim = tile.endermanAnimation.getValue(partialTick);
         if (endermanAnim != 0) {
             y -= 9;
 

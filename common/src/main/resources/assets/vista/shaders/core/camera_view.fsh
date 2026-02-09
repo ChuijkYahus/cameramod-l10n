@@ -5,14 +5,17 @@
 uniform sampler2D Sampler0;
 uniform sampler2D Sampler1;
 
+uniform float GameTime;
+
+uniform float NoiseIntensity;
 uniform float SwitchAnimation; // 0 = off, 1 = on
+
 uniform vec4 ColorModulator;
+
 uniform float FogStart;
 uniform float FogEnd;
 uniform vec4 FogColor;
 
-uniform float GameTime;
-uniform float NoiseIntensity;
 
 /* SpriteDimensions = (sizeU, sizeV) in normalized UVs. First 2 are unused */
 uniform vec2 SpriteDimensions;
@@ -38,6 +41,7 @@ in vec4 lightMapColor;
 in vec2 atlasSizePx;
 
 in vec2 texCoord0;
+in vec2 texCoord1;
 
 out vec4 fragColor;
 
