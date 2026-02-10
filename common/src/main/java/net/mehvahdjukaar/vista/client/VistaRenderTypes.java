@@ -93,7 +93,8 @@ public class VistaRenderTypes extends RenderType {
     private static void setCameraDrawUniforms(CrtKey key) {
         ShaderInstance shader = VistaModClient.CAMERA_VIEW_SHADER.get();
         shader.safeGetUniform("SpriteDimensions").set(key.frameW, key.frameH);
-        shader.safeGetUniform("HasOverlay").set(key.overlayTexture == null ? 0 : 1);
+        shader.safeGetUniform("HasOverlay").set(0);
+        shader.safeGetUniform("IsPaused").set(0);
 
         float scale = key.scale / 12f;
         float pt = Minecraft.getInstance().getTimer().getGameTimeDeltaTicks();

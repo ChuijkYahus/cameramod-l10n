@@ -54,11 +54,12 @@ public class TVEndermanObservationController {
 
     public boolean tick() {
         Level level = myTv.getLevel();
-        ViewFinderBlockEntity viewFinder = BroadcastManager.findLinkedViewFinder(level, broadcastUUID);
-        if (viewFinder != null) {
+        BroadcastManager manager = BroadcastManager.getInstance(level);
+
+        if (manager.getBroadcast(broadcastUUID, level.isClientSide) instanceof ViewFinderBlockEntity vf) {
             List<TVSpectatorView> doomScrollingPlayers = getPlayersLookView(level.players());
 
-            return angerEntitiesBeingLookedAt(viewFinder, doomScrollingPlayers);
+            return angerEntitiesBeingLookedAt(vf, doomScrollingPlayers);
         }
         return false;
     }

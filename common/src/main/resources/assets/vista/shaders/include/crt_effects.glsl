@@ -126,23 +126,22 @@ float vhs_rand(vec2 co)
     return fract(sin(dot(co, vec2(12.9898, 78.233))) * 43758.5453);
 }
 
-vec2 vhs_pause_uv(vec2 uv, float time, vec2 spriteDim)
-{
-    // Sprite-local pixel Y → VHS scanline
-    float pixelY   = spritePixelY(uv);
-    float scanline = floor(pixelY);
+// ------------------------
+// VHS Pause UV Distortion
+// ------------------------
+vec2 vhs_pause_uv(vec2 uv, float time, float scanlineCount) {
+    // Determine scanline index (0..scanlineCount-1)
+    float scanline = floor(uv.y * scanlineCount);
 
-    // Horizontal per-line jitter (does NOT move phosphors vertically)
-    float lineNoise = vhs_rand(vec2(time, scanline));
-    uv.x += (lineNoise - 0.5) * VHS_LINE_JITTER_AMPLITUDE;
+    // Horizontal per-line jitter (tape wobble)
+    float lineNoise = fract(sin(dot(vec2(time, scanline), vec2(12.9898, 78.233))) * 43758.5453);
+    uv.x += (lineNoise - 0.5) * 0.006; // VHS_LINE_JITTER_AMPLITUDE
 
-    // Vertical frame jitter (small, global)
-    float frameNoise = vhs_rand(vec2(time, 0.0));
-    uv.y += (frameNoise - 0.5) * VHS_FRAME_JITTER_AMPLITUDE
-    / max(spriteDim.y, 1e-6); // normalize to UV space
+    // Vertical frame jitter (tracking instability)
+    float frameNoise = fract(sin(dot(vec2(time, 0.0), vec2(12.9898, 78.233))) * 43758.5453);
+    uv.y += (frameNoise - 0.5) * 0.003; // VHS_FRAME_JITTER_AMPLITUDE
 
-    // Clamp to sprite bounds later (you already do this correctly)
-    return uv;
+    return clamp(uv, 0.0, 1.0);
 }
 
 
