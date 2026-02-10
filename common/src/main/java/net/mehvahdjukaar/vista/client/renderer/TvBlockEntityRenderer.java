@@ -105,7 +105,7 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
         poseStack.popPose();
     }
 
-    private static void addQuad(VertexConsumer builder, PoseStack poseStack,
+    public static void addQuad(VertexConsumer builder, PoseStack poseStack,
                                 float x0, float y0,
                                 float x1, float y1,
                                 int light) {

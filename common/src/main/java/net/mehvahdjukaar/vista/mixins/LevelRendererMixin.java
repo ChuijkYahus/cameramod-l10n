@@ -53,8 +53,7 @@ public class LevelRendererMixin {
 
     @Inject(method = "setupRender", at = @At("HEAD"), cancellable = true)
     public void vista$alterSetupRender(Camera camera, Frustum frustum, boolean hasCapturedFrustum, boolean isSpectator, CallbackInfo ci) {
-        if (VistaLevelRenderer.isRenderingLiveFeed()) {
-            VistaLevelRenderer.setupRender((LevelRenderer) (Object) this, camera, frustum, hasCapturedFrustum, isSpectator);
+        if (VistaLevelRenderer.setupRender((LevelRenderer) (Object) this, camera, frustum, hasCapturedFrustum, isSpectator)) {
             ci.cancel();
         }
     }

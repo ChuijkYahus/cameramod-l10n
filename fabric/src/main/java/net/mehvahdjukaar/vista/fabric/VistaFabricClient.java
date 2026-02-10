@@ -2,6 +2,7 @@ package net.mehvahdjukaar.vista.fabric;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientWorldEvents;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.fabricmc.fabric.api.event.client.player.ClientPreAttackCallback;
@@ -25,8 +26,11 @@ public class VistaFabricClient {
         HudRenderCallback.EVENT.register(VistaFabricClient::onRenderHud);
 
         ClientWorldEvents.AFTER_CLIENT_WORLD_CHANGE.register((minecraft, clientLevel) -> {
-            VistaModClient.onLevelClose();
             VistaModClient.onLevelLoaded(clientLevel);
+        });
+
+        ClientPlayConnectionEvents.DISCONNECT .register((clientPacketListener, minecraft) -> {
+            VistaModClient.onClientDisconnect();
         });
 
         WorldRenderEvents.AFTER_ENTITIES.register(worldRenderContext -> {

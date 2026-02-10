@@ -14,6 +14,8 @@ import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 
+import static net.mehvahdjukaar.vista.client.renderer.TvBlockEntityRenderer.addQuad;
+
 public class TvItemRenderer extends ItemStackRenderer {
 
     @Override
@@ -39,12 +41,10 @@ public class TvItemRenderer extends ItemStackRenderer {
             if (vc == null) vc = buffer.getBuffer(VistaRenderTypes.NOISE);
 
             //bugged when looking up. draw shader must be bugged
-            int lightU = light & 0xFFFF;
-            int lightV = (light >> 16) & 0xFFFF;
             float s = 6 / 16f;
             poseStack.translate(0.5, 0.5, -0.005f);
 
-            VertexUtil.addQuad(vc, poseStack, -s, -s, s, s, lightU, lightV);
+            addQuad(vc, poseStack, -s, -s, s, s, light);
         }
         poseStack.popPose();
     }

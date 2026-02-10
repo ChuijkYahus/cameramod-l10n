@@ -30,7 +30,6 @@ import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.VisibleForDebug;
-import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 
@@ -45,7 +44,7 @@ import java.util.function.Supplier;
 public class LiveFeedTexturesManager {
 
     private static final ResourceLocation POSTERIZE_FRAGMENT_SHADER = VistaMod.res("posterize");
-    private static final BiMap<UUID, ResourceLocation> LIVE_FEED_LOCATIONS = HashBiMap.create();
+    private static final BiMap<FeedKey, ResourceLocation> LIVE_FEED_LOCATIONS = HashBiMap.create();
     @VisibleForDebug
     public static final Map<ResourceLocation, RollingBuffer<Long>> UPDATE_TIMES = new HashMap<>();
 
@@ -62,6 +61,9 @@ public class LiveFeedTexturesManager {
                             .build()
             );
 
+    private record FeedKey(UUID name, Integer size) {
+    }
+
     private static long feedCounter = 0;
 
 
@@ -69,7 +71,7 @@ public class LiveFeedTexturesManager {
     public static LiveFeedTexture requestLiveFeedTexture(UUID location, int screenSize,
             boolean requiresUpdate, @Nullable ResourceLocation postShader) {
 
-        ResourceLocation feedId = getOrCreateFeedId(location);
+        ResourceLocation feedId = getOrCreateFeedId(location, screenSize);
         LiveFeedTexture texture = RenderedTexturesManager.requestTexture(feedId, () ->
                 new LiveFeedTexture(feedId,
                         screenSize * ClientConfigs.RESOLUTION_SCALE.get(),
@@ -92,11 +94,12 @@ public class LiveFeedTexturesManager {
         return null;
     }
 
-    private static ResourceLocation getOrCreateFeedId(UUID uuid) {
-        ResourceLocation loc = LIVE_FEED_LOCATIONS.get(uuid);
+    private static ResourceLocation getOrCreateFeedId(UUID uuid, int screenSize) {
+        FeedKey key = new FeedKey(uuid, screenSize);
+        ResourceLocation loc = LIVE_FEED_LOCATIONS.get(key);
         if (loc == null) {
             loc = VistaMod.res("live_feed_" + feedCounter++);
-            LIVE_FEED_LOCATIONS.put(uuid, loc);
+            LIVE_FEED_LOCATIONS.put(key, loc);
         }
         return loc;
     }
@@ -104,6 +107,8 @@ public class LiveFeedTexturesManager {
     @SuppressWarnings("ConstantConditions")
     public static void clear() {
         LIVE_FEED_LOCATIONS.clear();
+        UPDATE_TIMES.clear();
+        feedCounter = 0;
     }
 
     public static void onRenderTickEnd() {
@@ -153,6 +158,9 @@ public class LiveFeedTexturesManager {
 
         if (CompatHandler.DISTANT_HORIZONS) {
             runTask = DistantHorizonsCompat.decorateRenderWithoutLOD(runTask);
+        }
+        if(CompatHandler.IRIS){
+          //  runTask = IrisCompat.decorateRendererWithoutShadows(runTask);
         }
 
         SCHEDULER.get().runIfShouldUpdate(textureId, runTask);

@@ -140,21 +140,22 @@ public class VistaMod {
     public static void init() {
 
         if (CompatHandler.IRIS) {
-            VistaMod.LOGGER.error("IRIS mod detected. Vista WILL have visual issues and degraded performance. This is not something that I can fix. Trust me I tried but it's inherently due to how Iris was made and should be handled there.");
+            VistaMod.LOGGER.error("IRIS mod detected. Vista WILL have visual issues and degraded performance. This is not something that I can fix and happens even with shaderpacks off. Trust me I tried but it's inherently due to how Iris was made and should be handled there.");
         }
 
         //TODO:
-        //fix recursive rendering by using a canvas buffer
+        //tv face disappears
+        //cassettes dont go back in right tv
+        //lenses shaders for view finder
+        //aurora with snow and sleeping fox cabin
         //check if view are sections are not duplicated
         //frustum shenanigans
         //amendments mixed pot not saving on servers
-        //divining rod can use maybe has on the blockstate container of a chunk
+        //divining rod can use maybe has on the block container of a chunk
         //no adjusted frustum causing to clip through blocks when placed next to it
         //view finder scroll bug
         //creative only cassette that targets a video
         //turn table rotation thing
-        //show tv screen for far away cunks using a static screenshot with pause shaderand pause icon
-        //liveleak icon
         //ball item
         //jittery scroll
         //turn on sound
@@ -165,10 +166,8 @@ public class VistaMod {
         //check turn table
         //cannon maoeuvering sound
         //view finder maneuvering sound
-        //verify the connection system
         //tv glitch shader
         //exposure compat
-        //camera lensens
 
         CommonConfigs.init();
 

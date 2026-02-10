@@ -44,6 +44,7 @@ dependencies {
     modCompileOnly("curse.maven:cc-tweaked-282001:5714512")
     modCompileOnly("curse.maven:jei-238222:5846878")
     modCompileOnly("curse.maven:irisshaders-455508:6213635")
+    modCompileOnly("curse.maven:sodium-394468:6382649")
 
 
 }

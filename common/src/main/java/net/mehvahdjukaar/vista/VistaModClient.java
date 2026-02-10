@@ -118,7 +118,7 @@ public class VistaModClient {
         event.register(VIEWFINDER_MODEL, ViewFinderBlockEntityRenderer::createMesh);
     }
 
-    public static void onLevelClose() {
+    public static void onClientDisconnect() {
         LiveFeedTexturesManager.clear();
         VistaLevelRenderer.clear();
     }

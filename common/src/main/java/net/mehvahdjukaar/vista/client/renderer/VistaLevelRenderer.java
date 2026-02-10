@@ -8,6 +8,7 @@ import net.mehvahdjukaar.moonlight.core.client.DummyCamera;
 import net.mehvahdjukaar.vista.VistaPlatStuff;
 import net.mehvahdjukaar.vista.client.textures.LiveFeedTexture;
 import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
+import net.mehvahdjukaar.vista.integration.CompatHandler;
 import net.minecraft.client.Camera;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
@@ -204,7 +205,13 @@ public class VistaLevelRenderer {
 
     //mixin called stuff
 
-    public static void setupRender(LevelRenderer lr, Camera camera, Frustum frustum, boolean hasCapturedFrustum, boolean isSpectator) {
+    public static boolean setupRender(LevelRenderer lr, Camera camera, Frustum frustum, boolean hasCapturedFrustum, boolean isSpectator) {
+        if (!isRenderingLiveFeed()) {
+            return false;
+        }
+
+        if (CompatHandler.SODIUM) return false; //?? todo: give this a custom impl that follows what sodium does
+
         Vec3 cameraPosition = camera.getPosition();
         Minecraft minecraft = Minecraft.getInstance();
         ClientLevel clientLevel = minecraft.level;
@@ -314,6 +321,8 @@ public class VistaLevelRenderer {
         }
 
         minecraft.getProfiler().pop();
+
+        return true;
     }
 
     private static void viewAreaStuffChanged(LevelRenderer lr) {
@@ -340,6 +349,7 @@ public class VistaLevelRenderer {
     //very ugly because these can be called on another thread
 
     public static void onChunkLoaded(ChunkPos chunkPos, SectionOcclusionGraph sectionOcclusionGraph) {
+        if(CompatHandler.SODIUM)return;
         for (SectionOcclusionGraph graph : MANAGED_GRAPHS) {
             if (graph != sectionOcclusionGraph) {
                 graph.onChunkLoaded(chunkPos);
@@ -352,6 +362,7 @@ public class VistaLevelRenderer {
     }
 
     public static void onRecentlyCompiledSection(SectionRenderDispatcher.RenderSection renderSection, SectionOcclusionGraph sectionOcclusionGraph) {
+        if(CompatHandler.SODIUM)return;
         for (SectionOcclusionGraph graph : MANAGED_GRAPHS) {
             if (graph != sectionOcclusionGraph) {
                 graph.onSectionCompiled(renderSection);
