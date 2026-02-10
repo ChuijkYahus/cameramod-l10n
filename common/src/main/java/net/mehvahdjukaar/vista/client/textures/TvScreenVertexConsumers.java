@@ -78,7 +78,7 @@ public class TvScreenVertexConsumers {
         if (animatedStrip == null) return null;
 
         ResourceLocation overlay = paused ? VistaModClient.PAUSE_OVERLAY : null;
-
+overlay = VistaModClient.PAUSE_OVERLAY;
         ResourceLocation textureId = animatedStrip.getTextureLocation();
         AnimationStripData stripData = animatedStrip.getStripData();
         RenderType rt = hasSfx ?
@@ -100,7 +100,7 @@ public class TvScreenVertexConsumers {
                                                IntAnimationState enderman) {
         boolean hasSfx = hasSfx();
         if (!hasSfx && switchAnim.isDecreasing()) return null;
-        ResourceLocation overlay = paused ? VistaModClient.PAUSE_OVERLAY : null;
+        ResourceLocation overlay = (tex.isDisconnected() ? VistaModClient.DISCONNECT_OVERLAY : (paused ? VistaModClient.PAUSE_OVERLAY : null));
 
         ResourceLocation textureId = tex.getTextureLocation();
         RenderType rt = hasSfx ?
@@ -113,6 +113,7 @@ public class TvScreenVertexConsumers {
 
 
     private static boolean hasSfx() {
+        //TODO: add config
         return !VistaLevelRenderer.isRenderingLiveFeed() &&
                 Minecraft.getInstance().options.graphicsMode().get() != GraphicsStatus.FAST;
     }

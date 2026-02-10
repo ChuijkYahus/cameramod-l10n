@@ -129,7 +129,6 @@ public class LiveFeedTexturesManager {
             if (!(provider instanceof ViewFinderBlockEntity vf)) {
                 if(!text.isDisconnected()){
                     text.setDisconnected(true);
-                    drawOverlay(text.getFrameBuffer(), VistaModClient.DISCONNECT_OVERLAY);
                 }
                 return;
             }

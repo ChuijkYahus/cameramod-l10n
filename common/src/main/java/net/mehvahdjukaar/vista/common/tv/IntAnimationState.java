@@ -3,11 +3,10 @@ package net.mehvahdjukaar.vista.common.tv;
 import java.util.Objects;
 
 /**
- * AnimationHolder with forward and backward durations.
- * Enforces integer-only steps and clean divisions.
+ * Integer-only animation controller.
+ * Valid only when one duration is an exact multiple of the other.
  */
 public class IntAnimationState {
-
     // unmodifiable instance
     public static final IntAnimationState NO_ANIM = new IntAnimationState(1,1){
         @Override
@@ -18,29 +17,38 @@ public class IntAnimationState {
         }
     };
 
-    private final int turnOnTime;      // total ticks to fully turn on
-    private final int forwardStep;     // step per tick
-    private final int backwardStep;    // step per tick
+    private final int maxTick;
+    private final int forwardStep;
+    private final int backwardStep;
 
-    private int currentTick = 0;
-    private int prevTick = 0;
+    private int currentTick;
+    private int prevTick;
 
     public IntAnimationState(int turnOnTime, int turnOffTime) {
-        if (turnOnTime <= 0 || turnOffTime <= 0)
-            throw new IllegalArgumentException("Both turnOnTime and turnOffTime must be positive");
-
-        this.turnOnTime = turnOnTime;
-
-        // Compute steps per tick
-        this.forwardStep = 1; // always 1 for minimal storage
-
-        // Compute backward step as integer
-        float computedBackwardStep = (float) turnOnTime / turnOffTime;
-        if (Math.abs(Math.round(computedBackwardStep) - computedBackwardStep) > 1e-6) {
-            throw new IllegalArgumentException("turnOnTime / turnOffTime must produce integer backward step");
+        if (turnOnTime <= 0 || turnOffTime <= 0) {
+            throw new IllegalArgumentException("Times must be positive");
         }
-        this.backwardStep = Math.round(computedBackwardStep);
 
+        int max = Math.max(turnOnTime, turnOffTime);
+        int min = Math.min(turnOnTime, turnOffTime);
+
+        if (max % min != 0) {
+            throw new IllegalArgumentException(
+                    "Invalid animation ratio: one time must be an exact multiple of the other"
+            );
+        }
+
+        int ratio = max / min;
+
+        if (turnOnTime >= turnOffTime) {
+            this.forwardStep = 1;
+            this.backwardStep = ratio;
+        } else {
+            this.forwardStep = ratio;
+            this.backwardStep = 1;
+        }
+
+        this.maxTick = turnOnTime * forwardStep;
         this.currentTick = 0;
         this.prevTick = 0;
     }
@@ -53,28 +61,22 @@ public class IntAnimationState {
         return currentTick > prevTick;
     }
 
-    /**
-     * Call each tick while turning on
-     */
+    /** Call each tick while turning on */
     public void increment() {
         prevTick = currentTick;
-        currentTick = Math.min(turnOnTime, currentTick + forwardStep);
+        currentTick = Math.min(maxTick, currentTick + forwardStep);
     }
 
-    /**
-     * Call each tick while turning off
-     */
+    /** Call each tick while turning off */
     public void decrement() {
         prevTick = currentTick;
         currentTick = Math.max(0, currentTick - backwardStep);
     }
 
-    /**
-     * Returns normalized value [0,1], partialTick for interpolation
-     */
+    /** Normalized animation value in [0,1] */
     public float getValue(float partialTick) {
         float interpolated = prevTick + (currentTick - prevTick) * partialTick;
-        return Math.max(0f, Math.min(interpolated / turnOnTime, 1f));
+        return interpolated / maxTick;
     }
 
     @Override
@@ -90,6 +92,6 @@ public class IntAnimationState {
 
     @Override
     public String toString() {
-        return String.format("AnimationHolder[tick=%d/%d]", currentTick, turnOnTime);
+        return "Anim[" + currentTick + "->" + prevTick + "]";
     }
 }

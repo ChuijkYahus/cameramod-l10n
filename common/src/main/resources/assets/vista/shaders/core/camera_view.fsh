@@ -8,7 +8,8 @@ uniform sampler2D Sampler1;
 uniform float GameTime;
 
 uniform float NoiseIntensity;
-uniform float SwitchAnimation; // 0 = off, 1 = on
+uniform float SwitchAnimation;// 0 = off, 1 = on
+uniform int HasOverlay;
 
 uniform vec4 ColorModulator;
 
@@ -33,7 +34,7 @@ uniform float VignetteIntensity;
 
 // Base kernel radius used if the dynamic one computes smaller.
 // (Dynamic radius grows with Smear; this is a floor.)
-const int TriadKernelRadius = 1; // 0 => fastest/sharpest (no neighbors)
+const int TriadKernelRadius = 1;// 0 => fastest/sharpest (no neighbors)
 
 in float vertexDistance;
 in vec4 vertexColor;
@@ -108,9 +109,29 @@ vec2 clampToSpriteTexelCenters(vec2 uv, vec2 atlasSizePx) {
     return frameOriginUV + p / atlasSizePx;
 }
 
+vec3 sampleImage(vec2 uv){
+    if (HasOverlay > 0.5) {
+        uv = vhs_pause_uv(uv, GameTime);
+    }
+
+    vec3 baseColor = texture(Sampler0, uv).rgb;
+    vec4 overlay   = texture(Sampler1, uv);
+
+    vec3 diff = abs(baseColor - overlay.rgb);
+    float strength = HasOverlay * overlay.a;
+
+    vec3 color = mix(baseColor, diff, strength);
+
+    // Signal noise LAST
+    if (HasOverlay > 0.5) {
+      //  color = chromatic_noise(color, uv, GameTime);
+    }
+
+    return color;
+}
 
 /* ===================== Phosphor pass (gather) ===================== */
-vec3 accumulateTriadResponse(vec2 pixelPos, sampler2D srcTexture, vec2 atlasSizePx) {
+vec3 accumulateTriadResponse(vec2 pixelPos, vec2 atlasSizePx) {
     vec2 tpp = normalizedTriadPerPixel(atlasSizePx);
 
     vec2 triadPos = pixelPos * tpp - 0.25;
@@ -119,14 +140,14 @@ vec3 accumulateTriadResponse(vec2 pixelPos, sampler2D srcTexture, vec2 atlasSize
     // Estimate how many triad cycles a single screen pixel spans.
     vec2 dx = dFdx(triadPos);
     vec2 dy = dFdy(triadPos);
-    float cpp = max(length(dx), length(dy));   // cycles-per-pixel in triad units
+    float cpp = max(length(dx), length(dy));// cycles-per-pixel in triad units
     // Nyquist ~ 0.5 cpp. Build a soft contrast scale in [0..1].
     float t = clamp(0.5 / max(cpp, 1e-5), 0.0, 1.0);
-    float contrast = t * t; // smoother rolloff
+    float contrast = t * t;// smoother rolloff
 
     // Small scanline/beam jitter in TRIAD space (stable vs texture)
     vec2 jittered = triadPos;
-    float amp = 0.03 * clamp(1.0 / max(tpp.x, 1e-6), 0.25, 1.0); //tpp.x is incorrect
+    float amp = 0.03 * clamp(1.0 / max(tpp.x, 1e-6), 0.25, 1.0);//tpp.x is incorrect
     float offset = 0.0;
     offset += (mod(floor(triadPos.x), 3.0) < 1.5 ? 1.0 : -1.0) * amp;
     offset += (mod(floor(triadPos.x), 5.0) < 2.5 ? 1.0 : -1.0) * (amp * 0.6);
@@ -147,7 +168,7 @@ vec3 accumulateTriadResponse(vec2 pixelPos, sampler2D srcTexture, vec2 atlasSize
             vec2 cellCenter = floor(triadPos) + 0.5 + vec2(dx_i, dy_i);
 
             vec2 rP = jittered + vec2(0.0, up);
-            vec2 gP = jittered + vec2( lr, 0.0);
+            vec2 gP = jittered + vec2(lr, 0.0);
             vec2 bP = jittered + vec2(-lr, 0.0);
 
             float dR = triadDistance(cellCenter, rP);
@@ -163,9 +184,9 @@ vec3 accumulateTriadResponse(vec2 pixelPos, sampler2D srcTexture, vec2 atlasSize
             vec2 uvG = clampToSpriteTexelCenters(triadToUV(gP, atlasSizePx), atlasSizePx);
             vec2 uvB = clampToSpriteTexelCenters(triadToUV(bP, atlasSizePx), atlasSizePx);
 
-            vec3 sR = texture(srcTexture, uvR).rgb;
-            vec3 sG = texture(srcTexture, uvG).rgb;
-            vec3 sB = texture(srcTexture, uvB).rgb;
+            vec3 sR = sampleImage(uvR);
+            vec3 sG = sampleImage(uvG);
+            vec3 sB = sampleImage(uvB);
 
             // Optional gentle tonal tweak
             sR = pow(sR, vec3(1.18)) * 1.08;
@@ -193,12 +214,13 @@ vec3 accumulateTriadResponse(vec2 pixelPos, sampler2D srcTexture, vec2 atlasSize
     vec2 localUV = (texCoord0 - frameOriginUV) / frameSizeUV;
     vec2 fallbackUV = frameOriginUV + localUV * frameSizeUV;
 
-    vec3 fallback = texture(srcTexture, clampToSpriteTexelCenters(fallbackUV, atlasSizePx)).rgb;
+    vec3 fallback = sampleImage(clampToSpriteTexelCenters(fallbackUV, atlasSizePx));
 
 
     // Blend based on aliasing risk: high cpp -> contrast→0 -> prefer fallback
     return mix(fallback, triadOut, contrast);
 }
+
 
 
 // Returns [0..1] contrast scale for the triad mask based on pixel footprint.
@@ -216,7 +238,7 @@ float triadContrastScale(vec2 triadPos) {
     float t = clamp(nyquist / max(cpp, 1e-5), 0.0, 1.0);
 
     // Ease the rolloff for smoother transition
-    return t * t; // or smoothstep(0.0, 1.0, top)
+    return t * t;// or smoothstep(0.0, 1.0, top)
 }
 
 void main() {
@@ -235,7 +257,7 @@ void main() {
     vec2 pixelPos = localUV * spriteResolution;
 
 
-    vec3 triadRGB = accumulateTriadResponse(pixelPos, Sampler0, atlasSizePx);
+    vec3 triadRGB = accumulateTriadResponse(pixelPos, atlasSizePx);
 
     vec4 color = vec4(triadRGB, 1.0) * vertexColor * ColorModulator;
 
@@ -251,7 +273,7 @@ void main() {
     color.rgb *= vignette;
     // =============================================================
 
-    if (SwitchAnimation != 0){
+    if (SwitchAnimation != 1){
         color = crt_turn_on(
         color,
         pixelPos,

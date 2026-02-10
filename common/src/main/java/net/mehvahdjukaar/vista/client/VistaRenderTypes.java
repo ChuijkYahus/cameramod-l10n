@@ -6,11 +6,7 @@ import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.VistaModClient;
-import net.mehvahdjukaar.vista.client.textures.AnimatedStripTexture;
-import net.mehvahdjukaar.vista.client.textures.AnimationStripData;
-import net.mehvahdjukaar.vista.client.textures.LiveFeedTexture;
 import net.mehvahdjukaar.vista.common.tv.IntAnimationState;
-import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
@@ -19,8 +15,8 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.DyeColor;
+import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
-import org.joml.Vector4f;
 
 import java.util.function.Function;
 
@@ -96,8 +92,7 @@ public class VistaRenderTypes extends RenderType {
 
     private static void setCameraDrawUniforms(CrtKey key) {
         ShaderInstance shader = VistaModClient.CAMERA_VIEW_SHADER.get();
-        shader.safeGetUniform("SpriteDimensions")
-                .set(new Vector4f(0, 0, key.frameW, key.frameH));
+        shader.safeGetUniform("SpriteDimensions").set(key.frameW, key.frameH);
         shader.safeGetUniform("HasOverlay").set(key.overlayTexture == null ? 0 : 1);
 
         float scale = key.scale / 12f;

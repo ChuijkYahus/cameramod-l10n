@@ -22,7 +22,9 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.block.TintedGlassBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec2;
 import org.joml.Vector3f;
@@ -106,16 +108,16 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
     }
 
     private static void addQuad(VertexConsumer builder, PoseStack poseStack,
-                               float x0, float y0,
-                               float x1, float y1,
-                               int light) {
+                                float x0, float y0,
+                                float x1, float y1,
+                                int light) {
         int lu = light & 0xFFFF;
         int lv = (light >> 16) & 0xFFFF;
         PoseStack.Pose last = poseStack.last();
         Vector3f normal = last.normal().transform(new Vector3f(0, 0, -1));
-        vert(builder, poseStack, x0, y1, 1, 0, 0, 15, lu, lv, normal);
-        vert(builder, poseStack, x1, y1, 0, 0, lu, 15, 15, lv, normal);
-        vert(builder, poseStack, x1, y0, 0, 1, lu, 15, 0, lv, normal);
+        vert(builder, poseStack, x0, y1, 1, 0, lu, lv, 0, 15, normal);
+        vert(builder, poseStack, x1, y1, 0, 0, lu, lv, 15, 15, normal);
+        vert(builder, poseStack, x1, y0, 0, 1, lu, lv, 15, 0, normal);
         vert(builder, poseStack, x0, y0, 1, 1, lu, lv, 0, 0, normal);
     }
 
@@ -128,8 +130,8 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
         builder.addVertex(poseStack.last().pose(), x, y, 0);
         builder.setColor(1.0f, 1.0f, 1.0f, 1.0f);
         builder.setUv(u, v);
-        builder.setUv1(oU, oA);
-        builder.setUv2(lu, lv);
+        builder.setOverlay(OverlayTexture.NO_OVERLAY);
+        builder.setLight(LightTexture.FULL_BRIGHT);
         builder.setNormal(normal.x, normal.y, normal.z);
     }
 
