@@ -10,7 +10,7 @@ uniform float GameTime;
 uniform float NoiseIntensity;
 uniform float SwitchAnimation;// 0 = off, 1 = on
 uniform int HasOverlay;
-uniform int HasPause;
+uniform int IsPaused;
 
 uniform vec4 ColorModulator;
 
@@ -40,8 +40,8 @@ const int TriadKernelRadius = 1;// 0 => fastest/sharpest (no neighbors)
 in float vertexDistance;
 in vec4 vertexColor;
 in vec4 lightMapColor;
-in vec2 atlasSizePx;
-in vec2 spriteSizePx;
+flat in vec2 atlasSizePx;
+flat in vec2 spriteSizePx;
 
 in vec2 texCoord0;
 in vec2 texCoord1;
@@ -53,10 +53,6 @@ float beamFalloff(float d) {
     float expLike   = exp2(-d * d * 2.5 - 0.3);
     float softTail  = 0.05 / (d * d * d * 0.45 + 0.055);
     return mix(expLike, softTail, 0.65) * 0.99;
-}
-
-vec2 getFrameOriginUV() {
-    return floor(texCoord0 / SpriteDimensions) * SpriteDimensions;
 }
 
 float triadDistance(vec2 triadA, vec2 triadB) {
@@ -75,7 +71,7 @@ vec2 normalizedTriadPerPixel() {
 }
 
 /* TRIAD space -> UV (no global clamp here; we clamp to sprite rect later) */
-vec2 triadToUV(vec2 triadP) {
+vec2 triadToUV(vec2 triadP, vec2 frameOriginUV) {
     vec2 tpp = normalizedTriadPerPixel();
 
     // convert triad position to frame-local pixels
@@ -85,17 +81,14 @@ vec2 triadToUV(vec2 triadP) {
     vec2 localUV = pix / spriteSizePx;
 
     // return absolute UV inside the texture
-    return getFrameOriginUV() + localUV * SpriteDimensions;
+    return frameOriginUV + localUV * SpriteDimensions;
 }
 
 
 /* ---- Precise, no-bleed clamp: clamp to edge texel centers ----
    We clamp in texel units relative to the current frame, to [0.5 .. width-0.5]. */
-vec2 clampToSpriteTexelCenters(vec2 uv) {
+vec2 clampToSpriteTexelCenters(vec2 uv, vec2 frameOriginUV) {
     // frame size in UVs
-
-    // infer frame origin from texCoord0
-    vec2 frameOriginUV = getFrameOriginUV();
 
     // Convert to texel coords relative to frame
     vec2 p = (uv - frameOriginUV) * atlasSizePx;
@@ -108,19 +101,25 @@ vec2 clampToSpriteTexelCenters(vec2 uv) {
     return frameOriginUV + p / atlasSizePx;
 }
 
-vec3 sampleImage(vec2 uv){
-    if (HasPause > 0.5) {
+vec3 sampleImage(vec2 uv, vec2 frameOriginUV) {
+    if (IsPaused > 0.5) {
         uv = vhs_pause_uv(uv, GameTime, SpriteDimensions.y);
     }
 
     vec3 color = texture(Sampler0, uv).rgb;
     if (HasOverlay > 0.5){
-        vec4 overlay   = texture(Sampler1, uv);
+        // Map triad/sample UV to overlay UV [0..1]
+        vec2 overlayUV = (uv - frameOriginUV) / SpriteDimensions;
+        vec4 overlay = texture(Sampler1, overlayUV);
 
-        vec3 diff = abs(color - overlay.rgb);
-        float strength = HasOverlay * overlay.a;
+        float strength = overlay.a; // overlay alpha as blend factor
+        vec3 overlayRGB = overlay.rgb;
 
-        color = mix(color, diff, strength);
+        // Negative-multiply blend: src + dst - 2*src*dst
+        vec3 blended = color + overlayRGB - 2.0 * color * overlayRGB;
+
+        // Apply overlay strength (alpha)
+        color = mix(color, blended, strength);
     }
     // Signal noise LAST
     if (HasOverlay > 0.5) {
@@ -131,7 +130,7 @@ vec3 sampleImage(vec2 uv){
 }
 
 /* ===================== Phosphor pass (gather) ===================== */
-vec3 accumulateTriadResponse(vec2 pixelPos) {
+vec3 accumulateTriadResponse(vec2 pixelPos, vec2 localUV, vec2 frameOriginUV) {
     vec2 tpp = normalizedTriadPerPixel();
 
     vec2 triadPos = pixelPos * tpp - 0.25;
@@ -180,13 +179,13 @@ vec3 accumulateTriadResponse(vec2 pixelPos) {
             float wB = beamFalloff(dB);
 
             // Beam center → atlas UV, then clamp to sprite edge texel centers
-            vec2 uvR = clampToSpriteTexelCenters(triadToUV(rP));
-            vec2 uvG = clampToSpriteTexelCenters(triadToUV(gP));
-            vec2 uvB = clampToSpriteTexelCenters(triadToUV(bP));
+            vec2 uvR = clampToSpriteTexelCenters(triadToUV(rP, frameOriginUV), frameOriginUV);
+            vec2 uvG = clampToSpriteTexelCenters(triadToUV(gP, frameOriginUV), frameOriginUV);
+            vec2 uvB = clampToSpriteTexelCenters(triadToUV(bP, frameOriginUV), frameOriginUV);
 
-            vec3 sR = sampleImage(uvR);
-            vec3 sG = sampleImage(uvG);
-            vec3 sB = sampleImage(uvB);
+            vec3 sR = sampleImage(uvR, frameOriginUV);
+            vec3 sG = sampleImage(uvG, frameOriginUV);
+            vec3 sB = sampleImage(uvB, frameOriginUV);
 
             // Optional gentle tonal tweak
             sR = pow(sR, vec3(1.18)) * 1.08;
@@ -209,11 +208,9 @@ vec3 accumulateTriadResponse(vec2 pixelPos) {
 
     // Low-frequency fallback (no triad) using the sprite-local UV
     // compute frame-local UVs for fallback
-    vec2 frameOriginUV = getFrameOriginUV();
-    vec2 localUV = (texCoord0 - frameOriginUV) / SpriteDimensions;
     vec2 fallbackUV = frameOriginUV + localUV * SpriteDimensions;
 
-    vec3 fallback = sampleImage(clampToSpriteTexelCenters(fallbackUV));
+    vec3 fallback = sampleImage(clampToSpriteTexelCenters(fallbackUV, frameOriginUV), frameOriginUV);
 
 
     // Blend based on aliasing risk: high cpp -> contrast→0 -> prefer fallback
@@ -224,7 +221,7 @@ vec3 accumulateTriadResponse(vec2 pixelPos) {
 void main() {
 
     // infer frame origin from texCoord0
-    vec2 frameOriginUV = getFrameOriginUV();
+    vec2 frameOriginUV = floor(texCoord0 / SpriteDimensions) * SpriteDimensions;;
 
     // frame-local UVs
     vec2 localUV = (texCoord0 - frameOriginUV) / SpriteDimensions;
@@ -233,7 +230,7 @@ void main() {
     vec2 pixelPos = localUV * spriteSizePx;
 
 
-    vec3 triadRGB = accumulateTriadResponse(pixelPos);
+    vec3 triadRGB = accumulateTriadResponse(pixelPos, localUV, frameOriginUV);
 
     vec4 color = vec4(triadRGB, 1.0) * vertexColor * ColorModulator;
 

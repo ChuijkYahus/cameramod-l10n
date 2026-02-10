@@ -30,8 +30,8 @@ out vec4 lightMapColor;
 out vec2 texCoord0;        // original texture coord
 out vec2 texCoord1;        // overlay coord
 
-out vec2 spriteSizePx;
-out vec2 atlasSizePx;      // texture size in pixels
+flat out vec2 spriteSizePx;
+flat out vec2 atlasSizePx;      // texture size in pixels
 
 void main() {
     gl_Position = ProjMat * ModelViewMat * vec4(Position, 1.0);
@@ -53,5 +53,5 @@ void main() {
 
     // pass-through UVs
     texCoord0 = UV0;
-    texCoord1 = UV1;
+    texCoord1 = vec2(UV1) / 16.0;
 }

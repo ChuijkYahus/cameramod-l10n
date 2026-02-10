@@ -32,7 +32,8 @@ public class VistaRenderTypes extends RenderType {
 
     protected static final TransparencyStateShard DIFFERENCE_BLENDING = new TransparencyStateShard("additive_transparency", () -> {
         RenderSystem.enableBlend();
-        RenderSystem.blendFuncSeparate(GlStateManager.SourceFactor.ONE_MINUS_DST_COLOR,
+        RenderSystem.blendFuncSeparate(
+                GlStateManager.SourceFactor.ONE_MINUS_DST_COLOR,
                 GlStateManager.DestFactor.ONE_MINUS_SRC_COLOR,
                 GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
     }, () -> {
@@ -63,6 +64,7 @@ public class VistaRenderTypes extends RenderType {
     public static RenderType crtRenderType(
             ResourceLocation id, int scale, float frameW, float frameH, IntAnimationState turnOnAnim, IntAnimationState staticAnim,
             @Nullable ResourceLocation overlay) {
+        overlay = VistaModClient.DISCONNECT_OVERLAY;
         CrtKey key = new CrtKey(id, frameW, frameH, scale, turnOnAnim, staticAnim, overlay);
         return CRT_RENDER_TYPE.apply(key);
     }
@@ -93,7 +95,7 @@ public class VistaRenderTypes extends RenderType {
     private static void setCameraDrawUniforms(CrtKey key) {
         ShaderInstance shader = VistaModClient.CAMERA_VIEW_SHADER.get();
         shader.safeGetUniform("SpriteDimensions").set(key.frameW, key.frameH);
-        shader.safeGetUniform("HasOverlay").set(0);
+        shader.safeGetUniform("HasOverlay").set(key.overlayTexture == null ? 0 : 1);
         shader.safeGetUniform("IsPaused").set(0);
 
         float scale = key.scale / 12f;

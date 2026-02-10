@@ -87,7 +87,7 @@ overlay = VistaModClient.PAUSE_OVERLAY;
                         stripData.frameRelativeH(),
                         switchAnim, IntAnimationState.NO_ANIM,
                         overlay) :
-                RenderType.text(textureId);
+                RenderType.entitySolid(textureId);
         VertexConsumer inner = buffer.getBuffer(rt);
         return new AnimatedStripVertexConsumer(tickCount, stripData, inner);
     }
@@ -107,7 +107,7 @@ overlay = VistaModClient.PAUSE_OVERLAY;
                 VistaRenderTypes.crtRenderType(textureId, scale,
                         1, 1, switchAnim,
                         enderman, overlay) :
-                RenderType.text(textureId);
+                RenderType.entitySolid(textureId); //for normal
         return buffer.getBuffer(rt);
     }
 

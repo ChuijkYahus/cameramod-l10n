@@ -134,12 +134,12 @@ vec2 vhs_pause_uv(vec2 uv, float time, float scanlineCount) {
     float scanline = floor(uv.y * scanlineCount);
 
     // Horizontal per-line jitter (tape wobble)
-    float lineNoise = fract(sin(dot(vec2(time, scanline), vec2(12.9898, 78.233))) * 43758.5453);
-    uv.x += (lineNoise - 0.5) * 0.006; // VHS_LINE_JITTER_AMPLITUDE
+    float lineNoise = vhs_rand(vec2(time, scanline));
+    uv.x += (lineNoise - 0.5) * VHS_LINE_JITTER_AMPLITUDE;
 
     // Vertical frame jitter (tracking instability)
-    float frameNoise = fract(sin(dot(vec2(time, 0.0), vec2(12.9898, 78.233))) * 43758.5453);
-    uv.y += (frameNoise - 0.5) * 0.003; // VHS_FRAME_JITTER_AMPLITUDE
+    float frameNoise = vhs_rand(vec2(time, 0.0));
+    uv.y += (frameNoise - 0.5) * VHS_FRAME_JITTER_AMPLITUDE;
 
     return clamp(uv, 0.0, 1.0);
 }
