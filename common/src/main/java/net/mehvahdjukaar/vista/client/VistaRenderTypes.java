@@ -15,7 +15,6 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.DyeColor;
-import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Function;
@@ -57,14 +56,13 @@ public class VistaRenderTypes extends RenderType {
 
     private record CrtKey(ResourceLocation texture, float frameW, float frameH, int scale,
                           IntAnimationState turnOnAnim, IntAnimationState staticAnim,
-                          @Nullable ResourceLocation overlayTexture) {
+                          CrtOverlay overlay) {
     }
 
 
     public static RenderType crtRenderType(
-            ResourceLocation id, int scale, float frameW, float frameH, IntAnimationState turnOnAnim, IntAnimationState staticAnim,
-            @Nullable ResourceLocation overlay) {
-        overlay = VistaModClient.DISCONNECT_OVERLAY;
+            ResourceLocation id, int scale, float frameW, float frameH,
+            IntAnimationState turnOnAnim, IntAnimationState staticAnim, CrtOverlay overlay) {
         CrtKey key = new CrtKey(id, frameW, frameH, scale, turnOnAnim, staticAnim, overlay);
         return CRT_RENDER_TYPE.apply(key);
     }
@@ -73,8 +71,8 @@ public class VistaRenderTypes extends RenderType {
             Util.memoize(k -> {
                 var textureStateBuilder = MultiTextureStateShard.builder()
                         .add(k.texture, false, false);
-                if (k.overlayTexture != null) {
-                    textureStateBuilder.add(k.overlayTexture, false, false);
+                if (k.overlay  != CrtOverlay.NONE) {
+                    textureStateBuilder.add(k.texture(), false, false);
                 }
 
                 CompositeState compositeState = CompositeState.builder()
@@ -95,8 +93,7 @@ public class VistaRenderTypes extends RenderType {
     private static void setCameraDrawUniforms(CrtKey key) {
         ShaderInstance shader = VistaModClient.CAMERA_VIEW_SHADER.get();
         shader.safeGetUniform("SpriteDimensions").set(key.frameW, key.frameH);
-        shader.safeGetUniform("HasOverlay").set(key.overlayTexture == null ? 0 : 1);
-        shader.safeGetUniform("IsPaused").set(0);
+        shader.safeGetUniform("OverlayState").set(key.overlay.ordinal());
 
         float scale = key.scale / 12f;
         float pt = Minecraft.getInstance().getTimer().getGameTimeDeltaTicks();

@@ -115,10 +115,9 @@ vec4 crt_turn_on(vec4 inColor, vec2 fragPx, vec2 resolutionPx, float t) {
 // ===================== VHS PAUSE EFFECT =====================
 
 // Knobs
-#define VHS_LINE_JITTER_AMPLITUDE    0.006
-#define VHS_FRAME_JITTER_AMPLITUDE   0.003
+#define VHS_LINE_JITTER_AMPLITUDE    0.3
+#define VHS_FRAME_JITTER_AMPLITUDE   0.6
 #define VHS_COLOR_NOISE_STRENGTH     0.10
-#define VHS_SCANLINE_COUNT          480.0   // logical tape lines
 
 // RNG
 float vhs_rand(vec2 co)
@@ -129,29 +128,33 @@ float vhs_rand(vec2 co)
 // ------------------------
 // VHS Pause UV Distortion
 // ------------------------
-vec2 vhs_pause_uv(vec2 uv, float time, float scanlineCount) {
-    // Determine scanline index (0..scanlineCount-1)
-    float scanline = floor(uv.y * scanlineCount);
+vec2 vhs_pause_uv(vec2 uv, float time, vec2 atlasSizePx) {
+    float scanline = floor(uv.y * atlasSizePx.y);
 
-    // Horizontal per-line jitter (tape wobble)
+    // Horizontal per-line jitter (already pixel-stable)
     float lineNoise = vhs_rand(vec2(time, scanline));
-    uv.x += (lineNoise - 0.5) * VHS_LINE_JITTER_AMPLITUDE;
+    uv.x += (lineNoise - 0.5) * VHS_LINE_JITTER_AMPLITUDE / atlasSizePx.x;
 
-    // Vertical frame jitter (tracking instability)
+    // Vertical frame jitter — pixel space
     float frameNoise = vhs_rand(vec2(time, 0.0));
-    uv.y += (frameNoise - 0.5) * VHS_FRAME_JITTER_AMPLITUDE;
+    float yOffsetPx = (frameNoise - 0.5) * VHS_FRAME_JITTER_AMPLITUDE;
+    uv.y += yOffsetPx / atlasSizePx.y;
 
     return clamp(uv, 0.0, 1.0);
 }
 
 
-vec3 chromatic_noise(vec3 color, vec2 uv, float time){
-    float scanline = floor(uv.y * VHS_SCANLINE_COUNT);
+vec3 chromatic_noise(vec3 color, vec2 uv, float time, vec2 atlasSizePx){
+    // Physical scanline index (pixel space)
+    float scanline = floor(uv.y * atlasSizePx.y);
+
+    // Time-quantized noise (stable speed)
+    float t = floor(time * 60.0);
 
     vec3 noise;
-    noise.r = vhs_rand(vec2(scanline, time));
-    noise.g = vhs_rand(vec2(scanline, time + 1.0));
-    noise.b = vhs_rand(vec2(scanline, time + 2.0));
+    noise.r = vhs_rand(vec2(scanline, t));
+    noise.g = vhs_rand(vec2(scanline, t + 1.0));
+    noise.b = vhs_rand(vec2(scanline, t + 2.0));
 
     return color + (noise - 0.5) * VHS_COLOR_NOISE_STRENGTH;
 }

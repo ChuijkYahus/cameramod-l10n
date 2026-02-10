@@ -3,6 +3,7 @@ package net.mehvahdjukaar.vista.client.textures;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.VistaModClient;
+import net.mehvahdjukaar.vista.client.CrtOverlay;
 import net.mehvahdjukaar.vista.client.VistaRenderTypes;
 import net.mehvahdjukaar.vista.client.renderer.VistaLevelRenderer;
 import net.mehvahdjukaar.vista.common.cassette.CassetteTape;
@@ -77,8 +78,8 @@ public class TvScreenVertexConsumers {
         AnimatedStripTexture animatedStrip = CassetteTexturesManager.INSTANCE.getAnimatedTexture(id);
         if (animatedStrip == null) return null;
 
-        ResourceLocation overlay = paused ? VistaModClient.PAUSE_OVERLAY : null;
-overlay = VistaModClient.PAUSE_OVERLAY;
+        CrtOverlay overlay = paused ? CrtOverlay.PAUSE : CrtOverlay.NONE;
+
         ResourceLocation textureId = animatedStrip.getTextureLocation();
         AnimationStripData stripData = animatedStrip.getStripData();
         RenderType rt = hasSfx ?
@@ -100,7 +101,7 @@ overlay = VistaModClient.PAUSE_OVERLAY;
                                                IntAnimationState enderman) {
         boolean hasSfx = hasSfx();
         if (!hasSfx && switchAnim.isDecreasing()) return null;
-        ResourceLocation overlay = (tex.isDisconnected() ? VistaModClient.DISCONNECT_OVERLAY : (paused ? VistaModClient.PAUSE_OVERLAY : null));
+        CrtOverlay overlay = (tex.isDisconnected() ? CrtOverlay.DISCONNECT : (paused ? CrtOverlay.PAUSE : CrtOverlay.NONE));
 
         ResourceLocation textureId = tex.getTextureLocation();
         RenderType rt = hasSfx ?

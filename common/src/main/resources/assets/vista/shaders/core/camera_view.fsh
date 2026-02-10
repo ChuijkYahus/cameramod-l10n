@@ -9,8 +9,7 @@ uniform float GameTime;
 
 uniform float NoiseIntensity;
 uniform float SwitchAnimation;// 0 = off, 1 = on
-uniform int HasOverlay;
-uniform int IsPaused;
+uniform int OverlayIndex;
 
 uniform vec4 ColorModulator;
 
@@ -102,28 +101,24 @@ vec2 clampToSpriteTexelCenters(vec2 uv, vec2 frameOriginUV) {
 }
 
 vec3 sampleImage(vec2 uv, vec2 frameOriginUV) {
-    if (IsPaused > 0.5) {
-        uv = vhs_pause_uv(uv, GameTime, SpriteDimensions.y);
+    if (OverlayIndex == 1) {
+        uv = vhs_pause_uv(uv, GameTime, atlasSizePx);
     }
 
     vec3 color = texture(Sampler0, uv).rgb;
-    if (HasOverlay > 0.5){
-        // Map triad/sample UV to overlay UV [0..1]
+    if (OverlayIndex != 0){
+        // Map sprite-local UV to full overlay quad
         vec2 overlayUV = (uv - frameOriginUV) / SpriteDimensions;
         vec4 overlay = texture(Sampler1, overlayUV);
 
-        float strength = overlay.a; // overlay alpha as blend factor
-        vec3 overlayRGB = overlay.rgb;
+        float strength = overlay.a;
 
-        // Negative-multiply blend: src + dst - 2*src*dst
-        vec3 blended = color + overlayRGB - 2.0 * color * overlayRGB;
-
-        // Apply overlay strength (alpha)
-        color = mix(color, blended, strength);
+        // Additive blend
+        color += overlay.rgb * strength;
     }
     // Signal noise LAST
-    if (HasOverlay > 0.5) {
-        //  color = chromatic_noise(color, uv, GameTime);
+    if (OverlayIndex == 1) {
+          color = chromatic_noise(color, uv, GameTime, atlasSizePx);
     }
 
     return color;
@@ -131,6 +126,7 @@ vec3 sampleImage(vec2 uv, vec2 frameOriginUV) {
 
 /* ===================== Phosphor pass (gather) ===================== */
 vec3 accumulateTriadResponse(vec2 pixelPos, vec2 localUV, vec2 frameOriginUV) {
+
     vec2 tpp = normalizedTriadPerPixel();
 
     vec2 triadPos = pixelPos * tpp - 0.25;
@@ -219,16 +215,12 @@ vec3 accumulateTriadResponse(vec2 pixelPos, vec2 localUV, vec2 frameOriginUV) {
 
 
 void main() {
-
     // infer frame origin from texCoord0
     vec2 frameOriginUV = floor(texCoord0 / SpriteDimensions) * SpriteDimensions;;
-
     // frame-local UVs
     vec2 localUV = (texCoord0 - frameOriginUV) / SpriteDimensions;
-
     // frame-local pixel position for triad math
     vec2 pixelPos = localUV * spriteSizePx;
-
 
     vec3 triadRGB = accumulateTriadResponse(pixelPos, localUV, frameOriginUV);
 
