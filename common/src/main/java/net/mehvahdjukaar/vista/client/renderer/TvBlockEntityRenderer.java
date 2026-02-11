@@ -14,7 +14,6 @@ import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
@@ -22,6 +21,8 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec2;
@@ -86,11 +87,11 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
         float s = screenSize / 32f;
         int pixelEffectRes = ClientConfigs.SCALE_PIXELS.get() ? screenSize : TVBlockEntity.MIN_SCREEN_PIXEL_SIZE;
 
-        boolean shouldUpdate = lod.within(ClientConfigs.UPDATE_DISTANCE.get());
-        IntAnimationState switchAnim = blockEntity.poweredOnAnimation;
+        boolean paused = blockEntity.isPaused();
+        boolean shouldUpdate = !paused && lod.within(ClientConfigs.UPDATE_DISTANCE.get());
+        IntAnimationState switchAnim = blockEntity.fadeAnimation;
         IntAnimationState staticAnim = blockEntity.endermanAnimation;
         int videoTicks = blockEntity.getPlaybackTicks();
-        boolean paused = blockEntity.isPaused();
 
         VertexConsumer vc = blockEntity.getVideoSource()
                 .getVideoFrameBuilder(partialTick, buffer,
@@ -98,7 +99,9 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
                         videoTicks, paused, switchAnim, staticAnim);
 
         //technically not correct as tv could be multiple block. just matters for transition so it's probably ok
-        light = LevelRenderer.getLightColor(blockEntity.getLevel(), blockEntity.getBlockPos().relative(dir));
+        Level level = blockEntity.getLevel();
+        int skyBrightness = level.getBrightness(LightLayer.SKY, blockEntity.getBlockPos().relative(dir));
+        light = LightTexture.pack(15, skyBrightness);
 
         addQuad(vc, poseStack, -s, -s, s, s, light);
 

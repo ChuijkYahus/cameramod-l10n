@@ -8,6 +8,7 @@ import net.mehvahdjukaar.vista.client.VistaRenderTypes;
 import net.mehvahdjukaar.vista.client.renderer.VistaLevelRenderer;
 import net.mehvahdjukaar.vista.common.cassette.CassetteTape;
 import net.mehvahdjukaar.vista.common.tv.IntAnimationState;
+import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.minecraft.client.GraphicsStatus;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -53,6 +54,14 @@ public class TvScreenVertexConsumers {
         return createAnimatedStripVC(buffer, tapeTexture, scale, tickCount, paused, switchAnim);
     }
 
+
+    @Nullable
+    public static VertexConsumer getNoiseVC(MultiBufferSource buffer, int scale, IntAnimationState switchAnim) {
+        //TODO: return a vc with maxed out noise and a random texture , won't matter
+        return null;
+    }
+
+
     @Nullable
     public static VertexConsumer getBarsVC(MultiBufferSource buffer, int scale, IntAnimationState switchAnim) {
         return createAnimatedStripVC(buffer, BARS_LOCATION, scale, 0, false, switchAnim);
@@ -62,7 +71,7 @@ public class TvScreenVertexConsumers {
     public static VertexConsumer getSmileTapeVC(MultiBufferSource buffer, LivingEntity player) {
         Smile smile = Smile.fromHealth(player);
         ResourceLocation id = SMILES.get(smile);
-        int scale = 1;//always on a 1x1 tv
+        int scale = 12;//always on a 1x1 tv
         return createAnimatedStripVC(buffer, id, scale, player.tickCount, false, IntAnimationState.NO_ANIM);
     }
 
@@ -98,7 +107,7 @@ public class TvScreenVertexConsumers {
                                                LiveFeedTexture tex,
                                                int scale, boolean paused,
                                                IntAnimationState switchAnim,
-                                               IntAnimationState enderman) {
+                                               IntAnimationState noiseANim) {
         boolean hasSfx = hasSfx();
         if (!hasSfx && switchAnim.isDecreasing()) return null;
         CrtOverlay overlay = (tex.isDisconnected() ? CrtOverlay.DISCONNECT : (paused ? CrtOverlay.PAUSE : CrtOverlay.NONE));
@@ -107,16 +116,16 @@ public class TvScreenVertexConsumers {
         RenderType rt = hasSfx ?
                 VistaRenderTypes.crtRenderType(textureId, scale,
                         1, 1, switchAnim,
-                        enderman, overlay) :
+                        noiseANim, overlay) :
                 RenderType.entitySolid(textureId); //for normal
         return buffer.getBuffer(rt);
     }
 
 
     private static boolean hasSfx() {
-        //TODO: add config
         return !VistaLevelRenderer.isRenderingLiveFeed() &&
-                Minecraft.getInstance().options.graphicsMode().get() != GraphicsStatus.FAST;
+                Minecraft.getInstance().options.graphicsMode().get() != GraphicsStatus.FAST
+                && ClientConfigs.SCREEN_EFFECTS.get();
     }
 
 

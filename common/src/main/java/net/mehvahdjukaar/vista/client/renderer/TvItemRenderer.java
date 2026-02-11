@@ -6,8 +6,10 @@ import net.mehvahdjukaar.moonlight.api.client.ItemStackRenderer;
 import net.mehvahdjukaar.moonlight.api.client.util.VertexUtil;
 import net.mehvahdjukaar.vista.client.VistaRenderTypes;
 import net.mehvahdjukaar.vista.client.textures.TvScreenVertexConsumers;
+import net.mehvahdjukaar.vista.common.tv.IntAnimationState;
 import net.mehvahdjukaar.vista.common.tv.TVItem;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemDisplayContext;
@@ -37,12 +39,13 @@ public class TvItemRenderer extends ItemStackRenderer {
         Minecraft.getInstance().getBlockRenderer().renderSingleBlock(block.defaultBlockState(), poseStack, buffer, light, overlay);
 
         if (itemDisplayContext == ItemDisplayContext.HEAD) {
-            VertexConsumer vc = TvScreenVertexConsumers.getSmileTapeVC(buffer, le);
+            VertexConsumer vc = TvScreenVertexConsumers.getSmileTapeVC(buffer,le);
             if (vc == null) vc = buffer.getBuffer(VistaRenderTypes.NOISE);
 
             //bugged when looking up. draw shader must be bugged
             float s = 6 / 16f;
             poseStack.translate(0.5, 0.5, -0.005f);
+            light = LightTexture.pack(15, LightTexture.sky(light));
 
             addQuad(vc, poseStack, -s, -s, s, s, light);
         }

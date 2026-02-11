@@ -15,6 +15,11 @@ public class IntAnimationState {
         @Override
         public void decrement() {
         }
+
+        @Override
+        public float getValue(float partialTick) {
+            return 0;
+        }
     };
 
     private final int maxTick;

@@ -8,10 +8,8 @@ uniform sampler2D Sampler1;
 uniform float GameTime;
 
 uniform float NoiseIntensity;
-uniform float SwitchAnimation;// 0 = off, 1 = on
+uniform float FadeAnimation;// 1 = off, 0 = on
 uniform int OverlayIndex;
-
-uniform vec4 ColorModulator;
 
 uniform float FogStart;
 uniform float FogEnd;
@@ -64,9 +62,9 @@ float triadDistance(vec2 triadA, vec2 triadB) {
 
 vec2 normalizedTriadPerPixel() {
     //it works i guess
-    vec2 invFrame = 96.0 / (SpriteDimensions.xy * atlasSizePx);
+    vec2 invFrame = 96.0 / spriteSizePx;
     //remove 1 multiplication to have triads per pixels. 2 to be triads per uv
-    return TriadsPerPixel * invFrame * invFrame;
+    return TriadsPerPixel * invFrame;
 }
 
 /* TRIAD space -> UV (no global clamp here; we clamp to sprite rect later) */
@@ -100,26 +98,24 @@ vec2 clampToSpriteTexelCenters(vec2 uv, vec2 frameOriginUV) {
     return frameOriginUV + p / atlasSizePx;
 }
 
-vec3 sampleImage(vec2 uv, vec2 frameOriginUV) {
+vec3 sampleImage(vec2 uv, vec2 frameOriginUV)
+{
+    float colorAdd = 0.0;
     if (OverlayIndex == 1) {
-        uv = vhs_pause_uv(uv, GameTime, atlasSizePx);
+        vec3 uvAndCol = vcr_pause(uv, frameOriginUV, SpriteDimensions, atlasSizePx, GameTime, normalizedTriadPerPixel());
+        uv = uvAndCol.xy;
+        colorAdd = uvAndCol.z;
     }
 
     vec3 color = texture(Sampler0, uv).rgb;
-    if (OverlayIndex != 0){
-        // Map sprite-local UV to full overlay quad
+
+    if (OverlayIndex > 0){
         vec2 overlayUV = (uv - frameOriginUV) / SpriteDimensions;
         vec4 overlay = texture(Sampler1, overlayUV);
-
-        float strength = overlay.a;
-
-        // Additive blend
-        color += overlay.rgb * strength;
+        color += overlay.rgb * overlay.a;
     }
-    // Signal noise LAST
-    if (OverlayIndex == 1) {
-          color = chromatic_noise(color, uv, GameTime, atlasSizePx);
-    }
+
+    color += colorAdd;
 
     return color;
 }
@@ -222,14 +218,15 @@ void main() {
     // frame-local pixel position for triad math
     vec2 pixelPos = localUV * spriteSizePx;
 
-    vec3 triadRGB = accumulateTriadResponse(pixelPos, localUV, frameOriginUV);
+    vec3 triadRGB = NoiseIntensity >=1 ? vec3(1,1,1) :  accumulateTriadResponse(pixelPos, localUV, frameOriginUV);
 
-    vec4 color = vec4(triadRGB, 1.0) * vertexColor * ColorModulator;
+    vec4 color = vec4(triadRGB, 1.0) * vertexColor;
 
     // ===================== NOISE =====================
     // Get procedural noise
     vec4 noise = crt_noise(texCoord0, GameTime);
     color.rgb = color.rgb + (noise.rgb-0.5) * clamp(NoiseIntensity, 0.0, 1.0);
+
 
     // ===================== VIGNETTE =====================
     // Compute vignette using frame-local UV
@@ -238,15 +235,21 @@ void main() {
     color.rgb *= vignette;
     // =============================================================
 
-    if (SwitchAnimation != 1){
+
+    // ===================== AC BEAT =====================
+    float acBeat = vhs_wave(localUV, frameOriginUV, SpriteDimensions, GameTime);
+    color.rgb += (acBeat-0.5)*0.7;
+    // =============================================================
+
+    if (FadeAnimation != 0){
         color = crt_turn_on(
         color,
         pixelPos,
         spriteSizePx,
-        SwitchAnimation
+        FadeAnimation
         );
     }
 
-
+    color *= lightMapColor;
     fragColor = linear_fog(color, vertexDistance, FogStart, FogEnd, FogColor);
 }

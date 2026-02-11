@@ -21,6 +21,7 @@ import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.mehvahdjukaar.vista.integration.CompatHandler;
 import net.mehvahdjukaar.vista.integration.distant_horizons.DistantHorizonsCompat;
+import net.mehvahdjukaar.vista.integration.iris.IrisCompat;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -160,7 +161,7 @@ public class LiveFeedTexturesManager {
             runTask = DistantHorizonsCompat.decorateRenderWithoutLOD(runTask);
         }
         if(CompatHandler.IRIS){
-          //  runTask = IrisCompat.decorateRendererWithoutShadows(runTask);
+            runTask = IrisCompat.decorateRendererWithoutShadows(runTask);
         }
 
         SCHEDULER.get().runIfShouldUpdate(textureId, runTask);

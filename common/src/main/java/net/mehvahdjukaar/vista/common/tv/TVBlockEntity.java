@@ -43,10 +43,10 @@ public class TVBlockEntity extends ItemDisplayTile {
     private int connectedTvsWidth = 1;
 
     private int soundLoopTicks = 0;
-    public final IntAnimationState poweredOnAnimation = new IntAnimationState(3, 9);
+    public final IntAnimationState fadeAnimation = new IntAnimationState( 3,9);
     public final IntAnimationState endermanAnimation = new IntAnimationState(20, 20);
     private boolean isLookingAtEnderman = false;
-    private boolean wasLastPowered = false;
+    private boolean wasScreenOn = false;
 
 
     public TVBlockEntity(BlockPos pos, BlockState state) {
@@ -176,11 +176,19 @@ public class TVBlockEntity extends ItemDisplayTile {
 
     public static void onTick(Level world, BlockPos pos, BlockState state, TVBlockEntity tv) {
         boolean powered = state.getValue(TVBlock.POWER_STATE).isOn();
+        //both sides
+
+        if (powered) {
+            if (!tv.paused) tv.videoPlaybackTicks++;
+        } else {
+            tv.fadeAnimation.decrement();
+            tv.videoPlaybackTicks = 0;
+        }
         if (world.isClientSide) {
-            tv.wasLastPowered = powered;
+            tv.wasScreenOn = powered;
 
             if (powered) {
-                if (ClientConfigs.TURN_OFF_EFFECTS.get()) tv.poweredOnAnimation.increment();
+                if (ClientConfigs.TURN_OFF_EFFECTS.get()) tv.fadeAnimation.increment();
                 float duration = tv.videoSource.getVideoDuration();
                 if (++tv.soundLoopTicks >= (duration)) {
                     tv.soundLoopTicks = 0;
@@ -189,11 +197,8 @@ public class TVBlockEntity extends ItemDisplayTile {
                         world.playLocalSound(pos, sound, SoundSource.BLOCKS, 1, 1.0f, false);
                     }
                 }
-                tv.videoPlaybackTicks++;
             } else {
-                tv.poweredOnAnimation.decrement();
                 tv.soundLoopTicks = 0;
-                tv.videoPlaybackTicks = 0;
             }
             if (tv.isLookingAtEnderman) {
                 tv.endermanAnimation.increment();
@@ -227,7 +232,7 @@ public class TVBlockEntity extends ItemDisplayTile {
     }
 
     public boolean isScreenOn(float partialTicks) {
-        return this.wasLastPowered || this.poweredOnAnimation.getValue(partialTicks) != 0;
+        return this.wasScreenOn || this.fadeAnimation.getValue(partialTicks) != 0;
     }
 
     private static final int EDGE_PIXEL_LEN = 4;
