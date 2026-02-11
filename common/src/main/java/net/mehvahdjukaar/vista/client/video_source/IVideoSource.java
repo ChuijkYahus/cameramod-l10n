@@ -50,9 +50,7 @@ public interface IVideoSource {
                 boolean shouldUpdate, int screenSize, int pixelEffectRes,
                 int videoAnimationTick, boolean paused,
                 IntAnimationState switchAnim, IntAnimationState staticAnim) {
-            VertexConsumer vc = TvScreenVertexConsumers.getBarsVC(buffer, pixelEffectRes, switchAnim);
-            if (vc == null) return buffer.getBuffer(VistaRenderTypes.NOISE);
-            return vc;
+            return TvScreenVertexConsumers.getBarsVC(buffer, pixelEffectRes, switchAnim);
         }
     }
 }

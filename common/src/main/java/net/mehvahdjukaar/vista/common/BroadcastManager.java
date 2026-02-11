@@ -8,8 +8,6 @@ import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.common.cassette.IBroadcastProvider;
-import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
-import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -54,7 +52,7 @@ public final class BroadcastManager extends WorldSavedData {
                         storage.publishSnapshot();
                         return storage;
                     },
-                    storage ->  new HashMap<>(storage.snapshot)
+                    storage -> new HashMap<>(storage.snapshot)
             );
 
     /* -------------------- STATE -------------------- */
@@ -63,7 +61,8 @@ public final class BroadcastManager extends WorldSavedData {
     private final HashBiMap<UUID, GlobalPos> uuidToPos = HashBiMap.create(); //thread safe, mutable
     private volatile Map<UUID, GlobalPos> snapshot = Map.of(); //fast read only
 
-    private BroadcastManager() {}
+    private BroadcastManager() {
+    }
 
     /* -------------------- INTERNALS -------------------- */
 
@@ -190,37 +189,4 @@ public final class BroadcastManager extends WorldSavedData {
         return VistaMod.VIEWFINDER_CONNECTION.getData(level);
     }
 
-    @Deprecated(forRemoval = true)
-    @Nullable
-    public static IBroadcastProvider findLinkedFeedProvider(Level level, @Nullable UUID viewFinderUUID) {
-        if (viewFinderUUID == null) return null;
-        BroadcastManager connection = getInstance(level);
-        if (connection == null) return null;
-
-        GlobalPos gp = connection.getBroadcastOriginById(viewFinderUUID);
-        if (gp != null && gp.dimension() == level.dimension()) {
-            BlockPos pos = gp.pos();
-            if (level.isLoaded(pos) && level.getBlockEntity(pos) instanceof IBroadcastProvider be) {
-                return be;
-            }
-        }
-        return null;
-    }
-
-    @Deprecated(forRemoval = true)
-    @Nullable
-    public static ViewFinderBlockEntity findLinkedViewFinder(Level level, @Nullable UUID viewFinderUUID) {
-        if (viewFinderUUID == null) return null;
-        BroadcastManager connection = getInstance(level);
-        if (connection == null) return null;
-
-        GlobalPos gp = connection.getBroadcastOriginById(viewFinderUUID);
-        if (gp != null && gp.dimension() == level.dimension()) {
-            BlockPos pos = gp.pos();
-            if (level.isLoaded(pos) && level.getBlockEntity(pos) instanceof ViewFinderBlockEntity be) {
-                return be;
-            }
-        }
-        return null;
-    }
 }

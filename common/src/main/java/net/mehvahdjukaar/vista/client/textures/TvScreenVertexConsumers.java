@@ -2,7 +2,6 @@ package net.mehvahdjukaar.vista.client.textures;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.mehvahdjukaar.vista.VistaMod;
-import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.client.CrtOverlay;
 import net.mehvahdjukaar.vista.client.VistaRenderTypes;
 import net.mehvahdjukaar.vista.client.renderer.VistaLevelRenderer;
@@ -19,6 +18,7 @@ import net.minecraft.world.entity.LivingEntity;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
+import java.util.function.Function;
 
 public class TvScreenVertexConsumers {
 
@@ -47,27 +47,21 @@ public class TvScreenVertexConsumers {
         }
     }
 
-    @Nullable
     public static VertexConsumer getTapeVC(MultiBufferSource buffer, Holder<CassetteTape> tapeKey, int scale,
                                            int tickCount, boolean paused, IntAnimationState switchAnim) {
         ResourceLocation tapeTexture = tapeKey.value().assetId();
         return createAnimatedStripVC(buffer, tapeTexture, scale, tickCount, paused, switchAnim);
     }
 
-
-    @Nullable
     public static VertexConsumer getNoiseVC(MultiBufferSource buffer, int scale, IntAnimationState switchAnim) {
-        //TODO: return a vc with maxed out noise and a random texture , won't matter
-        return null;
+        return createVC(BARS_LOCATION, scale, 1, 1,
+                CrtOverlay.NONE, switchAnim, IntAnimationState.NO_ANIM, buffer::getBuffer);
     }
 
-
-    @Nullable
     public static VertexConsumer getBarsVC(MultiBufferSource buffer, int scale, IntAnimationState switchAnim) {
         return createAnimatedStripVC(buffer, BARS_LOCATION, scale, 0, false, switchAnim);
     }
 
-    @Nullable
     public static VertexConsumer getSmileTapeVC(MultiBufferSource buffer, LivingEntity player) {
         Smile smile = Smile.fromHealth(player);
         ResourceLocation id = SMILES.get(smile);
@@ -75,50 +69,49 @@ public class TvScreenVertexConsumers {
         return createAnimatedStripVC(buffer, id, scale, player.tickCount, false, IntAnimationState.NO_ANIM);
     }
 
-    @Nullable
     private static VertexConsumer createAnimatedStripVC(MultiBufferSource buffer,
                                                         ResourceLocation id,
                                                         int scale, int tickCount,
                                                         boolean paused,
                                                         IntAnimationState switchAnim) {
-        boolean hasSfx = hasSfx();
-        if (!hasSfx && switchAnim.isDecreasing()) return null;
-
         AnimatedStripTexture animatedStrip = CassetteTexturesManager.INSTANCE.getAnimatedTexture(id);
-        if (animatedStrip == null) return null;
+        if (animatedStrip == null) {
+            return getNoiseVC(buffer, scale, switchAnim); //missing
+        }
 
         CrtOverlay overlay = paused ? CrtOverlay.PAUSE : CrtOverlay.NONE;
-
         ResourceLocation textureId = animatedStrip.getTextureLocation();
         AnimationStripData stripData = animatedStrip.getStripData();
-        RenderType rt = hasSfx ?
-                VistaRenderTypes.crtRenderType(textureId, scale,
-                        stripData.frameRelativeW(),
-                        stripData.frameRelativeH(),
-                        switchAnim, IntAnimationState.NO_ANIM,
-                        overlay) :
-                RenderType.entitySolid(textureId);
-        VertexConsumer inner = buffer.getBuffer(rt);
-        return new AnimatedStripVertexConsumer(tickCount, stripData, inner);
+
+        return createVC(textureId, scale, stripData.frameRelativeW(), stripData.frameRelativeH(),
+                overlay, switchAnim, IntAnimationState.NO_ANIM, rt ->
+                        new AnimatedStripVertexConsumer(tickCount, stripData, buffer.getBuffer(rt)));
     }
 
-    @Nullable
     public static VertexConsumer getLiveFeedVC(MultiBufferSource buffer,
                                                LiveFeedTexture tex,
                                                int scale, boolean paused,
                                                IntAnimationState switchAnim,
-                                               IntAnimationState noiseANim) {
-        boolean hasSfx = hasSfx();
-        if (!hasSfx && switchAnim.isDecreasing()) return null;
+                                               IntAnimationState noiseAnim) {
         CrtOverlay overlay = (tex.isDisconnected() ? CrtOverlay.DISCONNECT : (paused ? CrtOverlay.PAUSE : CrtOverlay.NONE));
+        return createVC(tex.getTextureLocation(), scale, 1, 1, overlay, switchAnim, noiseAnim, buffer::getBuffer);
+    }
 
-        ResourceLocation textureId = tex.getTextureLocation();
+    public static VertexConsumer createVC(ResourceLocation texture,
+                                          int scale, float frameW, float frameH,
+                                          CrtOverlay overlay,
+                                          IntAnimationState switchAnim,
+                                          IntAnimationState noiseAnim,
+                                          Function<RenderType, VertexConsumer> func) {
+        boolean hasSfx = hasSfx();
+        if (!hasSfx && switchAnim.isDecreasing()) return EMPTY_VC;
+
         RenderType rt = hasSfx ?
-                VistaRenderTypes.crtRenderType(textureId, scale,
-                        1, 1, switchAnim,
-                        noiseANim, overlay) :
-                RenderType.entitySolid(textureId); //for normal
-        return buffer.getBuffer(rt);
+                VistaRenderTypes.crtRenderType(texture, scale,
+                        frameW, frameH,
+                        switchAnim, noiseAnim, overlay) :
+                RenderType.entitySolid(texture); //for normal
+        return func.apply(rt);
     }
 
 
@@ -128,5 +121,37 @@ public class TvScreenVertexConsumers {
                 && ClientConfigs.SCREEN_EFFECTS.get();
     }
 
+
+    private static final VertexConsumer EMPTY_VC = new VertexConsumer() {
+        @Override
+        public VertexConsumer addVertex(float x, float y, float z) {
+            return this;
+        }
+
+        @Override
+        public VertexConsumer setColor(int red, int green, int blue, int alpha) {
+            return this;
+        }
+
+        @Override
+        public VertexConsumer setUv(float u, float v) {
+            return this;
+        }
+
+        @Override
+        public VertexConsumer setUv1(int u, int v) {
+            return this;
+        }
+
+        @Override
+        public VertexConsumer setUv2(int u, int v) {
+            return this;
+        }
+
+        @Override
+        public VertexConsumer setNormal(float normalX, float normalY, float normalZ) {
+            return this;
+        }
+    };
 
 }

@@ -44,8 +44,6 @@ public class CassetteTapeVideoSource implements IVideoSource {
             int animationTick, boolean paused,
             IntAnimationState switchAnim, IntAnimationState staticAnim) {
 
-        VertexConsumer vc = TvScreenVertexConsumers.getTapeVC(buffer, tape, pixelEffectRes, animationTick, paused, switchAnim);
-        if (vc == null) return buffer.getBuffer(VistaRenderTypes.NOISE);
-        return vc;
+        return TvScreenVertexConsumers.getTapeVC(buffer, tape, pixelEffectRes, animationTick, paused, switchAnim);
     }
 }

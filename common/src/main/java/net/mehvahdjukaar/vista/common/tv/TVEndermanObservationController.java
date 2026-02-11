@@ -47,9 +47,12 @@ public class TVEndermanObservationController {
             return false;
         }
         Level level = myTv.getLevel();
-        ViewFinderBlockEntity viewFinder = BroadcastManager.findLinkedViewFinder(level, broadcastUUID);
-        if (viewFinder == null) return false;
-        return !computeEndermanLookedAt(viewFinder, List.of(view), List.of(enderMan)).isEmpty();
+        BroadcastManager manager = BroadcastManager.getInstance(level);
+
+        if (manager.getBroadcast(broadcastUUID, level.isClientSide) instanceof ViewFinderBlockEntity vf) {
+            return !computeEndermanLookedAt(vf, List.of(view), List.of(enderMan)).isEmpty();
+        }
+        return false;
     }
 
     public boolean tick() {
