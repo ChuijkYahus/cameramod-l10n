@@ -60,8 +60,8 @@ public class TvScreenVertexConsumers {
                 CrtOverlay.NONE, switchAnim, IntAnimationState.MAX_ANIM, buffer::getBuffer);
     }
 
-    public static VertexConsumer getBarsVC(MultiBufferSource buffer, int scale, IntAnimationState switchAnim) {
-        return createAnimatedStripVC(buffer, BARS_LOCATION, scale, 0, false, switchAnim);
+    public static VertexConsumer getBarsVC(MultiBufferSource buffer, int scale, boolean paused, IntAnimationState switchAnim) {
+        return createAnimatedStripVC(buffer, BARS_LOCATION, scale, 0, paused, switchAnim);
     }
 
     public static VertexConsumer getSmileTapeVC(MultiBufferSource buffer, LivingEntity player) {
