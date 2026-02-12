@@ -22,6 +22,8 @@ import java.util.function.Function;
 
 public class TvScreenVertexConsumers {
 
+    private static final ResourceLocation DUMMY_LOCATION = VistaMod.res("textures/cassette_tape/color_bars.png");
+
     private static final ResourceLocation BARS_LOCATION = VistaMod.res("color_bars");
     private static final ResourceLocation SMILE_LOCATION = VistaMod.res("smile");
     private static final ResourceLocation NEUTRAL_LOCATION = VistaMod.res("neutral");
@@ -54,8 +56,8 @@ public class TvScreenVertexConsumers {
     }
 
     public static VertexConsumer getNoiseVC(MultiBufferSource buffer, int scale, IntAnimationState switchAnim) {
-        return createVC(BARS_LOCATION, scale, 1, 1,
-                CrtOverlay.NONE, switchAnim, IntAnimationState.NO_ANIM, buffer::getBuffer);
+        return createVC(DUMMY_LOCATION, scale, 1, 1,
+                CrtOverlay.NONE, switchAnim, IntAnimationState.MAX_ANIM, buffer::getBuffer);
     }
 
     public static VertexConsumer getBarsVC(MultiBufferSource buffer, int scale, IntAnimationState switchAnim) {

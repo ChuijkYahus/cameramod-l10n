@@ -8,6 +8,8 @@ import net.mehvahdjukaar.moonlight.api.misc.ForgeOverride;
 import net.mehvahdjukaar.moonlight.api.misc.RollingBuffer;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.vista.client.textures.LiveFeedTexturesManager;
+import net.mehvahdjukaar.vista.client.video_source.BroadcastVideoSource;
+import net.mehvahdjukaar.vista.client.video_source.IVideoSource;
 import net.mehvahdjukaar.vista.common.tv.IntAnimationState;
 import net.mehvahdjukaar.vista.common.tv.TVBlock;
 import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
@@ -20,13 +22,14 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.Direction;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec2;
 import org.joml.Vector3f;
+
+import java.util.UUID;
 
 public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity> {
 
@@ -93,7 +96,8 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
         IntAnimationState staticAnim = blockEntity.endermanAnimation;
         int videoTicks = blockEntity.getPlaybackTicks();
 
-        VertexConsumer vc = blockEntity.getVideoSource()
+        IVideoSource videoSource = blockEntity.getVideoSource();
+        VertexConsumer vc = videoSource
                 .getVideoFrameBuilder(partialTick, buffer,
                         shouldUpdate, screenSize, pixelEffectRes,
                         videoTicks, paused, switchAnim, staticAnim);
@@ -105,13 +109,20 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
 
         addQuad(vc, poseStack, -s, -s, s, s, light);
 
+
+        if (ClientConfigs.rendersDebug()) {
+            if (videoSource instanceof BroadcastVideoSource(UUID uuid)) {
+                renderDebug(uuid, poseStack, buffer, partialTick, blockEntity);
+            }
+        }
+
         poseStack.popPose();
     }
 
     public static void addQuad(VertexConsumer builder, PoseStack poseStack,
-                                float x0, float y0,
-                                float x1, float y1,
-                                int light) {
+                               float x0, float y0,
+                               float x1, float y1,
+                               int light) {
         int lu = light & 0xFFFF;
         int lv = (light >> 16) & 0xFFFF;
         PoseStack.Pose last = poseStack.last();
@@ -140,7 +151,7 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
     // ========== DEBUG RENDERING ========== //
 
 
-    private void renderDebug(ResourceLocation tex, PoseStack poseStack, MultiBufferSource buffer, float partialTick,
+    private void renderDebug(UUID tex, PoseStack poseStack, MultiBufferSource buffer, float partialTick,
                              TVBlockEntity tile) {
         RollingBuffer<Long> lastUpdateTimes = LiveFeedTexturesManager.UPDATE_TIMES.get(tex);
         if (lastUpdateTimes == null) {

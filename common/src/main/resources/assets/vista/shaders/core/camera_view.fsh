@@ -218,15 +218,21 @@ void main() {
     // frame-local pixel position for triad math
     vec2 pixelPos = localUV * spriteSizePx;
 
-    vec3 triadRGB = NoiseIntensity >=1 ? vec3(1,1,1) :  accumulateTriadResponse(pixelPos, localUV, frameOriginUV);
+    vec3 triadRGB = NoiseIntensity >=1 ? vec3(1, 1, 1) :  accumulateTriadResponse(pixelPos, localUV, frameOriginUV);
 
     vec4 color = vec4(triadRGB, 1.0) * vertexColor;
 
     // ===================== NOISE =====================
     // Get procedural noise
-    vec4 noise = crt_noise(texCoord0, GameTime);
-    color.rgb = color.rgb + (noise.rgb-0.5) * clamp(NoiseIntensity, 0.0, 1.0);
+    if (NoiseIntensity >=0){
+        vec4 noise = crt_noise(texCoord0, GameTime);
+        color.rgb = color.rgb + (noise.rgb-0.5) * clamp(NoiseIntensity, 0.0, 1.0);
+    }
 
+    // ===================== AC BEAT =====================
+    float acBeat = vhs_wave(localUV, frameOriginUV, SpriteDimensions, GameTime);
+    color.rgb += (acBeat-0.5)*(0.05 + (NoiseIntensity*0.6));
+    // =============================================================
 
     // ===================== VIGNETTE =====================
     // Compute vignette using frame-local UV
@@ -236,10 +242,6 @@ void main() {
     // =============================================================
 
 
-    // ===================== AC BEAT =====================
-    float acBeat = vhs_wave(localUV, frameOriginUV, SpriteDimensions, GameTime);
-    color.rgb += (acBeat-0.5)*0.7;
-    // =============================================================
 
     if (FadeAnimation != 0){
         color = crt_turn_on(

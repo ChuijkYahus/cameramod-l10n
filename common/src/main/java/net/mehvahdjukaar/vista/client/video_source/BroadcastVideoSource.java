@@ -1,7 +1,7 @@
 package net.mehvahdjukaar.vista.client.video_source;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import net.mehvahdjukaar.vista.client.VistaRenderTypes;
+import net.mehvahdjukaar.vista.client.textures.TvScreenVertexConsumers;
 import net.mehvahdjukaar.vista.common.BroadcastManager;
 import net.mehvahdjukaar.vista.common.cassette.IBroadcastProvider;
 import net.mehvahdjukaar.vista.common.tv.IntAnimationState;
@@ -23,16 +23,15 @@ public record BroadcastVideoSource(UUID uuid) implements IVideoSource {
         BroadcastManager manager = BroadcastManager.getInstance(level);
         IBroadcastProvider broadcast = manager.getBroadcast(uuid, true);
 
-        if (broadcast == null) {
-            return buffer.getBuffer(VistaRenderTypes.NOISE);
-        }
-        IVideoSource vfContent = broadcast.getBroadcastVideoSource();
-        if (vfContent == null) {
-            return buffer.getBuffer(VistaRenderTypes.NOISE);
-        }
-        return vfContent.getVideoFrameBuilder(partialTick, buffer, shouldUpdate, screenSize, pixelEffectRes,
-                videoAnimationTick, paused, switchAnim, staticAnim);
+        if (broadcast != null) {
 
+            IVideoSource vfContent = broadcast.getBroadcastVideoSource();
+            if (vfContent != null) {
+                return vfContent.getVideoFrameBuilder(partialTick, buffer, shouldUpdate, screenSize, pixelEffectRes,
+                        videoAnimationTick, paused, switchAnim, staticAnim);
+            }
+        }
+        return TvScreenVertexConsumers.getNoiseVC(buffer, pixelEffectRes, switchAnim);
     }
 
 }

@@ -22,6 +22,20 @@ public class IntAnimationState {
         }
     };
 
+    public static final IntAnimationState MAX_ANIM = new IntAnimationState(1,1){
+        @Override
+        public void increment() {
+        }
+        @Override
+        public void decrement() {
+        }
+
+        @Override
+        public float getValue(float partialTick) {
+            return 1;
+        }
+    };
+
     private final int maxTick;
     private final int forwardStep;
     private final int backwardStep;

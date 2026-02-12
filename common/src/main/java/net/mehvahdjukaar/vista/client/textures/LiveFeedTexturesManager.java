@@ -47,7 +47,7 @@ public class LiveFeedTexturesManager {
     private static final ResourceLocation POSTERIZE_FRAGMENT_SHADER = VistaMod.res("posterize");
     private static final BiMap<FeedKey, ResourceLocation> LIVE_FEED_LOCATIONS = HashBiMap.create();
     @VisibleForDebug
-    public static final Map<ResourceLocation, RollingBuffer<Long>> UPDATE_TIMES = new HashMap<>();
+    public static final Map<UUID, RollingBuffer<Long>> UPDATE_TIMES = new HashMap<>();
 
     @VisibleForDebug
     public static final Supplier<AdaptiveUpdateScheduler<ResourceLocation>> SCHEDULER =
@@ -127,7 +127,7 @@ public class LiveFeedTexturesManager {
 
         Runnable runTask = () -> {
 
-            setLastUpdatedTime(textureId, level);
+            setLastUpdatedTime(text.getAssociatedUUID(), level);
 
             UUID uuid = text.getAssociatedUUID();
             BroadcastManager manager = BroadcastManager.getInstance(level);
@@ -169,7 +169,7 @@ public class LiveFeedTexturesManager {
     }
 
 
-    private static void setLastUpdatedTime(ResourceLocation textureId, ClientLevel level) {
+    private static void setLastUpdatedTime(UUID textureId, ClientLevel level) {
         if (ClientConfigs.rendersDebug()) {
             UPDATE_TIMES.computeIfAbsent(textureId, k -> new RollingBuffer<>(20))
                     .push(level.getGameTime());
