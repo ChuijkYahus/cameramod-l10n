@@ -61,7 +61,7 @@ public class VistaLevelRenderer {
 
         Minecraft mc = Minecraft.getInstance();
         RenderTarget mainTarget = mc.getMainRenderTarget();
-        RenderTarget canvas = text.getBackBuffer();
+        RenderTarget canvas = text.getRenderTarget();
         mc.mainRenderTarget = canvas;
 
         Camera camera = DUMMY_CAMERA;

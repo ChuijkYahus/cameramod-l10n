@@ -1,8 +1,8 @@
 {
-  "music_disc.vapor": {
+  "music_disc.sojourn": {
     "sounds": [
       {
-        "name": "vista:music/vapor",
+        "name": "vista:music/sojourn",
         "stream": true
       }
     ]

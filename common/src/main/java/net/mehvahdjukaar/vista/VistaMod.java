@@ -1,6 +1,7 @@
 package net.mehvahdjukaar.vista;
 
 import net.mehvahdjukaar.moonlight.api.misc.EventCalled;
+import net.mehvahdjukaar.moonlight.api.misc.HolderRef;
 import net.mehvahdjukaar.moonlight.api.misc.RegSupplier;
 import net.mehvahdjukaar.moonlight.api.misc.WorldSavedDataType;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
@@ -42,7 +43,6 @@ import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.MapColor;
-import net.minecraft.world.level.pathfinder.*;
 import net.minecraft.world.level.storage.loot.functions.LootItemFunctionType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -123,9 +123,12 @@ public class VistaMod {
                             .networkSynchronized(CassetteTape.STREAM_CODEC)
                             .build());
 
-    public static final Supplier<SoundEvent> CASSETTE_INSERT_SOUND = RegHelper.registerSound(res("block.television.insert"));
-    public static final Supplier<SoundEvent> CASSETTE_EJECT_SOUND = RegHelper.registerSound(res("block.television.eject"));
+    public static final RegSupplier<SoundEvent> CASSETTE_INSERT_SOUND = RegHelper.registerSound(res("block.television.insert"));
+    public static final RegSupplier<SoundEvent> CASSETTE_EJECT_SOUND = RegHelper.registerSound(res("block.television.eject"));
     public static final RegSupplier<SoundEvent> TV_STATIC_SOUND = RegHelper.registerSound(res("block.television.static"));
+    public static final RegSupplier<SoundEvent> SOJOURN_DISC_SOUND = RegHelper.registerSound(res("music_disc.sojourn"));
+    public static final HolderRef<JukeboxSong> SOJOURN_DISC_SONG = HolderRef.of(
+            res("music_disc.sojourn"), Registries.JUKEBOX_SONG);
     public static final int STATIC_SOUND_DURATION = 4 * 20; //4 seconds
 
     public static final Supplier<LootItemFunctionType<CassetteTapeLootFunction>> CASSETTE_TAPE_LOOT_FUNCTION =
@@ -137,6 +140,10 @@ public class VistaMod {
     public static final TagKey<Item> VIEW_FINDER_FILTER = TagKey.create(
             Registries.ITEM, res("view_finder_filter"));
 
+    public static final Supplier<Item> SOJOURN_MUSIC_DISC = RegHelper.registerItem(res("sojourn_music_disc"),
+            () -> new Item(new Item.Properties()
+                    .jukeboxPlayable(SOJOURN_DISC_SONG.getKey())
+                    .stacksTo(1).rarity(Rarity.RARE)));
 
     public static void init() {
         if (CompatHandler.IRIS) {
@@ -144,6 +151,7 @@ public class VistaMod {
         }
 
         //TODO:
+        //change update range to be higher!!!
         //tv face disappears
         //cassettes dont go back in right tv
         //lenses shaders for view finder
@@ -185,6 +193,9 @@ public class VistaMod {
         }
     }
 
+    private static final TagKey<Item> C_MUSIC_DISCS = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(
+            "c", "music_discs"));
+
     private static void addItemsToTabs(RegHelper.ItemToTabEvent event) {
         event.add(CreativeModeTabs.REDSTONE_BLOCKS, TV.get());
         event.add(CreativeModeTabs.REDSTONE_BLOCKS, VIEWFINDER.get());
@@ -196,12 +207,13 @@ public class VistaMod {
             event.add(CreativeModeTabs.TOOLS_AND_UTILITIES, stack);
         }
         event.add(CreativeModeTabs.TOOLS_AND_UTILITIES, HOLLOW_CASSETTE.get());
+        event.addAfter(CreativeModeTabs.TOOLS_AND_UTILITIES, i -> i.is(C_MUSIC_DISCS), SOJOURN_MUSIC_DISC.get());
 
         if (CompatHandler.COMPUTER_CRAFT) {
-            event.add(CreativeModeTabs.FUNCTIONAL_BLOCKS, SIGNAL_PROJECTOR.get());
+            //   event.add(CreativeModeTabs.FUNCTIONAL_BLOCKS, SIGNAL_PROJECTOR.get());
         } else {
             if (event.getTab().hasAnyItems()) {
-                event.add(CreativeModeTabs.OP_BLOCKS, SIGNAL_PROJECTOR.get());
+                // event.add(CreativeModeTabs.OP_BLOCKS, SIGNAL_PROJECTOR.get());
             }
         }
 
@@ -218,6 +230,6 @@ public class VistaMod {
 
 
     public static boolean isFunny() {
-        return  PlatHelper.isDev() || (CompatHandler.SUPPLEMENTARIES && SuppCompat.isFunny());
+        return PlatHelper.isDev() || (CompatHandler.SUPPLEMENTARIES && SuppCompat.isFunny());
     }
 }

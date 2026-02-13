@@ -15,6 +15,7 @@ import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
@@ -160,7 +161,11 @@ public final class BroadcastManager extends WorldSavedData {
     }
 
     @Nullable
-    public IBroadcastProvider getBroadcast(UUID feedId, boolean clientSide) {
+    public IBroadcastProvider getBroadcast(@NotNull UUID feedId, boolean clientSide) {
+        if(feedId == null){
+            int aa = 1;
+            return null;
+        }
         GlobalPos pos = snapshot.get(feedId);
         if (pos == null) return null;
 

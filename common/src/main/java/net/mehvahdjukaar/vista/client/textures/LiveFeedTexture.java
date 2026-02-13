@@ -2,37 +2,30 @@ package net.mehvahdjukaar.vista.client.textures;
 
 import com.google.gson.JsonSyntaxException;
 import com.mojang.blaze3d.pipeline.RenderTarget;
-import com.mojang.blaze3d.pipeline.TextureTarget;
 import com.mojang.blaze3d.systems.RenderSystem;
-import net.mehvahdjukaar.moonlight.api.client.texture_renderer.TickableFrameBufferBackedDynamicTexture;
+import net.mehvahdjukaar.texture_renderer.RenderTargetDynamicTexture;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.client.renderer.LevelRendererCameraState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.PostChain;
 import net.minecraft.client.renderer.PostPass;
-import net.minecraft.client.renderer.texture.Dumpable;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
-import java.nio.file.Path;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Consumer;
 
-import static net.minecraft.client.Minecraft.ON_OSX;
-
-//todo: improve moonlight class really.... merge tickable, add backbuffer and such
-public class LiveFeedTexture extends TickableFrameBufferBackedDynamicTexture implements Dumpable {
+public class LiveFeedTexture extends RenderTargetDynamicTexture {
 
     private static final ResourceLocation EMPTY_PIPELINE = VistaMod.res("shaders/post/empty.json");
 
     private final UUID associatedUUID;
 
     private final LevelRendererCameraState rendererState = LevelRendererCameraState.createNew();
-    private final TextureTarget backBuffer;
     @Nullable
     private final ResourceLocation postFragment;
     @Nullable
@@ -44,13 +37,12 @@ public class LiveFeedTexture extends TickableFrameBufferBackedDynamicTexture imp
     public LiveFeedTexture(ResourceLocation resourceLocation, int size,
                            @NotNull Consumer<LiveFeedTexture> textureDrawingFunction,
                            UUID id, @Nullable ResourceLocation postFragment) {
-        super(resourceLocation, size, (Consumer) textureDrawingFunction);
+        super(resourceLocation, size, textureDrawingFunction);
         this.associatedUUID = id;
         this.postChainID = null;
         this.postFragment = postFragment;
         //can cause flicker?
-        this.backBuffer = new TextureTarget(size, size, true, ON_OSX);
-//this too?
+        //this too?
         RenderSystem.recordRenderCall(this::recomputePostChain);
     }
 
@@ -73,10 +65,6 @@ public class LiveFeedTexture extends TickableFrameBufferBackedDynamicTexture imp
         }
     }
 
-    public RenderTarget getBackBuffer() {
-        return backBuffer;
-    }
-
     private void recomputePostChain() {
         if (postChain != null) {
             postChain.close();
@@ -85,21 +73,21 @@ public class LiveFeedTexture extends TickableFrameBufferBackedDynamicTexture imp
         Minecraft mc = Minecraft.getInstance();
         GameRenderer gameRenderer = mc.gameRenderer;
         try {
-            RenderTarget myTarget = this.getFrameBuffer();
-            RenderTarget canvasTarget = this.getBackBuffer();
+            RenderTarget canvasTarget = this.getRenderTarget();
             ResourceLocation chainId = postChainID == null ? EMPTY_PIPELINE : postChainID;
             postChain = new PostChain(mc.getTextureManager(), mc.getResourceManager(), canvasTarget, chainId);
             //add extra pass
+            RenderTarget swapTarget = postChain.getTempTarget("swap");
+            if (swapTarget == null) {
+                postChain.addTempTarget("swap", getWidth(), getHeight());
+            }
             if (postFragment != null) {
-                RenderTarget swapTarget = postChain.getTempTarget("swap");
-                if (swapTarget == null) {
-                    postChain.addTempTarget("swap", getWidth(), getHeight());
-                }
                 postChain.addPass(postFragment.toString(), canvasTarget, swapTarget, false);
                 //swap back
-                postChain.addPass("vista:blit_flip_y", swapTarget, myTarget, false);
+                postChain.addPass("vista:blit_flip_y", swapTarget, canvasTarget, false);
             }else{
-                postChain.addPass("vista:blit_flip_y", canvasTarget, myTarget, false);
+                postChain.addPass("blit", canvasTarget, swapTarget, false);
+                postChain.addPass("vista:blit_flip_y", swapTarget, canvasTarget, false);
             }
             for (PostPass postPass : postChain.passes) {
                 postPass.setOrthoMatrix(postChain.shaderOrthoMatrix);
@@ -131,19 +119,6 @@ public class LiveFeedTexture extends TickableFrameBufferBackedDynamicTexture imp
             postChain.close();
             postChain = null;
         }
-        if (RenderSystem.isOnRenderThread()) {
-            backBuffer.destroyBuffers();
-        } else {
-            RenderSystem.recordRenderCall(backBuffer::destroyBuffers);
-        }
-    }
-
-    @Override
-    public void dumpContents(ResourceLocation resourceLocation, Path path) throws IOException {
-        String string = resourceLocation.toDebugFileName() + ".png";
-        Path path2 = path.resolve(string);
-        this.download();
-        this.getPixels().writeToFile(path2);
     }
 
    public boolean isDisconnected() {

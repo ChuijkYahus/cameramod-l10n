@@ -8,10 +8,9 @@ import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
-import net.mehvahdjukaar.moonlight.api.client.texture_renderer.RenderedTexturesManager;
 import net.mehvahdjukaar.moonlight.api.misc.RollingBuffer;
+import net.mehvahdjukaar.texture_renderer.RenderedTexturesManager2;
 import net.mehvahdjukaar.vista.VistaMod;
-import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.client.AdaptiveUpdateScheduler;
 import net.mehvahdjukaar.vista.client.renderer.VistaLevelRenderer;
 import net.mehvahdjukaar.vista.common.BroadcastManager;
@@ -70,13 +69,18 @@ public class LiveFeedTexturesManager {
 
     @Nullable
     public static LiveFeedTexture requestLiveFeedTexture(UUID location, int screenSize,
-            boolean requiresUpdate, @Nullable ResourceLocation postShader) {
+                                                         boolean requiresUpdate, @Nullable ResourceLocation postShader) {
 
         ResourceLocation feedId = getOrCreateFeedId(location, screenSize);
-        LiveFeedTexture texture = RenderedTexturesManager.requestTexture(feedId, () ->
+        LiveFeedTexture texture = RenderedTexturesManager2.requestTexture(feedId, () ->
                 new LiveFeedTexture(feedId,
                         screenSize * ClientConfigs.RESOLUTION_SCALE.get(),
                         LiveFeedTexturesManager::refreshTexture, location, POSTERIZE_FRAGMENT_SHADER));
+
+        if (texture == null) {
+            SCHEDULER.get().forceUpdateNextTick(feedId);
+            return null;
+        }
 
         if (texture.setPostChain(postShader)) {
             requiresUpdate = true;
@@ -84,15 +88,8 @@ public class LiveFeedTexturesManager {
         if (VistaLevelRenderer.isRenderingLiveFeed()) {
             requiresUpdate = false; //suppress recursive updates
         }
-        if (!requiresUpdate) {
-            texture.unMarkForUpdate();
-        }
-        if (texture.isInitialized()) {
-            return texture;
-        } else {
-            SCHEDULER.get().forceUpdateNextTick(feedId);
-        }
-        return null;
+        texture.setUpdateNextTick(requiresUpdate);
+        return texture;
     }
 
     private static ResourceLocation getOrCreateFeedId(UUID uuid, int screenSize) {
@@ -133,7 +130,7 @@ public class LiveFeedTexturesManager {
             BroadcastManager manager = BroadcastManager.getInstance(level);
             IBroadcastProvider provider = manager.getBroadcast(uuid, true); //touch the feed to make sure it's still valid and linked
             if (!(provider instanceof ViewFinderBlockEntity vf)) {
-                if(!text.isDisconnected()){
+                if (!text.isDisconnected()) {
                     text.setDisconnected(true);
                 }
                 return;
@@ -146,12 +143,12 @@ public class LiveFeedTexturesManager {
                 LocalDateTime now = LocalDateTime.now();
                 DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM/dd HH:mm:ss");
                 String cctvTimestamp = now.format(formatter);
-                drawText(text.getFrameBuffer(), cctvTimestamp, 2, 4, false, true);
+                //  drawText(text.getFrameBuffer(), cctvTimestamp, 2, 4, false, true);
             }
 
 
             if (VistaMod.isFunny()) {
-                drawOverlay(text.getFrameBuffer(), VistaModClient.LL_OVERLAY);
+                //  drawOverlay(text.getFrameBuffer(), VistaModClient.LL_OVERLAY);
             }
 
 
@@ -160,7 +157,7 @@ public class LiveFeedTexturesManager {
         if (CompatHandler.DISTANT_HORIZONS) {
             runTask = DistantHorizonsCompat.decorateRenderWithoutLOD(runTask);
         }
-        if(CompatHandler.IRIS){
+        if (CompatHandler.IRIS) {
             runTask = IrisCompat.decorateRendererWithoutShadows(runTask);
         }
 

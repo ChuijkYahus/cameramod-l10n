@@ -38,7 +38,7 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
 
     @Override
     public int getViewDistance() {
-        return 96;
+        return 128; //very high, we then throttle based off the tv size
     }
 
     @Override
@@ -78,8 +78,16 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
 
         Vec2 screenCenter = blockEntity.getScreenBlockCenter();
 
-        //if (!lod.isMedium()) return;
-        if (lod.isPlaneCulled(dir, 0.5f, screenSize / 16f * 1.5f, 0f)) return;
+        if
+        (lod.isPlaneCulled(dir, 0.5f, screenSize / 16f * 1.5f, 0f)) return;
+
+        int connectedW = blockEntity.getConnectedWidth();
+        if (connectedW == 1 && !lod.isMedium()) {
+            return;
+        }
+        if(connectedW == 2 && !lod.isFar()) {
+            return;
+        }
 
         float yaw = dir.toYRot();
         poseStack.pushPose();
