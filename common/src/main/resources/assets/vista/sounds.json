@@ -1,4 +1,12 @@
 {
+  "music_disc.vapor": {
+    "sounds": [
+      {
+        "name": "vista:music/vapor",
+        "stream": true
+      }
+    ]
+  },
   "block.television.insert": {
     "sounds": [
       "vista:block/cassette_insert"

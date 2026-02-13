@@ -42,6 +42,7 @@ import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.MapColor;
+import net.minecraft.world.level.pathfinder.*;
 import net.minecraft.world.level.storage.loot.functions.LootItemFunctionType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -138,7 +139,6 @@ public class VistaMod {
 
 
     public static void init() {
-
         if (CompatHandler.IRIS) {
             VistaMod.LOGGER.error("IRIS mod detected. Vista WILL have visual issues and degraded performance. This is not something that I can fix and happens even with shaderpacks off. Trust me I tried but it's inherently due to how Iris was made and should be handled there.");
         }
