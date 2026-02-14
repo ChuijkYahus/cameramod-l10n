@@ -29,7 +29,7 @@ public class CommonConfigs {
                 .define("creeper_drop", true);
         CHEST_DROP = builder
                 .comment("Whether loot chests could contain cassette tapes.")
-                .define("chest_drop", false);
+                .define("chest_drop", true);
         builder.pop();
 
         SPEC = builder.build();

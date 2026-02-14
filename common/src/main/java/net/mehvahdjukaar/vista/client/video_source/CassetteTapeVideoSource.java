@@ -2,7 +2,6 @@ package net.mehvahdjukaar.vista.client.video_source;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.mehvahdjukaar.vista.VistaMod;
-import net.mehvahdjukaar.vista.client.VistaRenderTypes;
 import net.mehvahdjukaar.vista.client.textures.TvScreenVertexConsumers;
 import net.mehvahdjukaar.vista.common.cassette.CassetteTape;
 import net.mehvahdjukaar.vista.common.tv.IntAnimationState;
@@ -14,28 +13,22 @@ import org.jetbrains.annotations.NotNull;
 
 public class CassetteTapeVideoSource implements IVideoSource {
 
-    private final Holder<CassetteTape> tape;
+    private final @NotNull Holder<CassetteTape> tape;
 
-    public CassetteTapeVideoSource(ItemStack cassette) {
-        this.tape = cassette.get(VistaMod.CASSETTE_TAPE_COMPONENT.get());
+    public CassetteTapeVideoSource(Holder<CassetteTape> cassette) {
+        this.tape = cassette;
 
     }
 
     @Override
     public SoundEvent getVideoSound() {
-        if (tape != null) {
-            var s = tape.value().soundEvent();
-            if (s.isPresent()) return s.get().value();
-        }
-        return VistaMod.TV_STATIC_SOUND.get();
+        var s = tape.value().soundEvent();
+        return s.map(Holder::value).orElseGet(VistaMod.TV_STATIC_SOUND);
     }
 
     @Override
     public int getVideoDuration() {
-        if (tape != null) {
-            return tape.value().soundDuration().orElse(VistaMod.STATIC_SOUND_DURATION);
-        }
-        return VistaMod.STATIC_SOUND_DURATION;
+        return tape.value().soundDuration().orElse(VistaMod.STATIC_SOUND_DURATION);
     }
 
     @Override

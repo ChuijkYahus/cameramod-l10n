@@ -2,7 +2,6 @@ package net.mehvahdjukaar.vista.client.video_source;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.mehvahdjukaar.vista.VistaMod;
-import net.mehvahdjukaar.vista.client.VistaRenderTypes;
 import net.mehvahdjukaar.vista.client.textures.TvScreenVertexConsumers;
 import net.mehvahdjukaar.vista.common.cassette.CassetteItem;
 import net.mehvahdjukaar.vista.common.tv.IntAnimationState;
@@ -35,7 +34,8 @@ public interface IVideoSource {
     static IVideoSource create(ItemStack stack) {
         //we could have also implemented in the item but its better separation like this
         if (stack.getItem() instanceof CassetteItem) {
-            return new CassetteTapeVideoSource(stack);
+            var tape = stack.get(VistaMod.CASSETTE_TAPE_COMPONENT.get());
+            if (tape != null) return new CassetteTapeVideoSource(tape);
         } else if (stack.has(VistaMod.LINKED_FEED_COMPONENT.get())) {
             return new BroadcastVideoSource(stack.get(VistaMod.LINKED_FEED_COMPONENT.get()));
         }

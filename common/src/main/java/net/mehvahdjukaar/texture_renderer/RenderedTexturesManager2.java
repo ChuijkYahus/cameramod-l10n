@@ -30,15 +30,12 @@ public class RenderedTexturesManager2 {
     private static final LoadingCache<ResourceLocation,
             CompletableFuture<RenderTargetDynamicTexture>> TEXTURE_CACHE =
             CacheBuilder.newBuilder()
-                    .removalListener(i -> {
-                        CompletableFuture<RenderTargetDynamicTexture> future =
-                                (CompletableFuture<RenderTargetDynamicTexture>) i.getValue();
-
-                        if (future != null) {
-                            future.thenAccept(texture ->
-                                    RenderSystem.recordRenderCall(texture::close)
-                            );
-                        }
+                    .<ResourceLocation, CompletableFuture<RenderTargetDynamicTexture>>removalListener(i -> {
+                        CompletableFuture<RenderTargetDynamicTexture> future = i.getValue();
+                        if (future == null) return;
+                        future.thenAccept(texture ->
+                                RenderSystem.recordRenderCall(texture::unregister)
+                        );
                     })
                     .expireAfterAccess(2, TimeUnit.MINUTES)
                     .build(new CacheLoader<>() {

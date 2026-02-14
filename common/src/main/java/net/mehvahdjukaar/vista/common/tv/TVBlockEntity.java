@@ -149,13 +149,13 @@ public class TVBlockEntity extends ItemDisplayTile {
             Player player, InteractionHand handIn, ItemStack stack, int slot, BlockHitResult hit) {
 
         boolean powered = this.getBlockState().getValue(TVBlock.POWER_STATE).isOn();
-        if (powered && player.isSecondaryUseActive()) {
+        ItemStack current = this.getDisplayedItem();
+        if (!current.isEmpty() && powered && player.isSecondaryUseActive()) {
             this.paused = !this.paused;
             this.setChanged();
             return ItemInteractionResult.sidedSuccess(this.level.isClientSide);
         }
 
-        ItemStack current = this.getDisplayedItem();
         if (!current.isEmpty() && (canPlaceItem(0, stack) || stack.isEmpty())) {
             level.playSound(player, worldPosition, VistaMod.CASSETTE_EJECT_SOUND.get(),
                     SoundSource.BLOCKS, 1, 1);

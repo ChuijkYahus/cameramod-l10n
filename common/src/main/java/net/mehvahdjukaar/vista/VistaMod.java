@@ -90,11 +90,11 @@ public class VistaMod {
             res("viewfinder"), ViewFinderBlockEntity::new, VIEWFINDER);
 
     public static final RegSupplier<SignalProjectorBlock> SIGNAL_PROJECTOR =
-            RegHelper.registerBlockWithItem(VistaMod.res("signal_projector"),
+            RegHelper.registerBlockWithItem(VistaMod.res("wave_collector"), //wideband reciver, wideband listener, signal harvester
                     () -> new SignalProjectorBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.COBBLESTONE)));
 
     public static final RegSupplier<BlockEntityType<SignalProjectorBlockEntity>> SIGNAL_PROJECTOR_TILE =
-            RegHelper.registerBlockEntityType(VistaMod.res("signal_projector"),
+            RegHelper.registerBlockEntityType(VistaMod.res("wave_collector"),
                     SignalProjectorBlockEntity::new,
                     SIGNAL_PROJECTOR);
 
@@ -144,11 +144,11 @@ public class VistaMod {
     public static final Supplier<LootItemFunctionType<CassetteTapeLootFunction>> CASSETTE_TAPE_LOOT_FUNCTION =
             RegHelper.registerLootFunction(res("random_tape"), CassetteTapeLootFunction.CODEC);
 
-    public static final TagKey<CassetteTape> SUPPORTER_TAPES = TagKey.create(
+    public static final TagKey<CassetteTape> SUPPORTER_TAPES_TAG = TagKey.create(
             CASSETTE_TAPE_REGISTRY_KEY, res("supporter_tapes"));
 
-    public static final TagKey<Item> VIEW_FINDER_FILTER = TagKey.create(
-            Registries.ITEM, res("view_finder_filter"));
+    public static final TagKey<Item> GLASS_PANES_TAG = TagKey.create(
+            Registries.ITEM, ResourceLocation.fromNamespaceAndPath("c", "glass_panes"));
 
     public static final Supplier<Item> SOJOURN_MUSIC_DISC = RegHelper.registerItem(res("music_disc_sojourn"),
             () -> new Item(new Item.Properties()
@@ -161,8 +161,9 @@ public class VistaMod {
         }
 
         //TODO:
+        //view finder rotation bug
+        //pause not working with multiple tvs
         //change update range to be higher!!!
-        //tv face disappears
         //cassettes dont go back in right tv
         //lenses shaders for view finder
         //aurora with snow and sleeping fox cabin
@@ -211,7 +212,7 @@ public class VistaMod {
         event.add(CreativeModeTabs.REDSTONE_BLOCKS, VIEWFINDER.get());
         CreativeModeTab.ItemDisplayParameters parameters = event.getParameters();
         for (var v : parameters.holders().lookupOrThrow(CASSETTE_TAPE_REGISTRY_KEY).listElements().toList()) {
-            if (v.is(SUPPORTER_TAPES)) continue;
+            if (v.is(SUPPORTER_TAPES_TAG)) continue;
             ItemStack stack = CASSETTE.get().getDefaultInstance();
             stack.set(CASSETTE_TAPE_COMPONENT.get(), v);
             event.add(CreativeModeTabs.TOOLS_AND_UTILITIES, stack);

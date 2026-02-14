@@ -11,6 +11,7 @@ import com.mojang.blaze3d.vertex.*;
 import net.mehvahdjukaar.moonlight.api.misc.RollingBuffer;
 import net.mehvahdjukaar.texture_renderer.RenderedTexturesManager2;
 import net.mehvahdjukaar.vista.VistaMod;
+import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.client.AdaptiveUpdateScheduler;
 import net.mehvahdjukaar.vista.client.renderer.VistaLevelRenderer;
 import net.mehvahdjukaar.vista.common.BroadcastManager;
@@ -73,8 +74,7 @@ public class LiveFeedTexturesManager {
 
         ResourceLocation feedId = getOrCreateFeedId(location, screenSize);
         LiveFeedTexture texture = RenderedTexturesManager2.requestTexture(feedId, () ->
-                new LiveFeedTexture(feedId,
-                        screenSize * ClientConfigs.RESOLUTION_SCALE.get(),
+                new LiveFeedTexture(feedId, screenSize * ClientConfigs.RESOLUTION_SCALE.get(),
                         LiveFeedTexturesManager::refreshTexture, location, POSTERIZE_FRAGMENT_SHADER));
 
         if (texture == null) {
@@ -120,8 +120,6 @@ public class LiveFeedTexturesManager {
         if (!mc.isGameLoadFinished() || level == null) return;
         if (mc.isPaused()) return;
 
-        ResourceLocation textureId = text.getTextureLocation();
-
         Runnable runTask = () -> {
 
             setLastUpdatedTime(text.getAssociatedUUID(), level);
@@ -143,12 +141,12 @@ public class LiveFeedTexturesManager {
                 LocalDateTime now = LocalDateTime.now();
                 DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM/dd HH:mm:ss");
                 String cctvTimestamp = now.format(formatter);
-                //  drawText(text.getFrameBuffer(), cctvTimestamp, 2, 4, false, true);
+                drawText(text, cctvTimestamp, 2, 4, false, true);
             }
 
 
             if (VistaMod.isFunny()) {
-                //  drawOverlay(text.getFrameBuffer(), VistaModClient.LL_OVERLAY);
+                drawOverlay(text, VistaModClient.LL_OVERLAY);
             }
 
 
@@ -160,6 +158,8 @@ public class LiveFeedTexturesManager {
         if (CompatHandler.IRIS) {
             runTask = IrisCompat.decorateRendererWithoutShadows(runTask);
         }
+
+        ResourceLocation textureId = text.getTextureLocation();
 
         SCHEDULER.get().runIfShouldUpdate(textureId, runTask);
 
@@ -174,18 +174,17 @@ public class LiveFeedTexturesManager {
     }
 
 
-    private static void drawText(RenderTarget frameBuffer, String text,
+    private static void drawText(LiveFeedTexture texture, String text,
                                  int x, int y, boolean shadow, boolean background) {
         Minecraft mc = Minecraft.getInstance();
         RenderTarget oldTarget = mc.getMainRenderTarget();
-        frameBuffer.bindWrite(true);
 
         Font font = mc.font;
         MultiBufferSource.BufferSource bf = mc.renderBuffers().bufferSource();
 
         RenderSystem.backupProjectionMatrix();
         float baseScale = TVBlockEntity.MIN_SCREEN_PIXEL_SIZE * ClientConfigs.RESOLUTION_SCALE.get();
-        float size = baseScale * (frameBuffer.width / baseScale);
+        float size = baseScale * (texture.getWidth() / baseScale);
         Matrix4f matrix4f = new Matrix4f().setOrtho(
                 0.0F, size, 0.0F, size, -1, 1);
         RenderSystem.setProjectionMatrix(matrix4f, VertexSorting.ORTHOGRAPHIC_Z);
@@ -204,10 +203,9 @@ public class LiveFeedTexturesManager {
     }
 
 
-    private static void drawOverlay(RenderTarget frameBuffer, ResourceLocation overlayTexture) {
+    private static void drawOverlay(LiveFeedTexture text, ResourceLocation overlayTexture) {
         Minecraft mc = Minecraft.getInstance();
         RenderTarget oldTarget = mc.getMainRenderTarget();
-        frameBuffer.bindWrite(true);
 
 
         AbstractTexture texture = mc.getTextureManager().getTexture(overlayTexture);

@@ -28,6 +28,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -184,7 +185,7 @@ public class TVEndermanObservationController {
         float eyeH = fakePlayer.getEyeHeight();
 
         if (PlatHelper.getPhysicalSide().isClient() && ClientConfigs.rendersDebug()) {
-            ViewFinderBlockEntityRenderer.debugLastPlayer = fakePlayer;
+            ViewFinderBlockEntityRenderer.debugLastPlayer = new WeakReference<>(fakePlayer);
         }
 
 
@@ -217,27 +218,13 @@ public class TVEndermanObservationController {
             // Iterate endermen found in AABB and apply tighter checks before calling isLookingAtMe
             for (EnderMan man : enderMen) {
                 // Now the enderman is in range and in front: trigger the "looking at fake player"
-                if (isLookingAtMe(man,fakePlayer)) {
+                if (man.isLookingAtMe(fakePlayer)) {
                     lookResults.add(new EndermanLookResult(vr.player(), man));
                 }
             }
         }
 
         return lookResults;
-    }
-
-    public boolean isLookingAtMe(EnderMan man, Player player) {
-        ItemStack itemStack = (ItemStack)player.getInventory().armor.get(3);
-        if (itemStack.is(Blocks.CARVED_PUMPKIN.asItem())) {
-            return false;
-        } else {
-            Vec3 vec3 = player.getViewVector(1.0F).normalize();
-            Vec3 vec32 = new Vec3(man.getX() - player.getX(), man.getEyeY() - player.getEyeY(), man.getZ() - player.getZ());
-            double d = vec32.length();
-            vec32 = vec32.normalize();
-            double e = vec3.dot(vec32);
-            return e > (double)1.0F - 0.025 / d ? player.hasLineOfSight(man) : false;
-        }
     }
 
 

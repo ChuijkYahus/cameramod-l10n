@@ -66,7 +66,7 @@ vec4 crt_turn_on(vec4 inColor, vec2 fragPx, vec2 resolutionPx, float t) {
     float ryAnimStart = 0.1;
     float ryAnimDuration = 0.4;
     float ryStart = 0.25;
-    float ryEnd = 0.003;
+    float ryEnd = 0.0035;
 
     float rxAnimStart = 0.38;
     float rxAnimDuration = 0.62;
@@ -75,7 +75,7 @@ vec4 crt_turn_on(vec4 inColor, vec2 fragPx, vec2 resolutionPx, float t) {
 
     float dotStart = 0.49;
     float dotDuration = 0.51;
-    float dotRadiusMax = 0.14;
+    float dotRadiusMax = 0.13;
 
     // --- RADII ---
     float r_y = mix(ryStart, ryEnd, animate(t, ryAnimStart, ryAnimDuration));

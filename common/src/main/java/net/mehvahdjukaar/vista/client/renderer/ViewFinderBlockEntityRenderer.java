@@ -28,6 +28,8 @@ import net.minecraft.world.phys.Vec3;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
+import java.lang.ref.WeakReference;
+
 public class ViewFinderBlockEntityRenderer implements BlockEntityRenderer<ViewFinderBlockEntity> {
 
     private final ModelPart head;
@@ -167,11 +169,11 @@ public class ViewFinderBlockEntityRenderer implements BlockEntityRenderer<ViewFi
     }
 
     @VisibleForDebug
-    public static Player debugLastPlayer = null;
+    public static WeakReference<Player> debugLastPlayer = new WeakReference<>(null);
 
     private static void renderDebug(ViewFinderBlockEntity tile, PoseStack poseStack, MultiBufferSource bufferSource) {
 
-        Player player = debugLastPlayer;
+        Player player = debugLastPlayer.get();
         if (player != null) {
             poseStack.pushPose();
             Vec3 pos = player.getEyePosition().subtract(Vec3.atLowerCornerOf(tile.getBlockPos()));

@@ -15,6 +15,7 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.core.Holder;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.LivingEntity;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
@@ -49,9 +50,9 @@ public class TvScreenVertexConsumers {
         }
     }
 
-    public static VertexConsumer getTapeVC(MultiBufferSource buffer, Holder<CassetteTape> tapeKey, int scale,
+    public static VertexConsumer getTapeVC(MultiBufferSource buffer, @NotNull Holder<CassetteTape> tapeHolder, int scale,
                                            int tickCount, boolean paused, IntAnimationState switchAnim) {
-        ResourceLocation tapeTexture = tapeKey.value().assetId();
+        ResourceLocation tapeTexture = tapeHolder.value().assetId();
         return createAnimatedStripVC(buffer, tapeTexture, scale, tickCount, paused, switchAnim);
     }
 

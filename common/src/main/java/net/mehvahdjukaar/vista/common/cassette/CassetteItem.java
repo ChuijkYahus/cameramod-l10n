@@ -45,7 +45,7 @@ public class CassetteItem extends Item {
 
     public static void assignCustomCassette(ItemStack stack, Level level, String name) {
         //supporters cassettes
-        for (var h : level.registryAccess().registryOrThrow(VistaMod.CASSETTE_TAPE_REGISTRY_KEY).getTagOrEmpty(VistaMod.SUPPORTER_TAPES)) {
+        for (var h : level.registryAccess().registryOrThrow(VistaMod.CASSETTE_TAPE_REGISTRY_KEY).getTagOrEmpty(VistaMod.SUPPORTER_TAPES_TAG)) {
             var key = h.unwrapKey().get();
             if (key.location().getPath().equals(name)) {
                 stack.set(VistaMod.CASSETTE_TAPE_COMPONENT.get(), h);
@@ -68,7 +68,7 @@ public class CassetteItem extends Item {
         if (tape != null) {
             tape.unwrapKey().ifPresent((resourceKey) -> {
                 ResourceLocation location = resourceKey.location();
-                if (tape.is(VistaMod.SUPPORTER_TAPES)) {
+                if (tape.is(VistaMod.SUPPORTER_TAPES_TAG)) {
                     tooltipComponents.add(Component.literal(LangBuilder.getReadableName(location.getPath()))
                             .withStyle(ChatFormatting.GRAY));
                 } else {

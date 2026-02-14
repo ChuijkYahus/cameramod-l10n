@@ -23,7 +23,7 @@ public class CassetteTapeLootFunction implements LootItemFunction {
         Level level = context.getLevel();
         var holders = level.registryAccess().lookupOrThrow(VistaMod.CASSETTE_TAPE_REGISTRY_KEY)
                 .listElements()
-                .filter(h -> !h.is(VistaMod.SUPPORTER_TAPES))
+                .filter(h -> !h.is(VistaMod.SUPPORTER_TAPES_TAG))
                 .toList();
         if (!holders.isEmpty()) {
             int index = level.random.nextInt(holders.size());

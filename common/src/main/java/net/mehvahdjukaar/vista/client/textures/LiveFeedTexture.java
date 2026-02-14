@@ -32,8 +32,6 @@ public class LiveFeedTexture extends RenderTargetDynamicTexture {
     private ResourceLocation postChainID;
     private PostChain postChain;
     private boolean disconnected = false;
-    private boolean closed = false;
-
 
     public LiveFeedTexture(ResourceLocation resourceLocation, int size,
                            @NotNull Consumer<LiveFeedTexture> textureDrawingFunction,
@@ -44,7 +42,7 @@ public class LiveFeedTexture extends RenderTargetDynamicTexture {
         this.postFragment = postFragment;
         //can cause flicker?
         //this too?
-        RenderSystem.recordRenderCall(this::recomputePostChain);
+        this.recomputePostChain();
     }
 
     public LevelRendererCameraState getRendererState() {
@@ -56,7 +54,7 @@ public class LiveFeedTexture extends RenderTargetDynamicTexture {
     }
 
     public void applyPostChain() {
-        if(closed){
+        if(isClosed()){
             return;
         }
         GameRenderer gameRenderer = Minecraft.getInstance().gameRenderer;
@@ -70,7 +68,7 @@ public class LiveFeedTexture extends RenderTargetDynamicTexture {
     }
 
     private void recomputePostChain() {
-        if(closed){
+        if(isClosed()){
             return;
         }
 
