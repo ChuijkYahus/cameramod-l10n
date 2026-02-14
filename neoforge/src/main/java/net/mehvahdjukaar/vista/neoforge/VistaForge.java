@@ -32,17 +32,6 @@ public class VistaForge {
         RegHelper.startRegisteringFor(bus);
         VistaMod.init();
         NeoForge.EVENT_BUS.register(this);
-
-        bus.addListener(VistaForge::aaa);
-    }
-
-    public static void aaa(ModifyDefaultComponentsEvent a){
-        int aa = 1;
-    }
-
-    @SubscribeEvent
-    public void addListener(AddReloadListenerEvent e){
-        int aa = 1;
     }
 
     @SubscribeEvent

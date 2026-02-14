@@ -166,13 +166,6 @@ public class ViewFinderBlock extends DirectionalBlock implements EntityBlock {
         if (PlatHelper.getPhysicalSide().isClient() && ViewFinderController.isActiveAt(pos)) {
             return Shapes.empty();
         }
-        //for enderman view clip code
-        if (context instanceof EntityCollisionContext ec &&
-                ((ec.getEntity() instanceof Player p &&
-                        PlatHelper.isAFakePlayer(p)) || ec.getEntity() == null)) {
-             return Shapes.empty();
-
-        }
         return Shapes.block();
     }
 }

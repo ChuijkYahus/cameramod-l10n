@@ -215,6 +215,15 @@ public class TVEndermanObservationController {
             fakePlayer.setYHeadRot(yRot + vf.getYaw());
             fakePlayer.setXRot(xRot + vf.getPitch());
 
+            //move forward to skip our own BB since it cant be empty due to particles
+            float offset = 0.8f;
+            Vec3 forward = lensFacing.normalize();
+            fakePlayer.setPos(
+                    fakePlayer.getX() + forward.x * offset,
+                    fakePlayer.getY() + forward.y * offset,
+                    fakePlayer.getZ() + forward.z * offset
+            );
+
             // Iterate endermen found in AABB and apply tighter checks before calling isLookingAtMe
             for (EnderMan man : enderMen) {
                 // Now the enderman is in range and in front: trigger the "looking at fake player"
