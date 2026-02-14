@@ -1,5 +1,6 @@
 package net.mehvahdjukaar.vista.configs;
 
+import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.platform.configs.ConfigBuilder;
 import net.mehvahdjukaar.moonlight.api.platform.configs.ConfigType;
 import net.mehvahdjukaar.moonlight.api.platform.configs.ModConfigHolder;
@@ -93,6 +94,6 @@ public class ClientConfigs {
     }
 
     public static boolean rendersDebug() {
-        return RENDER_DEBUG.get();
+        return RENDER_DEBUG.get() || PlatHelper.isDev();
     }
 }

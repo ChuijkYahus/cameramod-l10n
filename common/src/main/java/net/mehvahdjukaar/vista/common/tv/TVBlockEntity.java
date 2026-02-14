@@ -45,7 +45,7 @@ public class TVBlockEntity extends ItemDisplayTile {
 
     private int soundLoopTicks = 0;
     public final IntAnimationState fadeAnimation = new IntAnimationState( 3,9);
-    public final IntAnimationState endermanAnimation = new IntAnimationState(20, 20);
+    public final IntAnimationState endermanAnimation = new IntAnimationState(20, 20, 0.6f);
     private boolean isLookingAtEnderman = false;
     private boolean wasScreenOn = false;
 
@@ -70,6 +70,7 @@ public class TVBlockEntity extends ItemDisplayTile {
         this.connectedTvHeight = Math.max(1, tag.getInt("ConnectionHeight"));
         this.paused = tag.getBoolean("Paused");
         this.videoPlaybackTicks = tag.getInt("VideoPlaybackTicks");
+        updateObservationController();
     }
 
     @NotNull
@@ -128,7 +129,11 @@ public class TVBlockEntity extends ItemDisplayTile {
             this.paused = false;
             this.videoPlaybackTicks = 0;
         }
+        updateObservationController();
+    }
 
+    private void updateObservationController() {
+        ItemStack displayedItem = this.getDisplayedItem();
         var uuid = displayedItem.get(VistaMod.LINKED_FEED_COMPONENT.get());
         this.observationController = uuid == null ? null : new TVEndermanObservationController(uuid, this);
     }

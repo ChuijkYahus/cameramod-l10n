@@ -226,12 +226,12 @@ void main() {
     // Get procedural noise
     if (NoiseIntensity >=0){
         vec4 noise = crt_noise(texCoord0, GameTime);
-        color.rgb = color.rgb + (noise.rgb-0.5) * clamp(NoiseIntensity, 0.0, 1.0);
+        color.rgb =  color.rgb * (1-NoiseIntensity) + noise.rgb * NoiseIntensity;
     }
 
     // ===================== AC BEAT =====================
     float acBeat = vhs_wave(localUV, frameOriginUV, SpriteDimensions, GameTime);
-    color.rgb += (acBeat-0.5)*(0.05 + (NoiseIntensity*0.6));
+    color.rgb += (acBeat-0.5)*(0.03 + (NoiseIntensity*0.4));
     // =============================================================
 
     // ===================== VIGNETTE =====================

@@ -21,7 +21,10 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.entity.EndermanRenderer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
+import net.minecraft.util.VisibleForDebug;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.phys.Vec3;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
@@ -34,6 +37,8 @@ public class ViewFinderBlockEntityRenderer implements BlockEntityRenderer<ViewFi
     private final ModelPart lens;
     private final ModelPart base;
     private final ModelPart model;
+
+
 
     public ViewFinderBlockEntityRenderer(BlockEntityRendererProvider.Context context) {
         ModelPart model = context.bakeLayer(VistaModClient.VIEWFINDER_MODEL);
@@ -161,9 +166,12 @@ public class ViewFinderBlockEntityRenderer implements BlockEntityRenderer<ViewFi
         return LayerDefinition.create(meshdefinition, 64, 64);
     }
 
+    @VisibleForDebug
+    public static Player debugLastPlayer = null;
+
     private static void renderDebug(ViewFinderBlockEntity tile, PoseStack poseStack, MultiBufferSource bufferSource) {
-      /*
-        var player = tile.fakePlayer;
+
+        Player player = debugLastPlayer;
         if (player != null) {
             poseStack.pushPose();
             Vec3 pos = player.getEyePosition().subtract(Vec3.atLowerCornerOf(tile.getBlockPos()));
@@ -187,8 +195,8 @@ public class ViewFinderBlockEntityRenderer implements BlockEntityRenderer<ViewFi
                     .setColor(30, 30, 255, 255)
                     .setNormal(pose, 0, 1, 0);
 
-            float headY = player.yHeadRot;
-            float headX = player.xRotO;
+            float headY = player.getYHeadRot();
+            float headX = player.getXRot();
             var view = Vec3.directionFromRotation(headX, headY).normalize();
             vc.addVertex(pose, 0, 0, 0)
                     .setColor(30, 255, 30, 255)
@@ -198,6 +206,6 @@ public class ViewFinderBlockEntityRenderer implements BlockEntityRenderer<ViewFi
                     .setNormal(pose, 0, 1, 0);
 
             poseStack.popPose();
-        }*/
+        }
     }
 }

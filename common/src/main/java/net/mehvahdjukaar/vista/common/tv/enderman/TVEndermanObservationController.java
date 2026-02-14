@@ -1,20 +1,25 @@
 package net.mehvahdjukaar.vista.common.tv.enderman;
 
 import com.mojang.authlib.GameProfile;
+import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.util.FakePlayerManager;
 import net.mehvahdjukaar.moonlight.api.util.math.MthUtils;
+import net.mehvahdjukaar.vista.client.renderer.ViewFinderBlockEntityRenderer;
 import net.mehvahdjukaar.vista.common.BroadcastManager;
 import net.mehvahdjukaar.vista.common.tv.TVBlock;
 import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
 import net.mehvahdjukaar.vista.common.tv.TVSpectatorView;
 import net.mehvahdjukaar.vista.common.view_finder.EndermanLookResult;
 import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
+import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.monster.EnderMan;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec2;
@@ -43,6 +48,7 @@ public class TVEndermanObservationController {
         this.myTv = tv;
     }
 
+    //for goal
     public boolean isPlayerLookingAtEnderman(EnderMan enderMan, Player player) {
         TVSpectatorView view = getPlayerLookView(player);
         if (view == null) {
@@ -177,6 +183,10 @@ public class TVEndermanObservationController {
         Player fakePlayer = FakePlayerManager.get(VIEW_FINDER_PLAYER, vf.getLevel());
         float eyeH = fakePlayer.getEyeHeight();
 
+        if (PlatHelper.getPhysicalSide().isClient() && ClientConfigs.rendersDebug()) {
+            ViewFinderBlockEntityRenderer.debugLastPlayer = fakePlayer;
+        }
+
 
         // For each view result: map local (x,y) -> destination world point, orient fake player, notify endermen
         for (TVSpectatorView vr : views) {
@@ -207,13 +217,27 @@ public class TVEndermanObservationController {
             // Iterate endermen found in AABB and apply tighter checks before calling isLookingAtMe
             for (EnderMan man : enderMen) {
                 // Now the enderman is in range and in front: trigger the "looking at fake player"
-                if (man.isLookingAtMe(fakePlayer)) {
+                if (isLookingAtMe(man,fakePlayer)) {
                     lookResults.add(new EndermanLookResult(vr.player(), man));
                 }
             }
         }
 
         return lookResults;
+    }
+
+    public boolean isLookingAtMe(EnderMan man, Player player) {
+        ItemStack itemStack = (ItemStack)player.getInventory().armor.get(3);
+        if (itemStack.is(Blocks.CARVED_PUMPKIN.asItem())) {
+            return false;
+        } else {
+            Vec3 vec3 = player.getViewVector(1.0F).normalize();
+            Vec3 vec32 = new Vec3(man.getX() - player.getX(), man.getEyeY() - player.getEyeY(), man.getZ() - player.getZ());
+            double d = vec32.length();
+            vec32 = vec32.normalize();
+            double e = vec3.dot(vec32);
+            return e > (double)1.0F - 0.025 / d ? player.hasLineOfSight(man) : false;
+        }
     }
 
 

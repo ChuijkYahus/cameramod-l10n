@@ -32,6 +32,7 @@ public class LiveFeedTexture extends RenderTargetDynamicTexture {
     private ResourceLocation postChainID;
     private PostChain postChain;
     private boolean disconnected = false;
+    private boolean closed = false;
 
 
     public LiveFeedTexture(ResourceLocation resourceLocation, int size,
@@ -55,6 +56,9 @@ public class LiveFeedTexture extends RenderTargetDynamicTexture {
     }
 
     public void applyPostChain() {
+        if(closed){
+            return;
+        }
         GameRenderer gameRenderer = Minecraft.getInstance().gameRenderer;
         if (postChain != null) {
             gameRenderer.effectActive = true;
@@ -66,6 +70,10 @@ public class LiveFeedTexture extends RenderTargetDynamicTexture {
     }
 
     private void recomputePostChain() {
+        if(closed){
+            return;
+        }
+
         if (postChain != null) {
             postChain.close();
             postChain = null;
@@ -115,6 +123,7 @@ public class LiveFeedTexture extends RenderTargetDynamicTexture {
     @Override
     public void close() {
         super.close();
+        this.closed = true;
         if (postChain != null) {
             postChain.close();
             postChain = null;

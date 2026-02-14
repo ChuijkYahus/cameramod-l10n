@@ -4,16 +4,12 @@ import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
-import dan200.computercraft.client.render.RenderTypes;
-import net.caffeinemc.mods.sodium.client.render.immediate.CloudRenderer;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.common.tv.IntAnimationState;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.Options;
-import net.minecraft.client.renderer.PostChain;
 import net.minecraft.client.renderer.RenderStateShard;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.ShaderInstance;
@@ -70,6 +66,14 @@ public class VistaRenderTypes extends RenderType {
         return CRT_RENDER_TYPE.apply(key);
     }
 
+    public static final LayeringStateShard CUSTOM_POLYGON_OFFSET_LAYERING = new LayeringStateShard(
+            "vista:polygon_offset_layering", () -> {
+        RenderSystem.polygonOffset(-1.0F, -10.0F);
+        RenderSystem.enablePolygonOffset();
+    }, () -> {
+        RenderSystem.polygonOffset(0.0F, 0.0F);
+        RenderSystem.disablePolygonOffset();
+    });
     private static final Function<CrtKey, RenderType> CRT_RENDER_TYPE =
             Util.memoize(k -> {
                 var textureStateBuilder = MultiTextureStateShard.builder()
@@ -82,7 +86,6 @@ public class VistaRenderTypes extends RenderType {
                         .setTransparencyState(RenderStateShard.TRANSLUCENT_TRANSPARENCY)
                         .setLightmapState(LIGHTMAP)
                         .setCullState(NO_CULL)
-                        .setWriteMaskState(COLOR_WRITE)
                         .setTextureState(textureStateBuilder.build())
                         .setTexturingState(new TexturingStateShard("set_texel_size",
                                 () -> setCameraDrawUniforms(k),

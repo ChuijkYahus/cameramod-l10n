@@ -8,10 +8,11 @@ import java.util.Objects;
  */
 public class IntAnimationState {
     // unmodifiable instance
-    public static final IntAnimationState NO_ANIM = new IntAnimationState(1,1){
+    public static final IntAnimationState NO_ANIM = new IntAnimationState(1, 1) {
         @Override
         public void increment() {
         }
+
         @Override
         public void decrement() {
         }
@@ -22,10 +23,11 @@ public class IntAnimationState {
         }
     };
 
-    public static final IntAnimationState MAX_ANIM = new IntAnimationState(1,1){
+    public static final IntAnimationState MAX_ANIM = new IntAnimationState(1, 1) {
         @Override
         public void increment() {
         }
+
         @Override
         public void decrement() {
         }
@@ -39,14 +41,20 @@ public class IntAnimationState {
     private final int maxTick;
     private final int forwardStep;
     private final int backwardStep;
+    private final float valueScale;
 
     private int currentTick;
     private int prevTick;
 
     public IntAnimationState(int turnOnTime, int turnOffTime) {
+        this(turnOnTime, turnOffTime, 1);
+    }
+
+    public IntAnimationState(int turnOnTime, int turnOffTime, float valueScale) {
         if (turnOnTime <= 0 || turnOffTime <= 0) {
             throw new IllegalArgumentException("Times must be positive");
         }
+        this .valueScale = valueScale;
 
         int max = Math.max(turnOnTime, turnOffTime);
         int min = Math.min(turnOnTime, turnOffTime);
@@ -80,22 +88,28 @@ public class IntAnimationState {
         return currentTick > prevTick;
     }
 
-    /** Call each tick while turning on */
+    /**
+     * Call each tick while turning on
+     */
     public void increment() {
         prevTick = currentTick;
         currentTick = Math.min(maxTick, currentTick + forwardStep);
     }
 
-    /** Call each tick while turning off */
+    /**
+     * Call each tick while turning off
+     */
     public void decrement() {
         prevTick = currentTick;
         currentTick = Math.max(0, currentTick - backwardStep);
     }
 
-    /** Normalized animation value in [0,1] */
+    /**
+     * Normalized animation value in [0,1]
+     */
     public float getValue(float partialTick) {
         float interpolated = prevTick + (currentTick - prevTick) * partialTick;
-        return interpolated / maxTick;
+        return (interpolated / maxTick) * valueScale;
     }
 
     @Override
