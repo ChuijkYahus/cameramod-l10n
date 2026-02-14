@@ -1,6 +1,6 @@
-package net.mehvahdjukaar.vista.common;
+package net.mehvahdjukaar.vista.common.tv.enderman;
 
-import net.mehvahdjukaar.vista.common.tv.TVEndermanObservationController;
+import net.mehvahdjukaar.vista.VistaMod;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.entity.monster.EnderMan;
@@ -58,6 +58,7 @@ public class EndermanFreezeWhenLookedAtThroughTVGoal extends Goal {
 
     @Override
     public void start() {
+        VistaMod.ENDERMAN_CAP.set(this.enderman, true);
         this.enderman.getNavigation().stop();
     }
 

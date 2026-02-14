@@ -1,13 +1,10 @@
 package net.mehvahdjukaar.vista;
 
-import net.mehvahdjukaar.moonlight.api.misc.EventCalled;
-import net.mehvahdjukaar.moonlight.api.misc.HolderRef;
-import net.mehvahdjukaar.moonlight.api.misc.RegSupplier;
-import net.mehvahdjukaar.moonlight.api.misc.WorldSavedDataType;
+import com.mojang.serialization.Codec;
+import net.mehvahdjukaar.moonlight.api.misc.*;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.platform.RegHelper;
 import net.mehvahdjukaar.vista.common.BroadcastManager;
-import net.mehvahdjukaar.vista.common.EndermanFreezeWhenLookedAtThroughTVGoal;
 import net.mehvahdjukaar.vista.common.ModLootOverrides;
 import net.mehvahdjukaar.vista.common.cassette.CassetteItem;
 import net.mehvahdjukaar.vista.common.cassette.CassetteTape;
@@ -18,6 +15,8 @@ import net.mehvahdjukaar.vista.common.projector.SignalProjectorBlockEntity;
 import net.mehvahdjukaar.vista.common.tv.TVBlock;
 import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
 import net.mehvahdjukaar.vista.common.tv.TVItem;
+import net.mehvahdjukaar.vista.common.tv.enderman.AngeredFromTvCondition;
+import net.mehvahdjukaar.vista.common.tv.enderman.EndermanFreezeWhenLookedAtThroughTVGoal;
 import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlock;
 import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
 import net.mehvahdjukaar.vista.configs.CommonConfigs;
@@ -44,6 +43,7 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.level.storage.loot.functions.LootItemFunctionType;
+import net.minecraft.world.level.storage.loot.predicates.LootItemConditionType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -123,12 +123,22 @@ public class VistaMod {
                             .networkSynchronized(CassetteTape.STREAM_CODEC)
                             .build());
 
+    public static final IAttachmentType<Boolean, EnderMan> ENDERMAN_CAP = RegHelper.registerDataAttachment(
+            res("angered_from_tv"),
+            () -> RegHelper.AttachmentBuilder.create(() -> Boolean.FALSE).persistent(Codec.BOOL),
+            EnderMan.class
+    );
+
+    public static final Supplier<LootItemConditionType> TV_ENDERMAN_CONDITION = RegHelper.registerLootCondition(
+            VistaMod.res("angered_from_tv"), () -> AngeredFromTvCondition.CODEC
+    );
+
     public static final RegSupplier<SoundEvent> CASSETTE_INSERT_SOUND = RegHelper.registerSound(res("block.television.insert"));
     public static final RegSupplier<SoundEvent> CASSETTE_EJECT_SOUND = RegHelper.registerSound(res("block.television.eject"));
     public static final RegSupplier<SoundEvent> TV_STATIC_SOUND = RegHelper.registerSound(res("block.television.static"));
     public static final RegSupplier<SoundEvent> SOJOURN_DISC_SOUND = RegHelper.registerSound(res("music_disc.sojourn"));
     public static final HolderRef<JukeboxSong> SOJOURN_DISC_SONG = HolderRef.of(
-            res("music_disc.sojourn"), Registries.JUKEBOX_SONG);
+            res("sojourn"), Registries.JUKEBOX_SONG);
     public static final int STATIC_SOUND_DURATION = 4 * 20; //4 seconds
 
     public static final Supplier<LootItemFunctionType<CassetteTapeLootFunction>> CASSETTE_TAPE_LOOT_FUNCTION =
@@ -140,7 +150,7 @@ public class VistaMod {
     public static final TagKey<Item> VIEW_FINDER_FILTER = TagKey.create(
             Registries.ITEM, res("view_finder_filter"));
 
-    public static final Supplier<Item> SOJOURN_MUSIC_DISC = RegHelper.registerItem(res("sojourn_music_disc"),
+    public static final Supplier<Item> SOJOURN_MUSIC_DISC = RegHelper.registerItem(res("music_disc_sojourn"),
             () -> new Item(new Item.Properties()
                     .jukeboxPlayable(SOJOURN_DISC_SONG.getKey())
                     .stacksTo(1).rarity(Rarity.RARE)));

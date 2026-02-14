@@ -1,10 +1,12 @@
-package net.mehvahdjukaar.vista.common.tv;
+package net.mehvahdjukaar.vista.common.tv.enderman;
 
 import com.mojang.authlib.GameProfile;
 import net.mehvahdjukaar.moonlight.api.util.FakePlayerManager;
 import net.mehvahdjukaar.moonlight.api.util.math.MthUtils;
 import net.mehvahdjukaar.vista.common.BroadcastManager;
-import net.mehvahdjukaar.vista.common.EndermanFreezeWhenLookedAtThroughTVGoal;
+import net.mehvahdjukaar.vista.common.tv.TVBlock;
+import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
+import net.mehvahdjukaar.vista.common.tv.TVSpectatorView;
 import net.mehvahdjukaar.vista.common.view_finder.EndermanLookResult;
 import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
 import net.minecraft.core.BlockPos;
