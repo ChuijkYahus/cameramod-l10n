@@ -4,8 +4,11 @@ import com.mojang.blaze3d.pipeline.RenderCall;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.pipeline.TextureTarget;
 import com.mojang.blaze3d.systems.RenderSystem;
+import net.mehvahdjukaar.vista.VistaMod;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.client.renderer.texture.DynamicTexture;
+import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.client.renderer.texture.Tickable;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
@@ -67,6 +70,7 @@ public class RenderTargetDynamicTexture extends DynamicTexture implements Tickab
      */
     public void redraw() {
         if(closed){
+            VistaMod.LOGGER.error("redraw on closed");
             return;
         }
         renderCall(() -> {
@@ -99,6 +103,7 @@ public class RenderTargetDynamicTexture extends DynamicTexture implements Tickab
     @Override
     public void bind() {
         if(closed){
+            VistaMod.LOGGER.error("bind on closed");
             return;
         }
         super.bind();
@@ -108,6 +113,7 @@ public class RenderTargetDynamicTexture extends DynamicTexture implements Tickab
     @Override
     public int getId() {
         if (closed) {
+            VistaMod.LOGGER.error("get id on closed");
             return 0;
         }
         RenderSystem.assertOnRenderThreadOrInit();
@@ -153,6 +159,7 @@ public class RenderTargetDynamicTexture extends DynamicTexture implements Tickab
      */
     public void download() {
         if (closed) {
+            VistaMod.LOGGER.error("download id on closed");
             return;
         }
         this.bind();
@@ -178,9 +185,15 @@ public class RenderTargetDynamicTexture extends DynamicTexture implements Tickab
 
     public void unregister() {
         //this also calls close
-        Minecraft.getInstance().getTextureManager().release(textureLocation);
+        TextureManager tm = Minecraft.getInstance().getTextureManager();
+        AbstractTexture t = tm.getTexture(textureLocation);
+        //if it's us we release it. Otherwise it means we have already been closed
+        if (t == this) {
+            tm.release(textureLocation);
+        }
     }
 
+    //safeguard but shouldnt be needed
     public boolean isClosed() {
         return closed;
     }

@@ -9,6 +9,8 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.AddReloadListenerEvent;
+import net.neoforged.neoforge.event.ModifyDefaultComponentsEvent;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.level.LevelEvent;
 
@@ -30,6 +32,17 @@ public class VistaForge {
         RegHelper.startRegisteringFor(bus);
         VistaMod.init();
         NeoForge.EVENT_BUS.register(this);
+
+        bus.addListener(VistaForge::aaa);
+    }
+
+    public static void aaa(ModifyDefaultComponentsEvent a){
+        int aa = 1;
+    }
+
+    @SubscribeEvent
+    public void addListener(AddReloadListenerEvent e){
+        int aa = 1;
     }
 
     @SubscribeEvent

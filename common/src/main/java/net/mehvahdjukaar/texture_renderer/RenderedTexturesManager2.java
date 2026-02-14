@@ -10,6 +10,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
 import net.mehvahdjukaar.moonlight.api.util.Utils;
 import net.mehvahdjukaar.moonlight.core.Moonlight;
+import net.mehvahdjukaar.vista.VistaMod;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.GameRenderer;
@@ -33,6 +34,7 @@ public class RenderedTexturesManager2 {
                     .<ResourceLocation, CompletableFuture<RenderTargetDynamicTexture>>removalListener(i -> {
                         CompletableFuture<RenderTargetDynamicTexture> future = i.getValue();
                         if (future == null) return;
+                        //this unregister calls close which makes texture as closed
                         future.thenAccept(texture ->
                                 RenderSystem.recordRenderCall(texture::unregister)
                         );
@@ -68,6 +70,7 @@ public class RenderedTexturesManager2 {
                     RenderSystem.recordRenderCall(() -> {
                         try {
                             T newText = textureSupplier.get();
+                            newText.register();
                             newText.redraw();
                             f.complete(newText);
                         } catch (Throwable t) {
@@ -83,7 +86,13 @@ public class RenderedTexturesManager2 {
             return null;
         }
 
-        return (T) future.join();
+        var t = (T) future.join();
+        if (t.isClosed()) {
+            TEXTURE_CACHE.invalidate(id);
+            VistaMod.LOGGER.error("get texture on closed");
+            return null;
+        }
+        return t;
     }
 
     /**

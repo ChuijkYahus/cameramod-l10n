@@ -55,6 +55,7 @@ public class LiveFeedTexture extends RenderTargetDynamicTexture {
 
     public void applyPostChain() {
         if(isClosed()){
+            VistaMod.LOGGER.error("apply post on closed");
             return;
         }
         GameRenderer gameRenderer = Minecraft.getInstance().gameRenderer;
@@ -69,6 +70,7 @@ public class LiveFeedTexture extends RenderTargetDynamicTexture {
 
     private void recomputePostChain() {
         if(isClosed()){
+            VistaMod.LOGGER.error("recompute post on closed");
             return;
         }
 
