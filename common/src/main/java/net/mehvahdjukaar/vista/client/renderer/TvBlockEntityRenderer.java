@@ -8,24 +8,28 @@ import net.mehvahdjukaar.moonlight.api.misc.ForgeOverride;
 import net.mehvahdjukaar.moonlight.api.misc.RollingBuffer;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.vista.client.textures.LiveFeedTexturesManager;
+import net.mehvahdjukaar.vista.client.video_source.BroadcastVideoSource;
+import net.mehvahdjukaar.vista.client.video_source.IVideoSource;
 import net.mehvahdjukaar.vista.common.tv.IntAnimationState;
 import net.mehvahdjukaar.vista.common.tv.TVBlock;
 import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.Direction;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec2;
 import org.joml.Vector3f;
+
+import java.util.UUID;
 
 public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity> {
 
@@ -34,7 +38,7 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
 
     @Override
     public int getViewDistance() {
-        return 96;
+        return 128; //very high, we then throttle based off the tv size
     }
 
     @Override
@@ -74,8 +78,16 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
 
         Vec2 screenCenter = blockEntity.getScreenBlockCenter();
 
-        //if (!lod.isMedium()) return;
-        if (lod.isPlaneCulled(dir, 0.5f, screenSize / 16f * 1.5f, 0f)) return;
+        if
+        (lod.isPlaneCulled(dir, 0.5f, screenSize / 16f * 1.5f, 0f)) return;
+
+        int connectedW = blockEntity.getConnectedWidth();
+        if (connectedW == 1 && !lod.isMedium()) {
+            return;
+        }
+        if(connectedW == 2 && !lod.isFar()) {
+            return;
+        }
 
         float yaw = dir.toYRot();
         poseStack.pushPose();
@@ -86,29 +98,39 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
         float s = screenSize / 32f;
         int pixelEffectRes = ClientConfigs.SCALE_PIXELS.get() ? screenSize : TVBlockEntity.MIN_SCREEN_PIXEL_SIZE;
 
-        boolean shouldUpdate = lod.within(ClientConfigs.UPDATE_DISTANCE.get());
-        IntAnimationState switchAnim = blockEntity.poweredOnAnimation;
+        boolean paused = blockEntity.isPaused();
+        boolean shouldUpdate = !paused && lod.within(ClientConfigs.UPDATE_DISTANCE.get());
+        IntAnimationState switchAnim = blockEntity.fadeAnimation;
         IntAnimationState staticAnim = blockEntity.endermanAnimation;
         int videoTicks = blockEntity.getPlaybackTicks();
-        boolean paused = blockEntity.isPaused();
 
-        VertexConsumer vc = blockEntity.getVideoSource()
+        IVideoSource videoSource = blockEntity.getVideoSource();
+        VertexConsumer vc = videoSource
                 .getVideoFrameBuilder(partialTick, buffer,
                         shouldUpdate, screenSize, pixelEffectRes,
                         videoTicks, paused, switchAnim, staticAnim);
 
         //technically not correct as tv could be multiple block. just matters for transition so it's probably ok
-        light = LevelRenderer.getLightColor(blockEntity.getLevel(), blockEntity.getBlockPos().relative(dir));
+        Level level = blockEntity.getLevel();
+        int skyBrightness = level.getBrightness(LightLayer.SKY, blockEntity.getBlockPos().relative(dir));
+        light = LightTexture.pack(15, skyBrightness);
 
         addQuad(vc, poseStack, -s, -s, s, s, light);
+
+
+        if (ClientConfigs.rendersDebug()) {
+            if (videoSource instanceof BroadcastVideoSource(UUID uuid)) {
+                renderDebug(uuid, poseStack, buffer, partialTick, blockEntity);
+            }
+        }
 
         poseStack.popPose();
     }
 
-    private static void addQuad(VertexConsumer builder, PoseStack poseStack,
-                                float x0, float y0,
-                                float x1, float y1,
-                                int light) {
+    public static void addQuad(VertexConsumer builder, PoseStack poseStack,
+                               float x0, float y0,
+                               float x1, float y1,
+                               int light) {
         int lu = light & 0xFFFF;
         int lv = (light >> 16) & 0xFFFF;
         PoseStack.Pose last = poseStack.last();
@@ -137,7 +159,7 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
     // ========== DEBUG RENDERING ========== //
 
 
-    private void renderDebug(ResourceLocation tex, PoseStack poseStack, MultiBufferSource buffer, float partialTick,
+    private void renderDebug(UUID tex, PoseStack poseStack, MultiBufferSource buffer, float partialTick,
                              TVBlockEntity tile) {
         RollingBuffer<Long> lastUpdateTimes = LiveFeedTexturesManager.UPDATE_TIMES.get(tex);
         if (lastUpdateTimes == null) {

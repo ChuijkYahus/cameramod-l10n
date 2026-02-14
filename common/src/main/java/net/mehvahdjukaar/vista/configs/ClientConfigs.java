@@ -1,5 +1,6 @@
 package net.mehvahdjukaar.vista.configs;
 
+import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.platform.configs.ConfigBuilder;
 import net.mehvahdjukaar.moonlight.api.platform.configs.ConfigType;
 import net.mehvahdjukaar.moonlight.api.platform.configs.ModConfigHolder;
@@ -27,6 +28,7 @@ public class ClientConfigs {
     public static final Supplier<Float> PIXEL_DENSITY;
     public static final Supplier<Float> VIGNETTE;
     public static final Supplier<Boolean> DRAW_DATE;
+    public static final Supplier<Boolean> SCREEN_EFFECTS;
 
     static {
         ConfigBuilder builder = ConfigBuilder.create(VistaMod.MOD_ID, ConfigType.CLIENT);
@@ -37,6 +39,9 @@ public class ClientConfigs {
                 .comment("Render distance that television will use when rendering the live feed. Decreasing this will improve the performance of TVs, possibly by a lot")
                 .define("render_distance", 64, 1, 256);
 
+        SCREEN_EFFECTS = builder
+                .comment("Turns off all the tv screen effects and draws it as a simple texture. Disabling can make the render slightly faster. All below options will be ignored if this is disabled")
+                .define("screen_effects", true);
         PIXEL_DENSITY = builder
                 .comment("Pixel density of televisions, in pixels per block side")
                 .define("pixel_density", 1.37f, 0.1f, 10);
@@ -89,6 +94,6 @@ public class ClientConfigs {
     }
 
     public static boolean rendersDebug() {
-        return RENDER_DEBUG.get();
+        return RENDER_DEBUG.get() || PlatHelper.isDev();
     }
 }

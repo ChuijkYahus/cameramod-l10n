@@ -109,7 +109,7 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
 
     @Override
     public boolean canPlaceItem(int index, ItemStack stack) {
-        return this.isEmpty() && stack.is(VistaMod.VIEW_FINDER_FILTER) ||
+        return this.isEmpty() && stack.is(VistaMod.GLASS_PANES_TAG) ||
                 (CompatHandler.SUPPLEMENTARIES && SuppCompat.getShaderForItem(stack.getItem()) != null);
     }
 

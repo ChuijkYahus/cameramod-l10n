@@ -1,4 +1,12 @@
 {
+  "music_disc.sojourn": {
+    "sounds": [
+      {
+        "name": "vista:music/sojourn",
+        "stream": true
+      }
+    ]
+  },
   "block.television.insert": {
     "sounds": [
       "vista:block/cassette_insert"

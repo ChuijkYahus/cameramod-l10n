@@ -3,6 +3,7 @@ package net.mehvahdjukaar.vista.common.tv;
 import net.mehvahdjukaar.moonlight.api.block.ItemDisplayTile;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.client.video_source.IVideoSource;
+import net.mehvahdjukaar.vista.common.tv.enderman.TVEndermanObservationController;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.mehvahdjukaar.vista.integration.CompatHandler;
 import net.mehvahdjukaar.vista.integration.exposure.ExposureCompat;
@@ -43,10 +44,10 @@ public class TVBlockEntity extends ItemDisplayTile {
     private int connectedTvsWidth = 1;
 
     private int soundLoopTicks = 0;
-    public final IntAnimationState poweredOnAnimation = new IntAnimationState(3, 9);
-    public final IntAnimationState endermanAnimation = new IntAnimationState(20, 20);
+    public final IntAnimationState fadeAnimation = new IntAnimationState( 3,9);
+    public final IntAnimationState endermanAnimation = new IntAnimationState(20, 20, 0.6f);
     private boolean isLookingAtEnderman = false;
-    private boolean wasLastPowered = false;
+    private boolean wasScreenOn = false;
 
 
     public TVBlockEntity(BlockPos pos, BlockState state) {
@@ -69,6 +70,7 @@ public class TVBlockEntity extends ItemDisplayTile {
         this.connectedTvHeight = Math.max(1, tag.getInt("ConnectionHeight"));
         this.paused = tag.getBoolean("Paused");
         this.videoPlaybackTicks = tag.getInt("VideoPlaybackTicks");
+        updateObservationController();
     }
 
     @NotNull
@@ -127,7 +129,11 @@ public class TVBlockEntity extends ItemDisplayTile {
             this.paused = false;
             this.videoPlaybackTicks = 0;
         }
+        updateObservationController();
+    }
 
+    private void updateObservationController() {
+        ItemStack displayedItem = this.getDisplayedItem();
         var uuid = displayedItem.get(VistaMod.LINKED_FEED_COMPONENT.get());
         this.observationController = uuid == null ? null : new TVEndermanObservationController(uuid, this);
     }
@@ -143,13 +149,13 @@ public class TVBlockEntity extends ItemDisplayTile {
             Player player, InteractionHand handIn, ItemStack stack, int slot, BlockHitResult hit) {
 
         boolean powered = this.getBlockState().getValue(TVBlock.POWER_STATE).isOn();
-        if (powered && player.isSecondaryUseActive()) {
+        ItemStack current = this.getDisplayedItem();
+        if (!current.isEmpty() && powered && player.isSecondaryUseActive()) {
             this.paused = !this.paused;
             this.setChanged();
             return ItemInteractionResult.sidedSuccess(this.level.isClientSide);
         }
 
-        ItemStack current = this.getDisplayedItem();
         if (!current.isEmpty() && (canPlaceItem(0, stack) || stack.isEmpty())) {
             level.playSound(player, worldPosition, VistaMod.CASSETTE_EJECT_SOUND.get(),
                     SoundSource.BLOCKS, 1, 1);
@@ -176,11 +182,19 @@ public class TVBlockEntity extends ItemDisplayTile {
 
     public static void onTick(Level world, BlockPos pos, BlockState state, TVBlockEntity tv) {
         boolean powered = state.getValue(TVBlock.POWER_STATE).isOn();
+        //both sides
+
+        if (powered) {
+            if (!tv.paused) tv.videoPlaybackTicks++;
+        } else {
+            tv.fadeAnimation.decrement();
+            tv.videoPlaybackTicks = 0;
+        }
         if (world.isClientSide) {
-            tv.wasLastPowered = powered;
+            tv.wasScreenOn = powered;
 
             if (powered) {
-                if (ClientConfigs.TURN_OFF_EFFECTS.get()) tv.poweredOnAnimation.increment();
+                if (ClientConfigs.TURN_OFF_EFFECTS.get()) tv.fadeAnimation.increment();
                 float duration = tv.videoSource.getVideoDuration();
                 if (++tv.soundLoopTicks >= (duration)) {
                     tv.soundLoopTicks = 0;
@@ -189,11 +203,8 @@ public class TVBlockEntity extends ItemDisplayTile {
                         world.playLocalSound(pos, sound, SoundSource.BLOCKS, 1, 1.0f, false);
                     }
                 }
-                tv.videoPlaybackTicks++;
             } else {
-                tv.poweredOnAnimation.decrement();
                 tv.soundLoopTicks = 0;
-                tv.videoPlaybackTicks = 0;
             }
             if (tv.isLookingAtEnderman) {
                 tv.endermanAnimation.increment();
@@ -227,7 +238,7 @@ public class TVBlockEntity extends ItemDisplayTile {
     }
 
     public boolean isScreenOn(float partialTicks) {
-        return this.wasLastPowered || this.poweredOnAnimation.getValue(partialTicks) != 0;
+        return this.wasScreenOn || this.fadeAnimation.getValue(partialTicks) != 0;
     }
 
     private static final int EDGE_PIXEL_LEN = 4;

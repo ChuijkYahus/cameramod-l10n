@@ -1,18 +1,25 @@
-package net.mehvahdjukaar.vista.common.tv;
+package net.mehvahdjukaar.vista.common.tv.enderman;
 
 import com.mojang.authlib.GameProfile;
+import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.util.FakePlayerManager;
 import net.mehvahdjukaar.moonlight.api.util.math.MthUtils;
+import net.mehvahdjukaar.vista.client.renderer.ViewFinderBlockEntityRenderer;
 import net.mehvahdjukaar.vista.common.BroadcastManager;
-import net.mehvahdjukaar.vista.common.EndermanFreezeWhenLookedAtThroughTVGoal;
+import net.mehvahdjukaar.vista.common.tv.TVBlock;
+import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
+import net.mehvahdjukaar.vista.common.tv.TVSpectatorView;
 import net.mehvahdjukaar.vista.common.view_finder.EndermanLookResult;
 import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
+import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.monster.EnderMan;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec2;
@@ -21,6 +28,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -41,6 +49,7 @@ public class TVEndermanObservationController {
         this.myTv = tv;
     }
 
+    //for goal
     public boolean isPlayerLookingAtEnderman(EnderMan enderMan, Player player) {
         TVSpectatorView view = getPlayerLookView(player);
         if (view == null) {
@@ -53,7 +62,6 @@ public class TVEndermanObservationController {
             return !computeEndermanLookedAt(vf, List.of(view), List.of(enderMan)).isEmpty();
         }
         return false;
-
     }
 
     public boolean tick() {
@@ -176,6 +184,10 @@ public class TVEndermanObservationController {
         Player fakePlayer = FakePlayerManager.get(VIEW_FINDER_PLAYER, vf.getLevel());
         float eyeH = fakePlayer.getEyeHeight();
 
+        if (PlatHelper.getPhysicalSide().isClient() && ClientConfigs.rendersDebug()) {
+            ViewFinderBlockEntityRenderer.debugLastPlayer = new WeakReference<>(fakePlayer);
+        }
+
 
         // For each view result: map local (x,y) -> destination world point, orient fake player, notify endermen
         for (TVSpectatorView vr : views) {
@@ -202,6 +214,15 @@ public class TVEndermanObservationController {
             fakePlayer.setYRot(yRot + vf.getYaw());
             fakePlayer.setYHeadRot(yRot + vf.getYaw());
             fakePlayer.setXRot(xRot + vf.getPitch());
+
+            //move forward to skip our own BB since it cant be empty due to particles
+            float offset = 0.8f;
+            Vec3 forward = lensFacing.normalize();
+            fakePlayer.setPos(
+                    fakePlayer.getX() + forward.x * offset,
+                    fakePlayer.getY() + forward.y * offset,
+                    fakePlayer.getZ() + forward.z * offset
+            );
 
             // Iterate endermen found in AABB and apply tighter checks before calling isLookingAtMe
             for (EnderMan man : enderMen) {

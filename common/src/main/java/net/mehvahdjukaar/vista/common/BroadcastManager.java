@@ -8,8 +8,6 @@ import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.common.cassette.IBroadcastProvider;
-import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
-import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -17,6 +15,7 @@ import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
@@ -54,7 +53,7 @@ public final class BroadcastManager extends WorldSavedData {
                         storage.publishSnapshot();
                         return storage;
                     },
-                    storage ->  new HashMap<>(storage.snapshot)
+                    storage -> new HashMap<>(storage.snapshot)
             );
 
     /* -------------------- STATE -------------------- */
@@ -63,7 +62,8 @@ public final class BroadcastManager extends WorldSavedData {
     private final HashBiMap<UUID, GlobalPos> uuidToPos = HashBiMap.create(); //thread safe, mutable
     private volatile Map<UUID, GlobalPos> snapshot = Map.of(); //fast read only
 
-    private BroadcastManager() {}
+    private BroadcastManager() {
+    }
 
     /* -------------------- INTERNALS -------------------- */
 
@@ -161,7 +161,11 @@ public final class BroadcastManager extends WorldSavedData {
     }
 
     @Nullable
-    public IBroadcastProvider getBroadcast(UUID feedId, boolean clientSide) {
+    public IBroadcastProvider getBroadcast(@NotNull UUID feedId, boolean clientSide) {
+        if(feedId == null){
+            int aa = 1;
+            return null;
+        }
         GlobalPos pos = snapshot.get(feedId);
         if (pos == null) return null;
 

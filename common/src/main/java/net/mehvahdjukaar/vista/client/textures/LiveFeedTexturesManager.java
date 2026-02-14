@@ -8,8 +8,8 @@ import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
-import net.mehvahdjukaar.moonlight.api.client.texture_renderer.RenderedTexturesManager;
 import net.mehvahdjukaar.moonlight.api.misc.RollingBuffer;
+import net.mehvahdjukaar.texture_renderer.RenderedTexturesManager2;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.client.AdaptiveUpdateScheduler;
@@ -21,6 +21,7 @@ import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.mehvahdjukaar.vista.integration.CompatHandler;
 import net.mehvahdjukaar.vista.integration.distant_horizons.DistantHorizonsCompat;
+import net.mehvahdjukaar.vista.integration.iris.IrisCompat;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -30,7 +31,6 @@ import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.VisibleForDebug;
-import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 
@@ -45,9 +45,9 @@ import java.util.function.Supplier;
 public class LiveFeedTexturesManager {
 
     private static final ResourceLocation POSTERIZE_FRAGMENT_SHADER = VistaMod.res("posterize");
-    private static final BiMap<UUID, ResourceLocation> LIVE_FEED_LOCATIONS = HashBiMap.create();
+    private static final BiMap<FeedKey, ResourceLocation> LIVE_FEED_LOCATIONS = HashBiMap.create();
     @VisibleForDebug
-    public static final Map<ResourceLocation, RollingBuffer<Long>> UPDATE_TIMES = new HashMap<>();
+    public static final Map<UUID, RollingBuffer<Long>> UPDATE_TIMES = new HashMap<>();
 
     @VisibleForDebug
     public static final Supplier<AdaptiveUpdateScheduler<ResourceLocation>> SCHEDULER =
@@ -62,18 +62,25 @@ public class LiveFeedTexturesManager {
                             .build()
             );
 
+    private record FeedKey(UUID name, Integer size) {
+    }
+
     private static long feedCounter = 0;
 
 
     @Nullable
     public static LiveFeedTexture requestLiveFeedTexture(UUID location, int screenSize,
-            boolean requiresUpdate, @Nullable ResourceLocation postShader) {
+                                                         boolean requiresUpdate, @Nullable ResourceLocation postShader) {
 
-        ResourceLocation feedId = getOrCreateFeedId(location);
-        LiveFeedTexture texture = RenderedTexturesManager.requestTexture(feedId, () ->
-                new LiveFeedTexture(feedId,
-                        screenSize * ClientConfigs.RESOLUTION_SCALE.get(),
+        ResourceLocation feedId = getOrCreateFeedId(location, screenSize);
+        LiveFeedTexture texture = RenderedTexturesManager2.requestTexture(feedId, () ->
+                new LiveFeedTexture(feedId, screenSize * ClientConfigs.RESOLUTION_SCALE.get(),
                         LiveFeedTexturesManager::refreshTexture, location, POSTERIZE_FRAGMENT_SHADER));
+
+        if (texture == null) {
+            SCHEDULER.get().forceUpdateNextTick(feedId);
+            return null;
+        }
 
         if (texture.setPostChain(postShader)) {
             requiresUpdate = true;
@@ -81,22 +88,16 @@ public class LiveFeedTexturesManager {
         if (VistaLevelRenderer.isRenderingLiveFeed()) {
             requiresUpdate = false; //suppress recursive updates
         }
-        if (!requiresUpdate) {
-            texture.unMarkForUpdate();
-        }
-        if (texture.isInitialized()) {
-            return texture;
-        } else {
-            SCHEDULER.get().forceUpdateNextTick(feedId);
-        }
-        return null;
+        texture.setUpdateNextTick(requiresUpdate);
+        return texture;
     }
 
-    private static ResourceLocation getOrCreateFeedId(UUID uuid) {
-        ResourceLocation loc = LIVE_FEED_LOCATIONS.get(uuid);
+    private static ResourceLocation getOrCreateFeedId(UUID uuid, int screenSize) {
+        FeedKey key = new FeedKey(uuid, screenSize);
+        ResourceLocation loc = LIVE_FEED_LOCATIONS.get(key);
         if (loc == null) {
             loc = VistaMod.res("live_feed_" + feedCounter++);
-            LIVE_FEED_LOCATIONS.put(uuid, loc);
+            LIVE_FEED_LOCATIONS.put(key, loc);
         }
         return loc;
     }
@@ -104,6 +105,8 @@ public class LiveFeedTexturesManager {
     @SuppressWarnings("ConstantConditions")
     public static void clear() {
         LIVE_FEED_LOCATIONS.clear();
+        UPDATE_TIMES.clear();
+        feedCounter = 0;
     }
 
     public static void onRenderTickEnd() {
@@ -117,17 +120,15 @@ public class LiveFeedTexturesManager {
         if (!mc.isGameLoadFinished() || level == null) return;
         if (mc.isPaused()) return;
 
-        ResourceLocation textureId = text.getTextureLocation();
-
         Runnable runTask = () -> {
 
-            setLastUpdatedTime(textureId, level);
+            setLastUpdatedTime(text.getAssociatedUUID(), level);
 
             UUID uuid = text.getAssociatedUUID();
             BroadcastManager manager = BroadcastManager.getInstance(level);
             IBroadcastProvider provider = manager.getBroadcast(uuid, true); //touch the feed to make sure it's still valid and linked
             if (!(provider instanceof ViewFinderBlockEntity vf)) {
-                if(!text.isDisconnected()){
+                if (!text.isDisconnected()) {
                     text.setDisconnected(true);
                 }
                 return;
@@ -140,12 +141,12 @@ public class LiveFeedTexturesManager {
                 LocalDateTime now = LocalDateTime.now();
                 DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM/dd HH:mm:ss");
                 String cctvTimestamp = now.format(formatter);
-                drawText(text.getFrameBuffer(), cctvTimestamp, 2, 4, false, true);
+                drawText(text, cctvTimestamp, 2, 4, false, true);
             }
 
 
             if (VistaMod.isFunny()) {
-                drawOverlay(text.getFrameBuffer(), VistaModClient.LL_OVERLAY);
+                drawOverlay(text, VistaModClient.LL_OVERLAY);
             }
 
 
@@ -154,13 +155,18 @@ public class LiveFeedTexturesManager {
         if (CompatHandler.DISTANT_HORIZONS) {
             runTask = DistantHorizonsCompat.decorateRenderWithoutLOD(runTask);
         }
+        if (CompatHandler.IRIS) {
+            runTask = IrisCompat.decorateRendererWithoutShadows(runTask);
+        }
+
+        ResourceLocation textureId = text.getTextureLocation();
 
         SCHEDULER.get().runIfShouldUpdate(textureId, runTask);
 
     }
 
 
-    private static void setLastUpdatedTime(ResourceLocation textureId, ClientLevel level) {
+    private static void setLastUpdatedTime(UUID textureId, ClientLevel level) {
         if (ClientConfigs.rendersDebug()) {
             UPDATE_TIMES.computeIfAbsent(textureId, k -> new RollingBuffer<>(20))
                     .push(level.getGameTime());
@@ -168,18 +174,17 @@ public class LiveFeedTexturesManager {
     }
 
 
-    private static void drawText(RenderTarget frameBuffer, String text,
+    private static void drawText(LiveFeedTexture texture, String text,
                                  int x, int y, boolean shadow, boolean background) {
         Minecraft mc = Minecraft.getInstance();
         RenderTarget oldTarget = mc.getMainRenderTarget();
-        frameBuffer.bindWrite(true);
 
         Font font = mc.font;
         MultiBufferSource.BufferSource bf = mc.renderBuffers().bufferSource();
 
         RenderSystem.backupProjectionMatrix();
         float baseScale = TVBlockEntity.MIN_SCREEN_PIXEL_SIZE * ClientConfigs.RESOLUTION_SCALE.get();
-        float size = baseScale * (frameBuffer.width / baseScale);
+        float size = baseScale * (texture.getWidth() / baseScale);
         Matrix4f matrix4f = new Matrix4f().setOrtho(
                 0.0F, size, 0.0F, size, -1, 1);
         RenderSystem.setProjectionMatrix(matrix4f, VertexSorting.ORTHOGRAPHIC_Z);
@@ -198,10 +203,9 @@ public class LiveFeedTexturesManager {
     }
 
 
-    private static void drawOverlay(RenderTarget frameBuffer, ResourceLocation overlayTexture) {
+    private static void drawOverlay(LiveFeedTexture text, ResourceLocation overlayTexture) {
         Minecraft mc = Minecraft.getInstance();
         RenderTarget oldTarget = mc.getMainRenderTarget();
-        frameBuffer.bindWrite(true);
 
 
         AbstractTexture texture = mc.getTextureManager().getTexture(overlayTexture);

@@ -1,5 +1,7 @@
 package net.mehvahdjukaar.vista.neoforge;
 
+import net.mehvahdjukaar.moonlight.api.client.texture_renderer.RenderedTexturesManager;
+import net.mehvahdjukaar.moonlight.api.misc.fake_level.FakeLevelManager;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.client.ViewFinderController;
@@ -86,18 +88,13 @@ public class VistaForgeClient {
     }
 
     @SubscribeEvent
-    public static void registerAtlases(RegisterMaterialAtlasesEvent event) {
-        //   event.register(CassetteTexturesMaterials.ATLAS_LOCATION, CassetteTexturesMaterials.ATLAS_INFO_LOCATION);
-    }
-
-    @SubscribeEvent
     public static void registerSpriteSources(RegisterSpriteSourceTypesEvent event) {
         event.register(VistaMod.res("directory_gifs"), GifPathSpriteSource.TYPE);
     }
 
     @SubscribeEvent
-    public static void onDimensionUnload(LevelEvent.Unload event) {
-        if (event.getLevel().isClientSide()) VistaModClient.onLevelClose();
+    public static void onPlayerLoggedOut(ClientPlayerNetworkEvent.LoggingOut event) {
+         VistaModClient.onClientDisconnect();
     }
 
     @SubscribeEvent

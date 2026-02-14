@@ -14,7 +14,6 @@ import io.github.mortuusars.exposure.world.item.component.album.AlbumPage;
 import io.github.mortuusars.exposure.world.item.util.ItemAndStack;
 import net.mehvahdjukaar.moonlight.api.misc.TField;
 import net.mehvahdjukaar.moonlight.api.misc.TMethod;
-import net.mehvahdjukaar.vista.client.VistaRenderTypes;
 import net.mehvahdjukaar.vista.client.textures.TvScreenVertexConsumers;
 import net.mehvahdjukaar.vista.client.video_source.IVideoSource;
 import net.mehvahdjukaar.vista.common.tv.IntAnimationState;
@@ -57,12 +56,10 @@ public class PictureFrameVideoSource implements IVideoSource {
         VertexConsumer vc = null;
         ResourceLocation texture = getPictureTextureForRenderer(pictureStack, videoAnimationTick);
         if (texture != null) {
-        //    vc = TvScreenVertexConsumers.getLiveFeedVC( buffer,texture, 0, paused,
-          //          pixelEffectRes, switchAnim);
+            //    vc = TvScreenVertexConsumers.getLiveFeedVC( buffer,texture, 0, paused,
+            //          pixelEffectRes, switchAnim);
         }
-        if (vc == null) {
-            vc = buffer.getBuffer(VistaRenderTypes.NOISE);
-        }
+        vc = TvScreenVertexConsumers.getNoiseVC(buffer, pixelEffectRes, switchAnim);
         return vc;
     }
 

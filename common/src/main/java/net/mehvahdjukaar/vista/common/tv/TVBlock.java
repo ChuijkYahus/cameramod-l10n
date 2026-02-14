@@ -238,7 +238,7 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
 
     private static Direction2D closestDirToCenter(Rect2D rect) {
         Vec2 center = rect.getCenter();
-        Vec2 myPos = Vec2.ZERO;
+        Vec2 myPos = new Vec2(0.5f, 0.5f);
         Vec2 diff = center.add(myPos.scale(-1));
         return Direction2D.closest(diff);
     }

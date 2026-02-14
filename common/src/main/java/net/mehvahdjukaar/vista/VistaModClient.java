@@ -7,6 +7,7 @@ import net.mehvahdjukaar.moonlight.api.misc.EventCalled;
 import net.mehvahdjukaar.moonlight.api.platform.ClientHelper;
 import net.mehvahdjukaar.moonlight.api.platform.RegHelper;
 import net.mehvahdjukaar.moonlight.api.util.Utils;
+import net.mehvahdjukaar.texture_renderer.RenderedTexturesManager2;
 import net.mehvahdjukaar.vista.client.ViewFinderController;
 import net.mehvahdjukaar.vista.client.VistaDynamicResources;
 import net.mehvahdjukaar.vista.client.renderer.TvBlockEntityRenderer;
@@ -118,9 +119,11 @@ public class VistaModClient {
         event.register(VIEWFINDER_MODEL, ViewFinderBlockEntityRenderer::createMesh);
     }
 
-    public static void onLevelClose() {
+    public static void onClientDisconnect() {
         LiveFeedTexturesManager.clear();
         VistaLevelRenderer.clear();
+
+        RenderedTexturesManager2.clearCache();
     }
 
     @EventCalled

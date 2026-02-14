@@ -15,7 +15,6 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.DyeColor;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Function;
 
@@ -67,18 +66,26 @@ public class VistaRenderTypes extends RenderType {
         return CRT_RENDER_TYPE.apply(key);
     }
 
+    public static final LayeringStateShard CUSTOM_POLYGON_OFFSET_LAYERING = new LayeringStateShard(
+            "vista:polygon_offset_layering", () -> {
+        RenderSystem.polygonOffset(-1.0F, -10.0F);
+        RenderSystem.enablePolygonOffset();
+    }, () -> {
+        RenderSystem.polygonOffset(0.0F, 0.0F);
+        RenderSystem.disablePolygonOffset();
+    });
     private static final Function<CrtKey, RenderType> CRT_RENDER_TYPE =
             Util.memoize(k -> {
                 var textureStateBuilder = MultiTextureStateShard.builder()
                         .add(k.texture, false, false);
-                if (k.overlay  != CrtOverlay.NONE) {
-                    textureStateBuilder.add(k.texture(), false, false);
+                if (k.overlay != CrtOverlay.NONE) {
+                    textureStateBuilder.add(k.overlay.texture, false, false);
                 }
-
                 CompositeState compositeState = CompositeState.builder()
                         .setShaderState(CAMERA_SHADER_STATE)
                         .setTransparencyState(RenderStateShard.TRANSLUCENT_TRANSPARENCY)
                         .setLightmapState(LIGHTMAP)
+                        .setCullState(NO_CULL)
                         .setTextureState(textureStateBuilder.build())
                         .setTexturingState(new TexturingStateShard("set_texel_size",
                                 () -> setCameraDrawUniforms(k),
@@ -93,10 +100,13 @@ public class VistaRenderTypes extends RenderType {
     private static void setCameraDrawUniforms(CrtKey key) {
         ShaderInstance shader = VistaModClient.CAMERA_VIEW_SHADER.get();
         shader.safeGetUniform("SpriteDimensions").set(key.frameW, key.frameH);
-        shader.safeGetUniform("OverlayState").set(key.overlay.ordinal());
+        shader.safeGetUniform("OverlayIndex").set(key.overlay.ordinal());
+        float pt = Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false);
 
+        //float max = 24000;
+        //float myTime = ((Minecraft.getInstance().level.getGameTime() % max) + pt)/max;
+        //shader.safeGetUniform("Time").set(myTime);
         float scale = key.scale / 12f;
-        float pt = Minecraft.getInstance().getTimer().getGameTimeDeltaTicks();
         setFloat(shader, "TriadsPerPixel",
                 ClientConfigs.PIXEL_DENSITY.get() * scale);
         setFloat(shader, "Smear", 1f);
@@ -104,7 +114,7 @@ public class VistaRenderTypes extends RenderType {
 
         setFloat(shader, "VignetteIntensity", ClientConfigs.VIGNETTE.get());
         setFloat(shader, "NoiseIntensity", key.staticAnim.getValue(pt));
-        setFloat(shader, "SwitchAnimation", key.turnOnAnim.getValue(pt));
+        setFloat(shader, "FadeAnimation", key.turnOnAnim.getValue(pt));
     }
 
     public static final RenderType NOISE =

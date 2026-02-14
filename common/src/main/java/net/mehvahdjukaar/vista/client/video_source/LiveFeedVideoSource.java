@@ -56,13 +56,10 @@ public class LiveFeedVideoSource implements IVideoSource {
 
         VertexConsumer vc = null;
         if (tex != null) {
-            if (ClientConfigs.rendersDebug()) {
-                // renderDebug(tex, poseStack, buffer, partialTick, blockEntity);
-            }
             vc = TvScreenVertexConsumers.getLiveFeedVC(buffer, tex, pixelEffectRes, paused, switchAnim, staticAnim);
         }
         if (vc == null) {
-            vc = buffer.getBuffer(VistaRenderTypes.NOISE);
+            vc = TvScreenVertexConsumers.getNoiseVC(buffer, pixelEffectRes, switchAnim);
         }
         return vc;
     }

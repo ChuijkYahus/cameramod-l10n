@@ -9,6 +9,8 @@ import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.VistaModClient;
+import net.minecraft.world.level.storage.loot.predicates.LootItemConditionType;
+import net.minecraft.world.level.storage.loot.predicates.LootItemConditions;
 
 public class VistaFabric implements ModInitializer {
 
