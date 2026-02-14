@@ -190,37 +190,4 @@ public final class BroadcastManager extends WorldSavedData {
         return VistaMod.VIEWFINDER_CONNECTION.getData(level);
     }
 
-    @Deprecated(forRemoval = true)
-    @Nullable
-    public static IBroadcastProvider findLinkedFeedProvider(Level level, @Nullable UUID viewFinderUUID) {
-        if (viewFinderUUID == null) return null;
-        BroadcastManager connection = getInstance(level);
-        if (connection == null) return null;
-
-        GlobalPos gp = connection.getBroadcastOriginById(viewFinderUUID);
-        if (gp != null && gp.dimension() == level.dimension()) {
-            BlockPos pos = gp.pos();
-            if (level.isLoaded(pos) && level.getBlockEntity(pos) instanceof IBroadcastProvider be) {
-                return be;
-            }
-        }
-        return null;
-    }
-
-    @Deprecated(forRemoval = true)
-    @Nullable
-    public static ViewFinderBlockEntity findLinkedViewFinder(Level level, @Nullable UUID viewFinderUUID) {
-        if (viewFinderUUID == null) return null;
-        BroadcastManager connection = getInstance(level);
-        if (connection == null) return null;
-
-        GlobalPos gp = connection.getBroadcastOriginById(viewFinderUUID);
-        if (gp != null && gp.dimension() == level.dimension()) {
-            BlockPos pos = gp.pos();
-            if (level.isLoaded(pos) && level.getBlockEntity(pos) instanceof ViewFinderBlockEntity be) {
-                return be;
-            }
-        }
-        return null;
-    }
 }
