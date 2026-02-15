@@ -1,7 +1,6 @@
 package net.mehvahdjukaar.vista.integration.iris;
 
 import net.irisshaders.iris.shadows.ShadowRenderer;
-import net.irisshaders.iris.mixin.MixinLevelRenderer;
 import net.irisshaders.iris.pipeline.VanillaRenderingPipeline;
 import net.irisshaders.iris.pipeline.WorldRenderingPipeline;
 import net.irisshaders.iris.uniforms.CapturedRenderingState;
@@ -17,12 +16,13 @@ import java.util.Arrays;
 public class IrisCompat {
 
     public static Runnable decorateRendererWithoutShadows(Runnable renderTask) {
-        return ()-> {
+        return () -> {
             boolean old = ShadowRenderer.ACTIVE;
             ShadowRenderer.ACTIVE = false;
             renderTask.run();
             ShadowRenderer.ACTIVE = old;
         };
+    }
 
     private static final Field VANILLA_PIPELINE_FIELD = Arrays.stream(LevelRenderer.class.getDeclaredFields())
             .filter(f -> f.getType().equals(WorldRenderingPipeline.class))

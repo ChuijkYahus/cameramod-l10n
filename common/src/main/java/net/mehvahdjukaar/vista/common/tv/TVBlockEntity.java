@@ -1,6 +1,7 @@
 package net.mehvahdjukaar.vista.common.tv;
 
 import net.mehvahdjukaar.moonlight.api.block.ItemDisplayTile;
+import net.mehvahdjukaar.moonlight.api.util.Utils;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.client.video_source.IVideoSource;
 import net.mehvahdjukaar.vista.common.tv.enderman.TVEndermanObservationController;
@@ -12,6 +13,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
@@ -29,8 +31,6 @@ import org.jetbrains.annotations.Nullable;
 
 public class TVBlockEntity extends ItemDisplayTile {
 
-    private static final int MAX_LOOKED_ENDERMAN = 20;
-
     @Nullable
     private TVEndermanObservationController observationController = null;
 
@@ -40,11 +40,10 @@ public class TVBlockEntity extends ItemDisplayTile {
     //client, I think
     private IVideoSource videoSource = IVideoSource.EMPTY;
 
-    private int connectedTvHeight = 1;
-    private int connectedTvsWidth = 1;
+    private int connectedTvsAmount = 1;
 
     private int soundLoopTicks = 0;
-    public final IntAnimationState fadeAnimation = new IntAnimationState( 3,9);
+    public final IntAnimationState fadeAnimation = new IntAnimationState(3, 9);
     public final IntAnimationState endermanAnimation = new IntAnimationState(20, 20, 0.6f);
     private boolean isLookingAtEnderman = false;
     private boolean wasScreenOn = false;
@@ -57,8 +56,7 @@ public class TVBlockEntity extends ItemDisplayTile {
     @Override
     public void saveAdditional(CompoundTag compound, HolderLookup.Provider registries) {
         super.saveAdditional(compound, registries);
-        compound.putInt("ConnectionWidth", connectedTvsWidth);
-        compound.putInt("ConnectionHeight", connectedTvHeight);
+        compound.putInt("ConnectionWidth", connectedTvsAmount);
         compound.putBoolean("Paused", paused);
         compound.putInt("VideoPlaybackTicks", videoPlaybackTicks);
     }
@@ -66,8 +64,7 @@ public class TVBlockEntity extends ItemDisplayTile {
     @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
-        this.connectedTvsWidth = Math.max(1, tag.getInt("ConnectionWidth"));
-        this.connectedTvHeight = Math.max(1, tag.getInt("ConnectionHeight"));
+        this.connectedTvsAmount = Math.max(1, tag.getInt("ConnectionWidth"));
         this.paused = tag.getBoolean("Paused");
         this.videoPlaybackTicks = tag.getInt("VideoPlaybackTicks");
         updateObservationController();
@@ -78,17 +75,12 @@ public class TVBlockEntity extends ItemDisplayTile {
         return videoSource;
     }
 
-    public int getConnectedHeight() {
-        return connectedTvHeight;
-    }
-
     public int getConnectedWidth() {
-        return connectedTvsWidth;
+        return connectedTvsAmount;
     }
 
-    public void setConnectionSize(int width, int height) {
-        this.connectedTvsWidth = width;
-        this.connectedTvHeight = height;
+    public void setConnectionSize(int width) {
+        this.connectedTvsAmount = width;
     }
 
     public boolean isPaused() {
@@ -150,13 +142,15 @@ public class TVBlockEntity extends ItemDisplayTile {
 
         boolean powered = this.getBlockState().getValue(TVBlock.POWER_STATE).isOn();
         ItemStack current = this.getDisplayedItem();
-        if (!current.isEmpty() && powered && player.isSecondaryUseActive()) {
+        boolean isEmpty = current.isEmpty();
+        //toggle pause
+        if (!isEmpty && powered && player.isSecondaryUseActive()) {
             this.paused = !this.paused;
             this.setChanged();
             return ItemInteractionResult.sidedSuccess(this.level.isClientSide);
         }
 
-        if (!current.isEmpty() && (canPlaceItem(0, stack) || stack.isEmpty())) {
+        if (!isEmpty && (canPlaceItem(0, stack) || stack.isEmpty())) {
             level.playSound(player, worldPosition, VistaMod.CASSETTE_EJECT_SOUND.get(),
                     SoundSource.BLOCKS, 1, 1);
             //pop current
@@ -173,7 +167,14 @@ public class TVBlockEntity extends ItemDisplayTile {
             return ItemInteractionResult.sidedSuccess(this.level.isClientSide);
         }
 
-        return super.interactWithPlayerItem(player, handIn, stack, slot);
+        //add item
+        var result = super.interactWithPlayerItem(player, handIn, stack, slot);
+        if (result.consumesAction() && isEmpty && powered && this.connectedTvsAmount >=3 &&
+                player instanceof ServerPlayer sp) {
+            //advancement
+            Utils.awardAdvancement(sp, VistaMod.CINEMA_ADVANCEMENT);
+        }
+        return result;
     }
 
     public int getPlaybackTicks() {
@@ -245,14 +246,14 @@ public class TVBlockEntity extends ItemDisplayTile {
     public static final int MIN_SCREEN_PIXEL_SIZE = 16 - EDGE_PIXEL_LEN;
 
     public Vec2 getScreenBlockCenter() {
-        return new Vec2(0.5f * (connectedTvsWidth - 1), 0.5f * (connectedTvHeight - 1));
+        return new Vec2(0.5f * (connectedTvsAmount - 1), 0.5f * (connectedTvsAmount - 1));
     }
 
     public int getScreenPixelWidth() {
-        return Math.max(1, connectedTvsWidth) * 16 - EDGE_PIXEL_LEN;
+        return Math.max(1, connectedTvsAmount) * 16 - EDGE_PIXEL_LEN;
     }
 
     public int getScreenPixelHeight() {
-        return Math.max(1, connectedTvHeight) * 16 - EDGE_PIXEL_LEN;
+        return Math.max(1, connectedTvsAmount) * 16 - EDGE_PIXEL_LEN;
     }
 }

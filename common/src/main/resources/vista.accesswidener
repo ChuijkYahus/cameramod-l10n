@@ -20,11 +20,13 @@ accessible field net/minecraft/client/Camera entity Lnet/minecraft/world/entity/
 accessible field net/minecraft/client/renderer/PostChain passes Ljava/util/List;
 accessible field net/minecraft/client/renderer/PostChain shaderOrthoMatrix Lorg/joml/Matrix4f;
 
+accessible class net/minecraft/client/renderer/texture/SpriteContents$AnimatedTexture
 accessible field net/minecraft/client/renderer/texture/SpriteContents originalImage Lcom/mojang/blaze3d/platform/NativeImage;
 accessible field net/minecraft/client/renderer/texture/SpriteContents animatedTexture Lnet/minecraft/client/renderer/texture/SpriteContents$AnimatedTexture;
 accessible field net/minecraft/client/renderer/texture/SpriteContents$AnimatedTexture frames Ljava/util/List;
 accessible field net/minecraft/client/renderer/texture/SpriteContents$FrameInfo time I
 accessible field net/minecraft/client/renderer/texture/SpriteContents$FrameInfo index I
+accessible class net/minecraft/client/renderer/texture/SpriteContents$FrameInfo
 accessible method net/minecraft/client/renderer/GameRenderer loadEffect (Lnet/minecraft/resources/ResourceLocation;)V
 accessible field net/minecraft/client/renderer/GameRenderer postEffect Lnet/minecraft/client/renderer/PostChain;
 accessible field net/minecraft/client/renderer/GameRenderer effectActive Z

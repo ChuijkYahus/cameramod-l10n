@@ -120,9 +120,11 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
 
     public ItemInteractionResult tryInteracting(Player player, InteractionHand hand, ItemStack stack,
                                                 BlockPos pos) {
-        ItemInteractionResult itemAdd = this.interactWithPlayerItem(player, hand, stack);
-        if (itemAdd.consumesAction()) {
-            return itemAdd;
+        if (player.isSecondaryUseActive() || this.isEmpty()) {
+            ItemInteractionResult itemAdd = this.interactWithPlayerItem(player, hand, stack);
+            if (itemAdd.consumesAction()) {
+                return itemAdd;
+            }
         }
         //same as super but sends custom packet
         if (player instanceof ServerPlayer sp && this.canBeUsedBy(pos, player)) {

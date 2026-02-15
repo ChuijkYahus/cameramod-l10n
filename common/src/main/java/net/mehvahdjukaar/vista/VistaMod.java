@@ -70,6 +70,8 @@ public class VistaMod {
         RegHelper.registerDataPackRegistry(CASSETTE_TAPE_REGISTRY_KEY, CassetteTape.DIRECT_CODEC, CassetteTape.DIRECT_CODEC);
     }
 
+    public static final ResourceLocation CINEMA_ADVANCEMENT = res("absolute_cinema");
+
     public static final Supplier<Block> TV = RegHelper.registerBlock(res("television"),
             () -> new TVBlock(Block.Properties.of()
                     .sound(SoundType.WOOD)
@@ -161,7 +163,8 @@ public class VistaMod {
         }
 
         //TODO:
-        //view finder rotation bug
+        //wrech and cannon for when facing same axis
+        // view finder rotation bug
         //pause not working with multiple tvs
         //change update range to be higher!!!
         //cassettes dont go back in right tv

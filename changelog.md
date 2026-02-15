@@ -5,10 +5,11 @@
 - added 5 new cassettes: nature, channel2, us, axolotl and frogs
 - huge internal changes which improve tv rendering logic and rendering pipeline in many different ways
 - you can pause a tv by shift clicking
+- added a switch on tv animation
 - improved tf shader to have additional effects
 - swapped static and color bars textures for missing feed and missing content tv states
 - endermen will be angered when looked at through at TV, just like SCP 096. This causes tv to play a static effect.
-- added funny live leak easter egg
+- added funny live leak overlay easter egg
 - added a new music disc, Sojourn by Hlzfss. You get it by killing an enderman angered from a TV
 - cassettes can now also be dropped by getting a creeper be killed by a pillager
 - added distant horizons compat, making tv scenes not render DH chunks (configurable)
