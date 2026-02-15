@@ -192,7 +192,7 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
 
     public void setGlobalYaw(ViewFinderAccess access, float relativeYaw) {
         //calculateyaw here
-        float yawOffset = access.getCannonGlobalYawOffset(1);
+        float yawOffset = access.getViewFinderGlobalYawOffset(1);
         setYaw(access, relativeYaw);
     }
 

@@ -46,8 +46,7 @@ public class ViewFinderHud implements LayeredDraw.Layer {
             int screenHeight = graphics.guiHeight();
 
             renderSpyglassOverlay(graphics, this.scopeScale);
-
-            renderBar(graphics, screenWidth, screenHeight, tile, deltaTracker.getGameTimeDeltaPartialTick(false));
+            renderBar(graphics, screenWidth, screenHeight, tile.getZoomLevel(), deltaTracker.getGameTimeDeltaPartialTick(false));
         }
     }
 
@@ -60,10 +59,8 @@ public class ViewFinderHud implements LayeredDraw.Layer {
     }
 
 
-    private void renderBar(GuiGraphics graphics, int screenWidth, int screenHeight, ViewFinderBlockEntity cannon,
-                           float partialTicks) {
+    private void renderBar(GuiGraphics graphics, int screenWidth, int screenHeight, int zoomLevel, float partialTicks) {
         int xpBarLeft = screenWidth / 2 - 91;
-        int zoomLevel = cannon.getZoomLevel();
 
         int xpBarTop = screenHeight - 32 + 3;
         graphics.blitSprite(BAR_SPRITE, xpBarLeft + 1, xpBarTop - 1 + 4, 180, 8);
