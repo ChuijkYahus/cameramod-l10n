@@ -75,7 +75,7 @@ public class TVBlockEntity extends ItemDisplayTile {
         return videoSource;
     }
 
-    public int getConnectedWidth() {
+    public int getConnectedCount() {
         return connectedTvsAmount;
     }
 

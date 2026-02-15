@@ -75,7 +75,7 @@ public record AnimationStripData(
         return v * frameRelativeH + row * frameRelativeH;
     }
     /**
-     * Time (ticks) → actual texture frame index
+     * Time (ticks) → actual textureMatrix frame index
      */
     public int getFrameIndexFromTime(int time) {
         if (frameInfos.length == 0) return 0;

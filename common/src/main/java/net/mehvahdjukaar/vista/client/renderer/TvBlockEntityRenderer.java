@@ -50,8 +50,8 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
     public AABB getRenderBoundingBox(BlockEntity tile) {
         AABB aabb = new AABB(tile.getBlockPos());
         Direction dir = tile.getBlockState().getValue(TVBlock.FACING);
-        float width = ((TVBlockEntity) tile).getConnectedWidth();
-        float height = ((TVBlockEntity) tile).getConnectedHeight();
+        float width = ((TVBlockEntity) tile).getConnectedCount();
+        float height = ((TVBlockEntity) tile).getConnectedCount();
         if (dir == Direction.EAST) {
             return aabb.expandTowards(0, height - 1, -width + 1);
         } else if (dir == Direction.WEST) {
@@ -81,7 +81,7 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
         if
         (lod.isPlaneCulled(dir, 0.5f, screenSize / 16f * 1.5f, 0f)) return;
 
-        int connectedW = blockEntity.getConnectedWidth();
+        int connectedW = blockEntity.getConnectedCount();
         if (connectedW == 1 && !lod.isMedium()) {
             return;
         }

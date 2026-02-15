@@ -1,8 +1,8 @@
 package net.mehvahdjukaar.vista.integration.iris;
 
-import net.irisshaders.iris.shadows.ShadowRenderer;
 import net.irisshaders.iris.pipeline.VanillaRenderingPipeline;
 import net.irisshaders.iris.pipeline.WorldRenderingPipeline;
+import net.irisshaders.iris.shadows.ShadowRenderer;
 import net.irisshaders.iris.uniforms.CapturedRenderingState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LevelRenderer;
@@ -15,50 +15,45 @@ import java.util.Arrays;
 
 public class IrisCompat {
 
-    public static Runnable decorateRendererWithoutShadows(Runnable renderTask) {
+    public static final VanillaRenderingPipeline VISTA_PIPELINE = new VanillaRenderingPipeline();
+
+    public static WorldRenderingPipeline getVistaPipeline() {
+        return VISTA_PIPELINE;
+    }
+
+    public static Runnable decorateRendererWithoutIris(Runnable renderTask) {
         return () -> {
+            LevelRenderer lr = Minecraft.getInstance().levelRenderer;
+            OldRenderState oldState = OldRenderState.loadFrom(CapturedRenderingState.INSTANCE);
+
+            VANILLA_PIPELINE_FIELD.setAccessible(true);
+            WorldRenderingPipeline oldPipeline;
+            try {
+                oldPipeline = (WorldRenderingPipeline) VANILLA_PIPELINE_FIELD.get(lr);
+            } catch (IllegalAccessException e) {
+                throw new RuntimeException(e);
+            }
+
             boolean old = ShadowRenderer.ACTIVE;
             ShadowRenderer.ACTIVE = false;
             renderTask.run();
             ShadowRenderer.ACTIVE = old;
+
+            //restore rendering state
+            if (oldState != null) oldState.saveTo(CapturedRenderingState.INSTANCE);
+
+            VANILLA_PIPELINE_FIELD.setAccessible(true);
+            try {
+                VANILLA_PIPELINE_FIELD.set(lr, oldPipeline);
+            } catch (IllegalAccessException e) {
+                throw new RuntimeException(e);
+            }
         };
     }
 
     private static final Field VANILLA_PIPELINE_FIELD = Arrays.stream(LevelRenderer.class.getDeclaredFields())
             .filter(f -> f.getType().equals(WorldRenderingPipeline.class))
             .findFirst().orElseThrow(() -> new RuntimeException("Failed to find vanilla pipeline field!"));
-
-
-    private static final ThreadLocal<WorldRenderingPipeline> IRIS_PIPELINE_CACHE = new ThreadLocal<>();
-    private static final ThreadLocal<OldRenderState> IRIS_RENDERING_STATE_CACHE = ThreadLocal.withInitial(OldRenderState::new);
-
-
-    public static WorldRenderingPipeline preparePipeline() {
-        //clone rendering state
-        LevelRenderer lr = Minecraft.getInstance().levelRenderer;
-        OldRenderState oldState = OldRenderState.loadFrom(CapturedRenderingState.INSTANCE);
-        IRIS_RENDERING_STATE_CACHE.set(oldState);
-
-        VANILLA_PIPELINE_FIELD.setAccessible(true);
-        try {
-            IRIS_PIPELINE_CACHE.set((WorldRenderingPipeline) VANILLA_PIPELINE_FIELD.get(lr));
-           // VANILLA_PIPELINE_FIELD.set(lr, new VanillaRenderingPipeline());
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException(e);
-        }
-        return new VanillaRenderingPipeline();
-
-    }
-
-    public static void restoreVanillaPipeline(LevelRenderer lr) {
-        //restore rendering state
-        OldRenderState oldState = IRIS_RENDERING_STATE_CACHE.get();
-        if (oldState != null) {
-         //   oldState.saveTo(CapturedRenderingState.INSTANCE);
-        }
-        VANILLA_PIPELINE_FIELD.setAccessible(true);
-        //   VANILLA_PIPELINE_FIELD.set(lr, IRIS_PIPELINE_CACHE.get());
-    }
 
 
     private record OldRenderState(

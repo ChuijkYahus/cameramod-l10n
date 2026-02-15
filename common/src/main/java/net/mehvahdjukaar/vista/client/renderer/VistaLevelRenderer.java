@@ -29,7 +29,9 @@ import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 
-import java.util.Set;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static net.minecraft.client.Minecraft.ON_OSX;
@@ -58,6 +60,8 @@ public class VistaLevelRenderer {
     }
 
     public static void render(LiveFeedTexture text, ViewFinderBlockEntity tile) {
+
+       RenderSystemState oldRenderSystem = RenderSystemState.capture();
 
         Minecraft mc = Minecraft.getInstance();
         RenderTarget mainTarget = mc.getMainRenderTarget();
@@ -137,6 +141,9 @@ public class VistaLevelRenderer {
         mc.gameRenderer.postEffect = oldPostEffect;
         mc.gameRenderer.effectActive = wasEffectActive;
         mc.gameRenderer.renderDistance = oldRenderDistance;
+
+       oldRenderSystem.apply();
+
     }
 
 
@@ -349,7 +356,7 @@ public class VistaLevelRenderer {
     //very ugly because these can be called on another thread
 
     public static void onChunkLoaded(ChunkPos chunkPos, SectionOcclusionGraph sectionOcclusionGraph) {
-        if(CompatHandler.SODIUM)return;
+        if (CompatHandler.SODIUM) return;
         for (SectionOcclusionGraph graph : MANAGED_GRAPHS) {
             if (graph != sectionOcclusionGraph) {
                 graph.onChunkLoaded(chunkPos);
@@ -362,7 +369,7 @@ public class VistaLevelRenderer {
     }
 
     public static void onRecentlyCompiledSection(SectionRenderDispatcher.RenderSection renderSection, SectionOcclusionGraph sectionOcclusionGraph) {
-        if(CompatHandler.SODIUM)return;
+        if (CompatHandler.SODIUM) return;
         for (SectionOcclusionGraph graph : MANAGED_GRAPHS) {
             if (graph != sectionOcclusionGraph) {
                 graph.onSectionCompiled(renderSection);
