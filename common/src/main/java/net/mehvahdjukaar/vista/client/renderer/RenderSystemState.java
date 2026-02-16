@@ -58,13 +58,13 @@ public record RenderSystemState(
     }
 
     public void apply() {
+        if (modelViewMatrix != null) RenderSystem.modelViewStack.set(modelViewStack);
         RenderSystem.setProjectionMatrix(projMatrix, vertexSorting);
         RenderSystem.getModelViewMatrix().set(modelViewMatrix);
         RenderSystem.setTextureMatrix(textureMatrix);
         RenderSystem.savedProjectionMatrix = lastSavedProj;
         RenderSystem.savedVertexSorting = lastSavedVertexSorting;
-     //   if (modelViewMatrix != null) RenderSystem.modelViewStack.set(modelViewStack);
-     //   System.arraycopy(shaderTextures, 0, RenderSystem.shaderTextures, 0, shaderTextures.length);
+        System.arraycopy(shaderTextures, 0, RenderSystem.shaderTextures, 0, shaderTextures.length);
         System.arraycopy(shaderColor, 0, RenderSystem.getShaderColor(), 0, shaderColor.length);
         RenderSystem.setShaderGlintAlpha(glintAlpha);
         RenderSystem.setShaderFogStart(shaderFogStart);

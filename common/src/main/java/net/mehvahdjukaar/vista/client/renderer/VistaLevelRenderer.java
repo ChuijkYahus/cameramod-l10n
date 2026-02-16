@@ -26,6 +26,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.piston.PistonMovingBlockEntity;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
@@ -141,7 +142,6 @@ public class VistaLevelRenderer {
         //important otherwise we get flicker
         RenderSystem.clear(16640, ON_OSX);
         oldRenderSystem.apply();
-
     }
 
 
