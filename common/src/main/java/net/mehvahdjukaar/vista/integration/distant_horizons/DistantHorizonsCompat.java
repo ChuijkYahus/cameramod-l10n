@@ -8,20 +8,12 @@ import java.util.function.Supplier;
 
 public class DistantHorizonsCompat {
 
-    static {
-        int aa = 1;
-    }
-
 
     private static Supplier<DHMode> dhMode = () -> DHMode.OFF;
 
     public static Runnable decorateRenderWithoutLOD(Runnable task) {
-        return new RunnableWithoutLOD(task);
-    }
 
-    private record RunnableWithoutLOD(Runnable task) implements Runnable {
-        @Override
-        public void run() {
+        return () -> {
             var config = DhApi.Delayed.configs.graphics().renderingEnabled();
             DHMode mode = dhMode.get();
             if (mode == DHMode.OFF) {
@@ -37,11 +29,10 @@ public class DistantHorizonsCompat {
                 task.run();
                 config1.setValue(valueBefore);
             }
-        }
+        };
     }
 
     public static void addConfigs(ConfigBuilder builder) {
-
         dhMode = builder
                 .comment("Distant Horizons compatibility lod render quality")
                 .define("distant_horizons_LOD", DHMode.OFF);

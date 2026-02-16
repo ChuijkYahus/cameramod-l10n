@@ -4,6 +4,7 @@ import net.irisshaders.iris.pipeline.VanillaRenderingPipeline;
 import net.irisshaders.iris.pipeline.WorldRenderingPipeline;
 import net.irisshaders.iris.shadows.ShadowRenderer;
 import net.irisshaders.iris.uniforms.CapturedRenderingState;
+import net.mehvahdjukaar.moonlight.api.platform.configs.ConfigBuilder;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LevelRenderer;
 import org.joml.Matrix4f;
@@ -12,8 +13,11 @@ import org.joml.Vector3d;
 
 import java.lang.reflect.Field;
 import java.util.Arrays;
+import java.util.function.Supplier;
 
 public class IrisCompat {
+
+    private static Supplier<Boolean> irisOff;
 
     public static final VanillaRenderingPipeline VISTA_PIPELINE = new VanillaRenderingPipeline();
 
@@ -22,6 +26,9 @@ public class IrisCompat {
     }
 
     public static Runnable decorateRendererWithoutIris(Runnable renderTask) {
+        if (!irisOff.get()) {
+            return renderTask; // no-op if the hack is disabled
+        }
         return () -> {
             LevelRenderer lr = Minecraft.getInstance().levelRenderer;
             OldRenderState oldState = OldRenderState.loadFrom(CapturedRenderingState.INSTANCE);
@@ -41,6 +48,12 @@ public class IrisCompat {
             VANILLA_PIPELINE_FIELD.setAccessible(true);
             setCurrentPipeline(lr, oldPipeline);
         };
+    }
+
+    public static void addConfigs(ConfigBuilder builder) {
+        irisOff = builder
+                .comment("Attempts to disable iris shaders in the live feed view")
+                .define("iris_off_hack", true);
     }
 
     private static void setCurrentPipeline(LevelRenderer lr, WorldRenderingPipeline oldPipeline) {
