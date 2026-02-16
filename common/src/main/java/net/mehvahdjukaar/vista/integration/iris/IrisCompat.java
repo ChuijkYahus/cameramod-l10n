@@ -91,8 +91,11 @@ public class IrisCompat {
         }
 
         public static OldRenderState loadFrom(CapturedRenderingState state) {
-            return new OldRenderState(state.getGbufferModelView(), state.getGbufferProjection(),
-                    state.getFogColor(), state.getFogDensity(), state.getDarknessLightFactor(), state.getTickDelta(),
+            return new OldRenderState(
+                    new Matrix4f(state.getGbufferModelView()),
+                    new Matrix4f(state.getGbufferProjection()),
+                    new Vector3d(state.getFogColor()),
+                    state.getFogDensity(), state.getDarknessLightFactor(), state.getTickDelta(),
                     state.getRealTickDelta(), state.getCurrentRenderedBlockEntity(), state.getCurrentRenderedEntity(),
                     state.getCurrentRenderedItem(), state.getCurrentAlphaTest(), state.getCloudTime());
         }
