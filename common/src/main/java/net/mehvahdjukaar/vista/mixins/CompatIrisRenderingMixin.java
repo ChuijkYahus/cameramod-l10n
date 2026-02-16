@@ -17,8 +17,10 @@ import org.spongepowered.asm.mixin.injection.At;
 @Mixin(IrisRenderingPipeline.class)
 public class CompatIrisRenderingMixin {
 
+    // change start: skip-shadows-feed
     @WrapWithCondition(method = "renderShadows", at = @At(value = "INVOKE", target = "Lnet/irisshaders/iris/shadows/ShadowRenderer;renderShadows(Lnet/irisshaders/iris/mixin/LevelRendererAccessor;Lnet/minecraft/client/Camera;)V"))
     private boolean vista$cockblockIrisShadowGlobalStateMessBugs(ShadowRenderer instance, LevelRendererAccessor fullyBufferedMultiBufferSource, Camera camera) {
         return !VistaLevelRenderer.isRenderingLiveFeed();
     }
+    // change end: skip-shadows-feed
 }

@@ -8,7 +8,6 @@ import net.mehvahdjukaar.moonlight.core.client.DummyCamera;
 import net.mehvahdjukaar.vista.VistaPlatStuff;
 import net.mehvahdjukaar.vista.client.textures.LiveFeedTexture;
 import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
-import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.mehvahdjukaar.vista.integration.CompatHandler;
 import net.minecraft.client.Camera;
 import net.minecraft.client.DeltaTracker;
@@ -29,6 +28,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
+import org.lwjgl.opengl.GL11C;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -60,89 +60,99 @@ public class VistaLevelRenderer {
         renderingLiveFeedVF = null;
     }
 
+    // change start: feed-state
     public static void render(LiveFeedTexture text, ViewFinderBlockEntity tile) {
         Minecraft mc = Minecraft.getInstance();
-
-        RenderSystemState oldRenderSystem = RenderSystemState.capture();
-
-        RenderTarget oldRenderTarget = mc.getMainRenderTarget();
+        RenderTarget mainTarget = mc.getMainRenderTarget();
         RenderTarget canvas = text.getRenderTarget();
         mc.mainRenderTarget = canvas;
 
         Camera camera = DUMMY_CAMERA;
-        Camera oldCamera = mc.gameRenderer.mainCamera;
+        Camera mainCamera = mc.gameRenderer.mainCamera;
         mc.gameRenderer.mainCamera = camera;
 
-        renderingLiveFeedVF = tile;
-
-        float partialTicks = mc.getTimer().getGameTimeDeltaTicks();
-
-        setupSceneCamera(tile, camera, partialTicks);
-
-        canvas.bindWrite(true);
-
-        //cache old
+        // save old state
         float oldRenderDistance = mc.gameRenderer.renderDistance;
         PostChain oldPostEffect = mc.gameRenderer.postEffect;
         boolean wasEffectActive = mc.gameRenderer.effectActive;
 
-
-        text.applyPostChain();
-
-        mc.gameRenderer.renderDistance = Math.min(oldRenderDistance, ClientConfigs.RENDER_DISTANCE.get());
-
-        //same as field of view modifier
-        float fov = tile.getFOV();
-
-
-        RenderSystem.clear(16640, ON_OSX);
-        FogRenderer.setupNoFog();
-        RenderSystem.enableCull();
-
-
-        //set new shader
-
+        // switch to feed camera state
         LevelRendererCameraState oldCameraState = LevelRendererCameraState.capture(mc.levelRenderer);
         LevelRendererCameraState feedCameraState = text.getRendererState();
-        feedCameraState.apply(mc.levelRenderer);
+        Matrix4f oldModelViewMatrix = new Matrix4f(RenderSystem.getModelViewMatrix());
 
-        MANAGED_GRAPHS.add(feedCameraState.getOcclusionGraph());
-        MC_OWN_GRAPH.set(oldCameraState.getOcclusionGraph());
+        RenderSystem.backupProjectionMatrix();
+        try {
+            renderingLiveFeedVF = tile;
 
-        renderLevel(mc, canvas, camera, fov);
+            float partialTicks = mc.getTimer().getGameTimeDeltaTicks();
+            setupSceneCamera(tile, camera, partialTicks);
 
-        MC_OWN_GRAPH.set(null);
+            canvas.bindWrite(true);
+            RenderSystem.viewport(0, 0, canvas.width, canvas.height);
 
-        //update and save camera state
-        feedCameraState.copyFrom(mc.levelRenderer);
-        //restore old camera state
-        oldCameraState.apply(mc.levelRenderer);
+            text.applyPostChain();
 
-        if (mc.gameRenderer.postEffect != null && mc.gameRenderer.effectActive) {
+            mc.gameRenderer.renderDistance = 128;// Math.min(oldRenderDistance, ClientConfigs.RENDER_DISTANCE.get());
+
+            // use camera fov
+            float fov = tile.getFOV();
+
+            RenderSystem.clear(16640, ON_OSX);
+            FogRenderer.setupNoFog();
+            RenderSystem.enableCull();
+
+            feedCameraState.apply(mc.levelRenderer);
+
+            MANAGED_GRAPHS.add(feedCameraState.getOcclusionGraph());
+            MC_OWN_GRAPH.set(oldCameraState.getOcclusionGraph());
+
+            // already wrapped outside; don't double-wrap this or it fucks everything over omg.
+            renderLevel(mc, canvas, camera, fov);
+
+            // save updated feed camera state
+            feedCameraState.copyFrom(mc.levelRenderer);
+
+            if (mc.gameRenderer.postEffect != null && mc.gameRenderer.effectActive) {
+                RenderSystem.disableBlend();
+                RenderSystem.disableDepthTest();
+                RenderSystem.resetTextureMatrix();
+                DeltaTracker deltaTracker = mc.getTimer();
+                mc.gameRenderer.postEffect.process(deltaTracker.getGameTimeDeltaTicks());
+            }
+        } finally {
+            MC_OWN_GRAPH.set(null);
+
+            // restore old camera state
+            oldCameraState.apply(mc.levelRenderer);
+
+            // swap back
+            renderingLiveFeedVF = null;
+
+            mc.mainRenderTarget = mainTarget;
+            mc.gameRenderer.mainCamera = mainCamera;
+
+            // restore post process
+            mc.gameRenderer.postEffect = oldPostEffect;
+            mc.gameRenderer.effectActive = wasEffectActive;
+            mc.gameRenderer.renderDistance = oldRenderDistance;
+
+            // restore global render state
+            RenderSystem.restoreProjectionMatrix();
+            RenderSystem.getModelViewStack().set(oldModelViewMatrix);
+            RenderSystem.applyModelViewMatrix();
+            mainTarget.bindWrite(true);
+            RenderSystem.viewport(0, 0, mainTarget.width, mainTarget.height);
+            RenderSystem.enableDepthTest();
+            RenderSystem.depthMask(true);
+            RenderSystem.enableCull();
             RenderSystem.disableBlend();
-            RenderSystem.disableDepthTest();
-            RenderSystem.resetTextureMatrix();
-            DeltaTracker deltaTracker = mc.getTimer();
-            mc.gameRenderer.postEffect.process(deltaTracker.getGameTimeDeltaTicks());
+
+            // clear depth only; clearing color here causes visible world/water popping
+            RenderSystem.clear(GL11C.GL_DEPTH_BUFFER_BIT, ON_OSX);
         }
-
-        //swap buffers
-        //stop using main buffer mixin
-        renderingLiveFeedVF = null;
-
-        mc.mainRenderTarget = oldRenderTarget;
-        mc.gameRenderer.mainCamera = oldCamera;
-        mc.gameRenderer.postEffect = oldPostEffect;
-        mc.gameRenderer.effectActive = wasEffectActive;
-        mc.gameRenderer.renderDistance = oldRenderDistance;
-
-        oldRenderTarget.bindWrite(true);
-
-        //important otherwise we get flicker
-        RenderSystem.clear(16640, ON_OSX);
-        oldRenderSystem.apply();
-
     }
+    // change end: feed-state
 
 
     //same as game renderer render level but simplified
@@ -150,6 +160,7 @@ public class VistaLevelRenderer {
         DeltaTracker deltaTracker = mc.getTimer();
         GameRenderer gr = mc.gameRenderer;
         LevelRenderer lr = mc.levelRenderer;
+        Matrix4f oldProjectionMatrix = new Matrix4f(RenderSystem.getProjectionMatrix());
 
         Matrix4f projMatrix = createProjectionMatrix(gr, target, fov);
         //fix Y inversion
@@ -169,6 +180,7 @@ public class VistaLevelRenderer {
         Matrix4f modelViewMatrix = RenderSystem.getModelViewMatrix();
 
         VistaPlatStuff.dispatchRenderStageAfterLevel(mc, poseStack, camera, modelViewMatrix, projMatrix);
+        gr.resetProjectionMatrix(oldProjectionMatrix);
     }
 
     @SuppressWarnings("ConstantConditions")

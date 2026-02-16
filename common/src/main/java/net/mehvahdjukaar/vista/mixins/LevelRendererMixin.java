@@ -4,14 +4,19 @@ import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import com.llamalad7.mixinextras.sugar.Local;
 import net.mehvahdjukaar.vista.client.renderer.VistaLevelRenderer;
+import net.mehvahdjukaar.vista.integration.iris.IrisCompat;
 import net.minecraft.client.Camera;
+import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.SectionOcclusionGraph;
 import net.minecraft.client.renderer.chunk.SectionRenderDispatcher;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.ChunkPos;
+import org.joml.Matrix4f;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -57,6 +62,16 @@ public class LevelRendererMixin {
             ci.cancel();
         }
     }
+
+    // change start: restore-on-return
+    @Inject(method = "renderLevel", at = @At("RETURN"))
+    public void vista$restoreIrisPipeline(DeltaTracker deltaTracker, boolean renderBlockOutline,
+                                          Camera camera, GameRenderer gameRenderer,
+                                          LightTexture lightTexture, Matrix4f modelView,
+                                          Matrix4f projection, CallbackInfo ci) {
+        IrisCompat.restorePipelineAfterRender();
+    }
+    // change end: restore-on-return
 
     @Inject(method = "onChunkLoaded", at = @At("HEAD"))
     public void vista$onChunkLoaded(ChunkPos chunkPos, CallbackInfo ci){
