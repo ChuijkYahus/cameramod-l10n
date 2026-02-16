@@ -30,6 +30,7 @@ import net.minecraft.world.level.block.piston.PistonMovingBlockEntity;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
+import org.lwjgl.opengl.GL11;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -110,7 +111,7 @@ public class VistaLevelRenderer {
         MANAGED_GRAPHS.add(feedCameraState.getOcclusionGraph());
         MC_OWN_GRAPH.set(oldCameraState.getOcclusionGraph());
 
-        renderLevel(mc, canvas, camera, fov);
+        renderLevel2(mc, canvas, camera, fov);
 
         MC_OWN_GRAPH.set(null);
 
@@ -143,6 +144,73 @@ public class VistaLevelRenderer {
         RenderSystem.clear(16640, ON_OSX);
         oldRenderSystem.apply();
     }
+
+
+    private static void renderLevel2(Minecraft mc, RenderTarget target, Camera camera, float fov) {
+
+        // --- Capture common GL11 state ---
+
+        boolean blend      = GL11.glIsEnabled(GL11.GL_BLEND);
+        boolean depthTest  = GL11.glIsEnabled(GL11.GL_DEPTH_TEST);
+        boolean cullFace   = GL11.glIsEnabled(GL11.GL_CULL_FACE);
+        boolean scissor    = GL11.glIsEnabled(GL11.GL_SCISSOR_TEST);
+        boolean stencil    = GL11.glIsEnabled(GL11.GL_STENCIL_TEST);
+        boolean alphaTest  = GL11.glIsEnabled(GL11.GL_ALPHA_TEST); // if compatibility profile
+
+        int blendSrc  = GL11.glGetInteger(GL11.GL_BLEND_SRC);
+        int blendDst  = GL11.glGetInteger(GL11.GL_BLEND_DST);
+        int depthFunc = GL11.glGetInteger(GL11.GL_DEPTH_FUNC);
+        int cullMode  = GL11.glGetInteger(GL11.GL_CULL_FACE_MODE);
+
+        int[] viewport = new int[4];
+        GL11.glGetIntegerv(GL11.GL_VIEWPORT, viewport);
+
+
+        float[] clearColor = new float[4];
+        GL11.glGetFloatv(GL11.GL_COLOR_CLEAR_VALUE, clearColor);
+
+        try {
+
+            renderLevel(mc, target, camera, fov);
+
+        } finally {
+
+            // --- Restore state deterministically ---
+
+            setState(GL11.GL_BLEND, blend);
+            setState(GL11.GL_DEPTH_TEST, depthTest);
+            setState(GL11.GL_CULL_FACE, cullFace);
+            setState(GL11.GL_SCISSOR_TEST, scissor);
+            setState(GL11.GL_STENCIL_TEST, stencil);
+            setState(GL11.GL_ALPHA_TEST, alphaTest);
+
+            GL11.glBlendFunc(blendSrc, blendDst);
+            GL11.glDepthFunc(depthFunc);
+            GL11.glCullFace(cullMode);
+
+            GL11.glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
+
+
+            GL11.glClearColor(clearColor[0], clearColor[1], clearColor[2], clearColor[3]);
+        }
+    }
+
+    private static void setState(int cap, boolean desired) {
+        boolean current = GL11.glIsEnabled(cap);
+
+            if (current != desired) {
+            System.out.println("[GL STATE] " + (cap) +
+                    " changed: " + current + " -> " + desired);
+
+            if (desired) {
+                GL11.glEnable(cap);
+            } else {
+                GL11.glDisable(cap);
+            }
+        }
+    }
+
+
 
 
     //same as game renderer render level but simplified
