@@ -8,6 +8,7 @@ import net.mehvahdjukaar.moonlight.core.client.DummyCamera;
 import net.mehvahdjukaar.vista.VistaPlatStuff;
 import net.mehvahdjukaar.vista.client.textures.LiveFeedTexture;
 import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
+import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.mehvahdjukaar.vista.integration.CompatHandler;
 import net.minecraft.client.Camera;
 import net.minecraft.client.DeltaTracker;
@@ -60,25 +61,23 @@ public class VistaLevelRenderer {
     }
 
     public static void render(LiveFeedTexture text, ViewFinderBlockEntity tile) {
-
-       RenderSystemState oldRenderSystem = RenderSystemState.capture();
-
         Minecraft mc = Minecraft.getInstance();
-        RenderTarget mainTarget = mc.getMainRenderTarget();
+
+        RenderSystemState oldRenderSystem = RenderSystemState.capture();
+
+        RenderTarget oldRenderTarget = mc.getMainRenderTarget();
         RenderTarget canvas = text.getRenderTarget();
         mc.mainRenderTarget = canvas;
 
         Camera camera = DUMMY_CAMERA;
-        Camera mainCamera = mc.gameRenderer.mainCamera;
+        Camera oldCamera = mc.gameRenderer.mainCamera;
         mc.gameRenderer.mainCamera = camera;
 
         renderingLiveFeedVF = tile;
 
         float partialTicks = mc.getTimer().getGameTimeDeltaTicks();
 
-
         setupSceneCamera(tile, camera, partialTicks);
-
 
         canvas.bindWrite(true);
 
@@ -87,9 +86,10 @@ public class VistaLevelRenderer {
         PostChain oldPostEffect = mc.gameRenderer.postEffect;
         boolean wasEffectActive = mc.gameRenderer.effectActive;
 
+
         text.applyPostChain();
 
-        mc.gameRenderer.renderDistance = 128;// Math.min(oldRenderDistance, ClientConfigs.RENDER_DISTANCE.get());
+        mc.gameRenderer.renderDistance = Math.min(oldRenderDistance, ClientConfigs.RENDER_DISTANCE.get());
 
         //same as field of view modifier
         float fov = tile.getFOV();
@@ -130,19 +130,17 @@ public class VistaLevelRenderer {
         //stop using main buffer mixin
         renderingLiveFeedVF = null;
 
-        mc.mainRenderTarget = mainTarget;
-        mc.gameRenderer.mainCamera = mainCamera;
-
-        mainTarget.bindWrite(true);
-
-        //important otherwise we get flicker
-        RenderSystem.clear(16640, ON_OSX);
-        //restore old post process
+        mc.mainRenderTarget = oldRenderTarget;
+        mc.gameRenderer.mainCamera = oldCamera;
         mc.gameRenderer.postEffect = oldPostEffect;
         mc.gameRenderer.effectActive = wasEffectActive;
         mc.gameRenderer.renderDistance = oldRenderDistance;
 
-       oldRenderSystem.apply();
+        oldRenderTarget.bindWrite(true);
+
+        //important otherwise we get flicker
+        RenderSystem.clear(16640, ON_OSX);
+        oldRenderSystem.apply();
 
     }
 

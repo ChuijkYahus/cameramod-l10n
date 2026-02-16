@@ -28,11 +28,7 @@ public class IrisCompat {
 
             VANILLA_PIPELINE_FIELD.setAccessible(true);
             WorldRenderingPipeline oldPipeline;
-            try {
-                oldPipeline = (WorldRenderingPipeline) VANILLA_PIPELINE_FIELD.get(lr);
-            } catch (IllegalAccessException e) {
-                throw new RuntimeException(e);
-            }
+            oldPipeline = getCurrentPipeline(lr);
 
             boolean old = ShadowRenderer.ACTIVE;
             ShadowRenderer.ACTIVE = false;
@@ -40,15 +36,27 @@ public class IrisCompat {
             ShadowRenderer.ACTIVE = old;
 
             //restore rendering state
-            if (oldState != null) oldState.saveTo(CapturedRenderingState.INSTANCE);
+            oldState.saveTo(CapturedRenderingState.INSTANCE);
 
             VANILLA_PIPELINE_FIELD.setAccessible(true);
-            try {
-                VANILLA_PIPELINE_FIELD.set(lr, oldPipeline);
-            } catch (IllegalAccessException e) {
-                throw new RuntimeException(e);
-            }
+            setCurrentPipeline(lr, oldPipeline);
         };
+    }
+
+    private static void setCurrentPipeline(LevelRenderer lr, WorldRenderingPipeline oldPipeline) {
+        try {
+            VANILLA_PIPELINE_FIELD.set(lr, oldPipeline);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static WorldRenderingPipeline getCurrentPipeline(LevelRenderer lr) {
+        try {
+            return (WorldRenderingPipeline) VANILLA_PIPELINE_FIELD.get(lr);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private static final Field VANILLA_PIPELINE_FIELD = Arrays.stream(LevelRenderer.class.getDeclaredFields())
@@ -69,11 +77,6 @@ public class IrisCompat {
             int currentRenderedItem,
             float currentAlphaTest,
             float cloudTime) {
-
-        public OldRenderState() {
-            this(null, null, new Vector3d(),
-                    0, 0, 0, 0, -1, -1, -1, 0, 0);
-        }
 
         public void saveTo(CapturedRenderingState state) {
             state.setGbufferModelView(gbufferModelView);
