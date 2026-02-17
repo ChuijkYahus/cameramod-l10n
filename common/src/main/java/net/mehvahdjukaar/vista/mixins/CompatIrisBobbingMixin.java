@@ -11,7 +11,6 @@ import org.spongepowered.asm.mixin.injection.At;
 @Pseudo
 @Mixin(GameRenderer.class)
 public class CompatIrisBobbingMixin {
-    // change start: skip-bobbing-feed
 
     @WrapWithCondition(method = "renderLevel", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/GameRenderer;bobView(Lcom/mojang/blaze3d/vertex/PoseStack;F)V"))
     private boolean vista$skipBobViewDuringFeed(GameRenderer instance, PoseStack poseStack, float partialTick) {
@@ -22,5 +21,4 @@ public class CompatIrisBobbingMixin {
     private boolean vista$skipBobHurtDuringFeed(GameRenderer instance, PoseStack poseStack, float partialTick) {
         return !IrisCompat.isVistaRendering();
     }
-    // change end: skip-bobbing-feed
 }

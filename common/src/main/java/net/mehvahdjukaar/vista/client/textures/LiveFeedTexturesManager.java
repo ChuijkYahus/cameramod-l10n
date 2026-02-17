@@ -152,7 +152,7 @@ public class LiveFeedTexturesManager {
         };
 
         if (CompatHandler.IRIS) {
-            runTask = IrisCompat.decorateRendererWithoutShadows(runTask);
+            runTask = IrisCompat.decorateRendererWithoutShaderPacks(runTask);
         }
 
         ResourceLocation textureId = text.getTextureLocation();
