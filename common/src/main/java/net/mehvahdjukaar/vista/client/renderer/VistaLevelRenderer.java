@@ -30,9 +30,7 @@ import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.lwjgl.opengl.GL11C;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
-import java.util.*;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static net.minecraft.client.Minecraft.ON_OSX;
@@ -60,7 +58,6 @@ public class VistaLevelRenderer {
         renderingLiveFeedVF = null;
     }
 
-    // change start: feed-state
     public static void render(LiveFeedTexture text, ViewFinderBlockEntity tile) {
         Minecraft mc = Minecraft.getInstance();
         RenderTarget mainTarget = mc.getMainRenderTarget();
@@ -79,9 +76,9 @@ public class VistaLevelRenderer {
         // switch to feed camera state
         LevelRendererCameraState oldCameraState = LevelRendererCameraState.capture(mc.levelRenderer);
         LevelRendererCameraState feedCameraState = text.getRendererState();
-        Matrix4f oldModelViewMatrix = new Matrix4f(RenderSystem.getModelViewMatrix());
 
-        RenderSystem.backupProjectionMatrix();
+        RenderSystemState oldRenderState = RenderSystemState.capture();
+
         try {
             renderingLiveFeedVF = tile;
 
@@ -126,6 +123,11 @@ public class VistaLevelRenderer {
             // restore old camera state
             oldCameraState.apply(mc.levelRenderer);
 
+            // restore old render state
+            oldRenderState.apply();
+            // clear depth only; clearing color here causes visible world/water popping
+            RenderSystem.clear(GL11C.GL_DEPTH_BUFFER_BIT, ON_OSX);
+
             // swap back
             renderingLiveFeedVF = null;
 
@@ -136,23 +138,8 @@ public class VistaLevelRenderer {
             mc.gameRenderer.postEffect = oldPostEffect;
             mc.gameRenderer.effectActive = wasEffectActive;
             mc.gameRenderer.renderDistance = oldRenderDistance;
-
-            // restore global render state
-            RenderSystem.restoreProjectionMatrix();
-            RenderSystem.getModelViewStack().set(oldModelViewMatrix);
-            RenderSystem.applyModelViewMatrix();
-            mainTarget.bindWrite(true);
-            RenderSystem.viewport(0, 0, mainTarget.width, mainTarget.height);
-            RenderSystem.enableDepthTest();
-            RenderSystem.depthMask(true);
-            RenderSystem.enableCull();
-            RenderSystem.disableBlend();
-
-            // clear depth only; clearing color here causes visible world/water popping
-            RenderSystem.clear(GL11C.GL_DEPTH_BUFFER_BIT, ON_OSX);
         }
     }
-    // change end: feed-state
 
 
     //same as game renderer render level but simplified

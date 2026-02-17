@@ -22,7 +22,6 @@ public class CompatIrisMixin  {
     @Inject(method = "preparePipeline", at = @At("HEAD"), cancellable = true)
     private void vista$preparePipeline(NamespacedId currentDimension,
                                        CallbackInfoReturnable<WorldRenderingPipeline> cir) {
-        //vista$pipelineStack.get().push(Optional.ofNullable(this.pipeline));
         var modified = IrisCompat.getModifiedPipeline();
         if (modified != null) {
             this.pipeline = modified;
