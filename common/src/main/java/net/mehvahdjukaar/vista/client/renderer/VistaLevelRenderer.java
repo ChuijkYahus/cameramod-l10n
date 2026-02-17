@@ -30,6 +30,7 @@ import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL11C;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
