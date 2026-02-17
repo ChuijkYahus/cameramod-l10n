@@ -34,7 +34,10 @@ public class JEICompat implements IModPlugin {
 
         @Override
         public String getLegacyStringSubtypeInfo(ItemStack stack, UidContext uidContext) {
-            return stack.get(VistaMod.CASSETTE_TAPE_COMPONENT.get()).toString();
+            // change start: jei-null-safe-legacy
+            Object component = stack.get(VistaMod.CASSETTE_TAPE_COMPONENT.get());
+            return component == null ? "" : component.toString();
+            // change end: jei-null-safe-legacy
         }
     }
 
