@@ -46,7 +46,6 @@ public class LevelRendererMixin {
         return original;
     }
 
-    //idk why this was needed
     @ModifyExpressionValue(method = "renderLevel", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Camera;getEntity()Lnet/minecraft/world/entity/Entity;",
             ordinal = 3), require = 1)
     public Entity vista$getActualPlayer(Entity original, @Local(ordinal = 0) Entity entity) {
@@ -74,13 +73,12 @@ public class LevelRendererMixin {
     // change end: restore-on-return
 
     @Inject(method = "onChunkLoaded", at = @At("HEAD"))
-    public void vista$onChunkLoaded(ChunkPos chunkPos, CallbackInfo ci){
+    public void vista$onChunkLoaded(ChunkPos chunkPos, CallbackInfo ci) {
         VistaLevelRenderer.onChunkLoaded(chunkPos, this.sectionOcclusionGraph);
     }
 
     @Inject(method = "addRecentlyCompiledSection", at = @At("HEAD"))
-    public void vista$onRecentlyCompiledSection(SectionRenderDispatcher.RenderSection renderSection, CallbackInfo ci){
+    public void vista$onRecentlyCompiledSection(SectionRenderDispatcher.RenderSection renderSection, CallbackInfo ci) {
         VistaLevelRenderer.onRecentlyCompiledSection(renderSection, this.sectionOcclusionGraph);
     }
-
 }

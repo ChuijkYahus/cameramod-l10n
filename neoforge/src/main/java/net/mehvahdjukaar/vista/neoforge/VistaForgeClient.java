@@ -1,6 +1,7 @@
 package net.mehvahdjukaar.vista.neoforge;
 
-import net.mehvahdjukaar.supplementaries.integration.neoforge.configured.ModConfigSelectScreen;
+import net.mehvahdjukaar.moonlight.api.client.texture_renderer.RenderedTexturesManager;
+import net.mehvahdjukaar.moonlight.api.misc.fake_level.FakeLevelManager;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.client.ViewFinderController;
@@ -25,11 +26,10 @@ public class VistaForgeClient {
 
     @SubscribeEvent
     public static void onLevelLoaded(LevelEvent.Load event) {
-        if (event.getLevel() instanceof ClientLevel cl) {
+        if(event.getLevel() instanceof ClientLevel cl){
             VistaModClient.onLevelLoaded(cl);
         }
     }
-
     @SubscribeEvent
     public static void onClientEndTick(ClientTickEvent.Post event) {
         VistaModClient.onClientTick(Minecraft.getInstance());
@@ -94,7 +94,7 @@ public class VistaForgeClient {
 
     @SubscribeEvent
     public static void onPlayerLoggedOut(ClientPlayerNetworkEvent.LoggingOut event) {
-        VistaModClient.onClientDisconnect();
+         VistaModClient.onClientDisconnect();
     }
 
     @SubscribeEvent
