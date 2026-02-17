@@ -1,6 +1,6 @@
 package net.mehvahdjukaar.vista.integration.iris;
 
-import net.irisshaders.iris.Iris;
+import net.irisshaders.iris.shadows.ShadowRenderer;
 import net.irisshaders.iris.pipeline.VanillaRenderingPipeline;
 import net.irisshaders.iris.pipeline.WorldRenderingPipeline;
 import net.irisshaders.iris.shadows.ShadowRenderer;
@@ -29,6 +29,18 @@ public class IrisCompat {
     public static boolean isVistaRendering() {
         return VISTA_RENDERING.get();
     }
+    // change end: vista-flag
+
+    public static void maybeResetTemporalHistoryForBobbing(Minecraft mc) {
+    }
+
+    public static void addConfigs(ConfigBuilder builder) {
+    }
+
+    // change start: vista-wrap
+    public static Runnable decorateRendererWithoutShadows(Runnable renderTask) {
+        return () -> {
+            boolean oldActive = ShadowRenderer.ACTIVE;
 
     @Nullable
     public static WorldRenderingPipeline getModifiedPipeline(){
@@ -45,12 +57,11 @@ public class IrisCompat {
             WorldRenderingPipeline oldPipeline = getCurrentPipeline(lr);
 
             try {
-                // no shadows in Vista camera pass
                 ShadowRenderer.ACTIVE = false;
                 VISTA_RENDERING.set(true);
-
                 renderTask.run();
             } finally {
+                ShadowRenderer.ACTIVE = oldActive;
                 // put state back
                 ShadowRenderer.ACTIVE = oldShadowActive;
                 VISTA_RENDERING.set(oldVistaRendering);
@@ -60,6 +71,11 @@ public class IrisCompat {
             }
         };
     }
+
+    public static Runnable decorateRendererWithoutIris(Runnable renderTask) {
+        return decorateRendererWithoutShadows(renderTask);
+    }
+    // change end: vista-wrap
 
 
     private static void setCurrentPipeline(LevelRenderer lr, WorldRenderingPipeline oldPipeline) {
@@ -71,6 +87,29 @@ public class IrisCompat {
         }
     }
 
+    private static final ThreadLocal<WorldRenderingPipeline> IRIS_PIPELINE_CACHE = new ThreadLocal<>();
+    private static final ThreadLocal<OldRenderState> IRIS_RENDERING_STATE_CACHE = ThreadLocal.withInitial(OldRenderState::new);
+
+    public static WorldRenderingPipeline preparePipeline() {
+        LevelRenderer lr = Minecraft.getInstance().levelRenderer;
+        OldRenderState oldState = OldRenderState.loadFrom(CapturedRenderingState.INSTANCE);
+        IRIS_RENDERING_STATE_CACHE.set(oldState);
+
+        VANILLA_PIPELINE_FIELD.setAccessible(true);
+        try {
+            IRIS_PIPELINE_CACHE.set((WorldRenderingPipeline) VANILLA_PIPELINE_FIELD.get(lr));
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+        return new VanillaRenderingPipeline();
+    }
+
+    public static void restoreVanillaPipeline(LevelRenderer lr) {
+        OldRenderState oldState = IRIS_RENDERING_STATE_CACHE.get();
+        if (oldState != null) {
+        }
+        VANILLA_PIPELINE_FIELD.setAccessible(true);
+    }
     private static WorldRenderingPipeline getCurrentPipeline(LevelRenderer lr) {
         try {
             VANILLA_PIPELINE_FIELD.setAccessible(true);
@@ -83,7 +122,6 @@ public class IrisCompat {
     private static final Field VANILLA_PIPELINE_FIELD = Arrays.stream(LevelRenderer.class.getDeclaredFields())
             .filter(f -> f.getType().equals(WorldRenderingPipeline.class))
             .findFirst().orElseThrow(() -> new RuntimeException("Failed to find vanilla pipeline field!"));
-
 
     private record OldRenderState(
             Matrix4fc gbufferModelView,
