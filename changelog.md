@@ -1,18 +1,2 @@
-- cassette tapes can play independently of one another
-- view finders can apply post shaders to their feed. This is done with glass panes or with mob heads when supplementaries is on
-- tvs can be connected to form a bigger tv screen, any size works so long its square
-- tvs can connect when at most 1 of them has a cassette or none at all
-- added 5 new cassettes: nature, channel2, us, axolotl and frogs
-- huge internal changes which improve tv rendering logic and rendering pipeline in many different ways
-- you can pause a tv by shift clicking
-- added a switch on tv animation
-- improved tf shader to have additional effects
-- swapped static and color bars textures for missing feed and missing content tv states
-- endermen will be angered when looked at through at TV, just like SCP 096. This causes tv to play a static effect.
-- added funny live leak overlay easter egg
-- added a new music disc, Sojourn by Hlzfss. You get it by killing an enderman angered from a TV
-- cassettes can now also be dropped by getting a creeper be killed by a pillager
-- added distant horizons compat, making tv scenes not render DH chunks (configurable)
-- attempted to add iris compat, some hacks were added and minor improvements obtained but really there's nothing more I can do, trust me I tried too much, Iris is just built not that well and would require compatibility on their end to for once allow people to disable shaders arbitrairly.
-- tvs can optionally show the current datetime timestamp
-- fixed many, many bugs
+- improved pause overlay
+- added some mega hacks to make stuff work slightly better with iris. this is still mega hacky and proper stuff can only be every done by iris itself. Has been mega pain to work on this. thanks to SupperDupper for the help here
