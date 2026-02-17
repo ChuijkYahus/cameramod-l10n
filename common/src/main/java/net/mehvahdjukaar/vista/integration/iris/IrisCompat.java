@@ -29,18 +29,6 @@ public class IrisCompat {
     public static boolean isVistaRendering() {
         return VISTA_RENDERING.get();
     }
-    // change end: vista-flag
-
-    public static void maybeResetTemporalHistoryForBobbing(Minecraft mc) {
-    }
-
-    public static void addConfigs(ConfigBuilder builder) {
-    }
-
-    // change start: vista-wrap
-    public static Runnable decorateRendererWithoutShadows(Runnable renderTask) {
-        return () -> {
-            boolean oldActive = ShadowRenderer.ACTIVE;
 
     @Nullable
     public static WorldRenderingPipeline getModifiedPipeline(){
@@ -61,8 +49,6 @@ public class IrisCompat {
                 VISTA_RENDERING.set(true);
                 renderTask.run();
             } finally {
-                ShadowRenderer.ACTIVE = oldActive;
-                // put state back
                 ShadowRenderer.ACTIVE = oldShadowActive;
                 VISTA_RENDERING.set(oldVistaRendering);
                 oldState.saveTo(CapturedRenderingState.INSTANCE);
@@ -71,12 +57,6 @@ public class IrisCompat {
             }
         };
     }
-
-    public static Runnable decorateRendererWithoutIris(Runnable renderTask) {
-        return decorateRendererWithoutShadows(renderTask);
-    }
-    // change end: vista-wrap
-
 
     private static void setCurrentPipeline(LevelRenderer lr, WorldRenderingPipeline oldPipeline) {
         try {
@@ -87,29 +67,6 @@ public class IrisCompat {
         }
     }
 
-    private static final ThreadLocal<WorldRenderingPipeline> IRIS_PIPELINE_CACHE = new ThreadLocal<>();
-    private static final ThreadLocal<OldRenderState> IRIS_RENDERING_STATE_CACHE = ThreadLocal.withInitial(OldRenderState::new);
-
-    public static WorldRenderingPipeline preparePipeline() {
-        LevelRenderer lr = Minecraft.getInstance().levelRenderer;
-        OldRenderState oldState = OldRenderState.loadFrom(CapturedRenderingState.INSTANCE);
-        IRIS_RENDERING_STATE_CACHE.set(oldState);
-
-        VANILLA_PIPELINE_FIELD.setAccessible(true);
-        try {
-            IRIS_PIPELINE_CACHE.set((WorldRenderingPipeline) VANILLA_PIPELINE_FIELD.get(lr));
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException(e);
-        }
-        return new VanillaRenderingPipeline();
-    }
-
-    public static void restoreVanillaPipeline(LevelRenderer lr) {
-        OldRenderState oldState = IRIS_RENDERING_STATE_CACHE.get();
-        if (oldState != null) {
-        }
-        VANILLA_PIPELINE_FIELD.setAccessible(true);
-    }
     private static WorldRenderingPipeline getCurrentPipeline(LevelRenderer lr) {
         try {
             VANILLA_PIPELINE_FIELD.setAccessible(true);
