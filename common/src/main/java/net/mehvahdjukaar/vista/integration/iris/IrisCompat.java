@@ -3,7 +3,6 @@ package net.mehvahdjukaar.vista.integration.iris;
 import net.irisshaders.iris.shadows.ShadowRenderer;
 import net.irisshaders.iris.pipeline.VanillaRenderingPipeline;
 import net.irisshaders.iris.pipeline.WorldRenderingPipeline;
-import net.irisshaders.iris.shadows.ShadowRenderer;
 import net.irisshaders.iris.uniforms.CapturedRenderingState;
 import net.mehvahdjukaar.moonlight.api.platform.configs.ConfigBuilder;
 import net.minecraft.client.Minecraft;
@@ -23,7 +22,7 @@ public class IrisCompat {
     // true while Vista is rendering a camera pass (should work)
     private static final WorldRenderingPipeline VISTA_PIPELINE = new VanillaRenderingPipeline();
     private static final ThreadLocal<Boolean> VISTA_RENDERING = ThreadLocal.withInitial(() -> false);
-    private static Supplier<Boolean> irisOff;
+    private static Supplier<Boolean> irisShaderPacksOff;
 
 
     public static boolean isVistaRendering() {
@@ -32,7 +31,7 @@ public class IrisCompat {
 
     @Nullable
     public static WorldRenderingPipeline getModifiedPipeline(){
-        return  VISTA_RENDERING.get() && irisOff.get() ? VISTA_PIPELINE : null;
+        return  VISTA_RENDERING.get() && irisShaderPacksOff.get() ? VISTA_PIPELINE : null;
     }
 
     public static Runnable decorateRendererWithoutShaderPacks(Runnable renderTask) {
@@ -60,7 +59,6 @@ public class IrisCompat {
 
     private static void setCurrentPipeline(LevelRenderer lr, WorldRenderingPipeline oldPipeline) {
         try {
-            VANILLA_PIPELINE_FIELD.setAccessible(true);
             VANILLA_PIPELINE_FIELD.set(lr, oldPipeline);
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
@@ -69,7 +67,6 @@ public class IrisCompat {
 
     private static WorldRenderingPipeline getCurrentPipeline(LevelRenderer lr) {
         try {
-            VANILLA_PIPELINE_FIELD.setAccessible(true);
             return (WorldRenderingPipeline) VANILLA_PIPELINE_FIELD.get(lr);
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
@@ -78,7 +75,21 @@ public class IrisCompat {
 
     private static final Field VANILLA_PIPELINE_FIELD = Arrays.stream(LevelRenderer.class.getDeclaredFields())
             .filter(f -> f.getType().equals(WorldRenderingPipeline.class))
-            .findFirst().orElseThrow(() -> new RuntimeException("Failed to find vanilla pipeline field!"));
+            .findFirst()
+            .map(p->{
+                p.setAccessible(true);
+                return p;
+            })
+            .orElseThrow(() -> new RuntimeException("Failed to find vanilla pipeline field!"));
+
+
+    public static boolean shouldSkipShadows() {
+        return VISTA_RENDERING.get();
+    }
+
+    public static boolean shouldSkipBobbing() {
+        return VISTA_RENDERING.get();
+    }
 
     private record OldRenderState(
             Matrix4fc gbufferModelView,
@@ -121,7 +132,7 @@ public class IrisCompat {
     }
 
     public static void addConfigs(ConfigBuilder builder) {
-        irisOff = builder
+        irisShaderPacksOff = builder
                 .comment("Attempts to disable iris shaders in the live feed view")
                 .define("iris_off_hack", true);
     }
