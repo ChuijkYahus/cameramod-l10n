@@ -96,8 +96,9 @@ public class TvScreenVertexConsumers {
                                                int scale, boolean paused,
                                                IntAnimationState switchAnim,
                                                IntAnimationState noiseAnim) {
-        CrtOverlay overlay = (tex.isDisconnected() ? CrtOverlay.DISCONNECT : (paused ? CrtOverlay.PAUSE : CrtOverlay.NONE));
-        return createVC(tex.getTextureLocation(), scale, 1, 1, overlay, switchAnim, noiseAnim, buffer::getBuffer);
+        CrtOverlay overlay = tex.getOverlay(paused) ;
+        return createVC(tex.getTextureLocation(), scale, 1, 1,
+                overlay, switchAnim, noiseAnim, buffer::getBuffer);
     }
 
     public static VertexConsumer createVC(ResourceLocation texture,

@@ -164,7 +164,7 @@ public class VistaMod {
 
         //TODO:
         //wrech and cannon for when facing same axis
-        // view finder rotation bug
+        // view finder rotation bug wirh wrench?
         //pause not working with multiple tvs
         //change update range to be higher!!!
         //cassettes dont go back in right tv

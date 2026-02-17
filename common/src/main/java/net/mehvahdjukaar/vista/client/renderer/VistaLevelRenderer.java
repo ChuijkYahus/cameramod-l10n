@@ -8,6 +8,7 @@ import net.mehvahdjukaar.moonlight.core.client.DummyCamera;
 import net.mehvahdjukaar.vista.VistaPlatStuff;
 import net.mehvahdjukaar.vista.client.textures.LiveFeedTexture;
 import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
+import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.mehvahdjukaar.vista.integration.CompatHandler;
 import net.minecraft.client.Camera;
 import net.minecraft.client.DeltaTracker;
@@ -90,10 +91,10 @@ public class VistaLevelRenderer {
 
             text.applyPostChain();
 
-            mc.gameRenderer.renderDistance = 128;// Math.min(oldRenderDistance, ClientConfigs.RENDER_DISTANCE.get());
-
             // use camera fov
             float fov = tile.getFOV();
+
+            mc.gameRenderer.renderDistance = Math.min(oldRenderDistance, calculateRenderDistance(fov));
 
             RenderSystem.clear(16640, ON_OSX);
             FogRenderer.setupNoFog();
@@ -139,6 +140,11 @@ public class VistaLevelRenderer {
             mc.gameRenderer.effectActive = wasEffectActive;
             mc.gameRenderer.renderDistance = oldRenderDistance;
         }
+    }
+
+    private static Integer calculateRenderDistance(float fov) {
+        //TODO: improve
+        return ClientConfigs.RENDER_DISTANCE.get();
     }
 
 

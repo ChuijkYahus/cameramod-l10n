@@ -13,6 +13,7 @@ import org.joml.Matrix4f;
 import org.joml.Matrix4fc;
 import org.joml.Vector3d;
 
+import javax.swing.plaf.PanelUI;
 import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.function.Supplier;
@@ -24,11 +25,6 @@ public class IrisCompat {
     private static final WorldRenderingPipeline VISTA_PIPELINE = new VanillaRenderingPipeline();
     private static final ThreadLocal<Boolean> VISTA_RENDERING = ThreadLocal.withInitial(() -> false);
     private static Supplier<Boolean> irisShaderPacksOff;
-
-
-    public static boolean isVistaRendering() {
-        return VISTA_RENDERING.get();
-    }
 
     @Nullable
     public static WorldRenderingPipeline getModifiedPipeline(){
@@ -82,7 +78,6 @@ public class IrisCompat {
                 return p;
             })
             .orElseThrow(() -> new RuntimeException("Failed to find vanilla pipeline field!"));
-
 
     public static boolean shouldSkipShadows() {
         return VISTA_RENDERING.get();

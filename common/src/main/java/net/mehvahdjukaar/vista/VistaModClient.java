@@ -47,6 +47,7 @@ public class VistaModClient {
 
     public static final ResourceLocation LL_OVERLAY = VistaMod.res("textures/cassette_tape/liveleak.png");
     public static final ResourceLocation PAUSE_OVERLAY = VistaMod.res("textures/cassette_tape/pause.png");
+    public static final ResourceLocation PAUSE_PLAY_OVERLAY = VistaMod.res("textures/cassette_tape/pause_play.png");
     public static final ResourceLocation DISCONNECT_OVERLAY = VistaMod.res("textures/cassette_tape/disconnect.png");
     public static final ResourceLocation LOADING_OVERLAY = VistaMod.res("textures/cassette_tape/loading.png");
 

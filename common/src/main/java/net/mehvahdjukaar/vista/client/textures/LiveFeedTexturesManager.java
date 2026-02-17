@@ -70,17 +70,21 @@ public class LiveFeedTexturesManager {
 
     @Nullable
     public static LiveFeedTexture requestLiveFeedTexture(UUID location, int screenSize,
-                                                         boolean requiresUpdate, @Nullable ResourceLocation postShader) {
+                                                         boolean requiresUpdate,
+                                                         @Nullable ResourceLocation postShader) {
 
         ResourceLocation feedId = getOrCreateFeedId(location, screenSize);
         LiveFeedTexture texture = DynamicTextureRenderer.requestTexture(feedId, () ->
                 new LiveFeedTexture(feedId, screenSize * ClientConfigs.RESOLUTION_SCALE.get(),
                         LiveFeedTexturesManager::refreshTexture, location, POSTERIZE_FRAGMENT_SHADER));
 
+
         if (texture == null) {
             SCHEDULER.get().forceUpdateNextTick(feedId);
             return null;
         }
+
+        texture.markReferenced(requiresUpdate);
 
         if (texture.setPostChain(postShader)) {
             requiresUpdate = true;
