@@ -17,7 +17,7 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 public class CassetteTexturesManager extends SimplePreparableReloadListener<Map<ResourceLocation, ResourceLocation>> {
-    public static final CassetteTexturesManager INSTANCE = new CassetteTexturesManager("shaderTextures/cassette_tape");
+    public static final CassetteTexturesManager INSTANCE = new CassetteTexturesManager("textures/cassette_tape");
 
     private final String directory;
     private final Map<ResourceLocation, Supplier<AnimatedStripTexture>> knowAnimations = new HashMap<>();

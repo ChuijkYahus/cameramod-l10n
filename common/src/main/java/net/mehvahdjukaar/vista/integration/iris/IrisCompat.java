@@ -1,5 +1,6 @@
 package net.mehvahdjukaar.vista.integration.iris;
 
+import net.irisshaders.iris.Iris;
 import net.irisshaders.iris.shadows.ShadowRenderer;
 import net.irisshaders.iris.pipeline.VanillaRenderingPipeline;
 import net.irisshaders.iris.pipeline.WorldRenderingPipeline;
@@ -88,6 +89,10 @@ public class IrisCompat {
     }
 
     public static boolean shouldSkipBobbing() {
+        return VISTA_RENDERING.get();
+    }
+
+    public static boolean shouldShushDHCompat() {
         return VISTA_RENDERING.get();
     }
 

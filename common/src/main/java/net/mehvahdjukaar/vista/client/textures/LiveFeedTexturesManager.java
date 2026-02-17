@@ -20,6 +20,7 @@ import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
 import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.mehvahdjukaar.vista.integration.CompatHandler;
+import net.mehvahdjukaar.vista.integration.distant_horizons.DistantHorizonsCompat;
 import net.mehvahdjukaar.vista.integration.iris.IrisCompat;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -150,7 +151,9 @@ public class LiveFeedTexturesManager {
 
 
         };
-
+        if (CompatHandler.DISTANT_HORIZONS) {
+            runTask = DistantHorizonsCompat.decorateRenderWithoutLOD(runTask);
+        }
         if (CompatHandler.IRIS) {
             runTask = IrisCompat.decorateRendererWithoutShaderPacks(runTask);
         }
