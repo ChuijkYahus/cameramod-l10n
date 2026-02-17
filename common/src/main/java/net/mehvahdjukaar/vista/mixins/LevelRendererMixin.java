@@ -63,16 +63,6 @@ public class LevelRendererMixin {
         }
     }
 
-    // change start: restore-on-return
-    @Inject(method = "renderLevel", at = @At("RETURN"))
-    public void vista$restoreIrisPipeline(DeltaTracker deltaTracker, boolean renderBlockOutline,
-                                          Camera camera, GameRenderer gameRenderer,
-                                          LightTexture lightTexture, Matrix4f modelView,
-                                          Matrix4f projection, CallbackInfo ci) {
-        IrisCompat.restorePipelineAfterRender();
-    }
-    // change end: restore-on-return
-
     @Inject(method = "onChunkLoaded", at = @At("HEAD"))
     public void vista$onChunkLoaded(ChunkPos chunkPos, CallbackInfo ci){
         VistaLevelRenderer.onChunkLoaded(chunkPos, this.sectionOcclusionGraph);

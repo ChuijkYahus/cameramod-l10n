@@ -159,7 +159,7 @@ public class LiveFeedTexturesManager {
         // change end: skip-dh-wrapper
         if (CompatHandler.IRIS) {
             // change start: iris-wrapper-call
-            runTask = IrisCompat.decorateRendererWithoutShadows(runTask);
+            runTask = IrisCompat.decorateRendererWithoutShaderPacks(runTask);
             // change end: iris-wrapper-call
         }
 
