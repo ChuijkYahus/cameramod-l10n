@@ -20,7 +20,6 @@ import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
 import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.mehvahdjukaar.vista.integration.CompatHandler;
-import net.mehvahdjukaar.vista.integration.distant_horizons.DistantHorizonsCompat;
 import net.mehvahdjukaar.vista.integration.iris.IrisCompat;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -152,11 +151,16 @@ public class LiveFeedTexturesManager {
 
         };
 
-        if (CompatHandler.DISTANT_HORIZONS) {
-            runTask = DistantHorizonsCompat.decorateRenderWithoutLOD(runTask);
-        }
+        // change start: skip-dh-wrapper
+        // Intentionally skip DH wrapper here to avoid DH-side chunk/LOD churn from feed updates.
+        // if (CompatHandler.DISTANT_HORIZONS) {
+        //     runTask = DistantHorizonsCompat.decorateRenderWithoutLOD(runTask);
+        // }
+        // change end: skip-dh-wrapper
         if (CompatHandler.IRIS) {
-            runTask = IrisCompat.decorateRendererWithoutIris(runTask);
+            // change start: iris-wrapper-call
+            runTask = IrisCompat.decorateRendererWithoutShadows(runTask);
+            // change end: iris-wrapper-call
         }
 
         ResourceLocation textureId = text.getTextureLocation();
