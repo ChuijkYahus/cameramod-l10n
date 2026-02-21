@@ -9,7 +9,7 @@ import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
 import net.mehvahdjukaar.moonlight.api.misc.RollingBuffer;
-import net.mehvahdjukaar.texture_renderer.RenderedTexturesManager2;
+import net.mehvahdjukaar.texture_renderer.DynamicTextureRenderer;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.client.AdaptiveUpdateScheduler;
@@ -70,17 +70,21 @@ public class LiveFeedTexturesManager {
 
     @Nullable
     public static LiveFeedTexture requestLiveFeedTexture(UUID location, int screenSize,
-                                                         boolean requiresUpdate, @Nullable ResourceLocation postShader) {
+                                                         boolean requiresUpdate,
+                                                         @Nullable ResourceLocation postShader) {
 
         ResourceLocation feedId = getOrCreateFeedId(location, screenSize);
-        LiveFeedTexture texture = RenderedTexturesManager2.requestTexture(feedId, () ->
+        LiveFeedTexture texture = DynamicTextureRenderer.requestTexture(feedId, () ->
                 new LiveFeedTexture(feedId, screenSize * ClientConfigs.RESOLUTION_SCALE.get(),
                         LiveFeedTexturesManager::refreshTexture, location, POSTERIZE_FRAGMENT_SHADER));
+
 
         if (texture == null) {
             SCHEDULER.get().forceUpdateNextTick(feedId);
             return null;
         }
+
+        texture.markReferenced(requiresUpdate);
 
         if (texture.setPostChain(postShader)) {
             requiresUpdate = true;
@@ -151,12 +155,11 @@ public class LiveFeedTexturesManager {
 
 
         };
-
         if (CompatHandler.DISTANT_HORIZONS) {
             runTask = DistantHorizonsCompat.decorateRenderWithoutLOD(runTask);
         }
         if (CompatHandler.IRIS) {
-            runTask = IrisCompat.decorateRendererWithoutShadows(runTask);
+            runTask = IrisCompat.decorateRendererWithoutShaderPacks(runTask);
         }
 
         ResourceLocation textureId = text.getTextureLocation();

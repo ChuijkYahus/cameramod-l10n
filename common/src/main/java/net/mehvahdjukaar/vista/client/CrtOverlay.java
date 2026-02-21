@@ -7,6 +7,7 @@ import net.minecraft.resources.ResourceLocation;
 public enum CrtOverlay {
     NONE(VistaMod.res("missing")),
     PAUSE(VistaModClient.PAUSE_OVERLAY),
+    PAUSE_PLAY(VistaModClient.PAUSE_PLAY_OVERLAY),
     LOADING(VistaModClient.LOADING_OVERLAY),
     DISCONNECT(VistaModClient.DISCONNECT_OVERLAY);
 

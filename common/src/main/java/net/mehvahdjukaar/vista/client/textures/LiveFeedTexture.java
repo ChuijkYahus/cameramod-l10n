@@ -5,6 +5,8 @@ import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.mehvahdjukaar.texture_renderer.RenderTargetDynamicTexture;
 import net.mehvahdjukaar.vista.VistaMod;
+import net.mehvahdjukaar.vista.client.CrtOverlay;
+import net.mehvahdjukaar.vista.client.SlidingWindowCounter;
 import net.mehvahdjukaar.vista.client.renderer.LevelRendererCameraState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
@@ -15,6 +17,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Consumer;
@@ -33,6 +36,13 @@ public class LiveFeedTexture extends RenderTargetDynamicTexture {
     private PostChain postChain;
     private boolean disconnected = false;
 
+    private enum RefType {
+        LIVE, PAUSED
+    }
+
+    private final SlidingWindowCounter<RefType> references =
+            new SlidingWindowCounter<>(Duration.ofSeconds(3), Duration.ofSeconds(1));
+
     public LiveFeedTexture(ResourceLocation resourceLocation, int size,
                            @NotNull Consumer<LiveFeedTexture> textureDrawingFunction,
                            UUID id, @Nullable ResourceLocation postFragment) {
@@ -45,6 +55,23 @@ public class LiveFeedTexture extends RenderTargetDynamicTexture {
         this.recomputePostChain();
     }
 
+    public void markReferenced(boolean paused) {
+        references.record(paused ? RefType.PAUSED : RefType.LIVE);
+    }
+
+    public CrtOverlay getOverlay(boolean wantPaused) {
+        if (isDisconnected()) return CrtOverlay.DISCONNECT;
+        int paused = references.getCount(RefType.LIVE);
+        int live = references.getCount(RefType.PAUSED);
+        if (live == 0 && paused != 0) {
+            return (paused == 0) ? CrtOverlay.NONE : CrtOverlay.PAUSE;
+        }
+        if (paused == 0 || !wantPaused) {
+            return CrtOverlay.NONE;
+        }
+        return CrtOverlay.PAUSE_PLAY;
+    }
+
     public LevelRendererCameraState getRendererState() {
         return rendererState;
     }
@@ -54,7 +81,7 @@ public class LiveFeedTexture extends RenderTargetDynamicTexture {
     }
 
     public void applyPostChain() {
-        if(isClosed()){
+        if (isClosed()) {
             VistaMod.LOGGER.error("apply post on closed");
             return;
         }
@@ -69,7 +96,7 @@ public class LiveFeedTexture extends RenderTargetDynamicTexture {
     }
 
     private void recomputePostChain() {
-        if(isClosed()){
+        if (isClosed()) {
             VistaMod.LOGGER.error("recompute post on closed");
             return;
         }
@@ -93,7 +120,7 @@ public class LiveFeedTexture extends RenderTargetDynamicTexture {
                 postChain.addPass(postFragment.toString(), canvasTarget, swapTarget, false);
                 //swap back
                 postChain.addPass("vista:blit_flip_y", swapTarget, canvasTarget, false);
-            }else{
+            } else {
                 postChain.addPass("blit", canvasTarget, swapTarget, false);
                 postChain.addPass("vista:blit_flip_y", swapTarget, canvasTarget, false);
             }
@@ -130,7 +157,7 @@ public class LiveFeedTexture extends RenderTargetDynamicTexture {
         }
     }
 
-   public boolean isDisconnected() {
+    public boolean isDisconnected() {
         return disconnected;
     }
 

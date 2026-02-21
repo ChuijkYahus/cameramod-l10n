@@ -20,7 +20,7 @@ public interface ViewFinderAccess {
 
     Vec3 getCannonGlobalPosition(float partialTicks);
 
-    float getCannonGlobalYawOffset(float partialTicks);
+    float getViewFinderGlobalYawOffset(float partialTicks);
 
     boolean stillValid(Player player);
 
@@ -56,7 +56,7 @@ public interface ViewFinderAccess {
         }
 
         @Override
-        public float getCannonGlobalYawOffset(float partialTicks) {
+        public float getViewFinderGlobalYawOffset(float partialTicks) {
             return 0;
         }
 

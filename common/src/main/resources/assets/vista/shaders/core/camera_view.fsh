@@ -109,10 +109,28 @@ vec3 sampleImage(vec2 uv, vec2 frameOriginUV)
 
     vec3 color = texture(Sampler0, uv).rgb;
 
-    if (OverlayIndex > 0){
-        vec2 overlayUV = (uv - frameOriginUV) / SpriteDimensions;
-        vec4 overlay = texture(Sampler1, overlayUV);
-        color += overlay.rgb * overlay.a;
+    if (OverlayIndex > 0) {
+        // --- overlay dimensions ---
+        ivec2 texSize = textureSize(Sampler1, 0);
+        float frameSize = float(texSize.x);              // square frame width/height
+        int frameCount = texSize.y / texSize.x;          // number of vertical frames
+        float frameHeightUV = 1.0 / float(frameCount);   // height of one frame in UV
+
+        // --- current frame based on GameTime ---
+        int millis = int(GameTime * 24000 * 0.05*1000); // 0.05 = 20 fps; adjust as needed
+        int frameIndex = int(millis * 0.01) % frameCount;
+        vec2 frameOffsetUV = vec2(0.0, float(frameIndex) * frameHeightUV);
+
+        // --- map quad UVs to overlay frame ---
+        // horizontal: use entire width (0-1)
+        // vertical: scale by 1.0 / frameCount to fit in one frame
+        vec2 overlayUV = vec2(
+            uv.x,
+            (uv.y - frameOriginUV.y) * frameHeightUV + frameOffsetUV.y
+        );
+
+        vec4 overlayColor = texture(Sampler1, overlayUV);
+        color += overlayColor.rgb * overlayColor.a;
     }
 
     color += colorAdd;

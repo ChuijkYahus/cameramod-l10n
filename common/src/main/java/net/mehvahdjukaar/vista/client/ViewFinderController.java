@@ -29,10 +29,13 @@ public class ViewFinderController {
     private static CameraType lastCameraType;
 
     // values controlled by player mouse movement. Not actually what camera uses
-    private static float yawIncrease;
-    private static float pitchIncrease;
+    private static float accumulatedYaw;
+    private static float accumulatedPitch;
 
     private static boolean needsToUpdateServer;
+
+    //truth for client view finder zoom. essentially ignore what the sever has so we have full authority and not jerkyness
+    private static int viewFinderZoom;
 
     // lerp camera
     private static float lastCameraYaw = 0;
@@ -53,6 +56,7 @@ public class ViewFinderController {
 
         Camera camera = mc.gameRenderer.getMainCamera();
         ViewFinderBlockEntity tile = access.getInternalTile();
+        viewFinderZoom = tile.getZoomLevel();
         camera.setRotation(Mth.wrapDegrees(tile.getYaw()), Mth.wrapDegrees(tile.getPitch()));
     }
 
@@ -81,11 +85,11 @@ public class ViewFinderController {
         return access != null;
     }
 
-    public static boolean isActiveFor(BlockEntity tile){
+    public static boolean isActiveFor(BlockEntity tile) {
         return access != null && access.getInternalTile() == tile;
     }
 
-    public static boolean isActiveAt(BlockPos pos){
+    public static boolean isActiveAt(BlockPos pos) {
         return access != null && access.getInternalTile().getBlockPos() == pos;
     }
 
@@ -103,8 +107,8 @@ public class ViewFinderController {
 
         // lerp camera
         Vec3 targetCameraPos = centerCannonPos.add(0, 0.5, 0);
-        float targetYRot = camera.getYRot() + yawIncrease;
-        float targetXRot = Mth.clamp(camera.getXRot() + pitchIncrease, -90, 90);
+        float targetYRot = camera.getYRot() + accumulatedYaw;
+        float targetXRot = Mth.clamp(camera.getXRot() + accumulatedPitch, -90, 90);
 
         camera.setPosition(targetCameraPos);
         camera.setRotation(targetYRot, targetXRot);
@@ -112,15 +116,15 @@ public class ViewFinderController {
         lastCameraYaw = camera.getYRot();
         lastCameraPitch = camera.getXRot();
 
-        yawIncrease = 0;
-        pitchIncrease = 0;
+        accumulatedYaw = 0;
+        accumulatedPitch = 0;
 
         float followSpeed = 1;
         ViewFinderBlockEntity tile = access.getInternalTile();
 
         tile.setPitch(access, Mth.rotLerp(followSpeed, tile.getPitch(), lastCameraPitch));
         // targetYawDeg = Mth.rotLerp(followSpeed, cannon.getYaw(0), targetYawDeg);
-        tile.setRenderYaw(access, lastCameraYaw + access.getCannonGlobalYawOffset(partialTick));
+        tile.setRenderYaw(access, lastCameraYaw + access.getViewFinderGlobalYawOffset(partialTick));
 
         return true;
     }
@@ -131,8 +135,8 @@ public class ViewFinderController {
         if (isActive()) {
             if (isLocked()) return true;
             float scale = 0.2f * (1 - access.getInternalTile().getNormalizedZoomFactor() + 0.01f);
-            yawIncrease += (float) (yawAdd * scale);
-            pitchIncrease += (float) (pitchAdd * scale);
+            accumulatedYaw += (float) (yawAdd * scale);
+            accumulatedPitch += (float) (pitchAdd * scale);
             if (yawAdd != 0 || pitchAdd != 0) needsToUpdateServer = true;
 
             if (access.shouldRotatePlayerFaceWhenManeuvering()) {
@@ -158,7 +162,7 @@ public class ViewFinderController {
             int newZoom = (Math.clamp((int) (tile.getZoomLevel() + scrollDelta), 1, ViewFinderBlockEntity.MAX_ZOOM));
             int oldZoom = tile.getZoomLevel();
             if (newZoom != oldZoom) {
-                tile.setZoomLevel(newZoom);
+                viewFinderZoom = newZoom;
                 needsToUpdateServer = true;
                 if (newZoom % 4 == 0)
                     //TODO: proper sound here
@@ -212,6 +216,8 @@ public class ViewFinderController {
         if (player == null) return;
         if (!isActive()) return;
         if (access.stillValid(player)) {
+            //keep setting zoom so we avoid jitter
+            access.getInternalTile().setZoomLevel(viewFinderZoom);
             if (needsToUpdateServer) {
                 needsToUpdateServer = false;
                 access.syncToServer(false);

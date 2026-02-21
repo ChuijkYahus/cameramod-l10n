@@ -120,9 +120,11 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
 
     public ItemInteractionResult tryInteracting(Player player, InteractionHand hand, ItemStack stack,
                                                 BlockPos pos) {
-        ItemInteractionResult itemAdd = this.interactWithPlayerItem(player, hand, stack);
-        if (itemAdd.consumesAction()) {
-            return itemAdd;
+        if (player.isSecondaryUseActive() || this.isEmpty()) {
+            ItemInteractionResult itemAdd = this.interactWithPlayerItem(player, hand, stack);
+            if (itemAdd.consumesAction()) {
+                return itemAdd;
+            }
         }
         //same as super but sends custom packet
         if (player instanceof ServerPlayer sp && this.canBeUsedBy(pos, player)) {
@@ -190,7 +192,7 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
 
     public void setGlobalYaw(ViewFinderAccess access, float relativeYaw) {
         //calculateyaw here
-        float yawOffset = access.getCannonGlobalYawOffset(1);
+        float yawOffset = access.getViewFinderGlobalYawOffset(1);
         setYaw(access, relativeYaw);
     }
 

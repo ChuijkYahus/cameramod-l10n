@@ -6,6 +6,7 @@ import net.mehvahdjukaar.moonlight.api.platform.configs.ConfigBuilder;
 import net.mehvahdjukaar.vista.integration.computer_craft.CCCompat;
 import net.mehvahdjukaar.vista.integration.distant_horizons.DistantHorizonsCompat;
 import net.mehvahdjukaar.vista.integration.exposure.ExposureCompat;
+import net.mehvahdjukaar.vista.integration.iris.IrisCompat;
 import net.minecraft.world.item.CreativeModeTabs;
 
 public class CompatHandler {
@@ -32,5 +33,6 @@ public class CompatHandler {
 
     public static void addConfigs(ConfigBuilder builder) {
         if (DISTANT_HORIZONS) DistantHorizonsCompat.addConfigs(builder);
+        if (IRIS) IrisCompat.addConfigs(builder);
     }
 }

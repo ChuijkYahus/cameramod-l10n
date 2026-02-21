@@ -26,7 +26,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-public class RenderedTexturesManager2 {
+public class DynamicTextureRenderer {
 
     private static final LoadingCache<ResourceLocation,
             CompletableFuture<RenderTargetDynamicTexture>> TEXTURE_CACHE =
@@ -34,7 +34,7 @@ public class RenderedTexturesManager2 {
                     .<ResourceLocation, CompletableFuture<RenderTargetDynamicTexture>>removalListener(i -> {
                         CompletableFuture<RenderTargetDynamicTexture> future = i.getValue();
                         if (future == null) return;
-                        //this unregister calls close which makes texture as closed
+                        //this unregister calls close which makes textureMatrix as closed
                         future.thenAccept(texture ->
                                 RenderSystem.recordRenderCall(texture::unregister)
                         );
@@ -174,7 +174,7 @@ public class RenderedTexturesManager2 {
     }
 
     public static void drawTexture(RenderTargetDynamicTexture tex, ResourceLocation texture) {
-        RenderedTexturesManager2.drawAsInGUI(tex, s -> {
+        DynamicTextureRenderer.drawAsInGUI(tex, s -> {
             RenderSystem.setShaderTexture(0, texture);
             PoseStack.Pose pose = s.pose().last();
             RenderSystem.disableDepthTest();
