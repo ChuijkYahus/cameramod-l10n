@@ -15,7 +15,6 @@ import net.mehvahdjukaar.vista.common.tv.connection.RectSelection;
 import net.mehvahdjukaar.vista.configs.CommonConfigs;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -120,7 +119,9 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
     public @Nullable BlockState getStateForPlacement(BlockPlaceContext context) {
         boolean powered = context.getLevel().hasNeighborSignal(context.getClickedPos());
         Direction facing = context.getHorizontalDirection().getOpposite();
-        TVType type = getTypeFromNeighbors(context.getLevel(), context.getClickedPos(), facing);
+        TVType type = CommonConfigs.MAX_CONNECTED_TV_SIZE.get() > 1 ?
+                getTypeFromNeighbors(context.getLevel(), context.getClickedPos(), facing)
+                        : TVType.SINGLE ;
 
         return this.defaultBlockState()
                 .setValue(POWER_STATE, PowerState.direct(powered))
