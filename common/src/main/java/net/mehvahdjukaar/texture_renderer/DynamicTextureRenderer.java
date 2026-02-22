@@ -26,13 +26,14 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+@Deprecated(forRemoval = true)
 public class DynamicTextureRenderer {
 
     private static final LoadingCache<ResourceLocation,
-            CompletableFuture<RenderTargetDynamicTexture>> TEXTURE_CACHE =
+            CompletableFuture<RenderableDynamicTexture>> TEXTURE_CACHE =
             CacheBuilder.newBuilder()
-                    .<ResourceLocation, CompletableFuture<RenderTargetDynamicTexture>>removalListener(i -> {
-                        CompletableFuture<RenderTargetDynamicTexture> future = i.getValue();
+                    .<ResourceLocation, CompletableFuture<RenderableDynamicTexture>>removalListener(i -> {
+                        CompletableFuture<RenderableDynamicTexture> future = i.getValue();
                         if (future == null) return;
                         //this unregister calls close which makes textureMatrix as closed
                         future.thenAccept(texture ->
@@ -42,7 +43,7 @@ public class DynamicTextureRenderer {
                     .expireAfterAccess(2, TimeUnit.MINUTES)
                     .build(new CacheLoader<>() {
                         @Override
-                        public CompletableFuture<RenderTargetDynamicTexture> load(ResourceLocation key) {
+                        public CompletableFuture<RenderableDynamicTexture> load(ResourceLocation key) {
                             return new CompletableFuture<>();
                         }
                     });
@@ -59,13 +60,13 @@ public class DynamicTextureRenderer {
      *
      * @param id id of this texture. must be unique
      **/
-    public static <T extends RenderTargetDynamicTexture> T requestTexture(
+    public static <T extends RenderableDynamicTexture> T requestTexture(
             ResourceLocation id,
             Supplier<T> textureSupplier
     ) {
-        CompletableFuture<RenderTargetDynamicTexture> future =
+        CompletableFuture<RenderableDynamicTexture> future =
                 TEXTURE_CACHE.asMap().computeIfAbsent(id, key -> {
-                    CompletableFuture<RenderTargetDynamicTexture> f = new CompletableFuture<>();
+                    CompletableFuture<RenderableDynamicTexture> f = new CompletableFuture<>();
 
                     RenderSystem.recordRenderCall(() -> {
                         try {
@@ -105,10 +106,10 @@ public class DynamicTextureRenderer {
      * @param textureDrawingFunction this is the function responsible to draw things onto this texture
      * @return texture instance
      */
-    public static RenderTargetDynamicTexture requestTexture(
+    public static RenderableDynamicTexture requestTexture(
             ResourceLocation id, int textureSize,
-            @NotNull Consumer<RenderTargetDynamicTexture> textureDrawingFunction, boolean updateEachFrame) {
-        var t = requestTexture(id, () -> new RenderTargetDynamicTexture(id, textureSize, textureDrawingFunction));
+            @NotNull Consumer<RenderableDynamicTexture> textureDrawingFunction, boolean updateEachFrame) {
+        var t = requestTexture(id, () -> new RenderableDynamicTexture(id, textureSize, textureDrawingFunction));
         if (t != null && updateEachFrame) {
             t.setUpdateNextTick(true);
         }
@@ -117,26 +118,26 @@ public class DynamicTextureRenderer {
 
 
     @Nullable
-    public static <T extends RenderTargetDynamicTexture> T getTextureIfPresent(ResourceLocation id) {
-        CompletableFuture<RenderTargetDynamicTexture> ifPresent = TEXTURE_CACHE.getIfPresent(id);
+    public static <T extends RenderableDynamicTexture> T getTextureIfPresent(ResourceLocation id) {
+        CompletableFuture<RenderableDynamicTexture> ifPresent = TEXTURE_CACHE.getIfPresent(id);
         return ifPresent == null || !ifPresent.isDone() ? null : (T) ifPresent.join();
     }
 
 
-    public static RenderTargetDynamicTexture requestFlatItemStackTexture(ResourceLocation res, ItemStack stack, int size) {
+    public static RenderableDynamicTexture requestFlatItemStackTexture(ResourceLocation res, ItemStack stack, int size) {
         return requestTexture(res, size, t -> drawItem(t, stack), true);
     }
 
-    public static RenderTargetDynamicTexture requestFlatItemTexture(Item item, int size) {
+    public static RenderableDynamicTexture requestFlatItemTexture(Item item, int size) {
         return requestFlatItemTexture(item, size, null);
     }
 
-    public static RenderTargetDynamicTexture requestFlatItemTexture(Item item, int size, @Nullable Consumer<NativeImage> postProcessing) {
+    public static RenderableDynamicTexture requestFlatItemTexture(Item item, int size, @Nullable Consumer<NativeImage> postProcessing) {
         ResourceLocation id = Moonlight.res(Utils.getID(item).toString().replace(":", "/") + "/" + size);
         return requestFlatItemTexture(id, item, size, postProcessing, false);
     }
 
-    public static RenderTargetDynamicTexture requestFlatItemTexture(
+    public static RenderableDynamicTexture requestFlatItemTexture(
             ResourceLocation id, Item item, int size, @Nullable Consumer<NativeImage> postProcessing) {
         return requestFlatItemTexture(id, item, size, postProcessing, false);
     }
@@ -149,7 +150,7 @@ public class DynamicTextureRenderer {
      * @param id             texture id. Needs to be unique
      * @param postProcessing some extra drawing functions to be applied on the native image. Can be slow as its cpu sided
      */
-    public static RenderTargetDynamicTexture requestFlatItemTexture(
+    public static RenderableDynamicTexture requestFlatItemTexture(
             ResourceLocation id, Item item, int size,
             @Nullable Consumer<NativeImage> postProcessing, boolean updateEachFrame) {
         return requestTexture(id, size, t -> {
@@ -166,14 +167,14 @@ public class DynamicTextureRenderer {
 
     //Utility methods
 
-    public static void drawItem(RenderTargetDynamicTexture tex, ItemStack stack) {
+    public static void drawItem(RenderableDynamicTexture tex, ItemStack stack) {
         drawAsInGUI(tex, g -> {
             //render stuff
             g.renderFakeItem(stack, 0, 0);
         });
     }
 
-    public static void drawTexture(RenderTargetDynamicTexture tex, ResourceLocation texture) {
+    public static void drawTexture(RenderableDynamicTexture tex, ResourceLocation texture) {
         DynamicTextureRenderer.drawAsInGUI(tex, s -> {
             RenderSystem.setShaderTexture(0, texture);
             PoseStack.Pose pose = s.pose().last();
@@ -194,7 +195,7 @@ public class DynamicTextureRenderer {
     /**
      * Coordinates here are from 0 to 1
      */
-    public static void drawNormalized(RenderTargetDynamicTexture tex, Consumer<PoseStack> drawFunction) {
+    public static void drawNormalized(RenderableDynamicTexture tex, Consumer<PoseStack> drawFunction) {
         drawAsInGUI(tex, g -> {
             var s = g.pose();
             float scale = 1f / 16f;
@@ -208,7 +209,7 @@ public class DynamicTextureRenderer {
      * Utility method that sets up an environment akin to gui rendering with a box from 0 t0 16.
      * If you render an item at 0,0 it will be centered
      */
-    public static void drawAsInGUI(RenderTargetDynamicTexture tex, Consumer<GuiGraphics> drawFunction) {
+    public static void drawAsInGUI(RenderableDynamicTexture tex, Consumer<GuiGraphics> drawFunction) {
         //fog bs that idk why its needed with flywheel. MC gui code doesnt need that
         float fogStart = RenderSystem.getShaderFogStart();
         float fogEnd = RenderSystem.getShaderFogEnd();

@@ -19,11 +19,11 @@ import java.util.function.Consumer;
 
 import static net.minecraft.client.Minecraft.ON_OSX;
 
-public class RenderTargetDynamicTexture extends DynamicTexture implements Tickable {
+public class RenderableDynamicTexture extends DynamicTexture implements Tickable {
 
     //runs when texture is initialized and populates it. Runs each tick if its tickable
     @NotNull
-    protected final Consumer<? super RenderTargetDynamicTexture> drawingFunction;
+    protected final Consumer<? super RenderableDynamicTexture> drawingFunction;
 
     //thing that is drawn later
     private RenderTarget readTarget;
@@ -37,19 +37,19 @@ public class RenderTargetDynamicTexture extends DynamicTexture implements Tickab
     private volatile boolean shouldTick = true;
     public boolean closed = false;
 
-    public RenderTargetDynamicTexture(ResourceLocation resourceLocation, int width, int height,
-                                      @NotNull Consumer<? extends RenderTargetDynamicTexture> textureDrawingFunction) {
+    public RenderableDynamicTexture(ResourceLocation resourceLocation, int width, int height,
+                                    @NotNull Consumer<? extends RenderableDynamicTexture> textureDrawingFunction) {
         super(width, height, false);
         RenderSystem.assertOnRenderThread();
         this.width = width;
         this.height = height;
         this.textureLocation = resourceLocation;
-        this.drawingFunction = (Consumer<? super RenderTargetDynamicTexture>) textureDrawingFunction;
+        this.drawingFunction = (Consumer<? super RenderableDynamicTexture>) textureDrawingFunction;
         this.setUpdateNextTick(true);
     }
 
-    public RenderTargetDynamicTexture(ResourceLocation resourceLocation, int size,
-                                      @NotNull Consumer<? extends RenderTargetDynamicTexture> textureDrawingFunction) {
+    public RenderableDynamicTexture(ResourceLocation resourceLocation, int size,
+                                    @NotNull Consumer<? extends RenderableDynamicTexture> textureDrawingFunction) {
         this(resourceLocation, size, size, textureDrawingFunction);
     }
 
