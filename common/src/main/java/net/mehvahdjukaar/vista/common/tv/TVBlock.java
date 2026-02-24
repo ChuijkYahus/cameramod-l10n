@@ -18,6 +18,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Equipable;
 import net.minecraft.world.item.ItemStack;
@@ -119,9 +120,7 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
     public @Nullable BlockState getStateForPlacement(BlockPlaceContext context) {
         boolean powered = context.getLevel().hasNeighborSignal(context.getClickedPos());
         Direction facing = context.getHorizontalDirection().getOpposite();
-        TVType type = CommonConfigs.MAX_CONNECTED_TV_SIZE.get() > 1 ?
-                getTypeFromNeighbors(context.getLevel(), context.getClickedPos(), facing)
-                        : TVType.SINGLE ;
+        TVType type = getTypeFromNeighbors(context.getLevel(), context.getClickedPos(), facing);
 
         return this.defaultBlockState()
                 .setValue(POWER_STATE, PowerState.direct(powered))
@@ -130,6 +129,7 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
     }
 
     private TVType getTypeFromNeighbors(Level level, BlockPos clickedPos, Direction facing) {
+        if (CommonConfigs.MAX_CONNECTED_TV_SIZE.get() <= 1) return TVType.SINGLE;
         boolean up = isNeighborConnected(level, clickedPos, facing, Direction.UP);
         boolean down = isNeighborConnected(level, clickedPos, facing, Direction.DOWN);
         boolean left = isNeighborConnected(level, clickedPos, facing, facing.getClockWise());
@@ -207,9 +207,9 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
     }
 
     @Override
-    protected void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean movedByPiston) {
-        super.onPlace(state, level, pos, oldState, movedByPiston);
-        if (!state.is(oldState.getBlock())) this.enlargeConnection(state, level, pos);
+    public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) {
+        super.setPlacedBy(level, pos, state, placer, stack);
+        if (!(placer instanceof Player p) || !p.isSecondaryUseActive()) this.enlargeConnection(state, level, pos);
     }
 
     private void enlargeConnection(BlockState tvState, Level level, BlockPos pos) {
