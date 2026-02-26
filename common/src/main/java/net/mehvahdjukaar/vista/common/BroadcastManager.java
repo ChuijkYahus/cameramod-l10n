@@ -162,10 +162,6 @@ public final class BroadcastManager extends WorldSavedData {
 
     @Nullable
     public IBroadcastProvider getBroadcast(@NotNull UUID feedId, boolean clientSide) {
-        if(feedId == null){
-            int aa = 1;
-            return null;
-        }
         GlobalPos pos = snapshot.get(feedId);
         if (pos == null) return null;
 
