@@ -161,8 +161,6 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
     @Override
     protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player,
                                               InteractionHand hand, BlockHitResult hitResult) {
-        if (level.isClientSide) return ItemInteractionResult.SUCCESS;
-
         TVBlockEntity masterTile = getMasterBlockEntity(level, pos, state);
         if (masterTile != null) {
             return masterTile.interactWithPlayerItem(player, hand, stack, 0, hitResult);
