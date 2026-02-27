@@ -1,4 +1,4 @@
-package net.mehvahdjukaar.vista.common;
+package net.mehvahdjukaar.vista.common.broadcast;
 
 import com.google.common.collect.HashBiMap;
 import com.mojang.serialization.Codec;
@@ -7,7 +7,7 @@ import net.mehvahdjukaar.moonlight.api.misc.WorldSavedDataType;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.VistaModClient;
-import net.mehvahdjukaar.vista.common.cassette.IBroadcastProvider;
+import net.mehvahdjukaar.vista.common.cassette.IBroadcastSource;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -22,7 +22,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-@SuppressWarnings("unchecked")
 public final class BroadcastManager extends WorldSavedData {
 
     public static BroadcastManager create(ServerLevel serverLevel) {
@@ -30,7 +29,7 @@ public final class BroadcastManager extends WorldSavedData {
     }
 
     public static final Codec<BroadcastManager> CODEC =
-            Codec.unboundedMap(UUIDUtil.STRING_CODEC, GlobalPos.CODEC)
+            Codec.unboundedMap(UUIDUtil.STRING_CODEC, IBroadcastLocation.CODEC)
                     .xmap(
                             map -> {
                                 BroadcastManager storage = new BroadcastManager();
@@ -42,10 +41,10 @@ public final class BroadcastManager extends WorldSavedData {
                     );
 
     public static final StreamCodec<RegistryFriendlyByteBuf, BroadcastManager> STREAM_CODEC =
-            (StreamCodec) ByteBufCodecs.map(
+            ByteBufCodecs.map(
                     i -> new HashMap<>(),
                     UUIDUtil.STREAM_CODEC,
-                    GlobalPos.STREAM_CODEC
+                    IBroadcastLocation.STREAM_CODEC
             ).map(
                     map -> {
                         BroadcastManager storage = new BroadcastManager();
@@ -59,8 +58,8 @@ public final class BroadcastManager extends WorldSavedData {
     /* -------------------- STATE -------------------- */
 
     private final Object lock = new Object();
-    private final HashBiMap<UUID, GlobalPos> uuidToPos = HashBiMap.create(); //thread safe, mutable
-    private volatile Map<UUID, GlobalPos> snapshot = Map.of(); //fast read only
+    private final HashBiMap<UUID, IBroadcastLocation> uuidToPos = HashBiMap.create(); //thread safe, mutable
+    private volatile Map<UUID, IBroadcastLocation> snapshot = Map.of(); //fast read only
 
     private BroadcastManager() {
     }
@@ -71,13 +70,13 @@ public final class BroadcastManager extends WorldSavedData {
         snapshot = Map.copyOf(uuidToPos);
     }
 
-    private boolean addFeedInternal(UUID viewFinderUUID, GlobalPos projectorPos, boolean trusted) {
+    private boolean addFeedInternal(UUID feedUUID, IBroadcastLocation projectorPos, boolean trusted) {
         boolean changed = false;
 
         synchronized (lock) {
             boolean occupied = uuidToPos.inverse().containsKey(projectorPos);
             if (!occupied || trusted) {
-                uuidToPos.forcePut(viewFinderUUID, projectorPos);
+                uuidToPos.forcePut(feedUUID, projectorPos);
                 publishSnapshot();
                 changed = true;
             }
@@ -88,13 +87,13 @@ public final class BroadcastManager extends WorldSavedData {
 
     /* -------------------- PUBLIC API (WRITES) -------------------- */
 
-    public void linkFeed(UUID viewFinderUUID, GlobalPos projectorPos) {
+    public void linkFeed(UUID feedUUID, IBroadcastLocation projectorPos) {
         boolean changed = false;
 
         synchronized (lock) {
-            GlobalPos old = uuidToPos.get(viewFinderUUID);
+            IBroadcastLocation old = uuidToPos.get(feedUUID);
             if (!projectorPos.equals(old)) {
-                uuidToPos.forcePut(viewFinderUUID, projectorPos);
+                uuidToPos.forcePut(feedUUID, projectorPos);
                 publishSnapshot();
                 changed = true;
             }
@@ -106,28 +105,11 @@ public final class BroadcastManager extends WorldSavedData {
         }
     }
 
-    public void unlinkFeed(GlobalPos projectorPos) {
+    public void unlinkFeed(UUID feedUUID) {
         boolean changed = false;
 
         synchronized (lock) {
-            UUID id = uuidToPos.inverse().remove(projectorPos);
-            if (id != null) {
-                publishSnapshot();
-                changed = true;
-            }
-        }
-
-        if (changed) {
-            setDirty();
-            sync();
-        }
-    }
-
-    public void unlinkFeed(UUID viewFinderUUID) {
-        boolean changed = false;
-
-        synchronized (lock) {
-            if (uuidToPos.remove(viewFinderUUID) != null) {
+            if (uuidToPos.remove(feedUUID) != null) {
                 publishSnapshot();
                 changed = true;
             }
@@ -142,12 +124,12 @@ public final class BroadcastManager extends WorldSavedData {
     /* -------------------- PUBLIC API (READS – FAST) -------------------- */
 
     @Nullable
-    public GlobalPos getBroadcastOriginById(UUID viewFinderUUID) {
+    public IBroadcastLocation getFeedLocationById(UUID viewFinderUUID) {
         return snapshot.get(viewFinderUUID);
     }
 
     @Nullable
-    public UUID getIdOfFeedAt(GlobalPos from) {
+    public UUID getIdOfFeedAt(IBroadcastLocation from) {
         for (var e : snapshot.entrySet()) {
             if (e.getValue().equals(from)) {
                 return e.getKey();
@@ -156,27 +138,25 @@ public final class BroadcastManager extends WorldSavedData {
         return null;
     }
 
-    public Iterable<Map.Entry<UUID, GlobalPos>> getAll() {
+    public Iterable<Map.Entry<UUID, IBroadcastLocation>> getAll() {
         return snapshot.entrySet();
     }
 
     @Nullable
-    public IBroadcastProvider getBroadcast(@NotNull UUID feedId, boolean clientSide) {
-        GlobalPos pos = snapshot.get(feedId);
+    public IBroadcastSource getBroadcast(@NotNull UUID feedId, boolean clientSide) {
+        IBroadcastLocation pos = snapshot.get(feedId);
         if (pos == null) return null;
 
-        Level otherLevel = clientSide
-                ? VistaModClient.getLocalLevelByDimension(pos.dimension())
-                : PlatHelper.getCurrentServer().getLevel(pos.dimension());
-
-        if (otherLevel != null && otherLevel.isLoaded(pos.pos())) {
-            if (otherLevel.getBlockEntity(pos.pos()) instanceof IBroadcastProvider provider) {
-                return provider;
-            } else if (!clientSide) {
+        var result = pos.get(clientSide);
+        if (result.isValid()) {
+            return result.getValue();
+        }
+        else{
+            if (!clientSide) {
                 unlinkFeed(feedId);
             }
+            return null;
         }
-        return null;
     }
 
     /* -------------------- WORLD DATA -------------------- */

@@ -2,7 +2,7 @@ package net.mehvahdjukaar.vista.common.projector;
 
 import com.mojang.serialization.MapCodec;
 import net.mehvahdjukaar.moonlight.api.util.Utils;
-import net.mehvahdjukaar.vista.common.BroadcastManager;
+import net.mehvahdjukaar.vista.common.broadcast.BroadcastManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.server.level.ServerLevel;

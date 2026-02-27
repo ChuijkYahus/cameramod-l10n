@@ -14,8 +14,8 @@ import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.client.AdaptiveUpdateScheduler;
 import net.mehvahdjukaar.vista.client.renderer.VistaLevelRenderer;
-import net.mehvahdjukaar.vista.common.BroadcastManager;
-import net.mehvahdjukaar.vista.common.cassette.IBroadcastProvider;
+import net.mehvahdjukaar.vista.common.broadcast.BroadcastManager;
+import net.mehvahdjukaar.vista.common.cassette.IBroadcastSource;
 import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
 import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
@@ -130,7 +130,7 @@ public class LiveFeedTexturesManager {
 
             UUID uuid = text.getAssociatedUUID();
             BroadcastManager manager = BroadcastManager.getInstance(level);
-            IBroadcastProvider provider = manager.getBroadcast(uuid, true); //touch the feed to make sure it's still valid and linked
+            IBroadcastSource provider = manager.getBroadcast(uuid, true); //touch the feed to make sure it's still valid and linked
             if (!(provider instanceof ViewFinderBlockEntity vf)) {
                 if (!text.isDisconnected()) {
                     text.setDisconnected(true);

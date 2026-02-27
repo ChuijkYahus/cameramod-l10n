@@ -5,11 +5,11 @@ import net.mehvahdjukaar.moonlight.api.block.ItemDisplayTile;
 import net.mehvahdjukaar.moonlight.api.misc.TileOrEntityTarget;
 import net.mehvahdjukaar.moonlight.api.platform.network.NetworkHelper;
 import net.mehvahdjukaar.moonlight.api.util.math.MthUtils;
-import net.mehvahdjukaar.supplementaries.common.block.cannon.CannonAccess;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.client.video_source.IVideoSource;
 import net.mehvahdjukaar.vista.client.video_source.LiveFeedVideoSource;
-import net.mehvahdjukaar.vista.common.cassette.IBroadcastProvider;
+import net.mehvahdjukaar.vista.common.broadcast.LevelBELocation;
+import net.mehvahdjukaar.vista.common.cassette.IBroadcastSource;
 import net.mehvahdjukaar.vista.integration.CompatHandler;
 import net.mehvahdjukaar.vista.integration.supplementaries.SuppCompat;
 import net.mehvahdjukaar.vista.network.ClientBoundControlViewFinderPacket;
@@ -29,7 +29,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.UUID;
 
-public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserInteractable, IBroadcastProvider {
+public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserInteractable, IBroadcastSource {
 
     public static final int MAX_ZOOM = 44;
 
@@ -64,7 +64,7 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
     }
 
     @Override
-    public @Nullable IVideoSource getBroadcastVideoSource() {
+    public @Nullable IVideoSource getBroadcastVideo() {
         return this.videoSource;
     }
 
@@ -87,13 +87,13 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
         this.pitch = tag.getFloat("pitch");
         this.locked = tag.getBoolean("locked");
         this.zoom = tag.getInt("zoom");
-        this.ensureLinked(level, getBlockPos());
+        if (level != null) this.ensureLinked(level, LevelBELocation.of(this));
     }
 
     @Override
     public void setLevel(Level level) {
         super.setLevel(level);
-        this.ensureLinked(level, getBlockPos());
+        this.ensureLinked(level, LevelBELocation.of(this));
     }
 
     @Override

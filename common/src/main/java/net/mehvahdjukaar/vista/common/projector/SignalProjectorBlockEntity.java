@@ -4,7 +4,7 @@ import net.mehvahdjukaar.moonlight.api.client.IScreenProvider;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.client.ui.SignalProjectorScreen;
 import net.mehvahdjukaar.vista.client.video_source.IVideoSource;
-import net.mehvahdjukaar.vista.common.cassette.IBroadcastProvider;
+import net.mehvahdjukaar.vista.common.cassette.IBroadcastSource;
 import net.mehvahdjukaar.vista.integration.CompatHandler;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -22,7 +22,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.UUID;
 
-public class SignalProjectorBlockEntity extends BlockEntity implements IScreenProvider, IBroadcastProvider {
+public class SignalProjectorBlockEntity extends BlockEntity implements IScreenProvider, IBroadcastSource {
 
     public Object ccPeripheral;
 
@@ -36,7 +36,7 @@ public class SignalProjectorBlockEntity extends BlockEntity implements IScreenPr
     }
 
     @Override
-    public @Nullable IVideoSource getBroadcastVideoSource() {
+    public @Nullable IVideoSource getBroadcastVideo() {
         return videoSource;
     }
 

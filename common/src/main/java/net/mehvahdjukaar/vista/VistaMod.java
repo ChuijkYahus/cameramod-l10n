@@ -4,8 +4,11 @@ import com.mojang.serialization.Codec;
 import net.mehvahdjukaar.moonlight.api.misc.*;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.platform.RegHelper;
-import net.mehvahdjukaar.vista.common.BroadcastManager;
 import net.mehvahdjukaar.vista.common.ModLootOverrides;
+import net.mehvahdjukaar.vista.common.broadcast.BroadcastLocationType;
+import net.mehvahdjukaar.vista.common.broadcast.BroadcastManager;
+import net.mehvahdjukaar.vista.common.broadcast.IBroadcastLocation;
+import net.mehvahdjukaar.vista.common.broadcast.LevelBELocation;
 import net.mehvahdjukaar.vista.common.cassette.CassetteItem;
 import net.mehvahdjukaar.vista.common.cassette.CassetteTape;
 import net.mehvahdjukaar.vista.common.cassette.CassetteTapeLootFunction;
@@ -64,11 +67,15 @@ public class VistaMod {
                     BroadcastManager.CODEC, BroadcastManager.STREAM_CODEC, false);
 
     public static final ResourceKey<Registry<CassetteTape>> CASSETTE_TAPE_REGISTRY_KEY =
-            ResourceKey.createRegistryKey(res("cassette_tape"));
+            RegHelper.registerDataPackRegistry(res("cassette_tape"),
+                    CassetteTape.DIRECT_CODEC, CassetteTape.DIRECT_CODEC);
 
-    static {
-        RegHelper.registerDataPackRegistry(CASSETTE_TAPE_REGISTRY_KEY, CassetteTape.DIRECT_CODEC, CassetteTape.DIRECT_CODEC);
-    }
+    public static final Registry<BroadcastLocationType> BROADCAST_LOCATION_REGISTRY =
+            RegHelper.registerRegistry(res("broadcast_location"), true);
+
+    public static final Supplier<BroadcastLocationType> LEVEL_BE_BROADCAST =
+            RegHelper.register(res("level_be_location"),
+                    () -> LevelBELocation.TYPE, BROADCAST_LOCATION_REGISTRY.key());
 
     public static final ResourceLocation CINEMA_ADVANCEMENT = res("absolute_cinema");
 

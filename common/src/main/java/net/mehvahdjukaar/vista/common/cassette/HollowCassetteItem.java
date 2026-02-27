@@ -3,10 +3,9 @@ package net.mehvahdjukaar.vista.common.cassette;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.VistaModClient;
-import net.mehvahdjukaar.vista.common.BroadcastManager;
+import net.mehvahdjukaar.vista.common.broadcast.BroadcastManager;
+import net.mehvahdjukaar.vista.common.broadcast.IBroadcastLocation;
 import net.minecraft.ChatFormatting;
-import net.minecraft.core.BlockPos;
-import net.minecraft.core.GlobalPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.Item;
@@ -30,7 +29,7 @@ public class HollowCassetteItem extends Item {
     public InteractionResult useOn(UseOnContext context) {
         Level level = context.getLevel();
         BlockEntity be = level.getBlockEntity(context.getClickedPos());
-        if (be instanceof IBroadcastProvider feed) {
+        if (be instanceof IBroadcastSource feed) {
             if (!level.isClientSide) {
 
                 ItemStack stack = context.getItemInHand();
@@ -56,20 +55,13 @@ public class HollowCassetteItem extends Item {
                 Level level = VistaModClient.getLocalLevel();
                 BroadcastManager connection = BroadcastManager.getInstance(level);
                 if (connection == null) return;
-                GlobalPos gp = connection.getBroadcastOriginById(feedId);
+                IBroadcastLocation gp = connection.getFeedLocationById(feedId);
                 if (gp == null) {
                     tooltipComponents.add(Component.translatable("tooltip.vista.hollow_cassette.linked_unknown")
                             .withStyle(ChatFormatting.GRAY));
                 } else {
-                    if (gp.dimension() == level.dimension()) {
-                        BlockPos pos = gp.pos();
-                        tooltipComponents.add(Component.translatable("tooltip.vista.hollow_cassette.linked",
-                                        pos.getX(), pos.getY(), pos.getZ())
-                                .withStyle(ChatFormatting.GRAY));
-                    } else {
-                        tooltipComponents.add(Component.translatable("tooltip.vista.hollow_cassette.linked_away", gp.dimension())
-                                .withStyle(ChatFormatting.GRAY));
-                    }
+                    var tooltip = gp.getTooltipComponent(level);
+                    tooltipComponents.add(tooltip.withStyle(ChatFormatting.GRAY));
                 }
             }
         }

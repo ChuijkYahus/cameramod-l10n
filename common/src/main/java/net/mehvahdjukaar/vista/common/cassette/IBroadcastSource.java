@@ -1,7 +1,8 @@
 package net.mehvahdjukaar.vista.common.cassette;
 
 import net.mehvahdjukaar.vista.client.video_source.IVideoSource;
-import net.mehvahdjukaar.vista.common.BroadcastManager;
+import net.mehvahdjukaar.vista.common.broadcast.BroadcastManager;
+import net.mehvahdjukaar.vista.common.broadcast.IBroadcastLocation;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.server.level.ServerLevel;
@@ -10,12 +11,12 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.UUID;
 
-public interface IBroadcastProvider {
+public interface IBroadcastSource {
 
-    default void ensureLinked(Level level, BlockPos pos) {
+    default void ensureLinked(Level level, IBroadcastLocation location) {
         if (level instanceof ServerLevel sl) {
             BroadcastManager.getInstance(sl)
-                    .linkFeed(this.getUUID(), new GlobalPos(sl.dimension(), pos));
+                    .linkFeed(this.getUUID(), location);
         }
     }
 
@@ -28,5 +29,5 @@ public interface IBroadcastProvider {
 
     UUID getUUID();
 
-    @Nullable IVideoSource getBroadcastVideoSource();
+    @Nullable IVideoSource getBroadcastVideo();
 }

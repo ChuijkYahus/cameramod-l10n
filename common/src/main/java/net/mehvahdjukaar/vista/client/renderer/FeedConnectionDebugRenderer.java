@@ -2,7 +2,9 @@ package net.mehvahdjukaar.vista.client.renderer;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
-import net.mehvahdjukaar.vista.common.BroadcastManager;
+import net.mehvahdjukaar.vista.common.broadcast.BroadcastManager;
+import net.mehvahdjukaar.vista.common.broadcast.IBroadcastLocation;
+import net.mehvahdjukaar.vista.common.broadcast.LevelBELocation;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.LevelRenderer;
@@ -42,7 +44,14 @@ public class FeedConnectionDebugRenderer implements DebugRenderer.SimpleDebugRen
 
         for (var p : manager.getAll()) {
 
-            GlobalPos from = p.getValue();
+            IBroadcastLocation loc = p.getValue();
+            GlobalPos from;
+            //TODO: render others too
+            if (loc instanceof LevelBELocation(GlobalPos globalPos)) {
+                from = globalPos;
+            } else {
+                continue;
+            }
             UUID feedId = p.getKey();
             if (from.dimension() == level.dimension()) {
                 BlockPos pos = from.pos();
@@ -59,7 +68,7 @@ public class FeedConnectionDebugRenderer implements DebugRenderer.SimpleDebugRen
                         (double) pos.getY() + (double) 1.25F + (offset * 4),
                         (double) pos.getZ() + (double) 0.5F, j);
 
-                UUID feedProv = manager.getIdOfFeedAt( from);
+                UUID feedProv = manager.getIdOfFeedAt(loc);
                 if (feedProv != null) {
                     j = feedProv.equals(feedId) ? j : 0xffff0000;
                     DebugRenderer.renderFloatingText(poseStack, buffer,

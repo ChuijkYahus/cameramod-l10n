@@ -2,8 +2,8 @@ package net.mehvahdjukaar.vista.client.video_source;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.mehvahdjukaar.vista.client.textures.TvScreenVertexConsumers;
-import net.mehvahdjukaar.vista.common.BroadcastManager;
-import net.mehvahdjukaar.vista.common.cassette.IBroadcastProvider;
+import net.mehvahdjukaar.vista.common.broadcast.BroadcastManager;
+import net.mehvahdjukaar.vista.common.cassette.IBroadcastSource;
 import net.mehvahdjukaar.vista.common.tv.IntAnimationState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -21,11 +21,11 @@ public record BroadcastVideoSource(UUID uuid) implements IVideoSource {
                                                         IntAnimationState switchAnim, IntAnimationState staticAnim) {
         Level level = Minecraft.getInstance().level;
         BroadcastManager manager = BroadcastManager.getInstance(level);
-        IBroadcastProvider broadcast = manager.getBroadcast(uuid, true);
+        IBroadcastSource broadcast = manager.getBroadcast(uuid, true);
 
         if (broadcast != null) {
 
-            IVideoSource vfContent = broadcast.getBroadcastVideoSource();
+            IVideoSource vfContent = broadcast.getBroadcastVideo();
             if (vfContent != null) {
                 return vfContent.getVideoFrameBuilder(partialTick, buffer, shouldUpdate, screenSize, pixelEffectRes,
                         videoAnimationTick, paused, switchAnim, staticAnim);
