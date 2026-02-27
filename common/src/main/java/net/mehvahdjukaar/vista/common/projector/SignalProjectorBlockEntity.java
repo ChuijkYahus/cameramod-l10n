@@ -4,6 +4,7 @@ import net.mehvahdjukaar.moonlight.api.client.IScreenProvider;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.client.ui.SignalProjectorScreen;
 import net.mehvahdjukaar.vista.client.video_source.IVideoSource;
+import net.mehvahdjukaar.vista.common.broadcast.LevelBELocation;
 import net.mehvahdjukaar.vista.common.cassette.IBroadcastSource;
 import net.mehvahdjukaar.vista.integration.CompatHandler;
 import net.minecraft.core.BlockPos;
@@ -58,7 +59,7 @@ public class SignalProjectorBlockEntity extends BlockEntity implements IScreenPr
     @Override
     public void setLevel(Level level) {
         super.setLevel(level);
-        this.ensureLinked(level, getBlockPos());
+        this.ensureLinked(level, LevelBELocation.of(this));
     }
 
     @Override
@@ -66,7 +67,7 @@ public class SignalProjectorBlockEntity extends BlockEntity implements IScreenPr
         super.loadAdditional(tag, registries);
         this.myUUID = tag.getUUID("UUID");
         this.url = tag.getString("url");
-        this.ensureLinked(level, getBlockPos());
+      if (level !=null)  this.ensureLinked(level, LevelBELocation.of(this));
 
 
     }
