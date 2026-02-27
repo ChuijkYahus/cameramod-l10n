@@ -36,6 +36,14 @@ public interface ViewFinderAccess {
         return true;
     }
 
+    default Vec3 getCannonGlobalFacing(float partialTicks) {
+        var cannon = this.getInternalTile();
+        return Vec3.directionFromRotation(cannon.getPitch(partialTicks),
+                cannon.getYaw(partialTicks) - this.getCannonGlobalYawOffset(partialTicks));
+    }
+
+    float getCannonGlobalYawOffset(float partialTicks);
+
 
 
     class Block implements ViewFinderAccess {
@@ -43,6 +51,11 @@ public interface ViewFinderAccess {
 
         public Block(ViewFinderBlockEntity tile) {
             this.blockEntity = tile;
+        }
+
+        @Override
+        public float getCannonGlobalYawOffset(float partialTicks) {
+            return 0;
         }
 
         @Override

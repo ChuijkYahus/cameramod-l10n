@@ -1,8 +1,13 @@
 package net.mehvahdjukaar.vista.common.view_finder;
 
 import com.mojang.serialization.MapCodec;
+import net.mehvahdjukaar.moonlight.api.block.IRotatable;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.util.Utils;
+import net.mehvahdjukaar.moonlight.api.util.math.MthUtils;
+import net.mehvahdjukaar.supplementaries.common.block.IAnalogRotatable;
+import net.mehvahdjukaar.supplementaries.common.block.tiles.CannonBlockTile;
+import net.mehvahdjukaar.supplementaries.common.utils.BlockUtil;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.client.ViewFinderController;
 import net.mehvahdjukaar.vista.common.BroadcastManager;
@@ -10,6 +15,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.LivingEntity;
@@ -18,6 +24,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
@@ -26,13 +33,18 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.EntityCollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
 
-public class ViewFinderBlock extends DirectionalBlock implements EntityBlock {
+import java.util.Optional;
+
+public class ViewFinderBlock extends DirectionalBlock implements EntityBlock, IRotatable, IAnalogRotatable {
 
     public static final MapCodec<ViewFinderBlock> CODEC = simpleCodec(ViewFinderBlock::new);
 
@@ -74,7 +86,7 @@ public class ViewFinderBlock extends DirectionalBlock implements EntityBlock {
         if (placer != null && level.getBlockEntity(pos) instanceof ViewFinderBlockEntity cannon) {
             Direction dir = Direction.orderedByNearest(placer)[0];
             Direction myDir = state.getValue(FACING).getOpposite();
-            var access = ViewFinderAccess.block(cannon);
+            var access = cannon.selfAccess;
             if (dir.getAxis() == Direction.Axis.Y) {
                 float pitch = dir == Direction.UP ? -90 : 90;
                 cannon.setPitch(access, (myDir.getOpposite() == dir ? pitch + 180 : pitch));
@@ -160,12 +172,58 @@ public class ViewFinderBlock extends DirectionalBlock implements EntityBlock {
     }
 
 
-    //TODO: bug here
     @Override
     protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         if (PlatHelper.getPhysicalSide().isClient() && ViewFinderController.isActiveAt(pos)) {
             return Shapes.empty();
         }
         return Shapes.block();
+    }
+
+
+    @Override
+    public Optional<BlockState> getRotatedState(BlockState state, LevelAccessor levelAccessor, BlockPos blockPos,
+                                                Rotation rotation, Direction axis, @Nullable Vec3 hit) {
+        boolean ccw = rotation == Rotation.COUNTERCLOCKWISE_90;
+        return BlockUtil.getRotatedDirectionalBlock(state, axis, ccw).or(() -> Optional.of(state));
+    }
+
+    @Override
+    public void onRotated(BlockState newState, BlockState oldState, LevelAccessor world, BlockPos pos, Rotation rotation,
+                          Direction axis, @Nullable Vec3 hit) {
+        if (axis.getAxis() == newState.getValue(FACING).getAxis() && world.getBlockEntity(pos) instanceof ViewFinderBlockEntity tile) {
+            float angle = rotation.rotate(0, 4) * -90;
+            Vector3f currentDir = tile.selfAccess.getCannonGlobalFacing(0).toVector3f();
+            Quaternionf q = new Quaternionf().rotateAxis(angle * Mth.DEG_TO_RAD, axis.step());
+            currentDir.rotate(q);
+            Vec3 newDir = new Vec3(currentDir);
+            tile.setYaw(tile.selfAccess, (float) MthUtils.getYaw(newDir));
+            tile.setPitch(tile.selfAccess, (float) MthUtils.getPitch(newDir));
+            tile.setChanged();
+            tile.getLevel().sendBlockUpdated(pos, oldState, newState, 3);
+        }
+    }
+
+
+    @Override
+    public void rotateAnalog(BlockState state, Level level, BlockPos pos, Direction face, boolean ccw, float speed) {
+        if (level.getBlockEntity(pos) instanceof CannonBlockTile tile) {
+            speed = speed * 0.01f;
+            float deltaAngle = -speed * (ccw ? -1 : 1);
+            Vector3f rotAxis = face.step();
+            Vector3f facingVec = tile.selfAccess.getCannonGlobalFacing(0).toVector3f();
+            //this is the way we face. now a rotation is being performend on the face "face", either ccw or cw. make this vector rotate acocrdingly
+            Quaternionf q = new Quaternionf().rotateAxis(deltaAngle, rotAxis);
+            facingVec.rotate(q);
+            Vec3 newDir = new Vec3(facingVec);
+            tile.selfAccess.setCannonGlobalFacing(newDir, true);
+            tile.setChanged();
+            //  level.sendBlockUpdated(pos, state, state, 3);
+        }
+    }
+
+    @Override
+    public boolean canRotateAnalog(BlockState state, Level level, BlockPos pos, Direction face) {
+        return state.getValue(FACING).getAxis() != face.getAxis();
     }
 }

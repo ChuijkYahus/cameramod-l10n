@@ -5,6 +5,7 @@ import net.mehvahdjukaar.moonlight.api.block.ItemDisplayTile;
 import net.mehvahdjukaar.moonlight.api.misc.TileOrEntityTarget;
 import net.mehvahdjukaar.moonlight.api.platform.network.NetworkHelper;
 import net.mehvahdjukaar.moonlight.api.util.math.MthUtils;
+import net.mehvahdjukaar.supplementaries.common.block.cannon.CannonAccess;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.client.video_source.IVideoSource;
 import net.mehvahdjukaar.vista.client.video_source.LiveFeedVideoSource;
@@ -52,11 +53,14 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
     private UUID controllingPlayer = null;
     private final LiveFeedVideoSource videoSource;
 
+    public final ViewFinderAccess selfAccess;
+
     public ViewFinderBlockEntity(BlockPos pos, BlockState state) {
         super(VistaMod.VIEWFINDER_TILE.get(), pos, state);
 
         this.myUUID = UUID.randomUUID();
         this.videoSource = new LiveFeedVideoSource(this);
+        this.selfAccess = ViewFinderAccess.block(this);
     }
 
     @Override
@@ -191,7 +195,7 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
     }
 
     public void setGlobalYaw(ViewFinderAccess access, float relativeYaw) {
-        //calculateyaw here
+        //calculate here
         float yawOffset = access.getViewFinderGlobalYawOffset(1);
         setYaw(access, relativeYaw);
     }
