@@ -133,7 +133,6 @@ public class ViewFinderBlockEntityRenderer implements BlockEntityRenderer<ViewFi
         poseStack.popPose();
     }
 
-
     public static LayerDefinition createMesh() {
         MeshDefinition meshdefinition = new MeshDefinition();
         PartDefinition partdefinition = meshdefinition.getRoot();
