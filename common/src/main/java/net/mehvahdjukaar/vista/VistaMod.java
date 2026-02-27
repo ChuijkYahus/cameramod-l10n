@@ -174,6 +174,9 @@ public class VistaMod {
         }
 
         //TODO:
+        //tinted panes
+        //night vision and ctr effects for view finders
+        //better way to get a clock overlay on tvs
         //check update rate when multiple view finders are queried
         //change view distance based off fov
         //change update rate based off tv size
