@@ -155,7 +155,7 @@ public class VistaLevelRenderer {
         LevelRenderer lr = mc.levelRenderer;
         Matrix4f oldProjectionMatrix = new Matrix4f(RenderSystem.getProjectionMatrix());
 
-        Matrix4f projMatrix = createProjectionMatrix(gr, target, fov);
+        Matrix4f projMatrix = createProjectionMatrixForCamera(gr, target, fov);
         //fix Y inversion
         gr.resetProjectionMatrix(projMatrix);
 
@@ -195,7 +195,8 @@ public class VistaLevelRenderer {
         dummyCamera.setRotation(yaw, pitch);
     }
 
-    private static Matrix4f createProjectionMatrix(GameRenderer gr, RenderTarget target, float fov) {
+    //Same as GameRenderer getProjectionMatrix but with custom fov and aspect ratio based on target size, and no zoom support (for now)
+    private static Matrix4f createProjectionMatrixForCamera(GameRenderer gr, RenderTarget target, float fov) {
         Matrix4f matrix4f = new Matrix4f();
         float zoom = 1;
 
@@ -215,7 +216,7 @@ public class VistaLevelRenderer {
 
     //mixin called stuff
 
-    public static boolean setupRender(LevelRenderer lr, Camera camera, Frustum frustum, boolean hasCapturedFrustum, boolean isSpectator) {
+    public static boolean onSetupRenderer(LevelRenderer lr, Camera camera, Frustum frustum, boolean hasCapturedFrustum, boolean isSpectator) {
         if (!isRenderingLiveFeed()) {
             return false;
         }
@@ -229,7 +230,7 @@ public class VistaLevelRenderer {
         // Check if the effective render distance has changed; if so, mark all chunks as needing update
         //TODO: change
         if (minecraft.options.getEffectiveRenderDistance() != lr.lastViewDistance) {
-            viewAreaStuffChanged(lr); //never invalidate
+            //viewAreaStuffChanged(lr); //never invalidate
         }
 
         clientLevel.getProfiler().push("camera");
@@ -257,7 +258,8 @@ public class VistaLevelRenderer {
             lr.lastCameraSectionY = cameraSectionY;
             lr.lastCameraSectionZ = cameraSectionZ;
 
-            lr.viewArea.repositionCamera(playerX, playerZ);
+            //view area is not swapped and is always centered on actual player
+            //lr.viewArea.repositionCamera(playerX, playerZ);
         }
 
         // Update the section render dispatcher with the camera position
