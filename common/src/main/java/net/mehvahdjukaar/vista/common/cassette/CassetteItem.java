@@ -3,6 +3,7 @@ package net.mehvahdjukaar.vista.common.cassette;
 import net.mehvahdjukaar.moonlight.api.resources.assets.LangBuilder;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -17,7 +18,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 
-public class CassetteItem extends Item {
+public class CassetteItem extends Item implements ITvCassette {
 
     public CassetteItem(Properties properties) {
         super(properties);
@@ -76,5 +77,14 @@ public class CassetteItem extends Item {
                 }
             });
         }
+    }
+
+    @Override
+    public int getAnalogSignalStrength(ItemStack stack) {
+        Holder<CassetteTape> tape = stack.get(VistaMod.CASSETTE_TAPE_COMPONENT.get());
+        if (tape != null) {
+            return tape.value().getRedstoneOutput();
+        }
+        return 1;
     }
 }

@@ -1,4 +1,5 @@
 {
   "color": "0xfff8ff00",
-  "asset_id": "vista:bounce"
+  "asset_id": "vista:bounce",
+  "comparator_output": 11
 }

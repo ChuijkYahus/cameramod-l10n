@@ -3,6 +3,7 @@ package net.mehvahdjukaar.vista.integration.exposure;
 import io.github.mortuusars.exposure.world.inventory.AlbumMenu;
 import net.mehvahdjukaar.moonlight.api.misc.ForgeOverride;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
+import net.mehvahdjukaar.vista.common.cassette.ITvCassette;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.stats.Stats;
@@ -20,7 +21,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
-public class PictureTapeItem extends Item {
+public class PictureTapeItem extends Item implements ITvCassette {
     public PictureTapeItem(Item.Properties properties) {
         super(properties);
     }
@@ -85,7 +86,12 @@ public class PictureTapeItem extends Item {
     public boolean shouldPlayEquipAnimation(ItemStack oldStack, ItemStack newStack) {
         return oldStack.getItem() != newStack.getItem();
     }
-
     //TODO. faric override
+
+    @Override
+    public int getAnalogSignalStrength(ItemStack stack) {
+        return 13;
+    }
+
 
 }

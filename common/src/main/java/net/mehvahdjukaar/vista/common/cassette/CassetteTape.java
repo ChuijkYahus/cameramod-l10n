@@ -16,15 +16,16 @@ import net.minecraft.util.ExtraCodecs;
 
 import java.util.Optional;
 
-public record CassetteTape(ResourceLocation assetId, int color, Optional<Holder<SoundEvent>> soundEvent, Optional<Integer> soundDuration) {
+public record CassetteTape(ResourceLocation assetId, int color, Optional<Holder<SoundEvent>> soundEvent,
+                           Optional<Integer> soundDuration, int comparatorOutput) {
 
 
     public static final Codec<CassetteTape> DIRECT_CODEC = RecordCodecBuilder.<CassetteTape>create((instance) -> instance.group(
                     ResourceLocation.CODEC.fieldOf("asset_id").forGetter(CassetteTape::assetId),
                     ColorUtils.CODEC.fieldOf("color").forGetter(CassetteTape::color),
                     SoundEvent.CODEC.optionalFieldOf("sound").forGetter(CassetteTape::soundEvent),
-                    ExtraCodecs.POSITIVE_INT.optionalFieldOf("sound_duration").forGetter(CassetteTape::soundDuration)
-
+                    ExtraCodecs.POSITIVE_INT.optionalFieldOf("sound_duration").forGetter(CassetteTape::soundDuration),
+                    ExtraCodecs.intRange(0, 15).optionalFieldOf("comparator_output", 1).forGetter(CassetteTape::comparatorOutput)
             ).apply(instance, CassetteTape::new))
             .validate(obj -> {
                 if (obj.soundEvent.isPresent() && !obj.soundDuration.isPresent()) {
@@ -39,6 +40,7 @@ public record CassetteTape(ResourceLocation assetId, int color, Optional<Holder<
                     ByteBufCodecs.VAR_INT, CassetteTape::color,
                     ByteBufCodecs.optional(SoundEvent.STREAM_CODEC), CassetteTape::soundEvent,
                     ByteBufCodecs.optional(ByteBufCodecs.VAR_INT), CassetteTape::soundDuration,
+                    ByteBufCodecs.VAR_INT, CassetteTape::comparatorOutput,
                     CassetteTape::new);
 
 
@@ -46,4 +48,8 @@ public record CassetteTape(ResourceLocation assetId, int color, Optional<Holder<
 
     public static final StreamCodec<RegistryFriendlyByteBuf, Holder<CassetteTape>> STREAM_CODEC = ByteBufCodecs.holder(
             VistaMod.CASSETTE_TAPE_REGISTRY_KEY, DIRECT_STREAM_CODEC);
+
+    public int getRedstoneOutput() {
+        return 0;
+    }
 }

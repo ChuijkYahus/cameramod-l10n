@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.UUID;
 
 
-public class HollowCassetteItem extends Item {
+public class HollowCassetteItem extends Item implements  ITvCassette {
 
     public HollowCassetteItem(Properties properties) {
         super(properties);
@@ -65,5 +65,10 @@ public class HollowCassetteItem extends Item {
                 }
             }
         }
+    }
+
+    @Override
+    public int getAnalogSignalStrength(ItemStack stack) {
+        return 15;
     }
 }

@@ -4,10 +4,9 @@ import net.mehvahdjukaar.moonlight.api.block.ItemDisplayTile;
 import net.mehvahdjukaar.moonlight.api.util.Utils;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.client.video_source.IVideoSource;
+import net.mehvahdjukaar.vista.common.cassette.ITvCassette;
 import net.mehvahdjukaar.vista.common.tv.enderman.TVEndermanObservationController;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
-import net.mehvahdjukaar.vista.integration.CompatHandler;
-import net.mehvahdjukaar.vista.integration.exposure.ExposureCompat;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
@@ -109,8 +108,7 @@ public class TVBlockEntity extends ItemDisplayTile {
 
     @Override
     public boolean canPlaceItem(int index, ItemStack stack) {
-        return stack.is(VistaMod.CASSETTE.get()) || stack.is(VistaMod.HOLLOW_CASSETTE.get()) ||
-                (CompatHandler.EXPOSURE && ExposureCompat.isPictureItem(stack));
+        return stack.getItem() instanceof ITvCassette;
     }
 
     @Override
@@ -169,7 +167,7 @@ public class TVBlockEntity extends ItemDisplayTile {
 
         //add item
         var result = super.interactWithPlayerItem(player, handIn, stack, slot);
-        if (result.consumesAction() && isEmpty && powered && this.connectedTvsAmount >=3 &&
+        if (result.consumesAction() && isEmpty && powered && this.connectedTvsAmount >= 3 &&
                 player instanceof ServerPlayer sp) {
             //advancement
             Utils.awardAdvancement(sp, VistaMod.CINEMA_ADVANCEMENT);
@@ -255,5 +253,11 @@ public class TVBlockEntity extends ItemDisplayTile {
 
     public int getScreenPixelHeight() {
         return Math.max(1, connectedTvsAmount) * 16 - EDGE_PIXEL_LEN;
+    }
+
+    public int getComparatorOutput() {
+        ItemStack displayed = this.getDisplayedItem();
+        if (displayed.getItem() instanceof ITvCassette tc) return tc.getAnalogSignalStrength(displayed);
+        return 0;
     }
 }
