@@ -102,7 +102,7 @@ public class ViewFinderController {
 
         //TODO: improve and simplify
         if (!isActive()) return false;
-        Vec3 centerCannonPos = access.getCannonGlobalPosition(partialTick);
+        Vec3 centerCannonPos = access.getGlobalPosition(partialTick);
 
 
         // lerp camera

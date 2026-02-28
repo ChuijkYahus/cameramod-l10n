@@ -41,7 +41,7 @@ public record ServerBoundSyncViewFinderPacket(
             ViewFinderAccess access = ViewFinderAccess.find(player.level(), this.target);
             if (access != null) {
                 var cannon = access.getInternalTile();
-                if (cannon.canBeUsedBy(BlockPos.containing(access.getCannonGlobalPosition(1)), player)) {
+                if (cannon.canBeUsedBy(BlockPos.containing(access.getGlobalPosition(1)), player)) {
                     cannon.setAttributes(this.yaw, this.pitch, this.zoomLevel, this.locked, player, access);
                     cannon.setChanged();
                     if (stopControlling) {

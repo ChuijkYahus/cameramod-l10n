@@ -3,6 +3,8 @@ package net.mehvahdjukaar.vista.common.view_finder;
 
 import net.mehvahdjukaar.moonlight.api.misc.TileOrEntityTarget;
 import net.mehvahdjukaar.moonlight.api.platform.network.NetworkHelper;
+import net.mehvahdjukaar.moonlight.api.util.math.MthUtils;
+import net.mehvahdjukaar.supplementaries.common.block.tiles.CannonBlockTile;
 import net.mehvahdjukaar.vista.network.ServerBoundSyncViewFinderPacket;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
@@ -18,7 +20,7 @@ public interface ViewFinderAccess {
 
     void syncToServer(boolean removeOwner);
 
-    Vec3 getCannonGlobalPosition(float partialTicks);
+    Vec3 getGlobalPosition(float partialTicks);
 
     float getViewFinderGlobalYawOffset(float partialTicks);
 
@@ -36,13 +38,37 @@ public interface ViewFinderAccess {
         return true;
     }
 
-    default Vec3 getCannonGlobalFacing(float partialTicks) {
-        var cannon = this.getInternalTile();
-        return Vec3.directionFromRotation(cannon.getPitch(partialTicks),
-                cannon.getYaw(partialTicks) - this.getCannonGlobalYawOffset(partialTicks));
+    default void setGlobalFacing(Vec3 direction) {
+        setGlobalFacing(direction, false);
     }
 
-    float getCannonGlobalYawOffset(float partialTicks);
+    //shouldn't these be in cannon tile
+    default void setGlobalFacing(Vec3 direction, boolean ignoreIfInvalid) {
+        ViewFinderBlockEntity cannon = this.getInternalTile();
+        float yaw = (float) (MthUtils.getYaw(direction) + this.getGlobalYawOffset(0));
+        float pitch = (float) MthUtils.getPitch(direction);
+        float oldYaw = cannon.getYaw(0);
+        float oldPitch = cannon.getPitch(0);
+        cannon.setYaw(this, yaw);
+        cannon.setPitch(this, pitch);
+        if (!ignoreIfInvalid) { //very ugly
+            float newYaw = cannon.getYaw(0);
+            float newPitch = cannon.getPitch(0);
+            if (newYaw != yaw || newPitch != pitch) {
+                //revert
+                cannon.setYaw(this, oldYaw);
+                cannon.setPitch(this, oldPitch);
+            }
+        }
+    }
+
+    default Vec3 getGlobalFacing(float partialTicks) {
+        var cannon = this.getInternalTile();
+        return Vec3.directionFromRotation(cannon.getPitch(partialTicks),
+                cannon.getYaw(partialTicks) - this.getGlobalYawOffset(partialTicks));
+    }
+
+    float getGlobalYawOffset(float partialTicks);
 
 
 
@@ -54,7 +80,7 @@ public interface ViewFinderAccess {
         }
 
         @Override
-        public float getCannonGlobalYawOffset(float partialTicks) {
+        public float getGlobalYawOffset(float partialTicks) {
             return 0;
         }
 
@@ -64,7 +90,7 @@ public interface ViewFinderAccess {
         }
 
         @Override
-        public Vec3 getCannonGlobalPosition(float ticks) {
+        public Vec3 getGlobalPosition(float ticks) {
             return blockEntity.getBlockPos().getCenter();
         }
 

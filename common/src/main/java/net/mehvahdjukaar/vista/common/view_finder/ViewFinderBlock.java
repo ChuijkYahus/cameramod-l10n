@@ -6,7 +6,6 @@ import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.util.Utils;
 import net.mehvahdjukaar.moonlight.api.util.math.MthUtils;
 import net.mehvahdjukaar.supplementaries.common.block.IAnalogRotatable;
-import net.mehvahdjukaar.supplementaries.common.block.tiles.CannonBlockTile;
 import net.mehvahdjukaar.supplementaries.common.utils.BlockUtil;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.client.ViewFinderController;
@@ -14,7 +13,6 @@ import net.mehvahdjukaar.vista.common.broadcast.BroadcastManager;
 import net.mehvahdjukaar.vista.common.broadcast.LevelBELocation;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.GlobalPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
@@ -132,7 +130,7 @@ public class ViewFinderBlock extends DirectionalBlock implements EntityBlock, IR
         super.onRemove(oldState, level, pos, newState, movedByPiston);
         if (oldState.getBlock() == this && newState.getBlock() != this &&
                 level instanceof ServerLevel sl) {
-            BroadcastManager.getInstance(sl).unlinkFeed(LevelBELocation.of(level,pos));
+            BroadcastManager.getInstance(sl).unlinkFeed(LevelBELocation.of(level, pos));
         }
     }
 
@@ -192,7 +190,7 @@ public class ViewFinderBlock extends DirectionalBlock implements EntityBlock, IR
                           Direction axis, @Nullable Vec3 hit) {
         if (axis.getAxis() == newState.getValue(FACING).getAxis() && world.getBlockEntity(pos) instanceof ViewFinderBlockEntity tile) {
             float angle = rotation.rotate(0, 4) * -90;
-            Vector3f currentDir = tile.selfAccess.getCannonGlobalFacing(0).toVector3f();
+            Vector3f currentDir = tile.selfAccess.getGlobalFacing(0).toVector3f();
             Quaternionf q = new Quaternionf().rotateAxis(angle * Mth.DEG_TO_RAD, axis.step());
             currentDir.rotate(q);
             Vec3 newDir = new Vec3(currentDir);
@@ -206,16 +204,16 @@ public class ViewFinderBlock extends DirectionalBlock implements EntityBlock, IR
 
     @Override
     public void rotateAnalog(BlockState state, Level level, BlockPos pos, Direction face, boolean ccw, float speed) {
-        if (level.getBlockEntity(pos) instanceof CannonBlockTile tile) {
+        if (level.getBlockEntity(pos) instanceof ViewFinderBlockEntity tile) {
             speed = speed * 0.01f;
             float deltaAngle = -speed * (ccw ? -1 : 1);
             Vector3f rotAxis = face.step();
-            Vector3f facingVec = tile.selfAccess.getCannonGlobalFacing(0).toVector3f();
+            Vector3f facingVec = tile.selfAccess.getGlobalFacing(0).toVector3f();
             //this is the way we face. now a rotation is being performend on the face "face", either ccw or cw. make this vector rotate acocrdingly
             Quaternionf q = new Quaternionf().rotateAxis(deltaAngle, rotAxis);
             facingVec.rotate(q);
             Vec3 newDir = new Vec3(facingVec);
-            tile.selfAccess.setCannonGlobalFacing(newDir, true);
+            tile.selfAccess.setGlobalFacing(newDir, true);
             tile.setChanged();
             //  level.sendBlockUpdated(pos, state, state, 3);
         }
