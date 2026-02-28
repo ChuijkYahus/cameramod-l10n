@@ -105,6 +105,24 @@ public final class BroadcastManager extends WorldSavedData {
         }
     }
 
+
+    public void unlinkFeed(IBroadcastLocation projectorPos) {
+        boolean changed = false;
+
+        synchronized (lock) {
+            UUID old = uuidToPos.inverse().remove(projectorPos);
+            if (old != null) {
+                publishSnapshot();
+                changed = true;
+            }
+        }
+
+        if (changed) {
+            setDirty();
+            sync();
+        }
+    }
+
     public void unlinkFeed(UUID feedUUID) {
         boolean changed = false;
 

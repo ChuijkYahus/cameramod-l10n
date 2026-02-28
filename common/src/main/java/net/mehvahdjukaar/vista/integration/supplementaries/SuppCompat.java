@@ -13,9 +13,9 @@ import java.util.function.Supplier;
 public class SuppCompat {
 
     private static final Supplier<Item> QUARK_GLASS_PANE =
-            Suppliers.memoize(() -> (BuiltInRegistries.ITEM.getOptional(new ResourceLocation("quark:dirty_glass_pane")))
+            Suppliers.memoize(() -> (BuiltInRegistries.ITEM.getOptional(ResourceLocation.fromNamespaceAndPath("quark","dirty_glass_pane")))
                     .orElse(null));
-    private static final ResourceLocation RETRO_SHADER = new ResourceLocation("vista:shaders/post/ntsc_codec.json");
+    private static final ResourceLocation RETRO_SHADER =  VistaMod.res("shaders/post/ntsc_codec.json");
 
     public static ResourceLocation getShaderForItem(Item item) {
         if (item == VistaMod.TV_ITEM.get()) return null;

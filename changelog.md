@@ -1,1 +1,1 @@
-fixed some stuff with compat classes
+misc fixes and improvements

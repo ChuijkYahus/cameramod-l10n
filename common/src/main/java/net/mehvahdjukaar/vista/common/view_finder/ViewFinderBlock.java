@@ -11,6 +11,7 @@ import net.mehvahdjukaar.supplementaries.common.utils.BlockUtil;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.client.ViewFinderController;
 import net.mehvahdjukaar.vista.common.broadcast.BroadcastManager;
+import net.mehvahdjukaar.vista.common.broadcast.LevelBELocation;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.GlobalPos;
@@ -129,10 +130,9 @@ public class ViewFinderBlock extends DirectionalBlock implements EntityBlock, IR
     @Override
     protected void onRemove(BlockState oldState, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
         super.onRemove(oldState, level, pos, newState, movedByPiston);
-        if (oldState.getBlock() instanceof ViewFinderBlock &&
-                !(newState.getBlock() instanceof ViewFinderBlock) &&
+        if (oldState.getBlock() == this && newState.getBlock() != this &&
                 level instanceof ServerLevel sl) {
-            BroadcastManager.getInstance(sl).unlinkFeed(new GlobalPos(level.dimension(), pos));
+            BroadcastManager.getInstance(sl).unlinkFeed(LevelBELocation.of(level,pos));
         }
     }
 
