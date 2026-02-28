@@ -6,12 +6,12 @@
     ],
     "passes": [
         {
-            "name": "ntsc_encode",
+            "name": "vista:ntsc_encode",
             "intarget": "minecraft:main",
             "outtarget": "swap"
         },
         {
-            "name": "ntsc_decode",
+            "name": "vista:ntsc_decode",
             "intarget": "swap",
             "outtarget": "swap2",
             "auxtargets": [
@@ -22,17 +22,17 @@
             ]
         },
         {
-            "name": "deconverge",
+            "name": "vista:deconverge",
             "intarget": "swap2",
             "outtarget": "minecraft:main"
         },
         {
-            "name": "scan_pincushion",
+            "name": "vista:scan_pincushion",
             "intarget": "minecraft:main",
             "outtarget": "swap"
         },
         {
-            "name": "phosphor",
+            "name": "vista:phosphor",
             "intarget": "swap",
             "outtarget": "minecraft:main",
             "auxtargets": [
