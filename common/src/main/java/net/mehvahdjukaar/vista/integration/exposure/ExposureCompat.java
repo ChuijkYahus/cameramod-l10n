@@ -42,7 +42,7 @@ public class ExposureCompat {
     //TODO: add picture tape item that can be insterted inplace of photops. basically a clone of the album but less functionality. also it holds maps
 
 
-    public static boolean isPictureItem(ItemStack stack) {
+    private static boolean isPictureItem(ItemStack stack) {
         Item item = stack.getItem();
         return item instanceof PictureTapeItem ||
                 item instanceof PhotographItem || item instanceof StackedPhotographsItem || item instanceof AlbumItem;

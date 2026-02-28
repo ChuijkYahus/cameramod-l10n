@@ -124,7 +124,6 @@ public class VistaModClient {
         VistaLevelRenderer.clear();
     }
 
-    @EventCalled
     public static void onClientTick(Minecraft minecraft) {
         if (minecraft.isPaused() || minecraft.level == null) return;
 
@@ -134,7 +133,6 @@ public class VistaModClient {
         ViewFinderController.onClientTick(minecraft);
     }
 
-    @EventCalled
     public static void onRenderTickEnd(Minecraft minecraft) {
         LiveFeedTexturesManager.onRenderTickEnd();
     }

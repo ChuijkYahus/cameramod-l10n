@@ -62,6 +62,13 @@ public class VistaMod {
         return ResourceLocation.fromNamespaceAndPath(MOD_ID, name);
     }
 
+    public static final Registry<BroadcastLocationType> BROADCAST_LOCATION_REGISTRY =
+            RegHelper.registerRegistry(res("broadcast_location"), true);
+
+    public static final Supplier<BroadcastLocationType> LEVEL_BE_BROADCAST =
+            RegHelper.register(res("level_be_location"),
+                    () -> LevelBELocation.TYPE, BROADCAST_LOCATION_REGISTRY.key());
+
     public static final WorldSavedDataType<BroadcastManager> VIEWFINDER_CONNECTION =
             RegHelper.registerWorldSavedData(res("viewfinder_connection"), BroadcastManager::create,
                     BroadcastManager.CODEC, BroadcastManager.STREAM_CODEC, false);
@@ -70,12 +77,6 @@ public class VistaMod {
             RegHelper.registerDataPackRegistry(res("cassette_tape"),
                     CassetteTape.DIRECT_CODEC, CassetteTape.DIRECT_CODEC);
 
-    public static final Registry<BroadcastLocationType> BROADCAST_LOCATION_REGISTRY =
-            RegHelper.registerRegistry(res("broadcast_location"), true);
-
-    public static final Supplier<BroadcastLocationType> LEVEL_BE_BROADCAST =
-            RegHelper.register(res("level_be_location"),
-                    () -> LevelBELocation.TYPE, BROADCAST_LOCATION_REGISTRY.key());
 
     public static final ResourceLocation CINEMA_ADVANCEMENT = res("absolute_cinema");
 
