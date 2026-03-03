@@ -107,7 +107,7 @@ dependencies {
     modImplementation("curse.maven:jei-238222:7057366")
     modCompileOnly("curse.maven:cc-tweaked-282001:5714512")
     //modImplementation("cc.tweaked-cobalt:cobalt:0.93")
-    modImplementation("net.mehvahdjukaar:supplementaries-neoforge:${supplementaries_version}"){
+    modCompileOnly("net.mehvahdjukaar:supplementaries-neoforge:${supplementaries_version}"){
         transitive = false
     }
 

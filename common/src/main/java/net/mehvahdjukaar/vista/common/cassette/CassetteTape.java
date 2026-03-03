@@ -13,12 +13,12 @@ import net.minecraft.resources.RegistryFileCodec;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.util.ExtraCodecs;
+import net.minecraft.world.item.Item;
 
 import java.util.Optional;
 
 public record CassetteTape(ResourceLocation assetId, int color, Optional<Holder<SoundEvent>> soundEvent,
                            Optional<Integer> soundDuration, int comparatorOutput) {
-
 
     public static final Codec<CassetteTape> DIRECT_CODEC = RecordCodecBuilder.<CassetteTape>create((instance) -> instance.group(
                     ResourceLocation.CODEC.fieldOf("asset_id").forGetter(CassetteTape::assetId),
@@ -43,11 +43,6 @@ public record CassetteTape(ResourceLocation assetId, int color, Optional<Holder<
                     ByteBufCodecs.VAR_INT, CassetteTape::comparatorOutput,
                     CassetteTape::new);
 
-
-    public static final Codec<Holder<CassetteTape>> CODEC = RegistryFileCodec.create(VistaMod.CASSETTE_TAPE_REGISTRY_KEY, DIRECT_CODEC);
-
-    public static final StreamCodec<RegistryFriendlyByteBuf, Holder<CassetteTape>> STREAM_CODEC = ByteBufCodecs.holder(
-            VistaMod.CASSETTE_TAPE_REGISTRY_KEY, DIRECT_STREAM_CODEC);
 
     public int getRedstoneOutput() {
         return 0;

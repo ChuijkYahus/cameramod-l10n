@@ -230,7 +230,7 @@ public class VistaLevelRenderer {
         // Check if the effective render distance has changed; if so, mark all chunks as needing update
         //TODO: change
         if (minecraft.options.getEffectiveRenderDistance() != lr.lastViewDistance) {
-            //viewAreaStuffChanged(lr); //never invalidate
+            viewAreaStuffChanged(lr); //this initializes stuff and is crucial but could be hooked up better
         }
 
         clientLevel.getProfiler().push("camera");

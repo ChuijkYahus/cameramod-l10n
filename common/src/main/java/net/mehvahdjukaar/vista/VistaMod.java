@@ -7,7 +7,6 @@ import net.mehvahdjukaar.moonlight.api.platform.RegHelper;
 import net.mehvahdjukaar.vista.common.ModLootOverrides;
 import net.mehvahdjukaar.vista.common.broadcast.BroadcastLocationType;
 import net.mehvahdjukaar.vista.common.broadcast.BroadcastManager;
-import net.mehvahdjukaar.vista.common.broadcast.IBroadcastLocation;
 import net.mehvahdjukaar.vista.common.broadcast.LevelBELocation;
 import net.mehvahdjukaar.vista.common.cassette.CassetteItem;
 import net.mehvahdjukaar.vista.common.cassette.CassetteTape;
@@ -31,6 +30,8 @@ import net.minecraft.core.Registry;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.resources.RegistryFileCodec;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
@@ -62,6 +63,11 @@ public class VistaMod {
         return ResourceLocation.fromNamespaceAndPath(MOD_ID, name);
     }
 
+
+    public static final ResourceKey<Registry<CassetteTape>> CASSETTE_TAPE_REGISTRY_KEY =
+            RegHelper.registerDataPackRegistry(res("cassette_tape"),
+                    CassetteTape.DIRECT_CODEC, CassetteTape.DIRECT_CODEC);
+
     public static final Registry<BroadcastLocationType> BROADCAST_LOCATION_REGISTRY =
             RegHelper.registerRegistry(res("broadcast_location"), true);
 
@@ -71,12 +77,7 @@ public class VistaMod {
 
     public static final WorldSavedDataType<BroadcastManager> VIEWFINDER_CONNECTION =
             RegHelper.registerWorldSavedData(res("viewfinder_connection"), BroadcastManager::create,
-                    BroadcastManager.CODEC, BroadcastManager.STREAM_CODEC, false);
-
-    public static final ResourceKey<Registry<CassetteTape>> CASSETTE_TAPE_REGISTRY_KEY =
-            RegHelper.registerDataPackRegistry(res("cassette_tape"),
-                    CassetteTape.DIRECT_CODEC, CassetteTape.DIRECT_CODEC);
-
+                    () -> BroadcastManager.CODEC, () -> BroadcastManager.STREAM_CODEC, false);
 
     public static final ResourceLocation CINEMA_ADVANCEMENT = res("absolute_cinema");
 
@@ -133,8 +134,8 @@ public class VistaMod {
     public static final Supplier<DataComponentType<Holder<CassetteTape>>> CASSETTE_TAPE_COMPONENT = RegHelper.registerDataComponent(
             res("cassette_tape"), () ->
                     DataComponentType.<Holder<CassetteTape>>builder()
-                            .persistent(CassetteTape.CODEC)
-                            .networkSynchronized(CassetteTape.STREAM_CODEC)
+                            .persistent(RegistryFileCodec.create(VistaMod.CASSETTE_TAPE_REGISTRY_KEY, CassetteTape.DIRECT_CODEC))
+                            .networkSynchronized(ByteBufCodecs.holderRegistry(VistaMod.CASSETTE_TAPE_REGISTRY_KEY))
                             .build());
 
     public static final IAttachmentType<Boolean, EnderMan> ENDERMAN_CAP = RegHelper.registerDataAttachment(
