@@ -1,1 +1,2 @@
-- fixed 3 critical bugs all added in latest update which made view finders crash, cassettes disconnect and added supplementaries as a dep
+- fixed cassettes not dropping from tvs
+- fixed mob heads not working on servers
