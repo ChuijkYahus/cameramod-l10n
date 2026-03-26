@@ -7,7 +7,6 @@ import net.mehvahdjukaar.moonlight.api.util.math.Direction2D;
 import net.mehvahdjukaar.moonlight.api.util.math.MthUtils;
 import net.mehvahdjukaar.moonlight.api.util.math.Rect2D;
 import net.mehvahdjukaar.moonlight.api.util.math.Vec2i;
-import net.mehvahdjukaar.supplementaries.common.block.blocks.NoticeBoardBlock;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.common.tv.connection.GridAccessor;
 import net.mehvahdjukaar.vista.common.tv.connection.GridTile;
@@ -29,11 +28,9 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
-import net.minecraft.world.level.block.JukeboxBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
-import net.minecraft.world.level.block.entity.JukeboxBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
@@ -241,6 +238,7 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
     }
 
     private void shrinkConnection(BlockState tvState, Level level, BlockPos pos) {
+        if (tvState.getValue(CONNECTION) == TVType.SINGLE) return;
         int maxSize = CommonConfigs.MAX_CONNECTED_TV_SIZE.get();
         if (maxSize <= 1) return;
         TVGridAccess gridAccess = new TVGridAccess(level, pos, tvState);
