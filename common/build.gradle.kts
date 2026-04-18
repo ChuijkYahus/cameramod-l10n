@@ -9,10 +9,8 @@ neoForge {
     }
 }
 
-// see fabric/build.gradle
 val moonlight_version: String by extra
 val supplementaries_version: String by extra
-//val candlelight_version: String by extra
 
 dependencies {
     //compileOnly("net.mehvahdjukaar:candlelight:${candlelight_version}")
@@ -26,11 +24,7 @@ dependencies {
     modCompileOnly("curse.maven:distant-horizons-508933:7336780")
 
     modCompileOnly("curse.maven:cc-tweaked-282001:5714512")
-    // implementation files("mods/entityculling-fabric:1.10.1-mc1.21.1.jar")
-
     //modCompileOnly files("mods/entityculling-fabric-1.10.1-mc1.21.1.jar")
-
-    //modCompileOnly("dev.tr7zw:entityculling-fabric:1.10.1-mc1.21.1")
     //modCompileOnly("maven.modrinth:entityculling:1.10.1-1.21.1+-+NeoForge")
     //modCompileOnly "curse.maven:entityculling-448233:7900085"
     modCompileOnly("curse.maven:jei-238222:5846878")

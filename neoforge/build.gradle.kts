@@ -8,9 +8,6 @@ neoforge {
 
 dependencies {
 
-    // This is ony way to do it in kotlin
-    // the other is in fabric/build.gradle
-    // the third would also be version catalogs
     modApi("net.mehvahdjukaar:moonlight-neoforge:${project.extra["moonlight_version"]}") {
         isTransitive = true
     }
