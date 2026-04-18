@@ -10,9 +10,7 @@ fabric {
 dependencies {
 
 
-    modApi("net.mehvahdjukaar:moonlight-fabric:${moonlight_version}"){
-        transitive = false
-    }
+    //modImplementation("net.mehvahdjukaar:moonlight-fabric:${moonlight_version}")
     /*
      modRuntimeOnly("net.mehvahdjukaar:supplementaries-fabric:${supplementaries_version}"){
          transitive = false

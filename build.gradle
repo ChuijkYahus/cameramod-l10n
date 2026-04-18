@@ -7,6 +7,29 @@ plugins {
     id "net.mehvahdjukaar.candlelight" version "${candlelight_version}" apply false
 }
 
+mod {
+    additional.add("mod_description", provider { project.mod_description })
+    additional.add("mod_credits", provider { project.mod_credits })
+    additional.add("mod_license", provider { project.mod_license })
+    additional.add("mod_homepage", provider { project.mod_homepage })
+    additional.add("moonlight_min_version", provider { project.moonlight_min_version })
+}
+
+allprojects {
+    repositories {
+        // Standard repositories
+        mavenLocal()
+        mavenCentral()
+
+        // Flat directory for local mods
+        flatDir { dirs "mods" }
+
+        // Our publishing repo
+        maven { url = "https://registry.somethingcatchy.net/repository/maven-releases/" }
+
+    }
+}
+
 subprojects {
     apply plugin: "com.possible-triangle.core"
 

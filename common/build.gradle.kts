@@ -3,9 +3,9 @@ plugins {
 }
 
 dependencies {
+    val moonlight_version = project.findProperty("moonlight_version") as String
 
-
-    implementation("net.mehvahdjukaar:moonlight:${moonlight_version}")
+   // modApi("net.mehvahdjukaar:moonlight:$moonlight_version")
     /*
     modCompileOnly("net.mehvahdjukaar:supplementaries:${supplementaries_version}")
     // modImplementation("curse.maven:selene-499980:7113116")
