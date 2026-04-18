@@ -1,0 +1,28 @@
+plugins {
+    id("com.possible-triangle.neoforge")
+}
+
+neoforge {
+    dependOn(project(":common"))
+}
+
+dependencies {
+
+    // This is ony way to do it in kotlin
+    // the other is in fabric/build.gradle.kts
+    // the third would also be version catalogs
+    modApi("net.mehvahdjukaar:moonlight-neoforge:${project.extra["moonlight_version"]}") {
+        isTransitive = true
+    }
+
+    modCompileOnly("net.mehvahdjukaar:supplementaries-neoforge:${project.extra["supplementaries_version"]}}") {
+        isTransitive = false
+    }
+
+    //modImplementation("cc.tweaked-cobalt:cobalt:0.93")
+    modCompileOnly("curse.maven:exposure-871755:7033927")
+    modImplementation("curse.maven:jei-238222:7057366")
+    modCompileOnly("curse.maven:cc-tweaked-282001:5714512")
+
+    //  modImplementation("cc.tweaked:cc-tweaked-1.21.1-forge:1.117.0")
+}
