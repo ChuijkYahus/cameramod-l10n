@@ -5,30 +5,30 @@ plugins {
     id("com.possible-triangle.common") apply false
     id("com.possible-triangle.fabric") apply false
     id("com.possible-triangle.neoforge") apply false
-    id("net.mehvahdjukaar.candlelight") apply false
+   // id("net.mehvahdjukaar.candlelight") version "1.0.0" apply false
 }
 
 subprojects {
     apply(plugin = "com.possible-triangle.core")
+    //apply(plugin = "net.mehvahdjukaar.candlelight")
 
     repositories {
         nexus()
     }
-
-    /*
-    // Will add in gradle helper itself tomorrow
-    dependencies {
-        mappings loom.layered() {
-            it.officialMojangMappings { setNameSyntheticMembers(false) }
-            it.parchment("org.parchmentmc.data:parchment-${parchment_version}")
-        }
-    }*/
 
     upload {
         maven {
             nexus()
         }
     }
+/*
+
+    candlelight {
+        clientOnly = false
+        logging = true
+    }
+ */
+
 
     tasks.withType<JavaCompile> {
         options.compilerArgs.addAll(listOf("-Xmaxerrs", "4000"))
@@ -52,8 +52,6 @@ tasks.register("buildAndPublishAll") {
 }
 
 tasks.register("gitTag") {
-    // `exec` in tasks is deprecated in gradle 9, needs this object now
-    // that's not a kotlin issue btw, it's also deprecated in groovy
     val execOps = project.objects.newInstance<ExecOperations>()
 
     group = "build"
