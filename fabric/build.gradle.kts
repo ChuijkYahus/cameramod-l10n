@@ -7,7 +7,7 @@ fabric {
 }
 
 // This is ony way to do it in kotlin
-// the other is in neoforge/build.gradle
+// the other is in neoforge/build.gradle.kts
 // the third would also be version catalogs
 val moonlight_version: String by extra
 val supplementaries_version: String by extra
