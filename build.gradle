@@ -10,20 +10,23 @@ plugins {
 subprojects {
     apply plugin: "com.possible-triangle.core"
 
+
+    /*
+    dependencies {
+        mappings loom.layered() {
+            it.officialMojangMappings { setNameSyntheticMembers(false) }
+            it.parchment("org.parchmentmc.data:parchment-${parchment_version}")
+        }
+    }*/
+
+
     upload {
         maven {
-        //    nexus()
+//           nexus()
         }
     }
 
     tasks.withType(JavaCompile).configureEach {
-        options.compilerArgs.add(
-                "-Acrafttweaker.processor.document.output_directory=${new File(rootProject.buildDir, "docsOut")}"
-        )
-        options.compilerArgs.add(
-                "-Acrafttweaker.processor.document.multi_source=true"
-        )
-
         options.compilerArgs << "-Xmaxerrs" << "4000"
     }
 }
