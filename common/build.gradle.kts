@@ -2,6 +2,13 @@ plugins {
     id("com.possible-triangle.common")
 }
 
+neoForge {
+    parchment {
+        mappingsVersion = "2024.11.17"
+        minecraftVersion = "1.21.1"
+    }
+}
+
 dependencies {
     val moonlight_version = project.findProperty("moonlight_version") as String
 
