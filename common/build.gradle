@@ -1,16 +1,11 @@
 plugins {
     id("com.possible-triangle.common")
-    id 'net.mehvahdjukaar.candlelight' version "${candlelight_version}" apply false
-
 }
-val moonlight_version: String by project
-val supplementaries_version: String by project
-
 
 dependencies {
-
-    modApi("net.mehvahdjukaar:moonlight:$moonlight_version")
-    modCompileOnly("net.mehvahdjukaar:supplementaries:$supplementaries_version")
+ /*
+    modApi("net.mehvahdjukaar:moonlight:${moonlight_version}")
+    modCompileOnly("net.mehvahdjukaar:supplementaries:${supplementaries_version}")
     // modImplementation("curse.maven:selene-499980:7113116")
 
     modImplementation("curse.maven:exposure-871755:7033927")
@@ -30,6 +25,6 @@ dependencies {
 
     modCompileOnly("curse.maven:alexs-caves-924854:4806837")
 
-
+*/
 
 }

@@ -1,0 +1,84 @@
+plugins {
+    id "com.possible-triangle.core"
+    id "com.possible-triangle.common" apply false
+    id "com.possible-triangle.fabric" apply false
+    id "com.possible-triangle.forge" apply false
+    id "com.possible-triangle.neoforge" apply false
+    id "net.mehvahdjukaar.candlelight" version "${candlelight_version}" apply false
+}
+
+subprojects {
+    apply plugin: "com.possible-triangle.core"
+
+    upload {
+        maven {
+        //    nexus()
+        }
+    }
+
+    tasks.withType(JavaCompile).configureEach {
+        options.compilerArgs.add(
+                "-Acrafttweaker.processor.document.output_directory=${new File(rootProject.buildDir, "docsOut")}"
+        )
+        options.compilerArgs.add(
+                "-Acrafttweaker.processor.document.multi_source=true"
+        )
+
+        options.compilerArgs << "-Xmaxerrs" << "4000"
+    }
+}
+
+tasks.register("buildAndPublishAll") {
+    dependsOn ":clean",
+            ":common:clean",
+            ":fabric:clean",
+            ":neoforge:clean",
+            ":build",
+            ":neoforge:build",
+            ":fabric:build",
+            ":neoforge:curseforge",
+            ":neoforge:modrinth",
+            ":fabric:curseforge",
+            ":fabric:modrinth",
+            ":publish",
+            ":fabric:publish",
+            ":neoforge:publish",
+            ":publishToMavenLocal"
+
+    finalizedBy ":gitTag"
+
+    group = "build"
+    description = "Runs clean, build, and publish neoforge and fabric"
+}
+
+tasks.register("gitTag") {
+    group = "build"
+    description = "Create and push git tag from project version"
+
+    doLast {
+        def tag = project.version.toString()
+
+        // check if tag already exists
+        def stdout = new ByteArrayOutputStream()
+
+        exec {
+            commandLine "git", "tag", "-l", tag
+            standardOutput = stdout
+        }
+
+        if (!stdout.toString().trim().isEmpty()) {
+            logger.warn("Git tag '${tag}' already exists")
+        } else {
+
+            // create annotated tag
+            exec {
+                commandLine "git", "tag", "-a", tag, "-m", "Release ${tag}"
+            }
+
+            // push tag
+            exec {
+                commandLine "git", "push", "origin", tag
+            }
+        }
+    }
+}

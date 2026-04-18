@@ -8,15 +8,8 @@ fabric {
 
 
 dependencies {
-    modImplementation "net.fabricmc:fabric-loader:${fabric_loader_version}"
-    modApi "net.fabricmc.fabric-api:fabric-api:${fabric_api_version}"
 
-
-    common(project(path: ":common", configuration: "namedElements")) { transitive false }
-    shadowCommon(project(path: ":common", configuration: "transformProductionFabric")) { transitive false }
-
-    include(implementation(annotationProcessor("io.github.llamalad7:mixinextras-fabric:0.5.0")))
-
+    /*
     modApi("net.mehvahdjukaar:moonlight-fabric:${moonlight_version}"){
         transitive = false
     }
@@ -33,4 +26,6 @@ dependencies {
     modCompileOnly("curse.maven:modmenu-308702:3920481")
     //modImplementation("cc.tweaked-cobalt:cobalt:0.93")
    // modCompileOnly "com.terraformersmc:modmenu:4.0.6",
+
+     */
 }
