@@ -6,19 +6,23 @@ neoforge {
     dependOn(project(":common"))
 }
 
-
 dependencies {
 
-   // modApi("net.mehvahdjukaar:moonlight-neoforge:${moonlight_version}"){ transitive = true }
-    /*
-        modCompileOnly("curse.maven:exposure-871755:7033927")
-        modImplementation("curse.maven:jei-238222:7057366")
-        modCompileOnly("curse.maven:cc-tweaked-282001:5714512")
-        //modImplementation("cc.tweaked-cobalt:cobalt:0.93")
-        modCompileOnly("net.mehvahdjukaar:supplementaries-neoforge:${supplementaries_version}"){
-            transitive = false
-        }
+    // This is ony way to do it in kotlin
+    // the other is in fabric/build.gradle
+    // the third would also be version catalogs
+    modApi("net.mehvahdjukaar:moonlight-neoforge:${project.extra["moonlight_version"]}") {
+        isTransitive = true
+    }
 
-      //  modImplementation("cc.tweaked:cc-tweaked-1.21.1-forge:1.117.0")
-    */
+    modCompileOnly("net.mehvahdjukaar:supplementaries-neoforge:${project.extra["supplementaries_version"]}}") {
+        isTransitive = false
+    }
+
+    //modImplementation("cc.tweaked-cobalt:cobalt:0.93")
+    modCompileOnly("curse.maven:exposure-871755:7033927")
+    modImplementation("curse.maven:jei-238222:7057366")
+    modCompileOnly("curse.maven:cc-tweaked-282001:5714512")
+
+    //  modImplementation("cc.tweaked:cc-tweaked-1.21.1-forge:1.117.0")
 }

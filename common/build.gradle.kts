@@ -9,11 +9,14 @@ neoForge {
     }
 }
 
-dependencies {
-    val moonlight_version = project.findProperty("moonlight_version") as String
+// see fabric/build.gradle
+val moonlight_version: String by extra
+val supplementaries_version: String by extra
 
-   // modApi("net.mehvahdjukaar:moonlight:$moonlight_version")
-    /*
+dependencies {
+
+    modImplementation("net.mehvahdjukaar:moonlight:${moonlight_version}")
+
     modCompileOnly("net.mehvahdjukaar:supplementaries:${supplementaries_version}")
     // modImplementation("curse.maven:selene-499980:7113116")
 
@@ -21,7 +24,7 @@ dependencies {
     modCompileOnly("curse.maven:distant-horizons-508933:7336780")
 
     modCompileOnly("curse.maven:cc-tweaked-282001:5714512")
-  //  implementation files("mods/entityculling-fabric:1.10.1-mc1.21.1.jar")
+    // implementation files("mods/entityculling-fabric:1.10.1-mc1.21.1.jar")
 
     //modCompileOnly files("mods/entityculling-fabric-1.10.1-mc1.21.1.jar")
 
@@ -33,7 +36,4 @@ dependencies {
     modCompileOnly("curse.maven:sodium-394468:6382649")
 
     modCompileOnly("curse.maven:alexs-caves-924854:4806837")
-
-*/
-
 }
