@@ -11,9 +11,10 @@ neoForge {
 
 val moonlight_version: String by extra
 val supplementaries_version: String by extra
+val candlelight_version: String by extra
 
 dependencies {
-    //compileOnly("net.mehvahdjukaar:candlelight:${candlelight_version}")
+    compileOnly("net.mehvahdjukaar:candlelight:${candlelight_version}")
 
     modImplementation("net.mehvahdjukaar:moonlight:${moonlight_version}")
 

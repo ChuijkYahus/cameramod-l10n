@@ -1,10 +1,11 @@
-package net.mehvahdjukaar.vista.neoforge;
+package net.mehvahdjukaar.vista.platform;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.neoforged.neoforge.client.ClientHooks;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
+import net.neoforged.neoforge.common.NeoForge;
 import org.joml.Matrix4f;
 
 public class VistaPlatStuffImpl {
@@ -18,4 +19,5 @@ public class VistaPlatStuffImpl {
         mc.getProfiler().pop();
 
     }
+
 }

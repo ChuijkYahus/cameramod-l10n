@@ -1,4 +1,4 @@
-package net.mehvahdjukaar.vista.integration.computer_craft.fabric;
+package net.mehvahdjukaar.vista.integration.computer_craft.platform;
 
 import dan200.computercraft.api.peripheral.IPeripheral;
 import dan200.computercraft.api.peripheral.PeripheralLookup;

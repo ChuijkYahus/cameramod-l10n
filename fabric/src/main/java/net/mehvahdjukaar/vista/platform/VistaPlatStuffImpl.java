@@ -1,4 +1,4 @@
-package net.mehvahdjukaar.vista.fabric;
+package net.mehvahdjukaar.vista.platform;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Camera;
