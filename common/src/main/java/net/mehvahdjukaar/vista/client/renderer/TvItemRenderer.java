@@ -2,6 +2,7 @@ package net.mehvahdjukaar.vista.client.renderer;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import net.mehvahdjukaar.candlelight.core.CandleLightExtension;
 import net.mehvahdjukaar.moonlight.api.client.ItemStackRenderer;
 import net.mehvahdjukaar.vista.client.textures.TvScreenVertexConsumers;
 import net.mehvahdjukaar.vista.common.tv.TVItem;

@@ -6,19 +6,12 @@ fabric {
     dependOn(project(":common"))
 }
 
-// This is ony way to do it in kotlin
-// the other is in neoforge/build.gradle.kts
-// the third would also be version catalogs
 val moonlight_version: String by extra
 val supplementaries_version: String by extra
 
 dependencies {
 
     modApi("net.mehvahdjukaar:moonlight-fabric:${moonlight_version}") {
-        isTransitive = false
-    }
-
-    modRuntimeOnly("net.mehvahdjukaar:supplementaries-fabric:${supplementaries_version}") {
         isTransitive = false
     }
 

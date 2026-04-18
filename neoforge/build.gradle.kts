@@ -12,9 +12,7 @@ dependencies {
         isTransitive = true
     }
 
-    modCompileOnly("net.mehvahdjukaar:supplementaries-neoforge:${project.extra["supplementaries_version"]}}") {
-        isTransitive = false
-    }
+    //modCompileOnly("net.mehvahdjukaar:supplementaries-neoforge:${project.extra["supplementaries_version"]}}");
 
     //modImplementation("cc.tweaked-cobalt:cobalt:0.93")
     modCompileOnly("curse.maven:exposure-871755:7033927")

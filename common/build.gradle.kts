@@ -18,7 +18,7 @@ dependencies {
 
     modImplementation("net.mehvahdjukaar:moonlight:${moonlight_version}")
 
-    modCompileOnly("net.mehvahdjukaar:supplementaries:${supplementaries_version}")
+  //  modCompileOnly("net.mehvahdjukaar:supplementaries:${supplementaries_version}")
     // modImplementation("curse.maven:selene-499980:7113116")
 
     modImplementation("curse.maven:exposure-871755:7033927")

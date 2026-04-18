@@ -5,7 +5,7 @@ plugins {
     id("com.possible-triangle.common") apply false
     id("com.possible-triangle.fabric") apply false
     id("com.possible-triangle.neoforge") apply false
-   // id("net.mehvahdjukaar.candlelight") version "1.0.0" apply false
+    id("net.mehvahdjukaar.candlelight") version "1.0.0" apply false
 }
 
 mod {
@@ -20,7 +20,7 @@ mod {
     additional.add("mod_credits", provider { mod_credits })
     additional.add("mod_license", provider { mod_license })
     additional.add("mod_homepage", provider { mod_homepage })
-    additional.add("mod_authors", provider { mod_homepage })
+    additional.add("mod_authors", provider { mod_authors })
     additional.add("mod_github", provider { mod_github })
     additional.add("moonlight_min_version", provider { moonlight_min_version })
 }
@@ -29,7 +29,7 @@ mod {
 subprojects {
 
     apply(plugin = "com.possible-triangle.core")
-    //apply(plugin = "net.mehvahdjukaar.candlelight")
+    apply(plugin = "net.mehvahdjukaar.candlelight")
 
     repositories {
         nexus()
@@ -40,13 +40,12 @@ subprojects {
             nexus()
         }
     }
-/*
 
+    /*
     candlelight {
         clientOnly = false
         logging = true
-    }
- */
+    }*/
 
 
     tasks.withType<JavaCompile> {
