@@ -2,7 +2,14 @@ plugins {
     id("com.possible-triangle.common")
 }
 
-// see fabric/build.gradle.kts
+neoForge {
+    parchment {
+        mappingsVersion = "2024.11.17"
+        minecraftVersion = "1.21.1"
+    }
+}
+
+// see fabric/build.gradle
 val moonlight_version: String by extra
 val supplementaries_version: String by extra
 
