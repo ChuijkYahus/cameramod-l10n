@@ -45,9 +45,9 @@ dependencies {
     modCompileOnly("curse.maven:cc-tweaked-282001:5714512")
   //  implementation files("mods/entityculling-fabric:1.10.1-mc1.21.1.jar")
 
-    modCompileOnly files("mods/entityculling-fabric-1.10.1-mc1.21.1.jar")
+    //modCompileOnly files("mods/entityculling-fabric-1.10.1-mc1.21.1.jar")
 
-    modCompileOnly("dev.tr7zw:entityculling-fabric:1.10.1-mc1.21.1")
+    //modCompileOnly("dev.tr7zw:entityculling-fabric:1.10.1-mc1.21.1")
     //modCompileOnly("maven.modrinth:entityculling:1.10.1-1.21.1+-+NeoForge")
     //modCompileOnly "curse.maven:entityculling-448233:7900085"
     modCompileOnly("curse.maven:jei-238222:5846878")
