@@ -17,9 +17,9 @@ body:
           required: true
         - label: "Always include a latest.log if you are crashing"
           required: true
-        - label: "Remove mod that enhances Minecraft: Optifine, Sodium, others. The issue persists."
+        - label: "Remove Optifine, there is no reason for anybody to use that. Also try disabling mods that alter rendering or fundamentally change big aspect of the game (Sodium, Lithium, Vulkan...)"
           required: true
-        - label: "If you are unsure which mod is the culprit.\nDisable all of your mods and enable them 1-2 mods each time to isolate the culprit"
+        - label: "If you are unsure which mod is the culprit.\nDisable half your mods until the culprit is found."
           required: true
         - label: "Confirm that there is no existing issue with a similar description submitted in the list of issues."
           required: true
@@ -30,6 +30,8 @@ body:
       label: Version
       description: The Version of Minecraft?
       options:
+        - 1.21.1-NEOFORGE
+        - 1.21.1-FABRIC
         - 1.20.1-FORGE
         - 1.20.1-FABRIC
         - 1.19.2-FORGE
@@ -40,22 +42,14 @@ body:
       required: true
 
   - type: input
-    id: supplementaries
+    id: mod
     attributes:
-      label: Supplementaries Version
-      description: The current version of supplementaries
-      placeholder: ex. supplementaries-1.20-2.7.33
+      label: Mod Version
+      description: The current version of the mod
+      placeholder: ex. 1.20-1.0.0
     validations:
       required: true
      
-  - type: input
-    id: moonlight
-    attributes:
-      label: Moonlight Lib Version
-      description: The current version of Moonlight Lib
-      placeholder: ex. moonlight-1.20-2.9.7-forge
-    validations:
-      required: true
 
   - type: textarea
     id: issue-details
