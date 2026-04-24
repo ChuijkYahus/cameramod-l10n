@@ -62,7 +62,7 @@ public class ClientConfigs {
         UPDATE_FPS = builder
                 .gameRestart()
                 .comment("How many times per second the television updates its live feed texture. Lowering this will improve performance but make the video less smooth, fractions work too")
-                .define("update_fps", 10.0, 0, 60);
+                .define("update_fps", 10.0, 1, 60);
         MIN_UPDATE_FPS = builder
                 .gameRestart()
                 .comment("The minimum update fps for live feed. The mod will throttle update rate when fps are low so this serves at a lower limit")
