@@ -1,4 +1,4 @@
-package net.mehvahdjukaar.vista.integration.computer_craft.neoforge;
+package net.mehvahdjukaar.vista.integration.computer_craft.platform;
 
 
 import dan200.computercraft.api.ForgeComputerCraftAPI;

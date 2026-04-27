@@ -4,7 +4,6 @@ package net.mehvahdjukaar.vista.common.view_finder;
 import net.mehvahdjukaar.moonlight.api.misc.TileOrEntityTarget;
 import net.mehvahdjukaar.moonlight.api.platform.network.NetworkHelper;
 import net.mehvahdjukaar.moonlight.api.util.math.MthUtils;
-import net.mehvahdjukaar.supplementaries.common.block.tiles.CannonBlockTile;
 import net.mehvahdjukaar.vista.network.ServerBoundSyncViewFinderPacket;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;

@@ -4,13 +4,12 @@ plugins {
 
 neoforge {
     dependOn(project(":common"))
+    accessWidener(project(":common"))
 }
 
 dependencies {
 
-    modApi("net.mehvahdjukaar:moonlight-neoforge:${project.extra["moonlight_version"]}") {
-        isTransitive = true
-    }
+    modImplementation("net.mehvahdjukaar:moonlight-neoforge:${project.extra["moonlight_version"]}")
 
     //modCompileOnly("net.mehvahdjukaar:supplementaries-neoforge:${project.extra["supplementaries_version"]}}");
 

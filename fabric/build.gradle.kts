@@ -2,18 +2,19 @@ plugins {
     id("com.possible-triangle.fabric")
 }
 
+
 fabric {
     dependOn(project(":common"))
+    accessWidener(project(":common"))
 }
+
 
 val moonlight_version: String by extra
 val supplementaries_version: String by extra
 
 dependencies {
 
-    modApi("net.mehvahdjukaar:moonlight-fabric:${moonlight_version}") {
-        isTransitive = false
-    }
+    modImplementation("net.mehvahdjukaar:moonlight-fabric:${moonlight_version}")
 
     modImplementation("curse.maven:sodium-394468:6382649")
     modCompileOnly("curse.maven:irisshaders-455508:6213635")

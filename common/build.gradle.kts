@@ -2,11 +2,8 @@ plugins {
     id("com.possible-triangle.common")
 }
 
-neoForge {
-    parchment {
-        mappingsVersion = "2024.11.17"
-        minecraftVersion = "1.21.1"
-    }
+common {
+    accessWidener()
 }
 
 val moonlight_version: String by extra
@@ -16,7 +13,7 @@ val candlelight_version: String by extra
 dependencies {
     compileOnly("net.mehvahdjukaar:candlelight:${candlelight_version}")
 
-    modImplementation("net.mehvahdjukaar:moonlight:${moonlight_version}")
+    modImplementation("net.mehvahdjukaar:moonlight-neoforge:${moonlight_version}")
 
   //  modCompileOnly("net.mehvahdjukaar:supplementaries:${supplementaries_version}")
     // modImplementation("curse.maven:selene-499980:7113116")

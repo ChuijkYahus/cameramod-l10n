@@ -16,7 +16,7 @@
   "environment": "*",
   "entrypoints": {
     "main": [
-      "net.mehvahdjukaar.vista.fabric.VistaFabric"
+      "net.mehvahdjukaar.vista.platform.VistaFabric"
     ],
     "jei_mod_plugin": [
       "net.mehvahdjukaar.vista.integration.jei.JEICompat"

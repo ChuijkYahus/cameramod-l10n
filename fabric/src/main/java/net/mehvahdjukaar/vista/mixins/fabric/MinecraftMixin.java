@@ -1,11 +1,7 @@
 package net.mehvahdjukaar.vista.mixins.fabric;
 
-import net.fabricmc.fabric.mixin.event.lifecycle.client.MinecraftClientMixin;
 import net.mehvahdjukaar.vista.VistaModClient;
-import net.mehvahdjukaar.vista.client.ViewFinderController;
-import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;

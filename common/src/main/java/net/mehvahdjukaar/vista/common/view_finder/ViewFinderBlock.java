@@ -6,10 +6,6 @@ import net.mehvahdjukaar.moonlight.api.block.IRotatable;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.util.Utils;
 import net.mehvahdjukaar.moonlight.api.util.math.MthUtils;
-import net.mehvahdjukaar.supplementaries.common.block.blocks.CannonBlock;
-import net.mehvahdjukaar.supplementaries.common.block.blocks.EndermanSkullBlock;
-import net.mehvahdjukaar.supplementaries.common.block.blocks.NoticeBoardBlock;
-import net.mehvahdjukaar.supplementaries.common.utils.BlockUtil;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.client.ViewFinderController;
 import net.mehvahdjukaar.vista.common.broadcast.BroadcastManager;
@@ -34,6 +30,7 @@ import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
@@ -187,7 +184,22 @@ public class ViewFinderBlock extends DirectionalBlock implements EntityBlock, IR
     public Optional<BlockState> getRotatedState(BlockState state, LevelAccessor levelAccessor, BlockPos blockPos,
                                                 Rotation rotation, Direction axis, @Nullable Vec3 hit) {
         boolean ccw = rotation == Rotation.COUNTERCLOCKWISE_90;
-        return BlockUtil.getRotatedDirectionalBlock(state, axis, ccw).or(() -> Optional.of(state));
+        return getRotatedDirectionalBlock(state, axis, ccw).or(() -> Optional.of(state));
+    }
+
+    @Deprecated(forRemoval = true) //use ml
+    public static Optional<BlockState> getRotatedDirectionalBlock(BlockState state, Direction axis, boolean ccw) {
+        Vec3 targetNormal = MthUtils.V3itoV3(state.getValue(BlockStateProperties.FACING).getNormal());
+        Vec3 myNormal = MthUtils.V3itoV3(axis.getNormal());
+        if (!ccw) targetNormal = targetNormal.scale(-1);
+
+        Vec3 rotated = myNormal.cross(targetNormal);
+        // not on same axis, can rotate
+        if (!rotated.equals(Vec3.ZERO)) {
+            Direction newDir = Direction.getNearest(rotated.x(), rotated.y(), rotated.z());
+            return Optional.of(state.setValue(BlockStateProperties.FACING, newDir));
+        }
+        return Optional.empty();
     }
 
     @Override
