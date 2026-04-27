@@ -40,7 +40,7 @@ public class VistaLevelRenderer {
 
     private static final Set<SectionOcclusionGraph> MANAGED_GRAPHS = new WeakHashSet<>();
     private static final AtomicReference<SectionOcclusionGraph> MC_OWN_GRAPH = new AtomicReference<>(null);
-    private static final DummyCamera DUMMY_CAMERA = new DummyCamera();
+    private static DummyCamera dummyCamera = new DummyCamera();
 
     private static ViewFinderBlockEntity renderingLiveFeedVF = null;
 
@@ -53,10 +53,18 @@ public class VistaLevelRenderer {
     }
 
     public static void clear() {
-        DUMMY_CAMERA.entity = null;
+
+        dummyCamera = null;
         MC_OWN_GRAPH.set(null);
         MANAGED_GRAPHS.clear();
         renderingLiveFeedVF = null;
+    }
+
+    public static DummyCamera getDummyCamera() {
+        if (dummyCamera == null) {
+            dummyCamera = new DummyCamera();
+        }
+        return dummyCamera;
     }
 
     public static void render(LiveFeedTexture text, ViewFinderBlockEntity tile) {
@@ -65,7 +73,7 @@ public class VistaLevelRenderer {
         RenderTarget canvas = text.getRenderTarget();
         mc.mainRenderTarget = canvas;
 
-        Camera camera = DUMMY_CAMERA;
+        Camera camera = getDummyCamera();
         Camera mainCamera = mc.gameRenderer.mainCamera;
         mc.gameRenderer.mainCamera = camera;
 
@@ -95,7 +103,6 @@ public class VistaLevelRenderer {
             float fov = tile.getFOV();
 
             mc.gameRenderer.renderDistance = Math.min(oldRenderDistance, calculateRenderDistance(fov));
-
             RenderSystem.clear(16640, ON_OSX);
             FogRenderer.setupNoFog();
             RenderSystem.enableCull();
@@ -177,22 +184,25 @@ public class VistaLevelRenderer {
     }
 
     @SuppressWarnings("ConstantConditions")
-    private static void setupSceneCamera(ViewFinderBlockEntity tile, Camera dummyCamera, float partialTicks) {
+    private static void setupSceneCamera(ViewFinderBlockEntity tile, Camera camera, float partialTicks) {
         Level level = tile.getLevel();
         float pitch = tile.getPitch(partialTicks);
         float yaw = tile.getYaw(partialTicks);
 
-        if (dummyCamera.entity == null) {
-            dummyCamera.entity = new Display.BlockDisplay(EntityType.BLOCK_DISPLAY, level);
+
+        camera.initialized = true;
+        camera.level = level;
+        if (camera.entity == null) {
+            camera.entity = new Display.BlockDisplay(EntityType.BLOCK_DISPLAY, level);
         }
-        Entity dummyCameraEntity = dummyCamera.getEntity();
+        Entity dummyCameraEntity = camera.getEntity();
         Vec3 pos = tile.getBlockPos().getCenter();
         dummyCameraEntity.setPos(pos);
         dummyCameraEntity.setXRot(pitch);
         dummyCameraEntity.setYRot(yaw + 180);
 
-        dummyCamera.setPosition(pos);
-        dummyCamera.setRotation(yaw, pitch);
+        camera.setPosition(pos);
+        camera.setRotation(yaw, pitch);
     }
 
     //Same as GameRenderer getProjectionMatrix but with custom fov and aspect ratio based on target size, and no zoom support (for now)

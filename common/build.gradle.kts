@@ -1,3 +1,5 @@
+import org.gradle.kotlin.dsl.accessTransformers
+
 plugins {
     id("com.possible-triangle.common")
 }
@@ -11,11 +13,14 @@ val supplementaries_version: String by extra
 val candlelight_version: String by extra
 
 dependencies {
+
     compileOnly("net.mehvahdjukaar:candlelight:${candlelight_version}")
 
-    modImplementation("net.mehvahdjukaar:moonlight-neoforge:${moonlight_version}")
+    modApi("net.mehvahdjukaar:moonlight-neoforge:${moonlight_version}")
 
-  //  modCompileOnly("net.mehvahdjukaar:supplementaries:${supplementaries_version}")
+    accessTransformers("net.mehvahdjukaar:moonlight-neoforge:${moonlight_version}")
+
+    modCompileOnly("net.mehvahdjukaar:supplementaries:${supplementaries_version}")
     // modImplementation("curse.maven:selene-499980:7113116")
 
     modImplementation("curse.maven:exposure-871755:7033927")

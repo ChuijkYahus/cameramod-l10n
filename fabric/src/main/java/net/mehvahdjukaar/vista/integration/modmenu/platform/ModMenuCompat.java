@@ -1,17 +1,17 @@
-package net.mehvahdjukaar.vista.integration.modmenu.fabric;
+package net.mehvahdjukaar.vista.integration.modmenu.platform;
 
 import com.terraformersmc.modmenu.api.ConfigScreenFactory;
 import com.terraformersmc.modmenu.api.ModMenuApi;
 import net.mehvahdjukaar.moonlight.api.client.gui.MediaButton;
-import net.mehvahdjukaar.moonlight.api.platform.configs.fabric.FabricConfigListScreen;
+import net.mehvahdjukaar.moonlight.api.platform.configs.platform.FabricConfigListScreen;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.mehvahdjukaar.vista.configs.CommonConfigs;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.renderer.FogRenderer;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 
 public class ModMenuCompat implements ModMenuApi {
 
@@ -31,7 +31,7 @@ public class ModMenuCompat implements ModMenuApi {
 
         @Override
         protected void addExtraButtons() {
-
+            FogRenderer.setupNoFog();
             int y = this.height - 27;
             int centerX = this.width / 2;
 

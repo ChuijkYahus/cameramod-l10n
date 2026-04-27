@@ -12,6 +12,8 @@ accessible method net/minecraft/client/Camera setPosition (Lnet/minecraft/world/
 accessible method net/minecraft/client/Camera setRotation (FF)V
 accessible method net/minecraft/client/Camera getMaxZoom (F)F
 accessible method net/minecraft/client/Camera move (FFF)V
+accessible field net/minecraft/client/Camera initialized Z
+accessible field net/minecraft/client/Camera level Lnet/minecraft/world/level/BlockGetter;
 
 #Render system state
 accessible field com/mojang/blaze3d/systems/RenderSystem savedProjectionMatrix Lorg/joml/Matrix4f;
