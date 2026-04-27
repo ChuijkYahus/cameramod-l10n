@@ -68,7 +68,7 @@ public class VistaModClient {
     });
 
 
-    //hack since resource key to level mapping isn't guaranteed 1:1. Don't even know if this will be used by any mods because in vanilla it isn't
+    //hack since the resource key to level mapping isn't guaranteed 1:1. Don't even know if this will be used by any mods because in vanilla it isn't
     private static final Map<ResourceKey<Level>, Level> KNOWN_LEVELS_BY_DIMENSION = new MapMaker()
             .weakValues()
             .makeMap();
@@ -170,6 +170,4 @@ public class VistaModClient {
         }
         return KNOWN_LEVELS_BY_DIMENSION.get(dimension);
     }
-
-
 }

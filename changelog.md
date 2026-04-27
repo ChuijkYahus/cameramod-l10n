@@ -1,1 +1,2 @@
 - minor improvements to camera view internals
+- zoom with direct redstone power

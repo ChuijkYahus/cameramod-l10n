@@ -4,7 +4,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.vista.common.broadcast.BroadcastManager;
 import net.mehvahdjukaar.vista.common.broadcast.IBroadcastLocation;
-import net.mehvahdjukaar.vista.common.broadcast.LevelBELocation;
+import net.mehvahdjukaar.vista.common.broadcast.LevelBEBroadcastLocation;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.LevelRenderer;
@@ -47,7 +47,7 @@ public class FeedConnectionDebugRenderer implements DebugRenderer.SimpleDebugRen
             IBroadcastLocation loc = p.getValue();
             GlobalPos from;
             //TODO: render others too
-            if (loc instanceof LevelBELocation(GlobalPos globalPos)) {
+            if (loc instanceof LevelBEBroadcastLocation(GlobalPos globalPos)) {
                 from = globalPos;
             } else {
                 continue;

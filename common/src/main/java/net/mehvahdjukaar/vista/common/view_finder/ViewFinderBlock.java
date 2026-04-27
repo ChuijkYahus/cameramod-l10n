@@ -9,7 +9,7 @@ import net.mehvahdjukaar.moonlight.api.util.math.MthUtils;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.client.ViewFinderController;
 import net.mehvahdjukaar.vista.common.broadcast.BroadcastManager;
-import net.mehvahdjukaar.vista.common.broadcast.LevelBELocation;
+import net.mehvahdjukaar.vista.common.broadcast.LevelBEBroadcastLocation;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -61,6 +61,15 @@ public class ViewFinderBlock extends DirectionalBlock implements EntityBlock, IR
         this.registerDefaultState(this.defaultBlockState()
                 .setValue(FACING, Direction.UP)
                 .setValue(ROTATE_TILE, Rotation.NONE));
+    }
+
+    @Override
+    protected void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock, BlockPos neighborPos, boolean movedByPiston) {
+        super.neighborChanged(state, level, pos, neighborBlock, neighborPos, movedByPiston);
+        if (level.getBlockEntity(pos) instanceof ViewFinderBlockEntity tile) {
+            int directPower = level.getDirectSignalTo(pos);
+            tile.updateRedstonePower(directPower);
+        }
     }
 
     @Nullable
@@ -132,7 +141,7 @@ public class ViewFinderBlock extends DirectionalBlock implements EntityBlock, IR
         super.onRemove(oldState, level, pos, newState, movedByPiston);
         if (oldState.getBlock() == this && newState.getBlock() != this &&
                 level instanceof ServerLevel sl) {
-            BroadcastManager.getInstance(sl).unlinkFeed(LevelBELocation.of(level, pos));
+            BroadcastManager.getInstance(sl).unlinkFeed(LevelBEBroadcastLocation.of(level, pos));
         }
     }
 

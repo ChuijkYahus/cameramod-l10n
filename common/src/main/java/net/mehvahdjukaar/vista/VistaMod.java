@@ -7,7 +7,7 @@ import net.mehvahdjukaar.moonlight.api.platform.RegHelper;
 import net.mehvahdjukaar.vista.common.ModLootOverrides;
 import net.mehvahdjukaar.vista.common.broadcast.BroadcastLocationType;
 import net.mehvahdjukaar.vista.common.broadcast.BroadcastManager;
-import net.mehvahdjukaar.vista.common.broadcast.LevelBELocation;
+import net.mehvahdjukaar.vista.common.broadcast.LevelBEBroadcastLocation;
 import net.mehvahdjukaar.vista.common.cassette.CassetteItem;
 import net.mehvahdjukaar.vista.common.cassette.CassetteTape;
 import net.mehvahdjukaar.vista.common.cassette.CassetteTapeLootFunction;
@@ -73,7 +73,7 @@ public class VistaMod {
 
     public static final Supplier<BroadcastLocationType> LEVEL_BE_BROADCAST =
             RegHelper.register(res("level_be_location"),
-                    () -> LevelBELocation.TYPE, BROADCAST_LOCATION_REGISTRY.key());
+                    () -> LevelBEBroadcastLocation.TYPE, BROADCAST_LOCATION_REGISTRY.key());
 
     public static final WorldSavedDataType<BroadcastManager> VIEWFINDER_CONNECTION =
             RegHelper.registerWorldSavedData(res("viewfinder_connection"), BroadcastManager::create,

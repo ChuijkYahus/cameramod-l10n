@@ -3,9 +3,8 @@ package net.mehvahdjukaar.vista.common.projector;
 import com.mojang.serialization.MapCodec;
 import net.mehvahdjukaar.moonlight.api.util.Utils;
 import net.mehvahdjukaar.vista.common.broadcast.BroadcastManager;
-import net.mehvahdjukaar.vista.common.broadcast.LevelBELocation;
+import net.mehvahdjukaar.vista.common.broadcast.LevelBEBroadcastLocation;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.GlobalPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
@@ -42,7 +41,7 @@ public class SignalProjectorBlock extends BaseEntityBlock {
         super.onRemove(oldState, level, pos, newState, movedByPiston);
         if (oldState.getBlock() == this && newState.getBlock() != this &&
                 level instanceof ServerLevel sl) {
-            BroadcastManager.getInstance(sl).unlinkFeed(LevelBELocation.of(level,pos));
+            BroadcastManager.getInstance(sl).unlinkFeed(LevelBEBroadcastLocation.of(level,pos));
         }
     }
 

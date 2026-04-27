@@ -10,18 +10,18 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
-public record LevelBELocation(GlobalPos globalPos) implements IBroadcastLocation {
+public record LevelBEBroadcastLocation(GlobalPos globalPos) implements IBroadcastLocation {
 
     public static final BroadcastLocationType TYPE = new BroadcastLocationType(
-            GlobalPos.MAP_CODEC.xmap(LevelBELocation::new, LevelBELocation::globalPos),
-            GlobalPos.STREAM_CODEC.map(LevelBELocation::new, LevelBELocation::globalPos)
+            GlobalPos.MAP_CODEC.xmap(LevelBEBroadcastLocation::new, LevelBEBroadcastLocation::globalPos),
+            GlobalPos.STREAM_CODEC.map(LevelBEBroadcastLocation::new, LevelBEBroadcastLocation::globalPos)
     );
 
-    public static LevelBELocation of(Level level, BlockPos pos) {
-        return new LevelBELocation(GlobalPos.of(level.dimension(), pos));
+    public static LevelBEBroadcastLocation of(Level level, BlockPos pos) {
+        return new LevelBEBroadcastLocation(GlobalPos.of(level.dimension(), pos));
     }
 
-    public static LevelBELocation of(BlockEntity be){
+    public static LevelBEBroadcastLocation of(BlockEntity be){
         return of(be.getLevel(), be.getBlockPos());
     }
 

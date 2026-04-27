@@ -10,6 +10,7 @@ neoforge {
 dependencies {
 
     modImplementation("net.mehvahdjukaar:moonlight-neoforge:${project.extra["moonlight_version"]}")
+//    accessTransformers("net.mehvahdjukaar:moonlight-neoforge:${project.extra["moonlight_version"]}")
 
     //modCompileOnly("net.mehvahdjukaar:supplementaries-neoforge:${project.extra["supplementaries_version"]}}");
 

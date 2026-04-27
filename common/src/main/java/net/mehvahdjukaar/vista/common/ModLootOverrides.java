@@ -44,7 +44,6 @@ public class ModLootOverrides {
         if (ENDERMAN_TABLE.equals(key)) {
             event.addTableReference(ENDERMAN_LOOT);
         }
-
     }
 
 

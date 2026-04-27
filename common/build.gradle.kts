@@ -18,7 +18,6 @@ dependencies {
 
     modApi("net.mehvahdjukaar:moonlight-neoforge:${moonlight_version}")
 
-    accessTransformers("net.mehvahdjukaar:moonlight-neoforge:${moonlight_version}")
 
     modCompileOnly("net.mehvahdjukaar:supplementaries:${supplementaries_version}")
     // modImplementation("curse.maven:selene-499980:7113116")

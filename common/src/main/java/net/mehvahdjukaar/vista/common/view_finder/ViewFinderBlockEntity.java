@@ -8,10 +8,9 @@ import net.mehvahdjukaar.moonlight.api.util.math.MthUtils;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.client.video_source.IVideoSource;
 import net.mehvahdjukaar.vista.client.video_source.LiveFeedVideoSource;
-import net.mehvahdjukaar.vista.common.broadcast.LevelBELocation;
+import net.mehvahdjukaar.vista.common.broadcast.LevelBEBroadcastLocation;
 import net.mehvahdjukaar.vista.common.cassette.IBroadcastSource;
 import net.mehvahdjukaar.vista.integration.CompatHandler;
-import net.mehvahdjukaar.vista.integration.supplementaries.SuppCompat;
 import net.mehvahdjukaar.vista.network.ClientBoundControlViewFinderPacket;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
@@ -42,6 +41,8 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
     public Object ccPeripheral = null;
 
     private UUID myUUID;
+
+    private int powerLevelWantedZoom = 0;
 
     private float pitch = 0;
     private float prevPitch = 0;
@@ -74,6 +75,12 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
     public static void tick(Level level, BlockPos pos, BlockState state, ViewFinderBlockEntity tile) {
         tile.prevYaw = tile.yaw;
         tile.prevPitch = tile.pitch;
+
+        if (tile.zoom != tile.powerLevelWantedZoom && tile.getCurrentUser() == null) {
+            int zoomDiff = tile.powerLevelWantedZoom - tile.zoom;
+            int zoomStep = Mth.clamp(zoomDiff, -1, 1);
+            tile.zoom += zoomStep;
+        }
     }
 
     @Override
@@ -90,13 +97,14 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
         this.pitch = tag.getFloat("pitch");
         this.locked = tag.getBoolean("locked");
         this.zoom = tag.getInt("zoom");
-        if (level != null) this.ensureLinked(level, LevelBELocation.of(this));
+        this.powerLevelWantedZoom = tag.getInt("wanted_zoom");
+        if (level != null) this.ensureLinked(level, LevelBEBroadcastLocation.of(this));
     }
 
     @Override
     public void setLevel(Level level) {
         super.setLevel(level);
-        this.ensureLinked(level, LevelBELocation.of(this));
+        this.ensureLinked(level, LevelBEBroadcastLocation.of(this));
     }
 
     @Override
@@ -107,6 +115,7 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
         tag.putFloat("pitch", this.pitch);
         tag.putBoolean("locked", this.locked);
         tag.putInt("zoom", this.zoom);
+        tag.putInt("wanted_zoom", this.powerLevelWantedZoom);
     }
 
     @Override
@@ -247,4 +256,11 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
     }
 
 
+    public void updateRedstonePower(int directPower) {
+        int prevWantedZoom = this.powerLevelWantedZoom;
+        this.powerLevelWantedZoom = (int) Mth.map(directPower, 0, 15, 0, MAX_ZOOM);
+        if (powerLevelWantedZoom != prevWantedZoom) {
+            this.setChanged(); //update clients
+        }
+    }
 }
