@@ -17,6 +17,7 @@ dependencies {
     compileOnly("net.mehvahdjukaar:candlelight:${candlelight_version}")
 
     modApi("net.mehvahdjukaar:moonlight-neoforge:${moonlight_version}")
+    accessTransformers("net.mehvahdjukaar:moonlight-neoforge:${project.extra["moonlight_version"]}")
 
 
     modCompileOnly("net.mehvahdjukaar:supplementaries:${supplementaries_version}")

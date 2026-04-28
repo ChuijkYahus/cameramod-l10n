@@ -14,7 +14,7 @@ val supplementaries_version: String by extra
 
 dependencies {
 
-    modImplementation("net.mehvahdjukaar:moonlight-fabric:${moonlight_version}")
+    modApi("net.mehvahdjukaar:moonlight-fabric:${moonlight_version}")
 
     modImplementation("curse.maven:sodium-394468:6382649")
     modCompileOnly("curse.maven:irisshaders-455508:6213635")

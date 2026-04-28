@@ -1,4 +1,4 @@
-package net.mehvahdjukaar.vista.neoforge;
+package net.mehvahdjukaar.vista.platform;
 
 import net.mehvahdjukaar.moonlight.api.platform.RegHelper;
 import net.mehvahdjukaar.vista.VistaMod;
