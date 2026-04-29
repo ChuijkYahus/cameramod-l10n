@@ -1,5 +1,5 @@
 modLoader = "javafml"
-loaderVersion = "${loader_version_range}"
+loaderVersion = "*"
 
 license = "${mod_license}"
 issueTrackerURL = "${mod_github}/issues"
@@ -13,7 +13,7 @@ config = "${mod_id}-common.mixins.json"
 modId = "${mod_id}"
 version = "${mod_version}"
 displayName = "${mod_name}"
-logoFile = "../../../../../.idea/icon.png"
+logoFile = "icon.png"
 authors = "${mod_authors}"
 credits = "${mod_credits}"
 description = '''${mod_description}'''
@@ -22,7 +22,7 @@ modUrl = "${mod_homepage}"
 [[dependencies.${ mod_id }]]
     modId = "neoforge"
     type = "required"
-    versionRange = "${neo_version_range}"
+    versionRange = "*"
     ordering = "NONE"
     side = "BOTH"
 

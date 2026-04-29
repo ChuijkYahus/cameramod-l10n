@@ -8,7 +8,6 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.mehvahdjukaar.moonlight.api.util.math.Vec2i;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.minecraft.client.renderer.texture.SpriteContents;
-import net.minecraft.client.renderer.texture.atlas.SpriteResourceLoader;
 import net.minecraft.client.renderer.texture.atlas.SpriteSource;
 import net.minecraft.client.renderer.texture.atlas.SpriteSourceType;
 import net.minecraft.client.resources.metadata.animation.AnimationFrame;
@@ -19,6 +18,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.ResourceMetadata;
+import org.jetbrains.annotations.Nullable;
 
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
@@ -61,7 +61,7 @@ public class GifPathSpriteSource implements SpriteSource {
                 VistaMod.LOGGER.warn("Unable to find texture {}", id);
             } else {
                 output.add(id, spriteLoader ->
-                        GIF_CONTENT_LOADER.loadSprite(id, optional.get()));
+                        loadGifContent(id, optional.get()));
             }
         });
     }
@@ -72,7 +72,7 @@ public class GifPathSpriteSource implements SpriteSource {
     }
 
 
-    public static final SpriteResourceLoader GIF_CONTENT_LOADER = (ResourceLocation id, Resource resource) -> {
+    public static @Nullable SpriteContents loadGifContent(ResourceLocation id, Resource resource) {
         try (InputStream inputStream = resource.open();
              ImageInputStream imageStream = ImageIO.createImageInputStream(inputStream)) {
 
@@ -102,7 +102,7 @@ public class GifPathSpriteSource implements SpriteSource {
             VistaMod.LOGGER.error("unable to build animated strip for {}", id, e);
         }
         return null;
-    };
+    }
 
     // --- helpers ---
 

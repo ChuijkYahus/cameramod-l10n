@@ -7,6 +7,7 @@
   "authors": [
     "${mod_authors}"
   ],
+  "accessWidener": "${mod_id}.accesswidener",
   "contact": {
     "homepage": "${mod_homepage}",
     "sources": "${mod_github}"

@@ -7,17 +7,24 @@ neoforge {
     accessWidener(project(":common"))
 }
 
+val moonlight_version: String by extra
+val supplementaries_version: String by extra
+
 dependencies {
 
-    modApi("net.mehvahdjukaar:moonlight-neoforge:${project.extra["moonlight_version"]}")
-    accessTransformers("net.mehvahdjukaar:moonlight-neoforge:${project.extra["moonlight_version"]}")
+    modApi("net.mehvahdjukaar:moonlight-neoforge:${moonlight_version}")
+    accessTransformers("net.mehvahdjukaar:moonlight-neoforge:${moonlight_version}")
 
     //modCompileOnly("net.mehvahdjukaar:supplementaries-neoforge:${project.extra["supplementaries_version"]}}");
 
     //modImplementation("cc.tweaked-cobalt:cobalt:0.93")
     modCompileOnly("curse.maven:exposure-871755:7033927")
-    modImplementation("curse.maven:jei-238222:7057366")
     modCompileOnly("curse.maven:cc-tweaked-282001:5714512")
+    modCompileOnly("curse.maven:jei-238222:7420587")
+    modCompileOnly("net.mehvahdjukaar:supplementaries-neoforge:${supplementaries_version}")
+    modCompileOnly("curse.maven:sodium-394468:6382649")
+    modCompileOnly("curse.maven:irisshaders-455508:6213635")
+    modCompileOnly("curse.maven:distant-horizons-508933:7336780")
 
     //  modImplementation("cc.tweaked:cc-tweaked-1.21.1-forge:1.117.0")
 }

@@ -1,7 +1,8 @@
-package net.mehvahdjukaar.vista.neoforge;
+package net.mehvahdjukaar.vista.platform;
 
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.VistaModClient;
+import net.mehvahdjukaar.vista.client.ChainedPostPassHelper;
 import net.mehvahdjukaar.vista.client.ViewFinderController;
 import net.mehvahdjukaar.vista.client.renderer.FeedConnectionDebugRenderer;
 import net.mehvahdjukaar.vista.client.textures.GifPathSpriteSource;
@@ -9,7 +10,12 @@ import net.mehvahdjukaar.vista.client.ui.ViewFinderHud;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
+import net.minecraft.client.renderer.texture.atlas.SpriteResourceLoader;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;

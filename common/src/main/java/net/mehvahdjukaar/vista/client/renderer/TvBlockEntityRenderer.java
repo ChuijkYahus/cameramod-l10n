@@ -47,7 +47,7 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
     }
 
     @ForgeOverride
-    public AABB getRenderBoundingBox(BlockEntity tile) {
+    public AABB getRenderBoundingBox(TVBlockEntity tile) {
         AABB aabb = new AABB(tile.getBlockPos());
         Direction dir = tile.getBlockState().getValue(TVBlock.FACING);
         float width = ((TVBlockEntity) tile).getConnectedCount();
