@@ -1,9 +1,9 @@
-package net.mehvahdjukaar.vista.mixins;
+package net.mehvahdjukaar.vista.mixins.fabric;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.mehvahdjukaar.moonlight.api.misc.OptionalMixin;
 import net.mehvahdjukaar.vista.integration.CompatHandler;
-import net.mehvahdjukaar.vista.integration.iris.IrisCompat;
+import net.mehvahdjukaar.vista.integration.iris.platform.IrisCompatImpl;
 import net.minecraft.client.renderer.GameRenderer;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -16,14 +16,14 @@ public class CompatIrisBobbingMixin {
 
     @Inject(method = "bobView", at = @At(value = "HEAD"), cancellable = true)
     private void vista$skipBobViewDuringFeed(PoseStack poseStack, float partialTicks, CallbackInfo ci) {
-        if (CompatHandler.IRIS && IrisCompat.shouldSkipBobbing()) {
+        if (CompatHandler.IRIS && IrisCompatImpl.shouldSkipBobbing()) {
             ci.cancel();
         }
     }
 
     @Inject(method = "bobHurt", at = @At(value = "HEAD"), cancellable = true)
     private void vista$skipBobHurtDuringFeed(PoseStack poseStack, float partialTicks, CallbackInfo ci) {
-        if (CompatHandler.IRIS && IrisCompat.shouldSkipBobbing()) {
+        if (CompatHandler.IRIS && IrisCompatImpl.shouldSkipBobbing()) {
             ci.cancel();
         }
     }

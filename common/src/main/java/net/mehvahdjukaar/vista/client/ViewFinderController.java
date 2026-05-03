@@ -1,7 +1,9 @@
 package net.mehvahdjukaar.vista.client;
 
+import net.mehvahdjukaar.moonlight.api.client.PostShadersHelper;
 import net.mehvahdjukaar.moonlight.api.misc.EventCalled;
-import net.mehvahdjukaar.vista.common.view_finder.ViewFinderAccess;
+import net.mehvahdjukaar.supplementaries.client.cannon.CannonController;
+import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
 import net.minecraft.client.Camera;
 import net.minecraft.client.CameraType;
@@ -12,6 +14,7 @@ import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
@@ -24,7 +27,11 @@ import org.lwjgl.glfw.GLFW;
 //TODO: merge events with supp cannon
 public class ViewFinderController {
 
-    protected static ViewFinderAccess access;
+    private static final PostShadersHelper.Group LENSES_GROUP = new PostShadersHelper.Group(
+            VistaMod.res("lenses"), 20
+    );
+
+    protected static ViewFinderBlockEntity viewFinder;
 
     private static CameraType lastCameraType;
 
@@ -43,8 +50,8 @@ public class ViewFinderController {
 
     public static void startControlling(ViewFinderAccess cannonAccess) {
         Minecraft mc = Minecraft.getInstance();
-        if (access == null) {
-            access = cannonAccess;
+        if (viewFinder == null) {
+            viewFinder = cannonAccess;
             lastCameraType = mc.options.getCameraType();
         } //if not it means we entered from manouver mode gui
         mc.options.setCameraType(CameraType.THIRD_PERSON_BACK);
@@ -55,21 +62,21 @@ public class ViewFinderController {
         mc.getNarrator().sayNow(message);
 
         Camera camera = mc.gameRenderer.getMainCamera();
-        ViewFinderBlockEntity tile = access.getInternalTile();
+        ViewFinderBlockEntity tile = viewFinder.getInternalTile();
         viewFinderZoom = tile.getZoomLevel();
         camera.setRotation(Mth.wrapDegrees(tile.getYaw()), Mth.wrapDegrees(tile.getPitch()));
     }
 
     // only works if we are already controlling
     private static void stopControllingAndSync() {
-        if (access == null) return;
-        access.syncToServer(true);
+        if (viewFinder == null) return;
+        viewFinder.syncToServer(true);
         stopControlling();
     }
 
     public static void stopControlling() {
-        if (access == null) return;
-        access = null;
+        if (viewFinder == null) return;
+        viewFinder = null;
         lastCameraYaw = 0;
         lastCameraPitch = 0;
         if (lastCameraType != null) {
@@ -77,24 +84,24 @@ public class ViewFinderController {
         }
     }
 
-    public static ViewFinderAccess getAccess() {
-        return access;
+    public static ViewFinderAccess getViewFinder() {
+        return viewFinder;
     }
 
     public static boolean isActive() {
-        return access != null;
+        return viewFinder != null;
     }
 
     public static boolean isActiveFor(BlockEntity tile) {
-        return access != null && access.getInternalTile() == tile;
+        return viewFinder != null && viewFinder.getInternalTile() == tile;
     }
 
     public static boolean isActiveAt(BlockPos pos) {
-        return access != null && access.getInternalTile().getBlockPos() == pos;
+        return viewFinder != null && viewFinder.getInternalTile().getBlockPos() == pos;
     }
 
     public static boolean isLocked() {
-        return access.getInternalTile().isLocked();
+        return viewFinder.getInternalTile().isLocked();
     }
 
     public static boolean setupCamera(Camera camera, BlockGetter level, Entity entity,
@@ -102,7 +109,7 @@ public class ViewFinderController {
 
         //TODO: improve and simplify
         if (!isActive()) return false;
-        Vec3 centerCannonPos = access.getGlobalPosition(partialTick);
+        Vec3 centerCannonPos = viewFinder.getGlobalPosition(partialTick);
 
 
         // lerp camera
@@ -120,11 +127,11 @@ public class ViewFinderController {
         accumulatedPitch = 0;
 
         float followSpeed = 1;
-        ViewFinderBlockEntity tile = access.getInternalTile();
+        ViewFinderBlockEntity tile = viewFinder.getInternalTile();
 
-        tile.setPitch(access, Mth.rotLerp(followSpeed, tile.getPitch(), lastCameraPitch));
+        tile.setPitch(viewFinder, Mth.rotLerp(followSpeed, tile.getPitch(), lastCameraPitch));
         // targetYawDeg = Mth.rotLerp(followSpeed, cannon.getYaw(0), targetYawDeg);
-        tile.setRenderYaw(access, lastCameraYaw + access.getViewFinderGlobalYawOffset(partialTick));
+        tile.setRenderYaw(viewFinder, lastCameraYaw + viewFinder.getViewFinderGlobalYawOffset(partialTick));
 
         return true;
     }
@@ -134,12 +141,12 @@ public class ViewFinderController {
     public static boolean onPlayerRotated(double yawAdd, double pitchAdd) {
         if (isActive()) {
             if (isLocked()) return true;
-            float scale = 0.2f * (1 - access.getInternalTile().getNormalizedZoomFactor() + 0.01f);
+            float scale = 0.2f * (1 - viewFinder.getInternalTile().getNormalizedZoomFactor() + 0.01f);
             accumulatedYaw += (float) (yawAdd * scale);
             accumulatedPitch += (float) (pitchAdd * scale);
             if (yawAdd != 0 || pitchAdd != 0) needsToUpdateServer = true;
 
-            if (access.shouldRotatePlayerFaceWhenManeuvering()) {
+            if (viewFinder.shouldRotatePlayerFaceWhenManeuvering()) {
                 //make player face camera while maneuvering
                 LocalPlayer player = Minecraft.getInstance().player;
                 player.turn(Mth.wrapDegrees((lastCameraYaw + yawAdd) - player.yHeadRot),
@@ -158,7 +165,7 @@ public class ViewFinderController {
         if (isLocked()) return true;
 
         if (scrollDelta != 0) {
-            ViewFinderBlockEntity tile = access.getInternalTile();
+            ViewFinderBlockEntity tile = viewFinder.getInternalTile();
             int newZoom = (Math.clamp((int) (tile.getZoomLevel() + scrollDelta), 1, ViewFinderBlockEntity.MAX_ZOOM));
             int oldZoom = tile.getZoomLevel();
             if (newZoom != oldZoom) {
@@ -174,7 +181,7 @@ public class ViewFinderController {
     }
 
     private static void toggleLock() {
-        ViewFinderBlockEntity tile = access.getInternalTile();
+        ViewFinderBlockEntity tile = viewFinder.getInternalTile();
         tile.setLocked(!tile.isLocked());
 
         needsToUpdateServer = true;
@@ -198,7 +205,7 @@ public class ViewFinderController {
     @EventCalled
     public static void onInputUpdate(Input input) {
         // resets input
-        if (access.impedePlayerMovementWhenManeuvering()) {
+        if (viewFinder.impedePlayerMovementWhenManeuvering()) {
             input.down = false;
             input.up = false;
             input.left = false;
@@ -214,16 +221,26 @@ public class ViewFinderController {
     public static void onClientTick(Minecraft mc) {
         Player player = Minecraft.getInstance().player;
         if (player == null) return;
+        setupPostShaders();
         if (!isActive()) return;
-        if (access.stillValid(player)) {
+        if (viewFinder.stillValid(player)) {
             //keep setting zoom so we avoid jitter
-            access.getInternalTile().setZoomLevel(viewFinderZoom);
+            viewFinder.getInternalTile().setZoomLevel(viewFinderZoom);
             if (needsToUpdateServer) {
                 needsToUpdateServer = false;
-                access.syncToServer(false);
+                viewFinder.syncToServer(false);
             }
         } else {
             stopControllingAndSync();
+        }
+    }
+
+    private static void setupPostShaders() {
+        if (isActive()) {
+            ResourceLocation lensShader = viewFinder.getInternalTile().getLensShader();
+            PostShadersHelper.toggleEffect(lensShader, LENSES_GROUP);
+        } else {
+            PostShadersHelper.toggleEffect(null, LENSES_GROUP);
         }
     }
 
@@ -253,7 +270,7 @@ public class ViewFinderController {
 
     public static boolean isZooming() {
         if (isActive()) {
-            ViewFinderBlockEntity tile = access.getInternalTile();
+            ViewFinderBlockEntity tile = viewFinder.getInternalTile();
             return tile.getZoomLevel() > 1;
         }
         return false;
@@ -263,7 +280,7 @@ public class ViewFinderController {
     @EventCalled
     public static float modifyFOV(float start, float modified, Player player) {
         if (isActive()) {
-            return access.getInternalTile().getFOVModifier();
+            return viewFinder.getInternalTile().getFOVModifier();
         }
         return modified;
     }

@@ -8,7 +8,6 @@ import net.mehvahdjukaar.vista.client.textures.LiveFeedTexturesManager;
 import net.mehvahdjukaar.vista.client.textures.TvScreenVertexConsumers;
 import net.mehvahdjukaar.vista.common.tv.IntAnimationState;
 import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
-import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.mehvahdjukaar.vista.integration.CompatHandler;
 import net.mehvahdjukaar.vista.integration.supplementaries.SuppCompat;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -17,6 +16,7 @@ import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class LiveFeedVideoSource implements IVideoSource {
 
@@ -43,6 +43,10 @@ public class LiveFeedVideoSource implements IVideoSource {
         }
     }
 
+    @Nullable
+    public ResourceLocation getPostShader() {
+        return postShader;
+    }
 
     @Override
     public @NotNull VertexConsumer getVideoFrameBuilder(
@@ -52,7 +56,7 @@ public class LiveFeedVideoSource implements IVideoSource {
             IntAnimationState switchAnim, IntAnimationState staticAnim) {
 
         LiveFeedTexture tex = LiveFeedTexturesManager.requestLiveFeedTexture(
-                viewFinder.getUUID(), screenSize, shouldUpdate, postShader);
+                viewFinder.getBroadcastUUID(), screenSize, shouldUpdate, postShader);
 
         VertexConsumer vc = null;
         if (tex != null) {

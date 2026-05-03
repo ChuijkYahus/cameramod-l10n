@@ -4,6 +4,7 @@ import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.mehvahdjukaar.moonlight.api.misc.WeakHashSet;
+import net.mehvahdjukaar.moonlight.api.util.math.EntityAngles;
 import net.mehvahdjukaar.moonlight.core.client.DummyCamera;
 import net.mehvahdjukaar.vista.VistaPlatStuff;
 import net.mehvahdjukaar.vista.client.textures.LiveFeedTexture;
@@ -186,9 +187,11 @@ public class VistaLevelRenderer {
     @SuppressWarnings("ConstantConditions")
     private static void setupSceneCamera(ViewFinderBlockEntity tile, Camera camera, float partialTicks) {
         Level level = tile.getLevel();
-        float pitch = tile.getPitch(partialTicks);
-        float yaw = tile.getYaw(partialTicks);
-
+       Quaternionf viewFinderRot = tile.getWorldOrientation(partialTicks);
+        //TODO: add Z for when looking up
+        EntityAngles entityAngles = EntityAngles.fromQuaternion(viewFinderRot);
+        float yaw = entityAngles.yaw();
+        float pitch = entityAngles.pitch();
 
         camera.initialized = true;
         camera.level = level;

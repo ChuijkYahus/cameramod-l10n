@@ -3,6 +3,7 @@ package net.mehvahdjukaar.vista.platform;
 import net.mehvahdjukaar.moonlight.api.platform.RegHelper;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.item.FallingBlockEntity;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.Mod;
@@ -22,7 +23,6 @@ public class VistaForge {
     public static WeakReference<IEventBus> modBus;
 
     public VistaForge(IEventBus bus) {
-
         modBus = new WeakReference<>(bus);
         RegHelper.startRegisteringFor(bus);
         VistaMod.init();

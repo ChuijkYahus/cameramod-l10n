@@ -80,7 +80,7 @@ public class SignalProjectorBlockEntity extends BlockEntity implements IScreenPr
     }
 
     @Override
-    public UUID getUUID() {
+    public UUID getBroadcastUUID() {
         return myUUID;
     }
 

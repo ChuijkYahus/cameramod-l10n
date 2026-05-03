@@ -33,7 +33,7 @@ public class HollowCassetteItem extends Item implements  ITvCassette {
             if (!level.isClientSide) {
 
                 ItemStack stack = context.getItemInHand();
-                stack.set(VistaMod.LINKED_FEED_COMPONENT.get(), feed.getUUID());
+                stack.set(VistaMod.LINKED_FEED_COMPONENT.get(), feed.getBroadcastUUID());
             }
             return InteractionResult.sidedSuccess(level.isClientSide);
         }

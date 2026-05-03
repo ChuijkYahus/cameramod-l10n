@@ -1,9 +1,9 @@
-package net.mehvahdjukaar.vista.mixins;
+package net.mehvahdjukaar.vista.mixins.fabric;
 
 import net.irisshaders.iris.pipeline.PipelineManager;
 import net.irisshaders.iris.pipeline.WorldRenderingPipeline;
 import net.irisshaders.iris.shaderpack.materialmap.NamespacedId;
-import net.mehvahdjukaar.vista.integration.iris.IrisCompat;
+import net.mehvahdjukaar.vista.integration.iris.platform.IrisCompatImpl;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Pseudo;
@@ -23,7 +23,7 @@ public class CompatIrisMixin  {
     @Inject(method = "preparePipeline", remap = false, at = @At("HEAD"), cancellable = true)
     private void vista$preparePipeline(NamespacedId currentDimension,
                                        CallbackInfoReturnable<WorldRenderingPipeline> cir) {
-        var modified = IrisCompat.getModifiedPipeline();
+        var modified = IrisCompatImpl.getModifiedPipeline();
         if (modified != null) {
             this.pipeline = modified;
             cir.setReturnValue(modified);

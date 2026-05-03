@@ -14,18 +14,17 @@ val candlelight_version: String by extra
 
 dependencies {
 
-    compileOnly("net.mehvahdjukaar:candlelight:${candlelight_version}")
-
-    modApi("net.mehvahdjukaar:moonlight-neoforge:${moonlight_version}")
-    accessTransformers("net.mehvahdjukaar:moonlight-neoforge:${project.extra["moonlight_version"]}")
+    modCompileOnly("net.mehvahdjukaar:moonlight-neoforge:${moonlight_version}")
+    accessTransformers("net.mehvahdjukaar:moonlight-neoforge:${moonlight_version}")
 
 
+    accessTransformers("net.mehvahdjukaar:supplementaries-neoforge:${supplementaries_version}")
+    //modImplementation("curse.maven:supplementaries-412082:7892406")
 
-    modCompileOnly("net.mehvahdjukaar:supplementaries-neoforge:${supplementaries_version}")
-    // modImplementation("curse.maven:selene-499980:7113116")
 
     modCompileOnly("curse.maven:exposure-871755:7862664")
-    modCompileOnly("curse.maven:distant-horizons-508933:7336780")
+    modCompileOnly("curse.maven:distant-horizons-508933:7977110")
+
 
     modCompileOnly("curse.maven:cc-tweaked-282001:5714512")
     //modCompileOnly files("mods/entityculling-fabric-1.10.1-mc1.21.1.jar")

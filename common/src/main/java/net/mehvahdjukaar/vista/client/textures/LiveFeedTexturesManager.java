@@ -17,7 +17,6 @@ import net.mehvahdjukaar.vista.client.renderer.VistaLevelRenderer;
 import net.mehvahdjukaar.vista.common.broadcast.BroadcastManager;
 import net.mehvahdjukaar.vista.common.cassette.IBroadcastSource;
 import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
-import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.mehvahdjukaar.vista.integration.CompatHandler;
 import net.mehvahdjukaar.vista.integration.distant_horizons.DistantHorizonsCompat;
@@ -45,7 +44,6 @@ import java.util.function.Supplier;
 
 public class LiveFeedTexturesManager {
 
-    private static final ResourceLocation POSTERIZE_FRAGMENT_SHADER = VistaMod.res("posterize");
     private static final BiMap<FeedKey, ResourceLocation> LIVE_FEED_LOCATIONS = HashBiMap.create();
     @VisibleForDebug
     public static final Map<UUID, RollingBuffer<Long>> UPDATE_TIMES = new HashMap<>();
@@ -77,7 +75,7 @@ public class LiveFeedTexturesManager {
         ResourceLocation feedId = getOrCreateFeedId(location, screenSize);
         LiveFeedTexture texture = DynamicTextureRenderer.requestTexture(feedId, () ->
                 new LiveFeedTexture(feedId, screenSize * ClientConfigs.RESOLUTION_SCALE.get(),
-                        LiveFeedTexturesManager::refreshTexture, location, POSTERIZE_FRAGMENT_SHADER));
+                        LiveFeedTexturesManager::refreshTexture, location));
 
 
         if (texture == null) {

@@ -3,6 +3,7 @@ package net.mehvahdjukaar.vista.client.textures;
 import com.google.gson.JsonSyntaxException;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.systems.RenderSystem;
+import net.mehvahdjukaar.moonlight.api.client.PostShadersHelper;
 import net.mehvahdjukaar.moonlight.api.client.texture_renderer.RenderableDynamicTexture;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.client.CrtOverlay;
@@ -11,7 +12,6 @@ import net.mehvahdjukaar.vista.client.renderer.LevelRendererCameraState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.PostChain;
-import net.minecraft.client.renderer.PostPass;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -24,15 +24,21 @@ import java.util.function.Consumer;
 
 public class LiveFeedTexture extends RenderableDynamicTexture {
 
-    private static final ResourceLocation EMPTY_PIPELINE = VistaMod.res("shaders/post/empty.json");
+    private static final PostShadersHelper.Group POSTERIZE_GROUP = new PostShadersHelper.Group(
+            VistaMod.res("1"), 0
+    );
+
+    private static final PostShadersHelper.Group LENS_EFFECTS_GROUP = new PostShadersHelper.Group(
+            VistaMod.res("0"), 1
+    );
+
+    private static final ResourceLocation CAMERA_POST_PIPELINE = VistaMod.res("shaders/post/posterize_camera.json");
 
     private final UUID associatedUUID;
 
     private final LevelRendererCameraState rendererState = new LevelRendererCameraState();
     @Nullable
-    private final ResourceLocation postFragment;
-    @Nullable
-    private ResourceLocation postChainID;
+    private ResourceLocation extraPostChainID;
     private PostChain postChain;
     private boolean disconnected = false;
 
@@ -45,11 +51,10 @@ public class LiveFeedTexture extends RenderableDynamicTexture {
 
     public LiveFeedTexture(ResourceLocation resourceLocation, int size,
                            @NotNull Consumer<LiveFeedTexture> textureDrawingFunction,
-                           UUID id, @Nullable ResourceLocation postFragment) {
+                           UUID id) {
         super(resourceLocation, size, textureDrawingFunction);
         this.associatedUUID = id;
-        this.postChainID = null;
-        this.postFragment = postFragment;
+        this.extraPostChainID = null;
         //can cause flicker?
         //this too?
         this.recomputePostChain();
@@ -95,6 +100,7 @@ public class LiveFeedTexture extends RenderableDynamicTexture {
         }
     }
 
+
     private void recomputePostChain() {
         if (isClosed()) {
             VistaMod.LOGGER.error("recompute post on closed");
@@ -109,39 +115,27 @@ public class LiveFeedTexture extends RenderableDynamicTexture {
         GameRenderer gameRenderer = mc.gameRenderer;
         try {
             RenderTarget canvasTarget = this.getRenderTarget();
-            ResourceLocation chainId = postChainID == null ? EMPTY_PIPELINE : postChainID;
-            postChain = new PostChain(mc.getTextureManager(), mc.getResourceManager(), canvasTarget, chainId);
-            //add extra pass
-            RenderTarget swapTarget = postChain.getTempTarget("swap");
-            if (swapTarget == null) {
-                postChain.addTempTarget("swap", getWidth(), getHeight());
-            }
-            if (postFragment != null) {
-                postChain.addPass(postFragment.toString(), canvasTarget, swapTarget, false);
-                //swap back
-                postChain.addPass("vista:blit_flip_y", swapTarget, canvasTarget, false);
-            } else {
-                postChain.addPass("blit", canvasTarget, swapTarget, false);
-                postChain.addPass("vista:blit_flip_y", swapTarget, canvasTarget, false);
-            }
-            for (PostPass postPass : postChain.passes) {
-                postPass.setOrthoMatrix(postChain.shaderOrthoMatrix);
+
+            postChain = PostShadersHelper.refreshComposite(postChain, CAMERA_POST_PIPELINE, POSTERIZE_GROUP, canvasTarget);
+
+            if (extraPostChainID != null) {
+                postChain = PostShadersHelper.refreshComposite(postChain, extraPostChainID, LENS_EFFECTS_GROUP, canvasTarget);
             }
         } catch (IOException ioexception) {
-            VistaMod.LOGGER.warn("Failed to load shader: {}", postChainID, ioexception);
+            VistaMod.LOGGER.warn("Failed to load shader: {}", extraPostChainID, ioexception);
             gameRenderer.effectActive = false;
         } catch (JsonSyntaxException jsonsyntaxexception) {
-            VistaMod.LOGGER.warn("Failed to parse shader: {}", postChainID, jsonsyntaxexception);
+            VistaMod.LOGGER.warn("Failed to parse shader: {}", extraPostChainID, jsonsyntaxexception);
             gameRenderer.effectActive = false;
         }
     }
 
     public boolean setPostChain(@Nullable ResourceLocation newPostChainId) {
-        ResourceLocation currentShader = this.postChainID;
+        ResourceLocation currentShader = this.extraPostChainID;
         if (Objects.equals(currentShader, newPostChainId)) {
             return false;
         }
-        this.postChainID = newPostChainId;
+        this.extraPostChainID = newPostChainId;
 
         RenderSystem.recordRenderCall(this::recomputePostChain);
         return true;
