@@ -4,6 +4,7 @@ import com.mojang.math.Axis;
 import net.mehvahdjukaar.moonlight.api.block.IOneUserInteractable;
 import net.mehvahdjukaar.moonlight.api.block.ItemDisplayTile;
 import net.mehvahdjukaar.moonlight.api.misc.OrientationRig;
+import net.mehvahdjukaar.moonlight.api.misc.TileOrEntityTarget;
 import net.mehvahdjukaar.moonlight.api.platform.network.NetworkHelper;
 import net.mehvahdjukaar.moonlight.api.util.math.EntityAngles;
 import net.mehvahdjukaar.supplementaries.Supplementaries;
@@ -14,6 +15,7 @@ import net.mehvahdjukaar.vista.client.video_source.LiveFeedVideoSource;
 import net.mehvahdjukaar.vista.common.broadcast.LevelBEBroadcastLocation;
 import net.mehvahdjukaar.vista.common.cassette.IBroadcastSource;
 import net.mehvahdjukaar.vista.integration.CompatHandler;
+import net.mehvahdjukaar.vista.network.SyncViewFinderPacket;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
@@ -23,10 +25,13 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.util.ExtraCodecs;
 import net.minecraft.util.Mth;
 import net.minecraft.util.VisibleForDebug;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
@@ -143,6 +148,9 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
         return videoSource.getPostShader();
     }
 
+    public void setZoomLevel(int zoom) {
+        this.zoom = zoom;
+    }
 
     public void setLocked(boolean b) {
         this.locked = b;
@@ -344,7 +352,7 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
 
     // Network
     public void syncToServer(boolean ignite, boolean removeOwner, Player playerWhoChangedIt) {
-        NetworkHelper.sendToServer(new SyncCannonPacket(
+        NetworkHelper.sendToServer(new SyncViewFinderPacket(
                 this.getWantedLocalRotation(), this.getPowerLevel(),
                 ignite, removeOwner, referenceFrame.makeNetworkTarget(),
                 playerWhoChangedIt.getUUID()));
@@ -353,7 +361,7 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
     public void syncToClients(boolean ignite) {
         if (level instanceof ServerLevel sl) {
             NetworkHelper.sendToAllClientPlayersInDefaultRange(sl,
-                    BlockPos.containing(referenceFrame.position(1)), new SyncCannonPacket(
+                    BlockPos.containing(referenceFrame.position(1)), new SyncViewFinderPacket(
                             this.getWantedLocalRotation(), this.getPowerLevel(),
                             ignite, false, referenceFrame.makeNetworkTarget(), null));
         }
@@ -361,6 +369,10 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
 
     public boolean isInWorld() {
         return referenceFrame instanceof WorldReferenceFrame;
+    }
+
+    public void cycleLock() {
+        this.locked = !locked;
     }
 
 }

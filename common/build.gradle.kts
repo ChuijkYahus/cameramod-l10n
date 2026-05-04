@@ -18,7 +18,7 @@ dependencies {
     accessTransformers("net.mehvahdjukaar:moonlight-neoforge:${moonlight_version}")
 
 
-    accessTransformers("net.mehvahdjukaar:supplementaries-neoforge:${supplementaries_version}")
+    modImplementation("net.mehvahdjukaar:supplementaries-neoforge:${supplementaries_version}")
     //modImplementation("curse.maven:supplementaries-412082:7892406")
 
 

@@ -2,7 +2,8 @@ package net.mehvahdjukaar.vista.client;
 
 import net.mehvahdjukaar.moonlight.api.client.PostShadersHelper;
 import net.mehvahdjukaar.moonlight.api.misc.EventCalled;
-import net.mehvahdjukaar.supplementaries.client.cannon.CannonController;
+import net.mehvahdjukaar.moonlight.api.util.math.EntityAngles;
+import net.mehvahdjukaar.supplementaries.common.entities.CannonBoatEntity;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
 import net.minecraft.client.Camera;
@@ -11,7 +12,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.Input;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
-import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
@@ -22,38 +22,38 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.Nullable;
 import org.lwjgl.glfw.GLFW;
 
-//TODO: merge events with supp cannon
-public class ViewFinderController {
 
+public class ViewFinderController {
     private static final PostShadersHelper.Group LENSES_GROUP = new PostShadersHelper.Group(
             VistaMod.res("lenses"), 20
     );
 
+    @Nullable
     protected static ViewFinderBlockEntity viewFinder;
 
     private static CameraType lastCameraType;
-
     // values controlled by player mouse movement. Not actually what camera uses
-    private static float accumulatedYaw;
-    private static float accumulatedPitch;
-
+    private static float yawIncrease;
+    private static float pitchIncrease;
     private static boolean needsToUpdateServer;
-
-    //truth for client view finder zoom. essentially ignore what the sever has so we have full authority and not jerkyness
-    private static int viewFinderZoom;
-
     // lerp camera
+    private static Vec3 lastCameraPos;
+    private static float lastZoomOut = 0;
     private static float lastCameraYaw = 0;
     private static float lastCameraPitch = 0;
+    private static boolean turnedLastTick = false;
 
-    public static void startControlling(ViewFinderAccess cannonAccess) {
+    private static int viewFinderZoom = 0;
+
+    public static void startControlling(ViewFinderBlockEntity tile) {
         Minecraft mc = Minecraft.getInstance();
         if (viewFinder == null) {
-            viewFinder = cannonAccess;
+            viewFinder = tile;
             lastCameraType = mc.options.getCameraType();
-        } //if not it means we entered from manouver mode gui
+        } //if not it means we entered from manoeuvre mode gui
         mc.options.setCameraType(CameraType.THIRD_PERSON_BACK);
         MutableComponent message = Component.translatable("message.vista.viewfinder.control",
                 mc.options.keyShift.getTranslatedKeyMessage(),
@@ -61,16 +61,14 @@ public class ViewFinderController {
         mc.gui.setOverlayMessage(message, false);
         mc.getNarrator().sayNow(message);
 
-        Camera camera = mc.gameRenderer.getMainCamera();
-        ViewFinderBlockEntity tile = viewFinder.getInternalTile();
         viewFinderZoom = tile.getZoomLevel();
-        camera.setRotation(Mth.wrapDegrees(tile.getYaw()), Mth.wrapDegrees(tile.getPitch()));
     }
 
     // only works if we are already controlling
     private static void stopControllingAndSync() {
         if (viewFinder == null) return;
-        viewFinder.syncToServer(true);
+        LocalPlayer player = Minecraft.getInstance().player;
+        viewFinder.syncToServer(false, true, player);
         stopControlling();
     }
 
@@ -79,12 +77,15 @@ public class ViewFinderController {
         viewFinder = null;
         lastCameraYaw = 0;
         lastCameraPitch = 0;
+        lastZoomOut = 0;
+        lastCameraPos = null;
+        turnedLastTick = false;
         if (lastCameraType != null) {
             Minecraft.getInstance().options.setCameraType(lastCameraType);
         }
     }
 
-    public static ViewFinderAccess getViewFinder() {
+    public static ViewFinderBlockEntity getViewFinder(){
         return viewFinder;
     }
 
@@ -93,70 +94,77 @@ public class ViewFinderController {
     }
 
     public static boolean isActiveFor(BlockEntity tile) {
-        return viewFinder != null && viewFinder.getInternalTile() == tile;
-    }
-
-    public static boolean isActiveAt(BlockPos pos) {
-        return viewFinder != null && viewFinder.getInternalTile().getBlockPos() == pos;
-    }
-
-    public static boolean isLocked() {
-        return viewFinder.getInternalTile().isLocked();
+        return viewFinder == tile;
     }
 
     public static boolean setupCamera(Camera camera, BlockGetter level, Entity entity,
                                       boolean detached, boolean thirdPersonReverse, float partialTick) {
 
-        //TODO: improve and simplify
         if (!isActive()) return false;
         Vec3 centerCannonPos = viewFinder.getGlobalPosition(partialTick);
 
+        if (lastCameraPos == null) {
+            lastCameraPos = camera.getPosition();
+            lastCameraYaw = camera.getYRot();
+            lastCameraPitch = camera.getXRot();
+        }
 
         // lerp camera
-        Vec3 targetCameraPos = centerCannonPos.add(0, 0.5, 0);
-        float targetYRot = camera.getYRot() + accumulatedYaw;
-        float targetXRot = Mth.clamp(camera.getXRot() + accumulatedPitch, -90, 90);
+        Vec3 targetCameraPos = centerCannonPos.add(0, 2, 0);
+        float targetYRot = camera.getYRot() + yawIncrease;
+        float targetXRot = Mth.clamp(camera.getXRot() + pitchIncrease, -90, 90);
 
         camera.setPosition(targetCameraPos);
         camera.setRotation(targetYRot, targetXRot);
 
+        lastCameraPos = camera.getPosition();
         lastCameraYaw = camera.getYRot();
         lastCameraPitch = camera.getXRot();
+        lastZoomOut = camera.getMaxZoom(4);
 
-        accumulatedYaw = 0;
-        accumulatedPitch = 0;
+        float horizontalOffset = -1;
 
-        float followSpeed = 1;
-        ViewFinderBlockEntity tile = viewFinder.getInternalTile();
+        camera.move(-lastZoomOut, 0, horizontalOffset);
 
-        tile.setPitch(viewFinder, Mth.rotLerp(followSpeed, tile.getPitch(), lastCameraPitch));
-        // targetYawDeg = Mth.rotLerp(followSpeed, cannon.getYaw(0), targetYawDeg);
-        tile.setRenderYaw(viewFinder, lastCameraYaw + viewFinder.getViewFinderGlobalYawOffset(partialTick));
+        yawIncrease = 0;
+        pitchIncrease = 0;
 
+        viewFinder.setWorldOrientation(EntityAngles.of(targetXRot, targetYRot).toQuaternion());
+        if (turnedLastTick) viewFinder.snapToWantedRotationInstantly();
+        turnedLastTick = true;
         return true;
     }
-    // true cancels the thing
 
-    @EventCalled
+    // true cancels the thing
     public static boolean onPlayerRotated(double yawAdd, double pitchAdd) {
-        if (isActive()) {
+        if (ViewFinderController.isActive()) {
             if (isLocked()) return true;
-            float scale = 0.2f * (1 - viewFinder.getInternalTile().getNormalizedZoomFactor() + 0.01f);
-            accumulatedYaw += (float) (yawAdd * scale);
-            accumulatedPitch += (float) (pitchAdd * scale);
+            float scale = 0.2f;
+            yawIncrease += (float) (yawAdd * scale);
+            pitchIncrease += (float) (pitchAdd * scale);
             if (yawAdd != 0 || pitchAdd != 0) needsToUpdateServer = true;
 
-            if (viewFinder.shouldRotatePlayerFaceWhenManeuvering()) {
-                //make player face camera while maneuvering
-                LocalPlayer player = Minecraft.getInstance().player;
-                player.turn(Mth.wrapDegrees((lastCameraYaw + yawAdd) - player.yHeadRot),
-                        Mth.wrapDegrees((lastCameraPitch + pitchAdd) - player.getXRot()));
-                player.yHeadRotO = player.yHeadRot;
-                player.xRotO = player.getXRot();
-            }
+            //make player face camera while maneuvering
+            LocalPlayer player = Minecraft.getInstance().player;
+            player.turn(Mth.wrapDegrees((lastCameraYaw + yawAdd) - player.yHeadRot),
+                    Mth.wrapDegrees((lastCameraPitch + pitchAdd) - player.getXRot()));
+            player.yHeadRotO = player.yHeadRot;
+            player.xRotO = player.getXRot();
             return true;
         }
         return false;
+    }
+
+    private static void onKeyJump() {
+    }
+
+    private static void onKeyInventory() {
+        //Disabled, too buggy
+        //viewFinder.sendOpenGuiRequest();
+    }
+
+    private static void onKeyShift() {
+        stopControllingAndSync();
     }
 
     @EventCalled
@@ -165,9 +173,8 @@ public class ViewFinderController {
         if (isLocked()) return true;
 
         if (scrollDelta != 0) {
-            ViewFinderBlockEntity tile = viewFinder.getInternalTile();
-            int newZoom = (Math.clamp((int) (tile.getZoomLevel() + scrollDelta), 1, ViewFinderBlockEntity.MAX_ZOOM));
-            int oldZoom = tile.getZoomLevel();
+            int newZoom = (Math.clamp((int) (viewFinder.getZoomLevel() + scrollDelta), 1, ViewFinderBlockEntity.MAX_ZOOM));
+            int oldZoom = viewFinder.getZoomLevel();
             if (newZoom != oldZoom) {
                 viewFinderZoom = newZoom;
                 needsToUpdateServer = true;
@@ -178,14 +185,6 @@ public class ViewFinderController {
             }
         }
         return true;
-    }
-
-    private static void toggleLock() {
-        ViewFinderBlockEntity tile = viewFinder.getInternalTile();
-        tile.setLocked(!tile.isLocked());
-
-        needsToUpdateServer = true;
-
     }
 
     @EventCalled
@@ -202,87 +201,101 @@ public class ViewFinderController {
         return true;
     }
 
-    @EventCalled
     public static void onInputUpdate(Input input) {
         // resets input
-        if (viewFinder.impedePlayerMovementWhenManeuvering()) {
-            input.down = false;
-            input.up = false;
-            input.left = false;
-            input.right = false;
-            input.forwardImpulse = 0;
-            input.leftImpulse = 0;
-        }
+        input.down = false;
+        input.up = false;
+        input.left = false;
+        input.right = false;
+        input.forwardImpulse = 0;
+        input.leftImpulse = 0;
         input.shiftKeyDown = false;
         input.jumping = false;
     }
 
-    @EventCalled
     public static void onClientTick(Minecraft mc) {
         Player player = Minecraft.getInstance().player;
         if (player == null) return;
         setupPostShaders();
+
         if (!isActive()) return;
         if (viewFinder.stillValid(player)) {
             //keep setting zoom so we avoid jitter
-            viewFinder.getInternalTile().setZoomLevel(viewFinderZoom);
+            viewFinder.setZoomLevel(viewFinderZoom);
             if (needsToUpdateServer) {
                 needsToUpdateServer = false;
-                viewFinder.syncToServer(false);
+                viewFinder.syncToServer(false, false, player);
             }
         } else {
             stopControllingAndSync();
         }
     }
 
+    //called by mixin. its cancellable. maybe switch all to this
+    public static boolean onEarlyKeyPress(int key, int scanCode, int action, int modifiers) {
+        if (!isActive()) return false;
+        var options = Minecraft.getInstance().options;
+
+        if (action != GLFW.GLFW_PRESS) return false;
+        if (key == 256) {
+            stopControllingAndSync();
+            return true;
+        } else if (options.keyInventory.matches(key, scanCode)) {
+            onKeyInventory();
+            return true;
+        }
+        if (options.keyJump.matches(key, scanCode)) {
+            onKeyJump();
+            return true;
+        }
+        if (options.keyShift.matches(key, scanCode)) {
+            onKeyShift();
+            return true;
+        }
+        return false;
+    }
+
+    public static boolean cancelsXPBar() {
+        return isActive() || Minecraft.getInstance().player.getVehicle() instanceof CannonBoatEntity;
+    }
+
+    public static boolean cancelsHotBar() {
+        return isActive();
+    }
+
+    public static boolean isZooming() {
+        if (isActive()) {
+            return viewFinder.getZoomLevel() > 1;
+        }
+        return false;
+    }
+
+    private static void toggleLock() {
+        viewFinder.cycleLock();
+        needsToUpdateServer = true;
+    }
+
+    public static boolean isLocked() {
+        return viewFinder.isLocked();
+    }
+
+    @EventCalled
+    public static float modifyFOV(float start, float modified, Player player) {
+        if (isActive()) {
+            return viewFinder.getFOVModifier();
+        }
+        return modified;
+    }
+
     private static void setupPostShaders() {
         if (isActive()) {
-            ResourceLocation lensShader = viewFinder.getInternalTile().getLensShader();
+            ResourceLocation lensShader = viewFinder.getLensShader();
             PostShadersHelper.toggleEffect(lensShader, LENSES_GROUP);
         } else {
             PostShadersHelper.toggleEffect(null, LENSES_GROUP);
         }
     }
 
-    //called by mixin. its cancellable. maybe switch all to this
-    @EventCalled
-    public static boolean onEarlyKeyPress(int key, int scanCode, int action, int modifiers) {
-        if (!isActive()) return false;
-        if (action != GLFW.GLFW_PRESS) return false;
-        var options = Minecraft.getInstance().options;
-        if (key == 256) {
-            stopControllingAndSync();
-            return true;
-        } else if (options.keyInventory.matches(key, scanCode)) {
 
-            return true;
-        }
-        if (options.keyJump.matches(key, scanCode)) {
-
-            return true;
-        }
-        if (options.keyShift.matches(key, scanCode)) {
-            stopControllingAndSync();
-            return true;
-        }
-        return false;
-    }
-
-    public static boolean isZooming() {
-        if (isActive()) {
-            ViewFinderBlockEntity tile = viewFinder.getInternalTile();
-            return tile.getZoomLevel() > 1;
-        }
-        return false;
-    }
-
-
-    @EventCalled
-    public static float modifyFOV(float start, float modified, Player player) {
-        if (isActive()) {
-            return viewFinder.getInternalTile().getFOVModifier();
-        }
-        return modified;
-    }
 }
 

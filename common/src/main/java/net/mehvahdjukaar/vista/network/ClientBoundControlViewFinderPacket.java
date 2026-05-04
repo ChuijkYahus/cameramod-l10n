@@ -4,8 +4,10 @@ import net.mehvahdjukaar.moonlight.api.misc.TileOrEntityTarget;
 import net.mehvahdjukaar.moonlight.api.platform.network.Message;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.client.ViewFinderController;
+import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.world.level.block.entity.BlockEntity;
 
 public record ClientBoundControlViewFinderPacket(TileOrEntityTarget target) implements Message {
 
@@ -26,9 +28,9 @@ public record ClientBoundControlViewFinderPacket(TileOrEntityTarget target) impl
     public void handle(Context context) {
         // client world
         var level = context.getPlayer().level();
-        ViewFinderAccess access = ViewFinderAccess.find(level, this.target());
-        if (access != null) {
-            ViewFinderController.startControlling(access);
+        BlockEntity be = this.target().findTileOrContainedTile(level);
+        if (be instanceof ViewFinderBlockEntity vf) {
+            ViewFinderController.startControlling(vf);
         }
     }
 

@@ -20,11 +20,10 @@ public class SuppCompat {
     public static ResourceLocation getShaderForItem(Item item) {
         if (item == VistaMod.TV_ITEM.get()) return null;
         if (item == QUARK_GLASS_PANE.get()) return RETRO_SHADER;
-        String shaderForItem = MobHeadShadersManager.INSTANCE.getShaderForItem(item);
-        return shaderForItem == null ? null : ResourceLocation.parse(shaderForItem);
+        return MobHeadShadersManager.INSTANCE.getShaderPathForItem(item);
     }
 
     public static boolean isFunny() {
-        return MiscUtils.FESTIVITY.isAprilsFool();
+        return MiscUtils.getFestivity().isAprilsFool();
     }
 }

@@ -80,8 +80,7 @@ public class ViewFinderBlockEntityRenderer implements BlockEntityRenderer<ViewFi
         poseStack.mulPose(rotation);
 
 
-        float pitchRad = tile.getPitch(partialTick) * Mth.DEG_TO_RAD;
-        float yawRad = tile.getYaw(partialTick) * Mth.DEG_TO_RAD;
+        Quaternionf viewFinderRot = tile.getLocalOrientation(partialTick);
 
         Vector3f forward = new Vector3f(0f, 0, 1);
 

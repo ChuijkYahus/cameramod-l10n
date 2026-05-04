@@ -17,6 +17,7 @@ import net.mehvahdjukaar.vista.client.renderer.VistaLevelRenderer;
 import net.mehvahdjukaar.vista.common.broadcast.BroadcastManager;
 import net.mehvahdjukaar.vista.common.cassette.IBroadcastSource;
 import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
+import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.mehvahdjukaar.vista.integration.CompatHandler;
 import net.mehvahdjukaar.vista.integration.distant_horizons.DistantHorizonsCompat;

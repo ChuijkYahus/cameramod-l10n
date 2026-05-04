@@ -3,6 +3,7 @@ package net.mehvahdjukaar.vista.common.tv.enderman;
 import com.mojang.authlib.GameProfile;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.util.FakePlayerManager;
+import net.mehvahdjukaar.moonlight.api.util.math.EntityAngles;
 import net.mehvahdjukaar.moonlight.api.util.math.MthUtils;
 import net.mehvahdjukaar.vista.client.renderer.ViewFinderBlockEntityRenderer;
 import net.mehvahdjukaar.vista.common.broadcast.BroadcastManager;
@@ -175,7 +176,7 @@ public class TVEndermanObservationController {
     private List<EndermanLookResult> computeEndermanLookedAt(ViewFinderBlockEntity vf,
                                                              List<TVSpectatorView> views, List<EnderMan> enderMen) {
         List<EndermanLookResult> lookResults = new ArrayList<>();
-        Vec3 lensFacing = Vec3.directionFromRotation(vf.getPitch(), vf.getYaw()).normalize();
+        Vec3 lensFacing = new Vec3(vf.getGlobalFacing(1));
         Vec3 lensCenter = Vec3.atCenterOf(vf.getBlockPos());
 
         // Prepare fake player once
@@ -209,6 +210,10 @@ public class TVEndermanObservationController {
             double horiz = Math.sqrt(look.x * look.x + look.z * look.z);
             float xRot = (float) (-Math.toDegrees(Math.atan2(look.y, horiz)));
 
+            EntityAngles ea = EntityAngles.fromQuaternion(vf.getWorldOrientation(1));
+            float yaw = ea.yaw();
+            //TODO: test enderman
+            float pitch = ea.pitch();
             fakePlayer.setYRot(yRot + vf.getYaw());
             fakePlayer.setYHeadRot(yRot + vf.getYaw());
             fakePlayer.setXRot(xRot + vf.getPitch());

@@ -10,11 +10,9 @@ import java.util.Objects;
 
 public final class ViewFinderPeripheral implements IPeripheral {
     private final ViewFinderBlockEntity tile;
-    private final ViewFinderAccess acc;
 
     public ViewFinderPeripheral(ViewFinderBlockEntity tile) {
         this.tile = tile;
-        this.acc = ViewFinderAccess.find(tile.getLevel(), TileOrEntityTarget.of(tile));
     }
 
     @LuaFunction

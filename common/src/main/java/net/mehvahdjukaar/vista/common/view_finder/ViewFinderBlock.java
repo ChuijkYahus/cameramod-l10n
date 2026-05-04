@@ -10,12 +10,12 @@ import net.mehvahdjukaar.moonlight.api.util.Utils;
 import net.mehvahdjukaar.moonlight.api.util.math.MthUtils;
 import net.mehvahdjukaar.supplementaries.common.block.ModBlockProperties;
 import net.mehvahdjukaar.supplementaries.common.block.tiles.CannonBlockTile;
-import net.mehvahdjukaar.supplementaries.common.network.ClientBoundControlCannonPacket;
 import net.mehvahdjukaar.supplementaries.common.utils.MiscUtils;
 import net.mehvahdjukaar.supplementaries.reg.ModRegistry;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.common.broadcast.BroadcastManager;
 import net.mehvahdjukaar.vista.common.broadcast.LevelBEBroadcastLocation;
+import net.mehvahdjukaar.vista.network.ClientBoundControlViewFinderPacket;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -178,27 +178,7 @@ public class ViewFinderBlock extends DirectionalBlock implements EntityBlock, IR
     @Nullable
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level pLevel, BlockState pState, BlockEntityType<T> pBlockEntityType) {
-        return Utils.getTicker(pBlockEntityType, ModRegistry.CANNON_TILE.get(),
-                (l, p, s, tile) -> tile.tick());
-    }
-
-    @Override
-    protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
-        var r = this.lightableInteractWithPlayerItem(state, level, pos, player, hand, stack);
-        if (r.consumesAction()) return r;
-        if (level.getBlockEntity(pos) instanceof CannonBlockTile tile) {
-            if (player instanceof ServerPlayer sp) {
-                if (player.isSecondaryUseActive()) {
-                    //same as super but sends custom packet
-                    if (tile.canBeUsedBy(pos, player)) {
-                        tile.setCurrentUser(player.getUUID());
-                        NetworkHelper.sendToClientPlayer(sp, new ClientBoundControlCannonPacket(TileOrEntityTarget.of(tile)));
-                    }
-                } else Utils.openGuiIfPossible(tile, sp, stack, hitResult.getDirection(), hitResult.getLocation());
-            }
-            return ItemInteractionResult.sidedSuccess(level.isClientSide());
-        }
-        return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+        return Utils.getTicker(pBlockEntityType, VistaMod.VIEWFINDER_TILE.get(), ViewFinderBlockEntity::tick);
     }
 
     @Override
@@ -206,7 +186,23 @@ public class ViewFinderBlock extends DirectionalBlock implements EntityBlock, IR
         ItemStack heldItem = player.getItemInHand(hand);
         if (heldItem.is(VistaMod.HOLLOW_CASSETTE.get())) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         if (level.getBlockEntity(pos) instanceof ViewFinderBlockEntity tile) {
-            return tile.tryInteracting(player, hand, stack, pos);
+
+            if (player.isSecondaryUseActive() || tile.isEmpty()) {
+                ItemInteractionResult itemAdd = tile.interactWithPlayerItem(player, hand, stack);
+                if (itemAdd.consumesAction()) {
+                    return itemAdd;
+                }
+            }
+            if (player instanceof ServerPlayer sp) {
+                if (player.isSecondaryUseActive()) {
+                    //same as super but sends custom packet
+                    if (tile.canBeUsedBy(pos, player)) {
+                        tile.setCurrentUser(player.getUUID());
+                        NetworkHelper.sendToClientPlayer(sp, new ClientBoundControlViewFinderPacket(TileOrEntityTarget.of(tile)));
+                    }
+                } else Utils.openGuiIfPossible(tile, sp, stack, hitResult.getDirection(), hitResult.getLocation());
+            }
+            return ItemInteractionResult.sidedSuccess(level.isClientSide());
         }
         return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
     }

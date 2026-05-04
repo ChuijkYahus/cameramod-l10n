@@ -1,6 +1,5 @@
 package net.mehvahdjukaar.vista.mixins;
 
-import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.client.ViewFinderController;
 import net.minecraft.client.KeyboardHandler;
 import org.spongepowered.asm.mixin.Mixin;

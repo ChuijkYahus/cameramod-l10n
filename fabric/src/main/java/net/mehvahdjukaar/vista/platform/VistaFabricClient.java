@@ -8,7 +8,6 @@ import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.fabricmc.fabric.api.event.client.player.ClientPreAttackCallback;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.VistaModClient;
-import net.mehvahdjukaar.vista.client.ViewFinderController;
 import net.mehvahdjukaar.vista.client.renderer.FeedConnectionDebugRenderer;
 import net.mehvahdjukaar.vista.client.textures.GifPathSpriteSource;
 import net.mehvahdjukaar.vista.client.ui.ViewFinderHud;
