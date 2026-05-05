@@ -1,11 +1,9 @@
 package net.mehvahdjukaar.vista.client.web;
 
+import com.mojang.blaze3d.platform.NativeImage;
 import net.mehvahdjukaar.vista.client.web.ffmpeg.FFmpegManager;
 
-import java.awt.image.BufferedImage;
-import java.awt.image.DataBufferInt;
 import java.io.*;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -15,15 +13,15 @@ import java.util.List;
  * Supports pausing and seeking (by restarting FFmpeg at a new timestamp).
  * Runs in its own thread.
  */
-public class WebVideoDecoder extends Thread {
+public class FFmpegMediaDecoder extends Thread {
     private final FFmpegManager ffmpeg;
-    private final MediaFramesHolder buffer;
+    private final MediaFramesList buffer;
     private final Path videoPath;
     private volatile boolean running = true;
     private volatile boolean paused = false;
     private volatile double seekToSeconds = -1.0; // -1 means no seek requested
 
-    public WebVideoDecoder(FFmpegManager ffmpeg, MediaFramesHolder buffer, Path videoPath) {
+    public FFmpegMediaDecoder(FFmpegManager ffmpeg, MediaFramesList buffer, Path videoPath) {
         this.ffmpeg = ffmpeg;
         this.buffer = buffer;
         this.videoPath = videoPath;
@@ -82,9 +80,6 @@ public class WebVideoDecoder extends Thread {
                 if (!Double.isFinite(framerate) || framerate <= 0) {
                     log("WARN", "Invalid probed framerate " + framerate + ", defaulting to 20 fps");
                     framerate = 20.0;
-                } else if (isGif(videoPath) && framerate > 30.0) {
-                    log("INFO", "Clamping GIF framerate from " + framerate + " to 20 fps");
-                    framerate = 20.0;
                 }
                 int totalFrames = probeTotalFrames(videoPath.toString()); // may be -1
                 log("INFO", String.format("Video: %dx%d, %.3f fps, %d frames", width, height, framerate, totalFrames));
@@ -125,7 +120,7 @@ public class WebVideoDecoder extends Thread {
                         }
 
                         double pts = frameCount / framerate;
-                        BufferedImage img = rgbBytesToBufferedImage(width, height, data);
+                        NativeImage img = rgbBytesToNativeImage(width, height, data);
                         buffer.add(new MediaFrame(img, pts));
                         frameCount++;
 
@@ -226,11 +221,16 @@ public class WebVideoDecoder extends Thread {
         }
     }
 
-    private BufferedImage rgbBytesToBufferedImage(int width, int height, byte[] data) {
-        BufferedImage img = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
-        int[] pixels = ((DataBufferInt) img.getRaster().getDataBuffer()).getData();
-        for (int i = 0, p = 0; i < pixels.length; i++, p += 3) {
-            pixels[i] = ((data[p] & 0xFF) << 16) | ((data[p + 1] & 0xFF) << 8) | (data[p + 2] & 0xFF);
+    private NativeImage rgbBytesToNativeImage(int width, int height, byte[] data) {
+        NativeImage img = new NativeImage(NativeImage.Format.RGBA, width, height, true);
+        for (int y = 0, p = 0; y < height; y++) {
+            for (int x = 0; x < width; x++, p += 3) {
+                int r = data[p] & 0xFF;
+                int g = data[p + 1] & 0xFF;
+                int b = data[p + 2] & 0xFF;
+                int abgr = 0xFF000000 | (b << 16) | (g << 8) | r;
+                img.setPixelRGBA(x, y, abgr);
+            }
         }
         return img;
     }
@@ -239,21 +239,6 @@ public class WebVideoDecoder extends Thread {
         System.out.printf("[%s] [%s] %s%n", level, getName(), msg);
         for (Exception e : args) {
             e.printStackTrace();
-        }
-    }
-
-    private static boolean isGif(Path path) {
-        if (path.getFileName().toString().toLowerCase().endsWith(".gif")) {
-            return true;
-        }
-        try (InputStream stream = Files.newInputStream(path)) {
-            byte[] header = stream.readNBytes(6);
-            return header.length == 6 &&
-                    header[0] == 'G' &&
-                    header[1] == 'I' &&
-                    header[2] == 'F';
-        } catch (IOException ignored) {
-            return false;
         }
     }
 }

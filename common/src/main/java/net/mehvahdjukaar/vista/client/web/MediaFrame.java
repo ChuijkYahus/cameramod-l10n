@@ -1,6 +1,6 @@
 package net.mehvahdjukaar.vista.client.web;
 
-import java.awt.image.BufferedImage;
+import com.mojang.blaze3d.platform.NativeImage;
 
-public record MediaFrame(BufferedImage image, double pts) {
+public record MediaFrame(NativeImage image, double pts) {
 }

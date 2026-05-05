@@ -7,7 +7,7 @@ import java.util.*;
  * Frames are stored in order of increasing PTS.
  * Supports looking up the closest frame ≤ a given timestamp.
  */
-public class MediaFramesHolder {
+public class MediaFramesList implements AutoCloseable {
     private final List<MediaFrame> frames = new ArrayList<>();
     private boolean completed = false;
 
@@ -100,5 +100,16 @@ public class MediaFramesHolder {
     @Deprecated
     public synchronized int getCurrentDisplayFrameNumber() {
         return frames.isEmpty() ? 0 : 1;
+    }
+
+    @Override
+    public synchronized void close() {
+        for (MediaFrame frame : frames) {
+            if (frame.image() != null) {
+                frame.image().close();
+            }
+        }
+        frames.clear();
+        completed = false;
     }
 }

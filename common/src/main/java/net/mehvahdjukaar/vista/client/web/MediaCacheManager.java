@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
  * - LRU eviction when total cache size exceeds a given limit
  * - Thread‑safe: concurrent downloads of the same URL are collapsed
  */
-public class WebVideoCacheManager {
+public class MediaCacheManager {
     private static final String CACHE_SUBDIR = "vista_web_content_cache";
     private final Path cacheDir;
     private final long maxSizeBytes;
@@ -32,7 +32,7 @@ public class WebVideoCacheManager {
     private final Map<Path, Long> lastAccess = new ConcurrentHashMap<>();
     private final Map<String, CompletableFuture<Path>> pendingDownloads = new ConcurrentHashMap<>();
 
-    public WebVideoCacheManager(Path baseDir, long maxSizeBytes) throws IOException {
+    public MediaCacheManager(Path baseDir, long maxSizeBytes) throws IOException {
         this.cacheDir = baseDir.resolve(CACHE_SUBDIR);
         this.maxSizeBytes = maxSizeBytes;
         Files.createDirectories(cacheDir);

@@ -13,21 +13,22 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
 import org.jetbrains.annotations.Nullable;
 
-import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.nio.file.Path;
 
 public class WebTexture extends AbstractTexture implements Dumpable {
     private final String urlString;
-    private final WebTexturesManager.WebVideoSession session;
+    private final WebTexturesManager.WebMediaSession session;
     private final ResourceLocation textureLocation;
 
     @Nullable
     private NativeImage cpuImage;
     @Nullable
     private MediaFrame uploadedFrame;
+    private int width = -1;
+    private int height = -1;
 
-    WebTexture(String urlString, ResourceLocation textureLocation, WebTexturesManager.WebVideoSession session) {
+    WebTexture(String urlString, ResourceLocation textureLocation, WebTexturesManager.WebMediaSession session) {
         this.urlString = urlString;
         this.textureLocation = textureLocation;
         this.session = session;
@@ -67,23 +68,20 @@ public class WebTexture extends AbstractTexture implements Dumpable {
             return frame != null;
         }
         uploadedFrame = frame;
-        NativeImage image = toNativeImage(frame.image());
-        uploadOnRenderThread(image);
+        uploadOnRenderThread(frame.image());
         return true;
     }
 
     private void uploadOnRenderThread(NativeImage image) {
         Runnable upload = () -> {
-            NativeImage oldImage = this.cpuImage;
             this.cpuImage = image;
-            if (cpuImage != null){
-            if(oldImage == null){
-                TextureUtil.prepareImage(this.getId(), this.cpuImage.getWidth(), this.cpuImage.getHeight());
-            }
-             this.upload();
-            }
-            if (oldImage != null && oldImage != image) {
-                oldImage.close();
+            if (this.cpuImage != null) {
+                if (this.width != this.cpuImage.getWidth() || this.height != this.cpuImage.getHeight()) {
+                    this.width = this.cpuImage.getWidth();
+                    this.height = this.cpuImage.getHeight();
+                    TextureUtil.prepareImage(this.getId(), this.width, this.height);
+                }
+                this.upload();
             }
         };
         if (RenderSystem.isOnRenderThread()) {
@@ -91,24 +89,6 @@ public class WebTexture extends AbstractTexture implements Dumpable {
         } else {
             RenderSystem.recordRenderCall(upload::run);
         }
-    }
-
-    private static NativeImage toNativeImage(BufferedImage src) {
-        int width = src.getWidth();
-        int height = src.getHeight();
-        NativeImage out = new NativeImage(NativeImage.Format.RGBA, width, height, true);
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                int argb = src.getRGB(x, y);
-                int a = (argb >>> 24) & 0xFF;
-                int r = (argb >>> 16) & 0xFF;
-                int g = (argb >>> 8) & 0xFF;
-                int b = argb & 0xFF;
-                int abgr = (a << 24) | (b << 16) | (g << 8) | r;
-                out.setPixelRGBA(x, y, abgr);
-            }
-        }
-        return out;
     }
 
     @Override
@@ -126,11 +106,9 @@ public class WebTexture extends AbstractTexture implements Dumpable {
 
     @Override
     public void close() {
-        if (this.cpuImage != null) {
-            this.cpuImage.close();
-            this.releaseId();
-            this.cpuImage = null;
-        }
+        this.cpuImage = null;
+        this.uploadedFrame = null;
+        this.releaseId();
     }
 
     @Override

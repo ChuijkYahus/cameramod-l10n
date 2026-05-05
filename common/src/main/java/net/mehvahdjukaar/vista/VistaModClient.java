@@ -8,9 +8,6 @@ import net.mehvahdjukaar.moonlight.api.platform.RegHelper;
 import net.mehvahdjukaar.moonlight.api.util.Utils;
 import net.mehvahdjukaar.vista.client.ViewFinderController;
 import net.mehvahdjukaar.vista.client.VistaDynamicResources;
-import net.mehvahdjukaar.vista.client.web.MediaFramesHolder;
-import net.mehvahdjukaar.vista.client.web.WebVideoCacheManager;
-import net.mehvahdjukaar.vista.client.web.WebVideoDecoder;
 import net.mehvahdjukaar.vista.client.web.ffmpeg.FFmpegManager;
 import net.mehvahdjukaar.vista.client.renderer.TvBlockEntityRenderer;
 import net.mehvahdjukaar.vista.client.renderer.TvItemRenderer;
@@ -35,8 +32,6 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Map;
 import java.util.function.Function;
 
