@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
  * - Thread‑safe: concurrent downloads of the same URL are collapsed
  */
 public class WebVideoCacheManager {
-    private static final String CACHE_SUBDIR = "video_cache";
+    private static final String CACHE_SUBDIR = "vista_web_content_cache";
     private final Path cacheDir;
     private final long maxSizeBytes;
     private final Map<String, CachedEntry> urlToEntry = new ConcurrentHashMap<>();

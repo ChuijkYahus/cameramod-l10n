@@ -97,8 +97,18 @@ public class TvScreenVertexConsumers {
                                                int scale, boolean paused,
                                                IntAnimationState switchAnim,
                                                IntAnimationState noiseAnim) {
-        CrtOverlay overlay = tex.getOverlay(paused) ;
+        CrtOverlay overlay = tex.getOverlay(paused);
         return createVC(tex.getTextureLocation(), scale, 1, 1,
+                overlay, switchAnim, noiseAnim, buffer::getBuffer);
+    }
+
+    public static VertexConsumer getWebVC(MultiBufferSource buffer,
+                                          WebTexture tex,
+                                          int scale, boolean paused,
+                                          IntAnimationState switchAnim,
+                                          IntAnimationState noiseAnim) {
+        CrtOverlay overlay = paused ? CrtOverlay.PAUSE : CrtOverlay.NONE;
+        return createVC(tex.getResourceLocation(), scale, 1, 1,
                 overlay, switchAnim, noiseAnim, buffer::getBuffer);
     }
 

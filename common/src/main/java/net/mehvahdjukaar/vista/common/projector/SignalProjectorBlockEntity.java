@@ -4,6 +4,7 @@ import net.mehvahdjukaar.moonlight.api.client.IScreenProvider;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.client.ui.SignalProjectorScreen;
 import net.mehvahdjukaar.vista.client.video_source.IVideoSource;
+import net.mehvahdjukaar.vista.client.video_source.WebUrlVideoSource;
 import net.mehvahdjukaar.vista.common.broadcast.LevelBEBroadcastLocation;
 import net.mehvahdjukaar.vista.common.cassette.IBroadcastSource;
 import net.mehvahdjukaar.vista.integration.CompatHandler;
@@ -66,10 +67,8 @@ public class SignalProjectorBlockEntity extends BlockEntity implements IScreenPr
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
         this.myUUID = tag.getUUID("UUID");
-        this.url = tag.getString("url");
-      if (level !=null)  this.ensureLinked(level, LevelBEBroadcastLocation.of(this));
-
-
+        this.setUrl(tag.getString("url"));
+        if (level != null) this.ensureLinked(level, LevelBEBroadcastLocation.of(this));
     }
 
     @Override
@@ -90,6 +89,7 @@ public class SignalProjectorBlockEntity extends BlockEntity implements IScreenPr
 
     public void setUrl(String url) {
         this.url = url;
+        this.videoSource = url.isBlank() ? IVideoSource.EMPTY : new WebUrlVideoSource(url);
     }
 
     public boolean canBeEditedBy(Player player) {

@@ -15,6 +15,7 @@ import net.mehvahdjukaar.vista.client.renderer.ViewFinderBlockEntityRenderer;
 import net.mehvahdjukaar.vista.client.renderer.VistaLevelRenderer;
 import net.mehvahdjukaar.vista.client.textures.CassetteTexturesManager;
 import net.mehvahdjukaar.vista.client.textures.LiveFeedTexturesManager;
+import net.mehvahdjukaar.vista.client.textures.WebTexturesManager;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
@@ -122,6 +123,7 @@ public class VistaModClient {
 
     public static void onClientDisconnect() {
         LiveFeedTexturesManager.clear();
+        WebTexturesManager.clear();
         VistaLevelRenderer.clear();
     }
 
