@@ -16,6 +16,8 @@ import java.nio.file.Path;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class WebTexturesManager {
@@ -24,6 +26,11 @@ public class WebTexturesManager {
     private static final Map<String, WebVideoSession> SESSIONS = new ConcurrentHashMap<>();
     private static final Map<ResourceLocation, WebTexture> TEXTURES = new ConcurrentHashMap<>();
     private static final AtomicLong TEXTURE_COUNTER = new AtomicLong();
+    private static final ExecutorService WEB_WORKER = Executors.newSingleThreadExecutor(r -> {
+        Thread thread = new Thread(r, "Vista-WebTextures");
+        thread.setDaemon(true);
+        return thread;
+    });
 
     @Nullable
     private static WebVideoCacheManager cacheManager;
@@ -32,17 +39,16 @@ public class WebTexturesManager {
         WebVideoSession session = SESSIONS.computeIfAbsent(url, WebVideoSession::new);
         ResourceLocation location = createNewFreeLocation();
         WebTexture texture = new WebTexture(url, location, session);
+        texture.register();
         TEXTURES.put(location, texture);
 
-        TextureManager manager = Minecraft.getInstance().getTextureManager();
-        manager.register(location, texture);
         return texture;
     }
 
     public static void releaseWebTexture(WebTexture texture) {
         ResourceLocation location = texture.getResourceLocation();
-        TEXTURES.remove(location);
-        Minecraft.getInstance().getTextureManager().release(location);
+        WebTexture wt = TEXTURES.remove(location);
+        if (wt != null) wt.unregister(); //internally calls close
     }
 
     public static void clear() {
@@ -83,12 +89,12 @@ public class WebTexturesManager {
 
         private WebVideoSession(String url) {
             this.url = url;
-            this.loadFuture = CompletableFuture.runAsync(this::load);
+            this.loadFuture = CompletableFuture.runAsync(this::load, WEB_WORKER);
         }
 
         @Nullable
         MediaFrame getFrameAtTime(double seconds) {
-            return frames.getFrameAtTime(seconds);
+            return frames.getLoopingFrameAtTime(seconds);
         }
 
         boolean isReady() {

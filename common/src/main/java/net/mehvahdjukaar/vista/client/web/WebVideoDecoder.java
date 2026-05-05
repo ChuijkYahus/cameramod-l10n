@@ -5,6 +5,7 @@ import net.mehvahdjukaar.vista.client.web.ffmpeg.FFmpegManager;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
 import java.io.*;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,13 +30,17 @@ public class WebVideoDecoder extends Thread {
         setName("VideoDecoder-" + videoPath.getFileName());
     }
 
-    /** Pause decoding (stops reading new frames). */
+    /**
+     * Pause decoding (stops reading new frames).
+     */
     public void pause() {
         paused = true;
         log("INFO", "Paused");
     }
 
-    /** Resume decoding. */
+    /**
+     * Resume decoding.
+     */
     public void resumePlay() {
         paused = false;
         synchronized (this) {
@@ -44,7 +49,9 @@ public class WebVideoDecoder extends Thread {
         log("INFO", "Resumed");
     }
 
-    /** Seek to a specific time (seconds). The decoder will restart at that timestamp. */
+    /**
+     * Seek to a specific time (seconds). The decoder will restart at that timestamp.
+     */
     public void seek(double seconds) {
         this.seekToSeconds = seconds;
         // Interrupt the current FFmpeg process gently
@@ -52,7 +59,9 @@ public class WebVideoDecoder extends Thread {
         log("INFO", "Seek requested to " + seconds + "s");
     }
 
-    /** Stop the decoder completely. */
+    /**
+     * Stop the decoder completely.
+     */
     public void stopDecoder() {
         running = false;
         resumePlay(); // wake up if paused
@@ -70,6 +79,13 @@ public class WebVideoDecoder extends Thread {
                 int width = size[0], height = size[1];
                 int frameSize = width * height * 3;
                 double framerate = probeFrameRate(videoPath.toString());
+                if (!Double.isFinite(framerate) || framerate <= 0) {
+                    log("WARN", "Invalid probed framerate " + framerate + ", defaulting to 20 fps");
+                    framerate = 20.0;
+                } else if (isGif(videoPath) && framerate > 30.0) {
+                    log("INFO", "Clamping GIF framerate from " + framerate + " to 20 fps");
+                    framerate = 20.0;
+                }
                 int totalFrames = probeTotalFrames(videoPath.toString()); // may be -1
                 log("INFO", String.format("Video: %dx%d, %.3f fps, %d frames", width, height, framerate, totalFrames));
 
@@ -173,6 +189,9 @@ public class WebVideoDecoder extends Thread {
                 String[] parts = line.trim().split("/");
                 double num = Double.parseDouble(parts[0]);
                 double den = Double.parseDouble(parts[1]);
+                if (den == 0) {
+                    return 20.0;
+                }
                 return num / den;
             } else if (line != null && !line.isEmpty()) {
                 return Double.parseDouble(line);
@@ -220,6 +239,21 @@ public class WebVideoDecoder extends Thread {
         System.out.printf("[%s] [%s] %s%n", level, getName(), msg);
         for (Exception e : args) {
             e.printStackTrace();
+        }
+    }
+
+    private static boolean isGif(Path path) {
+        if (path.getFileName().toString().toLowerCase().endsWith(".gif")) {
+            return true;
+        }
+        try (InputStream stream = Files.newInputStream(path)) {
+            byte[] header = stream.readNBytes(6);
+            return header.length == 6 &&
+                    header[0] == 'G' &&
+                    header[1] == 'I' &&
+                    header[2] == 'F';
+        } catch (IOException ignored) {
+            return false;
         }
     }
 }

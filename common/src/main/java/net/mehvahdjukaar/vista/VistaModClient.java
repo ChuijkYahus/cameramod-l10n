@@ -8,6 +8,9 @@ import net.mehvahdjukaar.moonlight.api.platform.RegHelper;
 import net.mehvahdjukaar.moonlight.api.util.Utils;
 import net.mehvahdjukaar.vista.client.ViewFinderController;
 import net.mehvahdjukaar.vista.client.VistaDynamicResources;
+import net.mehvahdjukaar.vista.client.web.MediaFramesHolder;
+import net.mehvahdjukaar.vista.client.web.WebVideoCacheManager;
+import net.mehvahdjukaar.vista.client.web.WebVideoDecoder;
 import net.mehvahdjukaar.vista.client.web.ffmpeg.FFmpegManager;
 import net.mehvahdjukaar.vista.client.renderer.TvBlockEntityRenderer;
 import net.mehvahdjukaar.vista.client.renderer.TvItemRenderer;
@@ -32,6 +35,8 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -80,6 +85,21 @@ public class VistaModClient {
     }
 
     public static void init() {
+
+        try {
+            String url  = "https://media.tenor.com/iALgQGVcpz4AAAAi/scemer-staring-cat.gif";
+
+            MediaFramesHolder buffer = new MediaFramesHolder();
+
+            WebVideoCacheManager cache = new WebVideoCacheManager(Paths.get("./game_data"), 1024 * 1024 * 1024); // 1 GB max
+
+            Path localVideo = cache.getOrDownload(url);
+
+            WebVideoDecoder decoder = new WebVideoDecoder(FFMPEG, buffer, localVideo);
+            decoder.start();
+        }catch (Exception ignored){}
+
+
         ClientConfigs.init();
         ClientHelper.addBlockEntityRenderersRegistration(VistaModClient::registerBlockEntityRenderers);
         ClientHelper.addShaderRegistration(VistaModClient::registerShaders);

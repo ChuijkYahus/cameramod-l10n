@@ -12,7 +12,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -38,10 +37,12 @@ public class WebVideoCacheManager {
         this.maxSizeBytes = maxSizeBytes;
         Files.createDirectories(cacheDir);
         restoreFromDisk();
-        log("INFO", "Cache initialized at " + cacheDir + ", max size = " + (maxSizeBytes / (1024*1024)) + " MB");
+        log("INFO", "Cache initialized at " + cacheDir + ", max size = " + (maxSizeBytes / (1024 * 1024)) + " MB");
     }
 
-    /** Obtains a local path for the given URL. Downloads if not already cached. */
+    /**
+     * Obtains a local path for the given URL. Downloads if not already cached.
+     */
     public Path getOrDownload(String url) throws Exception {
         String key = hashUrl(url);
         // Fast path: already cached and available
@@ -62,18 +63,17 @@ public class WebVideoCacheManager {
             return future.get(); // blocks until download finishes
         }
 
-        // Start a new download
-        CompletableFuture<Path> downloadFuture = CompletableFuture.supplyAsync(() -> {
-            try {
-                return downloadAndCache(url, key);
-            } catch (Exception e) {
-                throw new CompletionException(e);
-            }
-        });
-        pendingDownloads.put(key, downloadFuture);
+        // Start a new download on the caller's worker thread.
+        CompletableFuture<Path> downloadFuture = new CompletableFuture<>();
+        CompletableFuture<Path> previous = pendingDownloads.putIfAbsent(key, downloadFuture);
+        if (previous != null) {
+            log("INFO", "Waiting for ongoing download of " + url);
+            return previous.get();
+        }
 
         try {
-            Path cachedPath = downloadFuture.get();
+            Path cachedPath = downloadAndCache(url, key);
+            downloadFuture.complete(cachedPath);
             synchronized (this) {
                 urlToEntry.put(key, new CachedEntry(cachedPath, 1));
                 refCounts.put(cachedPath, 1);
@@ -82,12 +82,17 @@ public class WebVideoCacheManager {
             }
             log("INFO", "Download & cache completed for " + url + " -> " + cachedPath);
             return cachedPath;
+        } catch (Exception e) {
+            downloadFuture.completeExceptionally(e);
+            throw e;
         } finally {
             pendingDownloads.remove(key);
         }
     }
 
-    /** Releases a reference to a previously obtained URL. When refCount reaches zero, the file is deleted. */
+    /**
+     * Releases a reference to a previously obtained URL. When refCount reaches zero, the file is deleted.
+     */
     public void release(String url) {
         String key = hashUrl(url);
         CachedEntry entry = urlToEntry.get(key);
@@ -156,11 +161,12 @@ public class WebVideoCacheManager {
         for (Path p : refCounts.keySet()) {
             try {
                 total += Files.size(p);
-            } catch (IOException ignored) {}
+            } catch (IOException ignored) {
+            }
         }
         if (total <= maxSizeBytes) return;
 
-        log("INFO", "Cache size " + (total/(1024*1024)) + " MB exceeds limit " + (maxSizeBytes/(1024*1024)) + " MB. Evicting...");
+        log("INFO", "Cache size " + (total / (1024 * 1024)) + " MB exceeds limit " + (maxSizeBytes / (1024 * 1024)) + " MB. Evicting...");
         // LRU: sort by lastAccess, oldest first, only evict files with refCount == 0
         List<Map.Entry<Path, Long>> entries = new ArrayList<>(lastAccess.entrySet());
         entries.sort(Map.Entry.comparingByValue());
@@ -182,9 +188,10 @@ public class WebVideoCacheManager {
                     if (keyToRemove != null) urlToEntry.remove(keyToRemove);
                     refCounts.remove(p);
                     lastAccess.remove(p);
-                    log("INFO", "Evicted " + p + " (size " + (size/(1024)) + " KB)");
+                    log("INFO", "Evicted " + p + " (size " + (size / (1024)) + " KB)");
                     if (total <= maxSizeBytes) break;
-                } catch (IOException ignored) {}
+                } catch (IOException ignored) {
+                }
             }
         }
     }
@@ -212,6 +219,7 @@ public class WebVideoCacheManager {
     private static class CachedEntry {
         final Path path;
         int refCount;
+
         CachedEntry(Path path, int refCount) {
             this.path = path;
             this.refCount = refCount;

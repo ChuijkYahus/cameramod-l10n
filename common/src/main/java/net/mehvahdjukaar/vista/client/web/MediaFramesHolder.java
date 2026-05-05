@@ -1,9 +1,6 @@
 package net.mehvahdjukaar.vista.client.web;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 
 /**
  * Thread‑safe container for decoded video frames.
@@ -14,7 +11,9 @@ public class MediaFramesHolder {
     private final List<MediaFrame> frames = new ArrayList<>();
     private boolean completed = false;
 
-    /** Adds a frame (assumed to be in PTS order). */
+    /**
+     * Adds a frame (assumed to be in PTS order).
+     */
     public synchronized void add(MediaFrame frame) {
         frames.add(frame);
     }
@@ -27,9 +26,32 @@ public class MediaFramesHolder {
         return completed;
     }
 
-    /** Returns the total number of frames received so far. */
+    /**
+     * Returns the total number of frames received so far.
+     */
     public synchronized int size() {
         return frames.size();
+    }
+
+    public synchronized double getLastFrameTime() {
+        return frames.isEmpty() ? 0 : frames.get(frames.size() - 1).pts();
+    }
+
+    public synchronized double getDurationSeconds() {
+        if (frames.size() < 2) return 0;
+        double lastPts = frames.get(frames.size() - 1).pts();
+        double previousPts = frames.get(frames.size() - 2).pts();
+        double frameDuration = Math.max(0, lastPts - previousPts);
+        return lastPts + frameDuration;
+    }
+
+    public synchronized MediaFrame getLoopingFrameAtTime(double time) {
+        double duration = getDurationSeconds();
+        if (duration > 0 && time >= duration) {
+            time = time % duration;
+        }
+        if(true)return frames.get(new Random().nextInt(50));
+        return getFrameAtTime(time);
     }
 
     /**
@@ -52,7 +74,7 @@ public class MediaFramesHolder {
             if (insertionPoint == 0) {
                 // Requested time before first frame → return first frame? Or null?
                 // We'll return first frame (closest available)
-                return frames.get(0);
+                return frames.getFirst();
             } else {
                 // Return the frame just before the insertion point
                 return frames.get(insertionPoint - 1);
