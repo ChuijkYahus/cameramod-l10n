@@ -2,6 +2,7 @@ package net.mehvahdjukaar.vista.client.renderer;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import net.mehvahdjukaar.moonlight.api.util.math.EntityAngles;
 import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.client.ViewFinderController;
 import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlock;
@@ -24,7 +25,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Quaternionf;
-import org.joml.Vector3f;
 
 import java.lang.ref.WeakReference;
 
@@ -37,7 +37,6 @@ public class ViewFinderBlockEntityRenderer implements BlockEntityRenderer<ViewFi
     private final ModelPart lens;
     private final ModelPart base;
     private final ModelPart model;
-
 
 
     public ViewFinderBlockEntityRenderer(BlockEntityRendererProvider.Context context) {
@@ -73,29 +72,35 @@ public class ViewFinderBlockEntityRenderer implements BlockEntityRenderer<ViewFi
         boolean isControlledByLocalInstance = ViewFinderController.isActiveFor(tile);
 
         poseStack.pushPose();
+
         poseStack.translate(0.5, 0.5, 0.5);
 
-        Quaternionf rotation = tile.getBlockState().getValue(ViewFinderBlock.FACING).getOpposite().getRotation();
+        // Base rotation (block orientation)
+        Quaternionf cannonBaseRot =
+                tile.getBlockState()
+                        .getValue(ViewFinderBlock.FACING)
+                        .getOpposite()
+                        .getRotation();
 
-        poseStack.mulPose(rotation);
+        // Head local rot
+        Quaternionf cannonHeadRot = tile.getLocalOrientation(partialTick);
+
+        // Move into base space
+        poseStack.mulPose(cannonBaseRot);
 
 
-        Quaternionf viewFinderRot = tile.getLocalOrientation(partialTick);
+        // Compute head rotation relative to base
+        Quaternionf localRot = new Quaternionf(cannonBaseRot)
+                .invert()
+                .mul(cannonHeadRot);
 
-        Vector3f forward = new Vector3f(0f, 0, 1);
+        EntityAngles angles = EntityAngles.fromQuaternion(localRot);
 
-        forward.rotateX(Mth.PI - pitchRad);
+        float yaw = angles.yawRad();
+        float pitch = angles.pitchRad();
 
-        forward.rotateY(Mth.PI - yawRad);
-        forward.rotate(rotation.invert());
-
-        yawRad = (float) Mth.atan2(forward.x, forward.z);
-
-        pitchRad = (float) Mth.atan2(-forward.y, Mth.sqrt(forward.x * forward.x + forward.z * forward.z));
-        //float rollRad = (float) Math.atan2(forward.y, forward.z);
-
-        this.legs.yRot = yawRad;
-        this.pivot.xRot = pitchRad;
+        this.legs.yRot = -yaw;
+        this.pivot.xRot = pitch;
         this.pivot.zRot = 0;
 
         this.legsVisual.visible = !isControlledByLocalInstance;
@@ -128,6 +133,35 @@ public class ViewFinderBlockEntityRenderer implements BlockEntityRenderer<ViewFi
             }
         }
         poseStack.popPose();
+    }
+
+
+    public static Vec3 fromQuaternion(Quaternionf q) {
+        float x = q.x;
+        float y = q.y;
+        float z = q.z;
+        float w = q.w;
+
+        // --- Yaw (Y axis) ---
+        float siny_cosp = 2.0f * (w * y + x * z);
+        float cosy_cosp = 1.0f - 2.0f * (y * y + x * x);
+        float yaw = (float) Math.atan2(siny_cosp, cosy_cosp);
+
+        // --- Pitch (X axis) ---
+        float sinp = 2.0f * (w * x - y * z);
+        float pitch;
+        if (Math.abs(sinp) >= 1.0f) {
+            pitch = (float) Math.copySign(Math.PI / 2.0, sinp); // clamp
+        } else {
+            pitch = (float) Math.asin(sinp);
+        }
+
+        // --- Roll (Z axis) ---
+        float sinr_cosp = 2.0f * (w * z + y * x);
+        float cosr_cosp = 1.0f - 2.0f * (z * z + x * x);
+        float roll = (float) Math.atan2(sinr_cosp, cosr_cosp);
+
+        return new Vec3((yaw), (pitch), (roll));
     }
 
     public static LayerDefinition createMesh() {
@@ -182,9 +216,10 @@ public class ViewFinderBlockEntityRenderer implements BlockEntityRenderer<ViewFi
             vc.addVertex(pose, 0, 1, 0)
                     .setColor(255, 0, 255, 255)
                     .setNormal(pose, 0, 1, 0);
+            EntityAngles angles = EntityAngles.fromQuaternion(tile.getLocalOrientation(1));
 
-            float tileYaw = tile.getYaw();
-            float tilePitch = tile.getPitch();
+            float tileYaw = angles.yaw();
+            float tilePitch = angles.pitch();
             var tileView = Vec3.directionFromRotation(tilePitch, tileYaw).normalize();
             vc.addVertex(pose, 0, 0, 0)
                     .setColor(30, 30, 255, 255)

@@ -214,9 +214,9 @@ public class TVEndermanObservationController {
             float yaw = ea.yaw();
             //TODO: test enderman
             float pitch = ea.pitch();
-            fakePlayer.setYRot(yRot + vf.getYaw());
-            fakePlayer.setYHeadRot(yRot + vf.getYaw());
-            fakePlayer.setXRot(xRot + vf.getPitch());
+            fakePlayer.setYRot(yRot + yaw);
+            fakePlayer.setYHeadRot(yRot + yaw);
+            fakePlayer.setXRot(xRot + pitch);
 
             //move forward to skip our own BB since it cant be empty due to particles
             float offset = 0.8f;

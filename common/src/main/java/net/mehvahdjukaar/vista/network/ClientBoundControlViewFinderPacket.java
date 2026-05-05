@@ -7,6 +7,7 @@ import net.mehvahdjukaar.vista.client.ViewFinderController;
 import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
 public record ClientBoundControlViewFinderPacket(TileOrEntityTarget target) implements Message {
@@ -27,7 +28,7 @@ public record ClientBoundControlViewFinderPacket(TileOrEntityTarget target) impl
     @Override
     public void handle(Context context) {
         // client world
-        var level = context.getPlayer().level();
+        Level level = context.getPlayer().level();
         BlockEntity be = this.target().findTileOrContainedTile(level);
         if (be instanceof ViewFinderBlockEntity vf) {
             ViewFinderController.startControlling(vf);

@@ -2,51 +2,74 @@ package net.mehvahdjukaar.vista.integration.computer_craft;
 
 import dan200.computercraft.api.lua.LuaFunction;
 import dan200.computercraft.api.peripheral.IPeripheral;
-import net.mehvahdjukaar.moonlight.api.misc.TileOrEntityTarget;
+import net.mehvahdjukaar.moonlight.api.util.math.EntityAngles;
 import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Quaternionf;
 
 import java.util.Objects;
 
-public final class ViewFinderPeripheral implements IPeripheral {
+public class ViewFinderPeripheral implements IPeripheral {
     private final ViewFinderBlockEntity tile;
 
     public ViewFinderPeripheral(ViewFinderBlockEntity tile) {
         this.tile = tile;
     }
+    @LuaFunction
+    public float getYaw() {
+        Quaternionf orientation = tile.getLocalOrientation(1);
+        EntityAngles angles = EntityAngles.fromQuaternion(orientation);
+        return angles.yaw();
+    }
 
     @LuaFunction
     public void setYaw(double value) {
-        tile.setYaw(acc, (float) value);
-        acc.updateClients();
-    }
+        Quaternionf orientation = tile.getLocalOrientation(1);
+        EntityAngles angles = EntityAngles.fromQuaternion(orientation);
+        angles = angles.withYaw((float) value);
 
-    @LuaFunction
-    public float getYaw() {
-        return tile.getYaw();
-    }
-
-    @LuaFunction
-    public void setPitch(double value) {
-        tile.setPitch(acc, (float) value);
-        acc.updateClients();
+        tile.setLocalOrientation(angles.toQuaternion());
+        tile.syncToClients();
     }
 
     @LuaFunction
     public float getPitch() {
-        return tile.getPitch();
+        Quaternionf orientation = tile.getLocalOrientation(1);
+        EntityAngles angles = EntityAngles.fromQuaternion(orientation);
+        return angles.pitch();
+    }
+
+    @LuaFunction
+    public void setPitch(double value) {
+        Quaternionf orientation = tile.getLocalOrientation(1);
+        EntityAngles angles = EntityAngles.fromQuaternion(orientation);
+        angles = angles.withPitch((float) value);
+
+        tile.setLocalOrientation(angles.toQuaternion());
+
+        tile.syncToClients();
     }
 
     @LuaFunction
     public void setZoom(int zoom) {
         byte power = (byte) Math.min(Math.max(zoom, 1), ViewFinderBlockEntity.MAX_ZOOM);
-        tile.setZoomLevel(power);
-        acc.updateClients();
+        this.tile.setZoomLevel(power);
+        this.tile.syncToClients();
     }
 
     @LuaFunction
     public int getZoom() {
-        return tile.getZoomLevel();
+        return this.tile.getZoomLevel();
+    }
+
+    @LuaFunction
+    public void setLocked(boolean locked) {
+        this.tile.setLocked(locked);
+    }
+
+    @LuaFunction
+    public boolean isLocked() {
+        return tile.isLocked();
     }
 
     @Override
@@ -59,7 +82,7 @@ public final class ViewFinderPeripheral implements IPeripheral {
         if (obj == this) return true;
         if (obj == null || obj.getClass() != this.getClass()) return false;
         var that = (ViewFinderPeripheral) obj;
-        return Objects.equals(this.tile, that.tile);
+        return this.tile == that.tile;
     }
 
     @Override
@@ -72,5 +95,4 @@ public final class ViewFinderPeripheral implements IPeripheral {
         return "ViewFinderPeripheral[" +
                 "tile=" + tile + ']';
     }
-
 }

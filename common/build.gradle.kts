@@ -18,8 +18,8 @@ dependencies {
     accessTransformers("net.mehvahdjukaar:moonlight-neoforge:${moonlight_version}")
 
 
-    modImplementation("net.mehvahdjukaar:supplementaries-neoforge:${supplementaries_version}")
-    //modImplementation("curse.maven:supplementaries-412082:7892406")
+    //modImplementation("net.mehvahdjukaar:supplementaries-neoforge:${supplementaries_version}")
+    modImplementation("curse.maven:supplementaries-412082:8044262")
 
 
     modCompileOnly("curse.maven:exposure-871755:7862664")

@@ -10,6 +10,10 @@ fabric {
     accessWidener(project(":common"))
 }
 
+loom{
+
+}
+
 
 val moonlight_version: String by extra
 val supplementaries_version: String by extra
@@ -18,7 +22,8 @@ dependencies {
 
     modImplementation("net.mehvahdjukaar:moonlight-fabric:${moonlight_version}")
 
-    modImplementation("curse.maven:supplementaries-412082:7892407")
+    modImplementation("curse.maven:supplementaries-412082:8044264")
+            //modImplementation("net.mehvahdjukaar:supplementaries-fabric:${supplementaries_version}")
 
     modCompileOnly("curse.maven:irisshaders-455508:6213635")
     modCompileOnly("curse.maven:exposure-871755:7862665")

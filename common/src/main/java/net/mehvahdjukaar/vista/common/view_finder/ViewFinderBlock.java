@@ -8,18 +8,12 @@ import net.mehvahdjukaar.moonlight.api.misc.TileOrEntityTarget;
 import net.mehvahdjukaar.moonlight.api.platform.network.NetworkHelper;
 import net.mehvahdjukaar.moonlight.api.util.Utils;
 import net.mehvahdjukaar.moonlight.api.util.math.MthUtils;
-import net.mehvahdjukaar.supplementaries.common.block.ModBlockProperties;
-import net.mehvahdjukaar.supplementaries.common.block.tiles.CannonBlockTile;
-import net.mehvahdjukaar.supplementaries.common.utils.MiscUtils;
-import net.mehvahdjukaar.supplementaries.reg.ModRegistry;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.common.broadcast.BroadcastManager;
 import net.mehvahdjukaar.vista.common.broadcast.LevelBEBroadcastLocation;
 import net.mehvahdjukaar.vista.network.ClientBoundControlViewFinderPacket;
-import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
@@ -29,9 +23,7 @@ import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
@@ -42,8 +34,6 @@ import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
-import net.minecraft.world.level.block.state.properties.BlockStateProperties;
-import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.pathfinder.PathComputationType;
@@ -56,14 +46,11 @@ import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 import java.util.EnumMap;
-import java.util.List;
 import java.util.Optional;
 
 public class ViewFinderBlock extends DirectionalBlock implements EntityBlock, IRotatable, IAnalogRotatable {
 
-    public static final int MAX_POWER_LEVELS = 4;
-    public static final BooleanProperty POWERED = BlockStateProperties.POWERED;
-    public static final EnumProperty<Rotation> ROTATE_TILE = ModBlockProperties.ROTATE_TILE;
+    public static final EnumProperty<Rotation> ROTATE_TILE = EnumProperty.create("rotate_tile", Rotation.class);
     public static final MapCodec<ViewFinderBlock> CODEC = simpleCodec(ViewFinderBlock::new);
     protected static final EnumMap<Direction, VoxelShape> SHAPES = MthUtils.getAllRotatedVoxelShapes(
             Block.box(2.0, 2.0, 0.0, 14, 14, 2.0));
@@ -72,8 +59,7 @@ public class ViewFinderBlock extends DirectionalBlock implements EntityBlock, IR
         super(properties);
         this.registerDefaultState(this.stateDefinition.any()
                 .setValue(FACING, Direction.UP)
-                .setValue(ROTATE_TILE, Rotation.NONE)
-                .setValue(POWERED, false));
+                .setValue(ROTATE_TILE, Rotation.NONE));
     }
 
     @Override
@@ -81,17 +67,10 @@ public class ViewFinderBlock extends DirectionalBlock implements EntityBlock, IR
         return CODEC;
     }
 
-    @Override
-    public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
-        super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
-        if (!MiscUtils.showsHints(tooltipFlag)) return;
-        tooltipComponents.add((Component.translatable("message.supplementaries.cannon")).withStyle(ChatFormatting.GRAY).withStyle(ChatFormatting.ITALIC));
-    }
-
     @Nullable
     @Override
     public MenuProvider getMenuProvider(BlockState state, Level level, BlockPos pos) {
-        if (level.getBlockEntity(pos) instanceof CannonBlockTile tile) {
+        if (level.getBlockEntity(pos) instanceof ViewFinderBlockEntity tile) {
             return tile;
         }
         return null;
@@ -105,7 +84,7 @@ public class ViewFinderBlock extends DirectionalBlock implements EntityBlock, IR
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         super.createBlockStateDefinition(builder);
-        builder.add(FACING, POWERED, ROTATE_TILE);
+        builder.add(FACING, ROTATE_TILE);
     }
 
     @Override
@@ -126,8 +105,7 @@ public class ViewFinderBlock extends DirectionalBlock implements EntityBlock, IR
     @Nullable
     public BlockState getStateForPlacement(BlockPlaceContext context) {
         return this.defaultBlockState()
-                .setValue(FACING, context.getClickedFace())
-                .setValue(POWERED, context.getLevel().hasNeighborSignal(context.getClickedPos()));
+                .setValue(FACING, context.getClickedFace());
     }
 
     @Override
@@ -146,7 +124,7 @@ public class ViewFinderBlock extends DirectionalBlock implements EntityBlock, IR
     @Override
     public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) {
         super.setPlacedBy(level, pos, state, placer, stack);
-        if (placer != null && level.getBlockEntity(pos) instanceof CannonBlockTile cannon) {
+        if (placer != null && level.getBlockEntity(pos) instanceof ViewFinderBlockEntity cannon) {
             Direction[] nearest = Direction.orderedByNearest(placer);
             Direction dir = nearest[0].getOpposite();
             Direction myDir = state.getValue(FACING);
@@ -157,22 +135,18 @@ public class ViewFinderBlock extends DirectionalBlock implements EntityBlock, IR
     }
 
     @Override
-    public void neighborChanged(BlockState state, Level level, BlockPos pos, Block block, BlockPos fromPos, boolean isMoving) {
-        if (!level.isClientSide) {
-            boolean wasPowered = state.getValue(POWERED);
-            if (wasPowered != level.hasNeighborSignal(pos)) {
-                level.setBlock(pos, state.cycle(POWERED), 2);
-                if (!wasPowered && level.getBlockEntity(pos) instanceof CannonBlockTile tile) {
-                    tile.ignite(null);
-                }
-            }
+    protected void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock, BlockPos neighborPos, boolean movedByPiston) {
+        super.neighborChanged(state, level, pos, neighborBlock, neighborPos, movedByPiston);
+        if (level.getBlockEntity(pos) instanceof ViewFinderBlockEntity tile) {
+            int directPower = level.getDirectSignalTo(pos);
+            tile.updateRedstonePower(directPower);
         }
     }
 
     @Nullable
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
-        return new CannonBlockTile(pos, state);
+        return new ViewFinderBlockEntity(pos, state);
     }
 
     @Nullable
@@ -194,13 +168,11 @@ public class ViewFinderBlock extends DirectionalBlock implements EntityBlock, IR
                 }
             }
             if (player instanceof ServerPlayer sp) {
-                if (player.isSecondaryUseActive()) {
-                    //same as super but sends custom packet
-                    if (tile.canBeUsedBy(pos, player)) {
-                        tile.setCurrentUser(player.getUUID());
-                        NetworkHelper.sendToClientPlayer(sp, new ClientBoundControlViewFinderPacket(TileOrEntityTarget.of(tile)));
-                    }
-                } else Utils.openGuiIfPossible(tile, sp, stack, hitResult.getDirection(), hitResult.getLocation());
+                //same as super but sends custom packet
+                if (tile.canBeUsedBy(pos, player)) {
+                    tile.setCurrentUser(player.getUUID());
+                    NetworkHelper.sendToClientPlayer(sp, new ClientBoundControlViewFinderPacket(TileOrEntityTarget.of(tile)));
+                }
             }
             return ItemInteractionResult.sidedSuccess(level.isClientSide());
         }
@@ -222,36 +194,6 @@ public class ViewFinderBlock extends DirectionalBlock implements EntityBlock, IR
     }
 
     @Override
-    public boolean hasAnalogOutputSignal(BlockState blockState) {
-        return true;
-    }
-
-    @Override
-    public int getAnalogOutputSignal(BlockState blockState, Level level, BlockPos blockPos) {
-        int power = 0;
-        if (level.getBlockEntity(blockPos) instanceof CannonBlockTile tile) {
-            if (tile.isOnCooldown() || tile.isFiring()) {
-                power += 15;
-            }
-            if (!tile.getProjectile().isEmpty()) {
-                power += 8;
-            }
-            ItemStack ammo = tile.getFuel();
-            int maxStackSize = ammo.getMaxStackSize();
-            int ammoCount = ammo.getCount();
-            int importantCount = Math.min(ammoCount, MAX_POWER_LEVELS);
-            power += importantCount;
-            int nonImportantCount = maxStackSize - MAX_POWER_LEVELS;
-            float remainingPower = Mth.map(nonImportantCount, 0, maxStackSize - MAX_POWER_LEVELS,
-                    0, 3);
-            if (remainingPower > 0) {
-                power += (int) remainingPower;
-            }
-        }
-        return Mth.clamp(power, 0, 15);
-    }
-
-    @Override
     public Optional<BlockState> getRotatedState(BlockState state, LevelAccessor levelAccessor, BlockPos blockPos,
                                                 Rotation rotation, Direction axis, @Nullable Vec3 hit) {
         boolean ccw = rotation == Rotation.COUNTERCLOCKWISE_90;
@@ -261,7 +203,7 @@ public class ViewFinderBlock extends DirectionalBlock implements EntityBlock, IR
     @Override
     public void onRotated(BlockState newState, BlockState oldState, LevelAccessor world, BlockPos pos, Rotation rotation,
                           Direction axis, @Nullable Vec3 hit) {
-        if (axis.getAxis() == newState.getValue(FACING).getAxis() && world.getBlockEntity(pos) instanceof CannonBlockTile tile) {
+        if (axis.getAxis() == newState.getValue(FACING).getAxis() && world.getBlockEntity(pos) instanceof ViewFinderBlockEntity tile) {
             float angle = rotation.rotate(0, 4) * -90;
             Quaternionf currentDir = tile.getWorldOrientation(1);
             Quaternionf q = new Quaternionf().rotateAxis(angle * Mth.DEG_TO_RAD, axis.step());
@@ -276,7 +218,7 @@ public class ViewFinderBlock extends DirectionalBlock implements EntityBlock, IR
 
     @Override
     public void rotateAnalog(BlockState state, Level level, BlockPos pos, Direction face, boolean ccw, float speed) {
-        if (level.getBlockEntity(pos) instanceof CannonBlockTile tile) {
+        if (level.getBlockEntity(pos) instanceof ViewFinderBlockEntity tile) {
             speed = speed * 0.01f;
 
             float deltaAngle = -speed * (ccw ? -1 : 1);
@@ -285,8 +227,6 @@ public class ViewFinderBlock extends DirectionalBlock implements EntityBlock, IR
             //this is the way we face. now a rotation is being performend on the face "face", either ccw or cw. make this vector rotate acocrdingly
             cannonRot = new Quaternionf().rotateAxis(deltaAngle, rotAxis).mul(cannonRot);
             tile.setWorldOrientation(cannonRot);
-            tile.setChanged();
-            //  level.sendBlockUpdated(pos, state, state, 3);
         }
     }
 

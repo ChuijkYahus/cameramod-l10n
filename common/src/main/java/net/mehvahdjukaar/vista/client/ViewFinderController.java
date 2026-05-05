@@ -3,7 +3,6 @@ package net.mehvahdjukaar.vista.client;
 import net.mehvahdjukaar.moonlight.api.client.PostShadersHelper;
 import net.mehvahdjukaar.moonlight.api.misc.EventCalled;
 import net.mehvahdjukaar.moonlight.api.util.math.EntityAngles;
-import net.mehvahdjukaar.supplementaries.common.entities.CannonBoatEntity;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
 import net.minecraft.client.Camera;
@@ -40,8 +39,6 @@ public class ViewFinderController {
     private static float pitchIncrease;
     private static boolean needsToUpdateServer;
     // lerp camera
-    private static Vec3 lastCameraPos;
-    private static float lastZoomOut = 0;
     private static float lastCameraYaw = 0;
     private static float lastCameraPitch = 0;
     private static boolean turnedLastTick = false;
@@ -68,7 +65,7 @@ public class ViewFinderController {
     private static void stopControllingAndSync() {
         if (viewFinder == null) return;
         LocalPlayer player = Minecraft.getInstance().player;
-        viewFinder.syncToServer(false, true, player);
+        viewFinder.syncToServer( true, player);
         stopControlling();
     }
 
@@ -77,8 +74,6 @@ public class ViewFinderController {
         viewFinder = null;
         lastCameraYaw = 0;
         lastCameraPitch = 0;
-        lastZoomOut = 0;
-        lastCameraPos = null;
         turnedLastTick = false;
         if (lastCameraType != null) {
             Minecraft.getInstance().options.setCameraType(lastCameraType);
@@ -103,28 +98,16 @@ public class ViewFinderController {
         if (!isActive()) return false;
         Vec3 centerCannonPos = viewFinder.getGlobalPosition(partialTick);
 
-        if (lastCameraPos == null) {
-            lastCameraPos = camera.getPosition();
-            lastCameraYaw = camera.getYRot();
-            lastCameraPitch = camera.getXRot();
-        }
-
         // lerp camera
-        Vec3 targetCameraPos = centerCannonPos.add(0, 2, 0);
+        Vec3 targetCameraPos = centerCannonPos.add(0, 0.5, 0);
         float targetYRot = camera.getYRot() + yawIncrease;
         float targetXRot = Mth.clamp(camera.getXRot() + pitchIncrease, -90, 90);
 
         camera.setPosition(targetCameraPos);
         camera.setRotation(targetYRot, targetXRot);
 
-        lastCameraPos = camera.getPosition();
         lastCameraYaw = camera.getYRot();
         lastCameraPitch = camera.getXRot();
-        lastZoomOut = camera.getMaxZoom(4);
-
-        float horizontalOffset = -1;
-
-        camera.move(-lastZoomOut, 0, horizontalOffset);
 
         yawIncrease = 0;
         pitchIncrease = 0;
@@ -137,19 +120,21 @@ public class ViewFinderController {
 
     // true cancels the thing
     public static boolean onPlayerRotated(double yawAdd, double pitchAdd) {
-        if (ViewFinderController.isActive()) {
+        if (isActive()) {
             if (isLocked()) return true;
             float scale = 0.2f;
             yawIncrease += (float) (yawAdd * scale);
             pitchIncrease += (float) (pitchAdd * scale);
             if (yawAdd != 0 || pitchAdd != 0) needsToUpdateServer = true;
+            if (viewFinder.shouldRotatePlayerFaceWhenManeuvering()) {
 
-            //make player face camera while maneuvering
-            LocalPlayer player = Minecraft.getInstance().player;
-            player.turn(Mth.wrapDegrees((lastCameraYaw + yawAdd) - player.yHeadRot),
-                    Mth.wrapDegrees((lastCameraPitch + pitchAdd) - player.getXRot()));
-            player.yHeadRotO = player.yHeadRot;
-            player.xRotO = player.getXRot();
+                //make player face camera while maneuvering
+                LocalPlayer player = Minecraft.getInstance().player;
+                player.turn(Mth.wrapDegrees((lastCameraYaw + yawAdd) - player.yHeadRot),
+                        Mth.wrapDegrees((lastCameraPitch + pitchAdd) - player.getXRot()));
+                player.yHeadRotO = player.yHeadRot;
+                player.xRotO = player.getXRot();
+            }
             return true;
         }
         return false;
@@ -224,7 +209,7 @@ public class ViewFinderController {
             viewFinder.setZoomLevel(viewFinderZoom);
             if (needsToUpdateServer) {
                 needsToUpdateServer = false;
-                viewFinder.syncToServer(false, false, player);
+                viewFinder.syncToServer( false, player);
             }
         } else {
             stopControllingAndSync();
@@ -256,7 +241,7 @@ public class ViewFinderController {
     }
 
     public static boolean cancelsXPBar() {
-        return isActive() || Minecraft.getInstance().player.getVehicle() instanceof CannonBoatEntity;
+        return isActive();
     }
 
     public static boolean cancelsHotBar() {

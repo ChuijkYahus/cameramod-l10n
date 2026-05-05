@@ -3,6 +3,7 @@ package net.mehvahdjukaar.vista.mixins.fabric;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.mojang.authlib.GameProfile;
+import net.mehvahdjukaar.vista.client.ViewFinderController;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.player.Player;

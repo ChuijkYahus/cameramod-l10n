@@ -188,21 +188,15 @@ public class VistaMod {
         // view finder rotation bug wirh wrench?
         //pause not working with multiple tvs
         //change update range to be higher!!!
-        //lenses shaders for view finder
         //aurora with snow and sleeping fox cabin
         //check if view are sections are not duplicated
         //amendments mixed pot not saving on servers
         //divining rod can use maybe has on the block container of a chunk
         //no adjusted frustum causing to clip through blocks when placed next to it
-        //creative only cassette that targets a video
-        //turn table rotation thing
-        //ball item
         //turn on sound
         //player holding hands like when using explosure cameera and cannons
-        //shader when you wear a tv. fnaf
         //new cassettes
         //view distance scales with zoom
-        //check turn table
         //cannon maoeuvering sound
         //view finder maneuvering sound
         //exposure compat

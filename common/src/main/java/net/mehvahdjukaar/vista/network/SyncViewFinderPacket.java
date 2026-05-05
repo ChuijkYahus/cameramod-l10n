@@ -2,8 +2,6 @@ package net.mehvahdjukaar.vista.network;
 
 import net.mehvahdjukaar.moonlight.api.misc.TileOrEntityTarget;
 import net.mehvahdjukaar.moonlight.api.platform.network.Message;
-import net.mehvahdjukaar.supplementaries.Supplementaries;
-import net.mehvahdjukaar.supplementaries.common.block.tiles.CannonBlockTile;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
 import net.minecraft.core.BlockPos;
@@ -29,7 +27,7 @@ public record SyncViewFinderPacket(
             VistaMod.res("sync_view_finder"), SyncViewFinderPacket::new);
 
     public SyncViewFinderPacket(FriendlyByteBuf buf) {
-        this(ByteBufCodecs.QUATERNIONF.decode(buf), buf.readByte(),
+        this(ByteBufCodecs.QUATERNIONF.decode(buf), buf.readVarInt(),
                 buf.readBoolean(), buf.readBoolean(), TileOrEntityTarget.read(buf),
                 buf.readOptional(buffer -> buffer.readUUID()).orElse(null));
     }
@@ -37,8 +35,8 @@ public record SyncViewFinderPacket(
     @Override
     public void write(RegistryFriendlyByteBuf buf) {
         ByteBufCodecs.QUATERNIONF.encode(buf, localRot);
-        buf.writeByte(this.firePower);
-        buf.writeBoolean(this.ignite);
+        buf.writeVarInt(this.zoomLevel);
+        buf.writeBoolean(this.locked);
         buf.writeBoolean(this.stopControlling);
         this.target.write(buf);
         buf.writeOptional(Optional.ofNullable(this.userEntityId), (buffer, value) ->
@@ -58,7 +56,7 @@ public record SyncViewFinderPacket(
         }
         //trusted
         if (level.isClientSide) {
-            viewFinder.setTrustedInternalAttributes(this.localRot, this.firePower, this.ignite, null);
+            viewFinder.setTrustedInternalAttributes(this.localRot, this.zoomLevel, this.locked);
             if (stopControlling) {
                 viewFinder.setCurrentUser(null);
             }
@@ -75,12 +73,12 @@ public record SyncViewFinderPacket(
             }
 
             if (entity == null || viewFinder.canBeUsedBy(BlockPos.containing(viewFinder.getGlobalPosition(1)), entity)) {
-                viewFinder.setTrustedInternalAttributes(this.localRot, this.firePower, this.ignite);
+                viewFinder.setTrustedInternalAttributes(this.localRot, this.zoomLevel, this.locked);
                 viewFinder.setChanged();
                 if (stopControlling) {
                     viewFinder.setCurrentUser(null);
                 }
-                viewFinder.syncToClients(ignite);
+                viewFinder.syncToClients();
             } else {
                 VistaMod.LOGGER.warn("Entity {} tried to control cannon {} without permission", entity, this.target);
             }

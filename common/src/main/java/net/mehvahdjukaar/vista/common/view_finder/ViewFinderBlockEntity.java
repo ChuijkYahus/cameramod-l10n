@@ -4,11 +4,8 @@ import com.mojang.math.Axis;
 import net.mehvahdjukaar.moonlight.api.block.IOneUserInteractable;
 import net.mehvahdjukaar.moonlight.api.block.ItemDisplayTile;
 import net.mehvahdjukaar.moonlight.api.misc.OrientationRig;
-import net.mehvahdjukaar.moonlight.api.misc.TileOrEntityTarget;
 import net.mehvahdjukaar.moonlight.api.platform.network.NetworkHelper;
 import net.mehvahdjukaar.moonlight.api.util.math.EntityAngles;
-import net.mehvahdjukaar.supplementaries.Supplementaries;
-import net.mehvahdjukaar.supplementaries.common.network.SyncCannonPacket;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.client.video_source.IVideoSource;
 import net.mehvahdjukaar.vista.client.video_source.LiveFeedVideoSource;
@@ -25,13 +22,10 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.util.ExtraCodecs;
 import net.minecraft.util.Mth;
 import net.minecraft.util.VisibleForDebug;
-import net.minecraft.world.InteractionHand;
-import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
@@ -114,7 +108,7 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
             quat = EntityAngles.of(pitch, yaw).toQuaternion();
         } else {
             quat = ExtraCodecs.QUATERNIONF.parse(NbtOps.INSTANCE, tag.get("orientation"))
-                    .resultOrPartial(Supplementaries.LOGGER::error).orElse(new Quaternionf());
+                    .resultOrPartial(VistaMod.LOGGER::error).orElse(new Quaternionf());
         }
         this.orientation.orient(quat);
         this.snapToWantedRotationInstantly();
@@ -305,8 +299,7 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
         return localRot.mul(referenceRot);
     }
 
-    public void setTrustedInternalAttributes(Quaternionf localRotation,
-                                             int zoom, boolean locked) {
+    public void setTrustedInternalAttributes(Quaternionf localRotation, int zoom, boolean locked) {
         this.setLocalOrientation(localRotation);
         this.zoom = zoom;
         this.locked = locked;
@@ -344,26 +337,26 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
         return restraint.rotated(dir);
     }
 
-    private Quaternionf getWantedLocalRotation() {
+    private Quaternionf getWantedLocalOrientation() {
         Quaternionf rot = orientation.getWantedRotation();
         Quaternionf additionalRot = getStructureAdditionalRotation();
         return rot.mul(additionalRot);
     }
 
     // Network
-    public void syncToServer(boolean ignite, boolean removeOwner, Player playerWhoChangedIt) {
+    public void syncToServer(boolean removeOwner, Player playerWhoChangedIt) {
         NetworkHelper.sendToServer(new SyncViewFinderPacket(
-                this.getWantedLocalRotation(), this.getPowerLevel(),
-                ignite, removeOwner, referenceFrame.makeNetworkTarget(),
+                this.getWantedLocalOrientation(), this.zoom,
+                this.locked, removeOwner, referenceFrame.makeNetworkTarget(),
                 playerWhoChangedIt.getUUID()));
     }
 
-    public void syncToClients(boolean ignite) {
+    public void syncToClients() {
         if (level instanceof ServerLevel sl) {
             NetworkHelper.sendToAllClientPlayersInDefaultRange(sl,
                     BlockPos.containing(referenceFrame.position(1)), new SyncViewFinderPacket(
-                            this.getWantedLocalRotation(), this.getPowerLevel(),
-                            ignite, false, referenceFrame.makeNetworkTarget(), null));
+                            this.getWantedLocalOrientation(), this.zoom,
+                            this.locked, false, referenceFrame.makeNetworkTarget(), null));
         }
     }
 
@@ -375,4 +368,7 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
         this.locked = !locked;
     }
 
+    public boolean shouldRotatePlayerFaceWhenManeuvering() {
+        return false;
+    }
 }
