@@ -17,8 +17,6 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.nio.file.Path;
 
-import static com.mojang.text2speech.Narrator.LOGGER;
-
 public class WebTexture extends AbstractTexture implements Dumpable {
     private final String urlString;
     private final WebTexturesManager.WebVideoSession session;
@@ -78,7 +76,12 @@ public class WebTexture extends AbstractTexture implements Dumpable {
         Runnable upload = () -> {
             NativeImage oldImage = this.cpuImage;
             this.cpuImage = image;
-            this.upload();
+            if (cpuImage != null){
+            if(oldImage == null){
+                TextureUtil.prepareImage(this.getId(), this.cpuImage.getWidth(), this.cpuImage.getHeight());
+            }
+             this.upload();
+            }
             if (oldImage != null && oldImage != image) {
                 oldImage.close();
             }

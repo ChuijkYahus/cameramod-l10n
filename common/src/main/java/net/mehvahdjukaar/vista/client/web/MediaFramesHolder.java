@@ -50,7 +50,6 @@ public class MediaFramesHolder {
         if (duration > 0 && time >= duration) {
             time = time % duration;
         }
-        if(true)return frames.get(new Random().nextInt(50));
         return getFrameAtTime(time);
     }
 
