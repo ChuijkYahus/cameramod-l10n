@@ -4,7 +4,9 @@ import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.platform.TextureUtil;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.mehvahdjukaar.vista.VistaMod;
+import net.mehvahdjukaar.vista.client.web.FrameLookup;
 import net.mehvahdjukaar.vista.client.web.MediaFrame;
+import net.mehvahdjukaar.vista.client.web.MediaSession;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.client.renderer.texture.Dumpable;
@@ -18,7 +20,7 @@ import java.nio.file.Path;
 
 public class WebTexture extends AbstractTexture implements Dumpable {
     private final String urlString;
-    private final WebTexturesManager.WebMediaSession session;
+    private final MediaSession session;
     private final ResourceLocation textureLocation;
 
     @Nullable
@@ -28,7 +30,7 @@ public class WebTexture extends AbstractTexture implements Dumpable {
     private int width = -1;
     private int height = -1;
 
-    WebTexture(String urlString, ResourceLocation textureLocation, WebTexturesManager.WebMediaSession session) {
+    WebTexture(String urlString, ResourceLocation textureLocation, MediaSession session) {
         this.urlString = urlString;
         this.textureLocation = textureLocation;
         this.session = session;
@@ -62,14 +64,15 @@ public class WebTexture extends AbstractTexture implements Dumpable {
         return session.isFailed();
     }
 
-    public boolean uploadFrameAtTime(double seconds) {
-        MediaFrame frame = session.getFrameAtTime(seconds);
+    public FrameLookup uploadFrameAtTime(double seconds) {
+        FrameLookup lookup = session.lookupFrame(seconds);
+        MediaFrame frame = lookup.frame();
         if (frame == null || frame == uploadedFrame || frame.image() == null) {
-            return frame != null;
+            return lookup;
         }
         uploadedFrame = frame;
         uploadOnRenderThread(frame.image());
-        return true;
+        return lookup;
     }
 
     private void uploadOnRenderThread(NativeImage image) {

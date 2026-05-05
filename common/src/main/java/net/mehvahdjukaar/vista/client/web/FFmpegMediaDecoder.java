@@ -15,13 +15,13 @@ import java.util.List;
  */
 public class FFmpegMediaDecoder extends Thread {
     private final FFmpegManager ffmpeg;
-    private final MediaFramesList buffer;
+    private final MediaSession buffer;
     private final Path videoPath;
     private volatile boolean running = true;
     private volatile boolean paused = false;
     private volatile double seekToSeconds = -1.0; // -1 means no seek requested
 
-    public FFmpegMediaDecoder(FFmpegManager ffmpeg, MediaFramesList buffer, Path videoPath) {
+    public FFmpegMediaDecoder(FFmpegManager ffmpeg, MediaSession buffer, Path videoPath) {
         this.ffmpeg = ffmpeg;
         this.buffer = buffer;
         this.videoPath = videoPath;

@@ -1,6 +1,7 @@
 package net.mehvahdjukaar.vista.client.video_source;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import net.mehvahdjukaar.vista.client.web.FrameLookup;
 import net.mehvahdjukaar.vista.client.textures.TvScreenVertexConsumers;
 import net.mehvahdjukaar.vista.client.textures.WebTexture;
 import net.mehvahdjukaar.vista.client.textures.WebTexturesManager;
@@ -31,8 +32,11 @@ public class WebUrlVideoSource implements IVideoSource {
         }
 
         double seconds = (videoAnimationTick + partialTick) / 20.0;
-        boolean hasFrame = texture.uploadFrameAtTime(seconds);
-        if (!hasFrame) {
+        FrameLookup lookup = texture.uploadFrameAtTime(seconds);
+        if (lookup.state() == FrameLookup.State.FAILED || lookup.state() == FrameLookup.State.CLOSED) {
+            return TvScreenVertexConsumers.getNoiseVC(buffer, pixelEffectRes, switchAnim);
+        }
+        if (!lookup.hasFrame()) {
             return TvScreenVertexConsumers.getBarsVC(buffer, pixelEffectRes, paused, switchAnim);
         }
         return TvScreenVertexConsumers.getWebVC(buffer, texture, pixelEffectRes, paused, switchAnim, staticAnim);

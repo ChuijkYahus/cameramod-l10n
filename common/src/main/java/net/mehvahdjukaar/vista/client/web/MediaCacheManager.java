@@ -32,7 +32,7 @@ public class MediaCacheManager {
     private final Map<Path, Long> lastAccess = new ConcurrentHashMap<>();
     private final Map<String, CompletableFuture<Path>> pendingDownloads = new ConcurrentHashMap<>();
 
-    public MediaCacheManager(Path baseDir, long maxSizeBytes) throws IOException {
+    public MediaCacheManager(Path baseDir, long maxSizeBytes)  {
         this.cacheDir = baseDir.resolve(CACHE_SUBDIR);
         this.maxSizeBytes = maxSizeBytes;
         Files.createDirectories(cacheDir);

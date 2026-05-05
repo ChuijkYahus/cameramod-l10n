@@ -5,12 +5,11 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.mehvahdjukaar.moonlight.api.client.texture_renderer.RenderableDynamicTexture;
+import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.VistaModClient;
-import net.mehvahdjukaar.vista.client.web.MediaFrame;
-import net.mehvahdjukaar.vista.client.web.MediaFramesList;
 import net.mehvahdjukaar.vista.client.web.MediaCacheManager;
-import net.mehvahdjukaar.vista.client.web.FFmpegMediaDecoder;
+import net.mehvahdjukaar.vista.client.web.MediaSession;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.resources.ResourceLocation;
@@ -26,18 +25,18 @@ import java.util.concurrent.atomic.AtomicLong;
 public class WebTexturesManager {
     private static final long DEFAULT_CACHE_SIZE_BYTES = 512L * 1024L * 1024L;
 
-    private static final Map<String, WebMediaSession> SESSIONS = new ConcurrentHashMap<>();
+    private static final Map<String, MediaSession> SESSIONS = new ConcurrentHashMap<>();
     private static final Map<ResourceLocation, WebTexture> TEXTURES = new ConcurrentHashMap<>();
     LoadingCache<ResourceLocation, CompletableFuture<RenderableDynamicTexture>>
             TEXTURE_CACHE = CacheBuilder.newBuilder().removalListener((i) -> {
-        CompletableFuture<RenderableDynamicTexture> future = (CompletableFuture)i.getValue();
+        CompletableFuture<RenderableDynamicTexture> future = (CompletableFuture) i.getValue();
         if (future != null) {
             future.thenAccept((texture) -> {
                 Objects.requireNonNull(texture);
                 RenderSystem.recordRenderCall(texture::unregister);
             });
         }
-    }).expireAfterAccess(2L,TimeUnit.MINUTES).build(new CacheLoader<>() {
+    }).expireAfterAccess(2L, TimeUnit.MINUTES).build(new CacheLoader<>() {
         public CompletableFuture<RenderableDynamicTexture> load(ResourceLocation key) {
             return new CompletableFuture();
         }
@@ -51,13 +50,11 @@ public class WebTexturesManager {
     });
 
 
-
-
     @Nullable
-    private static MediaCacheManager cacheManager;
+    private static final MediaCacheManager MEDIA_CACHE_MANAGER = new MediaCacheManager(PlatHelper.getGamePath(), DEFAULT_CACHE_SIZE_BYTES);
 
     public static WebTexture requestWebTexture(String url) {
-        WebMediaSession session = SESSIONS.computeIfAbsent(url, WebMediaSession::new);
+        MediaSession session = SESSIONS.computeIfAbsent(url, WebTexturesManager::createSession);
         ResourceLocation location = createNewFreeLocation();
         WebTexture texture = new WebTexture(url, location, session);
         texture.register();
@@ -79,7 +76,7 @@ public class WebTexturesManager {
         }
         TEXTURES.clear();
 
-        for (WebMediaSession session : SESSIONS.values()) {
+        for (MediaSession session : SESSIONS.values()) {
             session.close();
         }
         SESSIONS.clear();
@@ -90,63 +87,7 @@ public class WebTexturesManager {
         return VistaMod.res("web_feed_" + TEXTURE_COUNTER.getAndIncrement());
     }
 
-    private static synchronized MediaCacheManager getCacheManager() throws IOException {
-        if (cacheManager == null) {
-            Path gameDir = Minecraft.getInstance().gameDirectory.toPath();
-            cacheManager = new MediaCacheManager(gameDir, DEFAULT_CACHE_SIZE_BYTES);
-        }
-        return cacheManager;
-    }
-
-    static class WebMediaSession implements AutoCloseable {
-        private final String url;
-        private final MediaFramesList frames = new MediaFramesList();
-        private final CompletableFuture<Void> loadFuture;
-
-        @Nullable
-        private volatile FFmpegMediaDecoder decoder;
-        private volatile boolean failed;
-        private volatile boolean closed;
-
-        private WebMediaSession(String url) {
-            this.url = url;
-            this.loadFuture = CompletableFuture.runAsync(this::load, WEB_WORKER);
-        }
-
-        @Nullable
-        MediaFrame getFrameAtTime(double seconds) {
-            return frames.getLoopingFrameAtTime(seconds);
-        }
-
-        boolean isReady() {
-            return frames.size() > 0;
-        }
-
-        boolean isFailed() {
-            return failed || loadFuture.isCompletedExceptionally();
-        }
-
-        private void load() {
-            try {
-                Path videoPath = getCacheManager().getOrDownload(url);
-                if (closed) return;
-                FFmpegMediaDecoder newDecoder = new FFmpegMediaDecoder(VistaModClient.FFMPEG, frames, videoPath);
-                this.decoder = newDecoder;
-                newDecoder.start();
-            } catch (Exception e) {
-                failed = true;
-                VistaMod.LOGGER.error("Failed to load web video {}", url, e);
-            }
-        }
-
-        @Override
-        public void close() {
-            closed = true;
-            FFmpegMediaDecoder currentDecoder = decoder;
-            if (currentDecoder != null) {
-                currentDecoder.stopDecoder();
-            }
-            frames.close();
-        }
+    private static MediaSession createSession(String url) {
+            return new MediaSession(url, VistaModClient.FFMPEG, MEDIA_CACHE_MANAGER, WEB_WORKER);
     }
 }
