@@ -3,37 +3,37 @@ package net.mehvahdjukaar.vista.client.textures;
 import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.platform.TextureUtil;
 import com.mojang.blaze3d.systems.RenderSystem;
-import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.client.web.FrameLookup;
 import net.mehvahdjukaar.vista.client.web.MediaFrame;
 import net.mehvahdjukaar.vista.client.web.MediaSession;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.client.renderer.texture.Dumpable;
+import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.IOException;
-import java.nio.file.Path;
+import java.util.concurrent.CompletableFuture;
 
-public class WebTexture extends AbstractTexture implements Dumpable {
-    private final String urlString;
-    private final MediaSession session;
+public class WebTexture extends DynamicTexture implements Dumpable {
+
     private final ResourceLocation textureLocation;
-
-    @Nullable
-    private NativeImage cpuImage;
+    private final MediaSession session;
     @Nullable
     private MediaFrame uploadedFrame;
     private int width = -1;
     private int height = -1;
 
-    WebTexture(String urlString, ResourceLocation textureLocation, MediaSession session) {
-        this.urlString = urlString;
-        this.textureLocation = textureLocation;
+    public static CompletableFuture<WebTexture> createFuture(String urlString, ResourceLocation textureLocation, MediaSession session) {
+
+    }
+
+    public WebTexture(ResourceLocation textureLocation, NativeImage firstFrame, MediaSession session) {
+        super(firstFrame);
         this.session = session;
+        this.textureLocation = textureLocation;
     }
 
     public void register() {
@@ -46,14 +46,6 @@ public class WebTexture extends AbstractTexture implements Dumpable {
         if (t == this) {
             tm.release(this.textureLocation);
         }
-    }
-
-    public ResourceLocation getResourceLocation() {
-        return textureLocation;
-    }
-
-    public String getUrlString() {
-        return urlString;
     }
 
     public boolean isReady() {
@@ -77,15 +69,13 @@ public class WebTexture extends AbstractTexture implements Dumpable {
 
     private void uploadOnRenderThread(NativeImage image) {
         Runnable upload = () -> {
-            this.cpuImage = image;
-            if (this.cpuImage != null) {
-                if (this.width != this.cpuImage.getWidth() || this.height != this.cpuImage.getHeight()) {
-                    this.width = this.cpuImage.getWidth();
-                    this.height = this.cpuImage.getHeight();
-                    TextureUtil.prepareImage(this.getId(), this.width, this.height);
-                }
-                this.upload();
+            this.setPixels(image);
+            if (this.width != image.getWidth() || this.height != image.getHeight()) {
+                this.width = image.getWidth();
+                this.height = image.getHeight();
+                TextureUtil.prepareImage(this.getId(), this.width, this.height);
             }
+            this.upload();
         };
         if (RenderSystem.isOnRenderThread()) {
             upload.run();
@@ -98,28 +88,4 @@ public class WebTexture extends AbstractTexture implements Dumpable {
     public void load(ResourceManager resourceManager) {
     }
 
-    public void upload() {
-        if (this.cpuImage != null) {
-            this.bind();
-            this.cpuImage.upload(0, 0, 0, false);
-        } else {
-            VistaMod.LOGGER.warn("Trying to upload disposed texture {}", this.getId());
-        }
-    }
-
-    @Override
-    public void close() {
-        this.cpuImage = null;
-        this.uploadedFrame = null;
-        this.releaseId();
-    }
-
-    @Override
-    public void dumpContents(ResourceLocation resourceLocation, Path p_path) throws IOException {
-        if (this.cpuImage != null) {
-            String s = resourceLocation.toDebugFileName() + ".png";
-            Path path = p_path.resolve(s);
-            this.cpuImage.writeToFile(path);
-        }
-    }
 }

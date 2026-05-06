@@ -1,9 +1,12 @@
 package net.mehvahdjukaar.vista.client.web;
 
+import net.mehvahdjukaar.vista.VistaMod;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -35,9 +38,13 @@ public class MediaCacheManager {
     public MediaCacheManager(Path baseDir, long maxSizeBytes)  {
         this.cacheDir = baseDir.resolve(CACHE_SUBDIR);
         this.maxSizeBytes = maxSizeBytes;
-        Files.createDirectories(cacheDir);
-        restoreFromDisk();
-        log("INFO", "Cache initialized at " + cacheDir + ", max size = " + (maxSizeBytes / (1024 * 1024)) + " MB");
+        try {
+            Files.createDirectories(cacheDir);
+            restoreFromDisk();
+            log("INFO", "Cache initialized at " + cacheDir + ", max size = " + (maxSizeBytes / (1024 * 1024)) + " MB");
+        }catch (Exception e){
+            throw new RuntimeException(e);
+        }
     }
 
     /**
@@ -142,7 +149,7 @@ public class MediaCacheManager {
     private void restoreFromDisk() throws IOException {
         // Load existing files into cache map with refCount = 0 (they are not actively used)
         try (var stream = Files.list(cacheDir)) {
-            List<Path> files = stream.collect(Collectors.toList());
+            List<Path> files = stream.toList();
             for (Path p : files) {
                 if (Files.isRegularFile(p) && p.toString().endsWith(".video")) {
                     String key = p.getFileName().toString().replace(".video", "");
@@ -203,7 +210,7 @@ public class MediaCacheManager {
     private String hashUrl(String url) {
         try {
             MessageDigest md = MessageDigest.getInstance("SHA-256");
-            byte[] hash = md.digest(url.getBytes("UTF-8"));
+            byte[] hash = md.digest(url.getBytes(StandardCharsets.UTF_8));
             StringBuilder hex = new StringBuilder();
             for (byte b : hash) hex.append(String.format("%02x", b));
             return hex.toString();

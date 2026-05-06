@@ -27,7 +27,7 @@ public class WebTexturesManager {
 
     private static final Map<String, MediaSession> SESSIONS = new ConcurrentHashMap<>();
     private static final Map<ResourceLocation, WebTexture> TEXTURES = new ConcurrentHashMap<>();
-    LoadingCache<ResourceLocation, CompletableFuture<RenderableDynamicTexture>>
+    LoadingCache<ResourceLocation, CompletableFuture<WebTexture>>
             TEXTURE_CACHE = CacheBuilder.newBuilder().removalListener((i) -> {
         CompletableFuture<RenderableDynamicTexture> future = (CompletableFuture) i.getValue();
         if (future != null) {
@@ -37,7 +37,7 @@ public class WebTexturesManager {
             });
         }
     }).expireAfterAccess(2L, TimeUnit.MINUTES).build(new CacheLoader<>() {
-        public CompletableFuture<RenderableDynamicTexture> load(ResourceLocation key) {
+        public CompletableFuture<WebTexture> load(ResourceLocation key) {
             return new CompletableFuture();
         }
     });
@@ -51,7 +51,8 @@ public class WebTexturesManager {
 
 
     @Nullable
-    private static final MediaCacheManager MEDIA_CACHE_MANAGER = new MediaCacheManager(PlatHelper.getGamePath(), DEFAULT_CACHE_SIZE_BYTES);
+    private static final MediaCacheManager MEDIA_CACHE_MANAGER = new MediaCacheManager(
+            PlatHelper.getGamePath(), DEFAULT_CACHE_SIZE_BYTES);
 
     public static WebTexture requestWebTexture(String url) {
         MediaSession session = SESSIONS.computeIfAbsent(url, WebTexturesManager::createSession);
