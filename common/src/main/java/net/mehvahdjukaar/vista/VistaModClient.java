@@ -81,20 +81,6 @@ public class VistaModClient {
 
     public static void init() {
 
-//        try {
-//            String url  = "https://media.tenor.com/iALgQGVcpz4AAAAi/scemer-staring-cat.gif";
-//
-//            MediaFramesHolder buffer = new MediaFramesHolder();
-//
-//            WebVideoCacheManager cache = new WebVideoCacheManager(Paths.get("./game_data"), 1024 * 1024 * 1024); // 1 GB max
-//
-//            Path localVideo = cache.getOrDownload(url);
-//
-//            WebVideoDecoder decoder = new WebVideoDecoder(FFMPEG, buffer, localVideo);
-//            decoder.start();
-//        }catch (Exception ignored){}
-
-
         ClientConfigs.init();
         ClientHelper.addBlockEntityRenderersRegistration(VistaModClient::registerBlockEntityRenderers);
         ClientHelper.addShaderRegistration(VistaModClient::registerShaders);

@@ -9,17 +9,13 @@ import net.mehvahdjukaar.vista.common.tv.IntAnimationState;
 import net.minecraft.client.renderer.MultiBufferSource;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.UUID;
+
 public class WebUrlVideoSource implements IVideoSource {
-    private final String url;
     private final WebTexture texture;
 
-    public WebUrlVideoSource(String url) {
-        this.url = url;
-        this.texture = WebTexturesManager.requestWebTexture(url);
-    }
-
-    public String getUrl() {
-        return url;
+    public WebUrlVideoSource(String url, UUID projectorID) {
+        this.texture = WebTexturesManager.requestWebTexture(url, projectorID);
     }
 
     @Override
@@ -27,9 +23,7 @@ public class WebUrlVideoSource implements IVideoSource {
                                                         boolean shouldUpdate, int screenSize, int pixelEffectRes,
                                                         int videoAnimationTick, boolean paused,
                                                         IntAnimationState switchAnim, IntAnimationState staticAnim) {
-        if (texture.isFailed()) {
-            return TvScreenVertexConsumers.getNoiseVC(buffer, pixelEffectRes, switchAnim);
-        }
+            //return TvScreenVertexConsumers.getNoiseVC(buffer, pixelEffectRes, switchAnim);
 
         double seconds = (videoAnimationTick + partialTick) / 20.0;
         FrameLookup lookup = texture.uploadFrameAtTime(seconds);

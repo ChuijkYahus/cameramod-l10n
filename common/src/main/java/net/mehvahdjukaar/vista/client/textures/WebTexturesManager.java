@@ -4,91 +4,87 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.mojang.blaze3d.systems.RenderSystem;
-import net.mehvahdjukaar.moonlight.api.client.texture_renderer.RenderableDynamicTexture;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.client.web.MediaCacheManager;
 import net.mehvahdjukaar.vista.client.web.MediaSession;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.resources.ResourceLocation;
-import org.jetbrains.annotations.Nullable;
 
-import java.io.IOException;
-import java.nio.file.Path;
-import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public class WebTexturesManager {
     private static final long DEFAULT_CACHE_SIZE_BYTES = 512L * 1024L * 1024L;
+    private static final long CACHE_EXPIRY_MINUTES = 2L;
 
-    private static final Map<String, MediaSession> SESSIONS = new ConcurrentHashMap<>();
-    private static final Map<ResourceLocation, WebTexture> TEXTURES = new ConcurrentHashMap<>();
-    LoadingCache<ResourceLocation, CompletableFuture<WebTexture>>
-            TEXTURE_CACHE = CacheBuilder.newBuilder().removalListener((i) -> {
-        CompletableFuture<RenderableDynamicTexture> future = (CompletableFuture) i.getValue();
-        if (future != null) {
-            future.thenAccept((texture) -> {
-                Objects.requireNonNull(texture);
-                RenderSystem.recordRenderCall(texture::unregister);
-            });
-        }
-    }).expireAfterAccess(2L, TimeUnit.MINUTES).build(new CacheLoader<>() {
-        public CompletableFuture<WebTexture> load(ResourceLocation key) {
-            return new CompletableFuture();
-        }
-    });
-
-    private static final AtomicLong TEXTURE_COUNTER = new AtomicLong();
     private static final ExecutorService WEB_WORKER = Executors.newSingleThreadExecutor(r -> {
         Thread thread = new Thread(r, "Vista-WebTextures");
         thread.setDaemon(true);
         return thread;
     });
 
-
-    @Nullable
     private static final MediaCacheManager MEDIA_CACHE_MANAGER = new MediaCacheManager(
             PlatHelper.getGamePath(), DEFAULT_CACHE_SIZE_BYTES);
 
-    public static WebTexture requestWebTexture(String url) {
-        MediaSession session = SESSIONS.computeIfAbsent(url, WebTexturesManager::createSession);
-        ResourceLocation location = createNewFreeLocation();
-        WebTexture texture = new WebTexture(url, location, session);
-        texture.register();
-        TEXTURES.put(location, texture);
+    private static final LoadingCache<String, MediaSession> SESSION_CACHE = CacheBuilder.newBuilder()
+            .expireAfterAccess(CACHE_EXPIRY_MINUTES, TimeUnit.MINUTES)
+            .removalListener(notification -> {
+                MediaSession session = (MediaSession) notification.getValue();
+                if (session != null) {
+                    session.close();
+                }
+            })
+            .build(new CacheLoader<>() {
+                @Override
+                public MediaSession load(String url) {
+                    return new MediaSession(url, VistaModClient.FFMPEG, MEDIA_CACHE_MANAGER, WEB_WORKER);
+                }
+            });
 
-        return texture;
-    }
+    private static final LoadingCache<ResourceLocation, WebTexture> TEXTURE_CACHE = CacheBuilder.newBuilder()
+            .expireAfterAccess(CACHE_EXPIRY_MINUTES, TimeUnit.MINUTES)
+            .removalListener(notification -> {
+                WebTexture texture = (WebTexture) notification.getValue();
+                if (texture != null) {
+                    RenderSystem.recordRenderCall(texture::unregister);
+                }
+            })
+            .build(new CacheLoader<>() {
+                @Override
+                public WebTexture load(ResourceLocation key) {
+                    throw new AssertionError("not supported");
+                }
+            });
 
-    public static void releaseWebTexture(WebTexture texture) {
-        ResourceLocation location = texture.getResourceLocation();
-        WebTexture wt = TEXTURES.remove(location);
-        if (wt != null) wt.unregister(); //internally calls close
+    public static WebTexture requestWebTexture(String url, UUID projectorUUID) {
+        ResourceLocation location = makeUniqueTextureLoc(url, projectorUUID);
+        return TEXTURE_CACHE.asMap().computeIfAbsent(location,
+                r -> {
+                    WebTexture wt = new WebTexture(r, SESSION_CACHE.getUnchecked(url));
+                    wt.register();
+                    return wt;
+                });
     }
 
     public static void clear() {
-        TextureManager manager = Minecraft.getInstance().getTextureManager();
-        for (ResourceLocation location : TEXTURES.keySet()) {
-            manager.release(location);
-        }
-        TEXTURES.clear();
+        TEXTURE_CACHE.invalidateAll();
+        TEXTURE_CACHE.cleanUp();
 
-        for (MediaSession session : SESSIONS.values()) {
-            session.close();
-        }
-        SESSIONS.clear();
-        TEXTURE_COUNTER.set(0);
+        SESSION_CACHE.invalidateAll();
+        SESSION_CACHE.cleanUp();
     }
 
-    private static ResourceLocation createNewFreeLocation() {
-        return VistaMod.res("web_feed_" + TEXTURE_COUNTER.getAndIncrement());
+    private static ResourceLocation makeUniqueTextureLoc(String url, UUID uuid) {
+        String uniqueTextureKey = url + "_" + uuid;
+        return VistaMod.res("web_feed/" + sanitizePath(uniqueTextureKey));
     }
 
-    private static MediaSession createSession(String url) {
-            return new MediaSession(url, VistaModClient.FFMPEG, MEDIA_CACHE_MANAGER, WEB_WORKER);
+    private static String sanitizePath(String key) {
+        String sanitized = key.toLowerCase().replaceAll("[^a-z0-9/._-]", "_");
+
+        return sanitized.isBlank() ? "unnamed" : sanitized;
     }
 }

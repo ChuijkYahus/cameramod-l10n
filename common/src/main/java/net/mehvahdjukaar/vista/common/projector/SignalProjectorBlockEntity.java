@@ -89,7 +89,7 @@ public class SignalProjectorBlockEntity extends BlockEntity implements IScreenPr
 
     public void setUrl(String url) {
         this.url = url;
-        this.videoSource = url.isBlank() ? IVideoSource.EMPTY : new WebUrlVideoSource(url);
+        this.videoSource = url.isBlank() ? IVideoSource.EMPTY : new WebUrlVideoSource(url, myUUID);
     }
 
     public boolean canBeEditedBy(Player player) {
