@@ -77,8 +77,7 @@ public class VistaModClient {
     public static FFmpegManager getFfmpeg() {
         if (ffmpeg != null) return ffmpeg;
         if (ClientConfigs.ENABLE_WIP.get()) {
-            ffmpeg = FFmpegManager.createOsBased();
-
+            ffmpeg = FFmpegManager.create();
         }
         return ffmpeg;
     }

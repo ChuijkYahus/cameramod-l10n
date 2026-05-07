@@ -7,40 +7,38 @@ import com.google.gson.JsonParser;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.URL;
+import java.net.URI;
 import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
+import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
-public abstract class FFmpegManager {
+public final class FFmpegManager {
 
     private static final Path SOURCES_CONFIG_PATH = Paths.get("ffmpeg_sources.json");
     private static final String SOURCES_RESOURCE_PATH = "/ffmpeg_sources.json";
+    private static final Path PROGRAM_FOLDER = Paths.get("ffmpeg_bin");
 
-    protected final Path programFolder = Paths.get("ffmpeg_bin");
-    protected final Path ffmpegPath;
-    protected final Path ffprobePath;
+    private final Path ffmpegPath;
+    private final Path ffprobePath;
+    private final OsType platform;
 
     private final CompletableFuture<Void> readyFuture;
 
-    public static FFmpegManager createOsBased() {
-        String os = System.getProperty("os.name").toLowerCase();
-
-        if (os.contains("win")) {
-            return new WindowsFFmpegManager();
-        } else {
-            return new LinuxFFmpegManager();
-        }
+    public static FFmpegManager create() {
+        return new FFmpegManager(OsType.detect());
     }
 
-    protected FFmpegManager(String ffmpegName, String ffprobeName) {
-        this.ffmpegPath = programFolder.resolve(ffmpegName);
-        this.ffprobePath = programFolder.resolve(ffprobeName);
+    private FFmpegManager(OsType platform) {
+        this.platform = platform;
+        this.ffmpegPath = PROGRAM_FOLDER.resolve(platform.ffmpegName);
+        this.ffprobePath = PROGRAM_FOLDER.resolve(platform.ffprobeName);
 
         try {
-            Files.createDirectories(programFolder);
+            Files.createDirectories(PROGRAM_FOLDER);
         } catch (IOException e) {
             throw new RuntimeException("Failed to create bin folder", e);
         }
@@ -48,27 +46,24 @@ public abstract class FFmpegManager {
         readyFuture = CompletableFuture.runAsync(this::initialize);
     }
 
-    // ===== ABSTRACT CONTRACT =====
-    protected abstract String getSourceKey();
-    protected abstract String getArchiveName();
-    protected abstract void acceptDownloaded(Path archive) throws Exception;
 
     // ===== COMMON LOGIC =====
     private void initialize() {
         if (Files.exists(ffmpegPath) && Files.exists(ffprobePath)) return;
 
-        Path archive = programFolder.resolve(getArchiveName());
-
         try {
-            if (Files.exists(archive) && !isValidArchive(archive)) {
+            String downloadUrl = getDownloadUrlFromSources();
+            Path archive = PROGRAM_FOLDER.resolve(getArchiveName(downloadUrl));
+
+            if (Files.exists(archive) && !ArchiveExtractor.isProbablyValid(archive)) {
                 Files.deleteIfExists(archive);
             }
 
             if (!Files.exists(archive)) {
-                downloadWithRetry(getDownloadUrlFromSources(), archive);
+                downloadWithRetry(downloadUrl, archive);
             }
 
-            acceptDownloaded(archive);
+            extractAndInstall(archive);
             Files.deleteIfExists(archive);
 
         } catch (Exception e) {
@@ -87,7 +82,7 @@ public abstract class FFmpegManager {
             throw new IOException("Invalid JSON in " + SOURCES_CONFIG_PATH, e);
         }
 
-        String key = getSourceKey();
+        String key = platform.jsonKey;
         if (!root.has(key)) {
             throw new IOException("Missing key '" + key + "' in " + SOURCES_CONFIG_PATH);
         }
@@ -98,6 +93,14 @@ public abstract class FFmpegManager {
         return url;
     }
 
+    private String getArchiveName(String downloadUrl) throws IOException {
+        String fileName = Path.of(URI.create(downloadUrl).getPath()).getFileName().toString();
+        if (fileName.isEmpty()) {
+            throw new IOException("Could not resolve archive name from URL: " + downloadUrl);
+        }
+        return fileName;
+    }
+
     private void ensureSourcesConfigExists() throws IOException {
         if (Files.exists(SOURCES_CONFIG_PATH)) return;
 
@@ -106,28 +109,6 @@ public abstract class FFmpegManager {
                 throw new IOException("Resource not found: " + SOURCES_RESOURCE_PATH);
             }
             Files.copy(in, SOURCES_CONFIG_PATH);
-        }
-    }
-
-    protected boolean isValidArchive(Path archive) {
-        try {
-            long size = Files.size(archive);
-            if (size == 0) return false;
-
-            String name = archive.getFileName().toString().toLowerCase();
-
-            if (name.endsWith(".zip")) {
-                try (java.util.zip.ZipFile ignored = new java.util.zip.ZipFile(archive.toFile())) {
-                    return true;
-                }
-            }
-
-            // For .tar.xz we only do a minimal check
-            // (full validation would require full decompression)
-            return size > 1024; // reject obviously broken files
-
-        } catch (Exception e) {
-            return false;
         }
     }
 
@@ -145,7 +126,8 @@ public abstract class FFmpegManager {
 
                 try {
                     Thread.sleep(1000L * i);
-                } catch (InterruptedException ignored) {}
+                } catch (InterruptedException ignored) {
+                }
             }
         }
     }
@@ -153,7 +135,7 @@ public abstract class FFmpegManager {
     private void downloadFile(String urlStr, Path target) throws IOException {
         Path tmp = target.resolveSibling(target.getFileName() + ".part");
 
-        URLConnection conn = new URL(urlStr).openConnection();
+        URLConnection conn = URI.create(urlStr).toURL().openConnection();
         long expected = conn.getContentLengthLong();
 
         try (InputStream in = conn.getInputStream();
@@ -217,4 +199,72 @@ public abstract class FFmpegManager {
         System.arraycopy(args, 0, cmd, 1, args.length);
         return new ProcessBuilder(cmd).start();
     }
+
+    private void moveRequiredBinariesFromProgramFolder() throws IOException {
+        Path ffmpeg = null;
+        Path ffprobe = null;
+
+        try (Stream<Path> stream = Files.walk(PROGRAM_FOLDER)) {
+            for (Path p : (Iterable<Path>) stream.filter(Files::isRegularFile)::iterator) {
+                String name = p.getFileName().toString();
+                if (name.equals(ffmpegPath.getFileName().toString())) {
+                    ffmpeg = p;
+                } else if (name.equals(ffprobePath.getFileName().toString())) {
+                    ffprobe = p;
+                }
+                if (ffmpeg != null && ffprobe != null) {
+                    break;
+                }
+            }
+        }
+
+        if (ffmpeg == null || ffprobe == null) {
+            throw new IOException("Archive does not contain required binaries: "
+                    + ffmpegPath.getFileName() + ", " + ffprobePath.getFileName());
+        }
+
+        Files.move(ffmpeg, ffmpegPath, StandardCopyOption.REPLACE_EXISTING);
+        Files.move(ffprobe, ffprobePath, StandardCopyOption.REPLACE_EXISTING);
+    }
+
+    private void extractAndInstall(Path archive) throws IOException, InterruptedException {
+        if (!ArchiveExtractor.isSupported(archive)) {
+            throw new IOException("Unsupported archive format: " + archive.getFileName());
+        }
+        ArchiveExtractor.extract(archive, PROGRAM_FOLDER);
+        moveRequiredBinariesFromProgramFolder();
+        if (platform.requiresExecutableBit) {
+            markExecutables();
+        }
+    }
+
+    private void markExecutables() throws IOException {
+        if (!ffmpegPath.toFile().setExecutable(true) || !ffprobePath.toFile().setExecutable(true)) {
+            throw new IOException("Could not mark FFmpeg binaries as executable");
+        }
+    }
+
+    private enum OsType {
+        LINUX("linux", "ffmpeg", "ffprobe", true),
+        WINDOWS("windows", "ffmpeg.exe", "ffprobe.exe", false);
+
+        private final String jsonKey;
+        private final String ffmpegName;
+        private final String ffprobeName;
+        private final boolean requiresExecutableBit;
+
+        OsType(String sourceKey, String ffmpegName, String ffprobeName, boolean requiresExecutableBit) {
+            this.jsonKey = sourceKey;
+            this.ffmpegName = ffmpegName;
+            this.ffprobeName = ffprobeName;
+            this.requiresExecutableBit = requiresExecutableBit;
+        }
+
+        private static OsType detect() {
+            String os = System.getProperty("os.name").toLowerCase(Locale.ROOT);
+            return os.contains("win") ? OsType.WINDOWS : OsType.LINUX;
+        }
+    }
+
+
 }
