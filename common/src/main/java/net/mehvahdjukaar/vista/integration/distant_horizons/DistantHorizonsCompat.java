@@ -18,16 +18,22 @@ public class DistantHorizonsCompat {
             DHMode mode = dhMode.get();
             if (mode == DHMode.OFF) {
                 boolean valueBefore = config.getValue();
-                config.setValue(false);
-                task.run();
-                config.setValue(valueBefore);
+                try {
+                    config.setValue(false);
+                    task.run();
+                } finally {
+                    config.setValue(valueBefore);
+                }
             } else {
                 var newDHConfig = mode.horizontal();
                 var config1 = DhApi.Delayed.configs.graphics().horizontalQuality();
                 var valueBefore = config1.getValue();
-                config1.setValue(newDHConfig);
-                task.run();
-                config1.setValue(valueBefore);
+                try {
+                    config1.setValue(newDHConfig);
+                    task.run();
+                } finally {
+                    config1.setValue(valueBefore);
+                }
             }
         };
     }

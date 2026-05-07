@@ -30,7 +30,6 @@ public class LiveFeedVideoSource implements IVideoSource {
         this.viewFinder = viewFinder;
     }
 
-
     public void onItemChanged() {
         ItemStack filterItem = viewFinder.getDisplayedItem();
         this.postShader = null;

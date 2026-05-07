@@ -23,9 +23,12 @@ public class EntityCullingCompat {
             //EntityCullingModBase.enabled = false;
             try {
                 boolean oldState = CULLING_ENABLED_FIELD.getBoolean(null);
-                CULLING_ENABLED_FIELD.set(null, false);
-                task.run();
-                CULLING_ENABLED_FIELD.set(null, oldState);
+                try {
+                    CULLING_ENABLED_FIELD.set(null, false);
+                    task.run();
+                } finally {
+                    CULLING_ENABLED_FIELD.set(null, oldState);
+                }
             } catch (IllegalAccessException e) {
                 throw new RuntimeException(e);
             }

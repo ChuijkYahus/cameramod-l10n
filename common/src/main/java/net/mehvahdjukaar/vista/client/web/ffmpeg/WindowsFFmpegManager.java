@@ -12,17 +12,16 @@ import java.util.zip.ZipFile;
 
 public class WindowsFFmpegManager extends FFmpegManager {
 
-    private static final String URL =
-        "https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip";
     private static final String ARCHIVE_NAME = "ffmpeg.zip";
+    private static final String SOURCE_KEY = "windows";
 
     public WindowsFFmpegManager() {
         super("ffmpeg.exe", "ffprobe.exe");
     }
 
     @Override
-    protected String getDownloadUrl() {
-        return URL;
+    protected String getSourceKey() {
+        return SOURCE_KEY;
     }
 
     @Override

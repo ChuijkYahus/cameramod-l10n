@@ -9,6 +9,10 @@
     "PlayerMixin"
   ],
   "client": [
+    "CompatIrisMixin",
+    "CompatIrisBobbingMixin",
+    "CompatIrisDhCompat",
+    "CompatIrisRenderingMixin",
     "CameraMixin",
     "FrustumMixin",
     "GameRendererMixin",

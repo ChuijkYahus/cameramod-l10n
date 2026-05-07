@@ -1,6 +1,5 @@
 package net.mehvahdjukaar.vista.configs;
 
-import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.platform.configs.ConfigBuilder;
 import net.mehvahdjukaar.moonlight.api.platform.configs.ConfigType;
 import net.mehvahdjukaar.moonlight.api.platform.configs.ModConfigHolder;
@@ -29,6 +28,7 @@ public class ClientConfigs {
     public static final Supplier<Float> VIGNETTE;
     public static final Supplier<Boolean> DRAW_DATE;
     public static final Supplier<Boolean> SCREEN_EFFECTS;
+    public static final Supplier<Boolean> ENABLE_WIP;
 
     static {
         ConfigBuilder builder = ConfigBuilder.create(VistaMod.MOD_ID, ConfigType.CLIENT);
@@ -87,6 +87,12 @@ public class ClientConfigs {
         CompatHandler.addConfigs(builder);
 
         builder.pop();
+
+        builder.push("wip");
+        ENABLE_WIP = builder.comment("enable wip features")
+                .define("enable_wip", false);
+        builder.pop();
+
         builder.pop();
 
         SPEC = builder.build();

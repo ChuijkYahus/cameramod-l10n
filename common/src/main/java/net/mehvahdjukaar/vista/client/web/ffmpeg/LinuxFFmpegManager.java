@@ -7,17 +7,16 @@ import java.nio.file.StandardCopyOption;
 
 public class LinuxFFmpegManager extends FFmpegManager {
 
-    private static final String URL =
-        "https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz";
     private static final String ARCHIVE_NAME = "ffmpeg.tar.xz";
+    private static final String SOURCE_KEY = "linux";
 
     public LinuxFFmpegManager() {
         super("ffmpeg", "ffprobe");
     }
 
     @Override
-    protected String getDownloadUrl() {
-        return URL;
+    protected String getSourceKey() {
+        return SOURCE_KEY;
     }
 
     @Override

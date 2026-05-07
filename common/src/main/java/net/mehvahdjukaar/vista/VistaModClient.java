@@ -8,7 +8,6 @@ import net.mehvahdjukaar.moonlight.api.platform.RegHelper;
 import net.mehvahdjukaar.moonlight.api.util.Utils;
 import net.mehvahdjukaar.vista.client.ViewFinderController;
 import net.mehvahdjukaar.vista.client.VistaDynamicResources;
-import net.mehvahdjukaar.vista.client.web.ffmpeg.FFmpegManager;
 import net.mehvahdjukaar.vista.client.renderer.TvBlockEntityRenderer;
 import net.mehvahdjukaar.vista.client.renderer.TvItemRenderer;
 import net.mehvahdjukaar.vista.client.renderer.ViewFinderBlockEntityRenderer;
@@ -16,6 +15,7 @@ import net.mehvahdjukaar.vista.client.renderer.VistaLevelRenderer;
 import net.mehvahdjukaar.vista.client.textures.CassetteTexturesManager;
 import net.mehvahdjukaar.vista.client.textures.LiveFeedTexturesManager;
 import net.mehvahdjukaar.vista.client.textures.WebTexturesManager;
+import net.mehvahdjukaar.vista.client.web.ffmpeg.FFmpegManager;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
@@ -73,13 +73,25 @@ public class VistaModClient {
             .weakValues()
             .makeMap();
 
-    public static final FFmpegManager FFMPEG = FFmpegManager.createOsBased();
+    @Nullable
+    public static FFmpegManager getFfmpeg() {
+        if (ffmpeg != null) return ffmpeg;
+        if (ClientConfigs.ENABLE_WIP.get()) {
+            ffmpeg = FFmpegManager.createOsBased();
+
+        }
+        return ffmpeg;
+    }
+
+    @Nullable
+    public static FFmpegManager ffmpeg;
 
     private static ModelLayerLocation loc(String name) {
         return new ModelLayerLocation(VistaMod.res(name), name);
     }
 
     public static void init() {
+        getFfmpeg();
         ClientConfigs.init();
         ClientHelper.addBlockEntityRenderersRegistration(VistaModClient::registerBlockEntityRenderers);
         ClientHelper.addShaderRegistration(VistaModClient::registerShaders);

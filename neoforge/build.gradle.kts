@@ -24,6 +24,7 @@ dependencies {
     modCompileOnly("curse.maven:sodium-394468:6382649")
     modCompileOnly("curse.maven:irisshaders-455508:6213635")
     modCompileOnly("curse.maven:distant-horizons-508933:7977110")
+    modCompileOnly("maven.modrinth:iris:1.8.8+1.21.1-neoforge")
 
 
     //  modImplementation("cc.tweaked:cc-tweaked-1.21.1-forge:1.117.0")

@@ -41,12 +41,14 @@ public class WebUrlVideoSource implements IVideoSource {
         if (state == MediaState.FAILED || state == MediaState.CLOSED) {
             return TvScreenVertexConsumers.getNoiseVC(buffer, pixelEffectRes, switchAnim);
         }
-        if (state == MediaState.LOADING) {
-            return TvScreenVertexConsumers.getBarsVC(buffer, pixelEffectRes, switchAnim);
-        }
-        CrtOverlay overlay = paused ? CrtOverlay.PAUSE : CrtOverlay.NONE;
         ResourceLocation textureId = texture.getResourceLocation();
-
+        CrtOverlay overlay;
+        if (state == MediaState.LOADING || state == MediaState.BUFFERING) {
+            overlay = CrtOverlay.LOADING;
+        } else {
+            overlay = paused ? CrtOverlay.PAUSE : CrtOverlay.NONE;
+        }
         return TvScreenVertexConsumers.getSingleTextureVC(buffer, textureId, overlay, pixelEffectRes, switchAnim, staticAnim);
+
     }
 }

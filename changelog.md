@@ -1,2 +1,6 @@
-- minor improvements to camera view internals
-- zoom with direct redstone power
+- view finders can be properly rotated with turn table
+- improved view finder rotation logic to match the new imporved one in supplementaries
+- view finders can display post shaders of the lenses they have. Can be stacked when wearing a mob head.
+- added a workaround to prevent an issue the mod Veil has (their issue remains.)
+- moved iris compat in common, hoping it will work on neo
+- added some code for flashback compat

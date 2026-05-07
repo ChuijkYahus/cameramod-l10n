@@ -5,7 +5,9 @@ import net.mehvahdjukaar.moonlight.api.platform.RegHelper;
 import net.mehvahdjukaar.moonlight.api.platform.configs.ConfigBuilder;
 import net.mehvahdjukaar.vista.integration.computer_craft.CCCompat;
 import net.mehvahdjukaar.vista.integration.distant_horizons.DistantHorizonsCompat;
+import net.mehvahdjukaar.vista.integration.entity_culling.EntityCullingCompat;
 import net.mehvahdjukaar.vista.integration.exposure.ExposureCompat;
+import net.mehvahdjukaar.vista.integration.flashback.FlashbackCompat;
 import net.mehvahdjukaar.vista.integration.iris.IrisCompat;
 import net.minecraft.world.item.CreativeModeTabs;
 
@@ -19,6 +21,7 @@ public class CompatHandler {
     public static final boolean SODIUM = PlatHelper.isModLoaded("sodium") || PlatHelper.isModLoaded("embeddium");
     public static final boolean ENTITYCULLING = PlatHelper.isModLoaded("entityculling");
     public static final boolean ALEX_CAVES = PlatHelper.isModLoaded("alexs-caves");
+    public static final boolean FLASHBACK = PlatHelper.isModLoaded("flashback");
 
     public static void init() {
         if (EXPOSURE) ExposureCompat.init();
@@ -36,5 +39,21 @@ public class CompatHandler {
     public static void addConfigs(ConfigBuilder builder) {
         if (DISTANT_HORIZONS) DistantHorizonsCompat.addConfigs(builder);
         if (IRIS) IrisCompat.addConfigs(builder);
+    }
+
+    public static Runnable decorateRenderer(Runnable runTask) {
+        if (DISTANT_HORIZONS) {
+            runTask = DistantHorizonsCompat.decorateRenderWithoutLOD(runTask);
+        }
+        if (IRIS) {
+            runTask = IrisCompat.decorateRendererWithoutShaderPacks(runTask);
+        }
+        if (ENTITYCULLING) {
+            runTask = EntityCullingCompat.decorateRenderWithoutCulling(runTask);
+        }
+        if (FLASHBACK) {
+            runTask = FlashbackCompat.decorateRenderRestoringMatrices(runTask);
+        }
+        return runTask;
     }
 }

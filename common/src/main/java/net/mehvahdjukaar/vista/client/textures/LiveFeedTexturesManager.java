@@ -18,9 +18,6 @@ import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
 import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.mehvahdjukaar.vista.integration.CompatHandler;
-import net.mehvahdjukaar.vista.integration.distant_horizons.DistantHorizonsCompat;
-import net.mehvahdjukaar.vista.integration.entity_culling.EntityCullingCompat;
-import net.mehvahdjukaar.vista.integration.iris.IrisCompat;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -146,18 +143,9 @@ public class LiveFeedTexturesManager {
             if (VistaMod.isFunny()) {
                 drawOverlay(text, VistaModClient.LL_OVERLAY);
             }
-
-
         };
-        if (CompatHandler.DISTANT_HORIZONS) {
-            runTask = DistantHorizonsCompat.decorateRenderWithoutLOD(runTask);
-        }
-        if (CompatHandler.IRIS) {
-            runTask = IrisCompat.decorateRendererWithoutShaderPacks(runTask);
-        }
-        if (CompatHandler.ENTITYCULLING) {
-            runTask = EntityCullingCompat.decorateRenderWithoutCulling(runTask);
-        }
+
+        runTask = CompatHandler.decorateRenderer(runTask);
 
         ResourceLocation textureId = text.getTextureLocation();
 

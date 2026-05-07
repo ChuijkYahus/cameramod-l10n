@@ -1,15 +1,23 @@
 package net.mehvahdjukaar.vista.client.web.ffmpeg;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonParser;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 public abstract class FFmpegManager {
+
+    private static final Path SOURCES_CONFIG_PATH = Paths.get("ffmpeg_sources.json");
+    private static final String SOURCES_RESOURCE_PATH = "/ffmpeg_sources.json";
 
     protected final Path programFolder = Paths.get("ffmpeg_bin");
     protected final Path ffmpegPath;
@@ -41,7 +49,7 @@ public abstract class FFmpegManager {
     }
 
     // ===== ABSTRACT CONTRACT =====
-    protected abstract String getDownloadUrl();
+    protected abstract String getSourceKey();
     protected abstract String getArchiveName();
     protected abstract void acceptDownloaded(Path archive) throws Exception;
 
@@ -57,7 +65,7 @@ public abstract class FFmpegManager {
             }
 
             if (!Files.exists(archive)) {
-                downloadWithRetry(getDownloadUrl(), archive);
+                downloadWithRetry(getDownloadUrlFromSources(), archive);
             }
 
             acceptDownloaded(archive);
@@ -65,6 +73,39 @@ public abstract class FFmpegManager {
 
         } catch (Exception e) {
             throw new RuntimeException("FFmpeg setup failed", e);
+        }
+    }
+
+    private String getDownloadUrlFromSources() throws IOException {
+        ensureSourcesConfigExists();
+
+        String json = Files.readString(SOURCES_CONFIG_PATH, StandardCharsets.UTF_8);
+        JsonObject root;
+        try {
+            root = JsonParser.parseString(json).getAsJsonObject();
+        } catch (IllegalStateException | JsonParseException e) {
+            throw new IOException("Invalid JSON in " + SOURCES_CONFIG_PATH, e);
+        }
+
+        String key = getSourceKey();
+        if (!root.has(key)) {
+            throw new IOException("Missing key '" + key + "' in " + SOURCES_CONFIG_PATH);
+        }
+        String url = root.get(key).getAsString().trim();
+        if (url.isEmpty()) {
+            throw new IOException("Empty URL for key '" + key + "' in " + SOURCES_CONFIG_PATH);
+        }
+        return url;
+    }
+
+    private void ensureSourcesConfigExists() throws IOException {
+        if (Files.exists(SOURCES_CONFIG_PATH)) return;
+
+        try (InputStream in = FFmpegManager.class.getResourceAsStream(SOURCES_RESOURCE_PATH)) {
+            if (in == null) {
+                throw new IOException("Resource not found: " + SOURCES_RESOURCE_PATH);
+            }
+            Files.copy(in, SOURCES_CONFIG_PATH);
         }
     }
 
