@@ -1,21 +1,27 @@
 package net.mehvahdjukaar.vista.client.video_source;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import net.mehvahdjukaar.vista.client.web.FrameLookup;
+import net.mehvahdjukaar.vista.client.CrtOverlay;
 import net.mehvahdjukaar.vista.client.textures.TvScreenVertexConsumers;
 import net.mehvahdjukaar.vista.client.textures.WebTexture;
 import net.mehvahdjukaar.vista.client.textures.WebTexturesManager;
+import net.mehvahdjukaar.vista.client.web.MediaState;
 import net.mehvahdjukaar.vista.common.tv.IntAnimationState;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.UUID;
 
 public class WebUrlVideoSource implements IVideoSource {
-    private final WebTexture texture;
+    private final String url;
+    private final UUID projectorID;
+    private WebTexturesManager.Handle textureHandle;
+    private int lastScreenSize = -1;
 
     public WebUrlVideoSource(String url, UUID projectorID) {
-        this.texture = WebTexturesManager.requestWebTexture(url, projectorID);
+        this.url = url;
+        this.projectorID = projectorID;
     }
 
     @Override
@@ -23,16 +29,24 @@ public class WebUrlVideoSource implements IVideoSource {
                                                         boolean shouldUpdate, int screenSize, int pixelEffectRes,
                                                         int videoAnimationTick, boolean paused,
                                                         IntAnimationState switchAnim, IntAnimationState staticAnim) {
-            //return TvScreenVertexConsumers.getNoiseVC(buffer, pixelEffectRes, switchAnim);
+        //return TvScreenVertexConsumers.getNoiseVC(buffer, pixelEffectRes, switchAnim);
 
         double seconds = (videoAnimationTick + partialTick) / 20.0;
-        FrameLookup lookup = texture.uploadFrameAtTime(seconds);
-        if (lookup.state() == FrameLookup.State.FAILED || lookup.state() == FrameLookup.State.CLOSED) {
+        if (textureHandle == null || lastScreenSize != screenSize) {
+            this.textureHandle = WebTexturesManager.createHandle(url, projectorID, screenSize);
+            this.lastScreenSize = screenSize;
+        }
+        WebTexture texture = textureHandle.getTexture();
+        MediaState state = texture.uploadFrameAtTime(seconds);
+        if (state == MediaState.FAILED || state == MediaState.CLOSED) {
             return TvScreenVertexConsumers.getNoiseVC(buffer, pixelEffectRes, switchAnim);
         }
-        if (!lookup.hasFrame()) {
-            return TvScreenVertexConsumers.getBarsVC(buffer, pixelEffectRes, paused, switchAnim);
+        if (state == MediaState.LOADING) {
+            return TvScreenVertexConsumers.getBarsVC(buffer, pixelEffectRes, switchAnim);
         }
-        return TvScreenVertexConsumers.getWebVC(buffer, texture, pixelEffectRes, paused, switchAnim, staticAnim);
+        CrtOverlay overlay = paused ? CrtOverlay.PAUSE : CrtOverlay.NONE;
+        ResourceLocation textureId = texture.getResourceLocation();
+
+        return TvScreenVertexConsumers.getSingleTextureVC(buffer, textureId, overlay, pixelEffectRes, switchAnim, staticAnim);
     }
 }

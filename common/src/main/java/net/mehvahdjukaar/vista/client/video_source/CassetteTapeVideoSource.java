@@ -2,6 +2,7 @@ package net.mehvahdjukaar.vista.client.video_source;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.mehvahdjukaar.vista.VistaMod;
+import net.mehvahdjukaar.vista.client.CrtOverlay;
 import net.mehvahdjukaar.vista.client.textures.TvScreenVertexConsumers;
 import net.mehvahdjukaar.vista.common.cassette.CassetteTape;
 import net.mehvahdjukaar.vista.common.tv.IntAnimationState;
@@ -36,7 +37,7 @@ public class CassetteTapeVideoSource implements IVideoSource {
             float partialTick, MultiBufferSource buffer, boolean shouldUpdate, int screenSize, int pixelEffectRes,
             int animationTick, boolean paused,
             IntAnimationState switchAnim, IntAnimationState staticAnim) {
-
-        return TvScreenVertexConsumers.getTapeVC(buffer, tape, pixelEffectRes, animationTick, paused, switchAnim);
+        CrtOverlay overlay = paused ? CrtOverlay.PAUSE : CrtOverlay.NONE;
+        return TvScreenVertexConsumers.getTapeVC(buffer, tape, pixelEffectRes, animationTick, overlay, switchAnim);
     }
 }

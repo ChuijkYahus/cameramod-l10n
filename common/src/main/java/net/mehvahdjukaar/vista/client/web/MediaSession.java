@@ -26,7 +26,7 @@ public class MediaSession implements AutoCloseable {
         this.loadFuture = CompletableFuture.runAsync(() -> load(url, ffmpeg, cacheManager), executor);
     }
 
-    private void load(String url, FFmpegManager ffmpeg,  MediaCacheManager cacheManager) {
+    private void load(String url, FFmpegManager ffmpeg, MediaCacheManager cacheManager) {
         try {
             Path videoPath = cacheManager.getOrDownload(url);
             if (closed) return;
@@ -63,25 +63,24 @@ public class MediaSession implements AutoCloseable {
         return failed || loadFuture.isCompletedExceptionally();
     }
 
-    public FrameLookup lookupFrame(double seconds) {
+    public MediaState.Pair lookupFrame(double seconds) {
         synchronized (this) {
-            if (closed) return new FrameLookup(null, FrameLookup.State.CLOSED);
-            if (isFailed()) return new FrameLookup(null, FrameLookup.State.FAILED);
-            if (frames.isEmpty()) return new FrameLookup(null, FrameLookup.State.LOADING);
+            if (closed) return MediaState.closed();
+            if (isFailed()) return MediaState.failed();
+            if (frames.isEmpty()) return MediaState.loading();
 
             double queryTime = seconds;
-            FrameLookup.State state = FrameLookup.State.READY;
             double duration = getDurationSecondsLocked();
 
             if (completed && duration > 0 && queryTime >= duration) {
                 queryTime = queryTime % duration;
-                state = FrameLookup.State.COMPLETE;
+                return MediaState.complete(getFrameAtTimeLocked(queryTime));
             } else if (!completed && queryTime > getLastFrameTimeLocked()) {
-                state = FrameLookup.State.BUFFERING;
                 queryTime = getLastFrameTimeLocked();
+                MediaState.buffering(getFrameAtTimeLocked(queryTime));
             }
 
-            return new FrameLookup(getFrameAtTimeLocked(queryTime), state);
+            return MediaState.ready(getFrameAtTimeLocked(queryTime));
         }
     }
 

@@ -1,8 +1,6 @@
 package net.mehvahdjukaar.vista.client.textures;
 
 import com.google.common.base.Suppliers;
-import com.google.common.collect.BiMap;
-import com.google.common.collect.HashBiMap;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.platform.Lighting;
@@ -45,7 +43,6 @@ import java.util.function.Supplier;
 
 public class LiveFeedTexturesManager {
 
-    private static final BiMap<FeedKey, ResourceLocation> LIVE_FEED_LOCATIONS = HashBiMap.create();
     @VisibleForDebug
     public static final Map<UUID, RollingBuffer<Long>> UPDATE_TIMES = new HashMap<>();
 
@@ -62,55 +59,52 @@ public class LiveFeedTexturesManager {
                             .build()
             );
 
-    private record FeedKey(UUID name, Integer size) {
+
+    public static class Handle {
+
+        private final ResourceLocation textureId;
+        private final UUID uuid;
+        private final int screenSize;
+
+        public Handle(UUID uuid, int size) {
+            this.textureId = VistaMod.res("live_feed/" + uuid + "_" + size);
+            this.uuid = uuid;
+            this.screenSize = size;
+        }
+
+        @Nullable
+        public LiveFeedTexture getTexture(@Nullable ResourceLocation postShader, boolean requiresUpdate) {
+
+            LiveFeedTexture texture = DynamicTextureRenderer.requestTexture(textureId, () ->
+                    new LiveFeedTexture(textureId, screenSize * ClientConfigs.RESOLUTION_SCALE.get(),
+                            LiveFeedTexturesManager::refreshTexture, uuid));
+
+
+            if (texture == null) {
+                SCHEDULER.get().forceUpdateNextTick(textureId);
+                return null;
+            }
+
+            texture.markReferenced(requiresUpdate);
+
+            if (texture.setPostChain(postShader)) {
+                requiresUpdate = true;
+            }
+            if (VistaLevelRenderer.isRenderingLiveFeed()) {
+                requiresUpdate = false; //suppress recursive updates
+            }
+            texture.setUpdateNextTick(requiresUpdate);
+            return texture;
+        }
     }
 
-    private static long feedCounter = 0;
-
-
-    @Nullable
-    public static LiveFeedTexture requestLiveFeedTexture(UUID location, int screenSize,
-                                                         boolean requiresUpdate,
-                                                         @Nullable ResourceLocation postShader) {
-
-        ResourceLocation feedId = getOrCreateFeedId(location, screenSize);
-        LiveFeedTexture texture = DynamicTextureRenderer.requestTexture(feedId, () ->
-                new LiveFeedTexture(feedId, screenSize * ClientConfigs.RESOLUTION_SCALE.get(),
-                        LiveFeedTexturesManager::refreshTexture, location));
-
-
-        if (texture == null) {
-            SCHEDULER.get().forceUpdateNextTick(feedId);
-            return null;
-        }
-
-        texture.markReferenced(requiresUpdate);
-
-        if (texture.setPostChain(postShader)) {
-            requiresUpdate = true;
-        }
-        if (VistaLevelRenderer.isRenderingLiveFeed()) {
-            requiresUpdate = false; //suppress recursive updates
-        }
-        texture.setUpdateNextTick(requiresUpdate);
-        return texture;
-    }
-
-    private static ResourceLocation getOrCreateFeedId(UUID uuid, int screenSize) {
-        FeedKey key = new FeedKey(uuid, screenSize);
-        ResourceLocation loc = LIVE_FEED_LOCATIONS.get(key);
-        if (loc == null) {
-            loc = VistaMod.res("live_feed_" + feedCounter++);
-            LIVE_FEED_LOCATIONS.put(key, loc);
-        }
-        return loc;
+    public static Handle createHandle(UUID uuid, int screenSize) {
+        return new Handle(uuid, screenSize);
     }
 
     @SuppressWarnings("ConstantConditions")
     public static void clear() {
-        LIVE_FEED_LOCATIONS.clear();
         UPDATE_TIMES.clear();
-        feedCounter = 0;
     }
 
     public static void onRenderTickEnd() {

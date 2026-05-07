@@ -55,18 +55,37 @@ public class WebTexturesManager {
             .build(new CacheLoader<>() {
                 @Override
                 public WebTexture load(ResourceLocation key) {
-                    throw new AssertionError("not supported");
+                    throw new IllegalStateException("not implementede");
                 }
             });
 
-    public static WebTexture requestWebTexture(String url, UUID projectorUUID) {
-        ResourceLocation location = makeUniqueTextureLoc(url, projectorUUID);
-        return TEXTURE_CACHE.asMap().computeIfAbsent(location,
-                r -> {
-                    WebTexture wt = new WebTexture(r, SESSION_CACHE.getUnchecked(url));
-                    wt.register();
-                    return wt;
-                });
+    public static class Handle {
+
+        private final ResourceLocation textureId;
+        private final String url;
+        private final int screenSize;
+
+        public Handle(String url, UUID id, int screenSize) {
+            this.textureId = makeUniqueTextureLoc(url, id, screenSize);
+            this.url = url;
+            this.screenSize = screenSize;
+        }
+
+        public WebTexture getTexture() {
+            return TEXTURE_CACHE.asMap()
+                    .computeIfAbsent(textureId,
+                            resourceLocation -> {
+                                WebTexture texture = new WebTexture(resourceLocation,
+                                        SESSION_CACHE.getUnchecked(this.url));
+                                texture.register();
+                                return texture;
+                            });
+        }
+    }
+
+
+    public static Handle createHandle(String url, UUID projectorUUID, int screenSize) {
+        return new Handle(url, projectorUUID, screenSize);
     }
 
     public static void clear() {
@@ -77,8 +96,8 @@ public class WebTexturesManager {
         SESSION_CACHE.cleanUp();
     }
 
-    private static ResourceLocation makeUniqueTextureLoc(String url, UUID uuid) {
-        String uniqueTextureKey = url + "_" + uuid;
+    private static ResourceLocation makeUniqueTextureLoc(String url, UUID uuid, int screenSize) {
+        String uniqueTextureKey = url + "_" + uuid + "_" + screenSize;
         return VistaMod.res("web_feed/" + sanitizePath(uniqueTextureKey));
     }
 

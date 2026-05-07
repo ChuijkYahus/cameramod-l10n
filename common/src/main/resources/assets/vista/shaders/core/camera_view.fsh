@@ -125,6 +125,11 @@ vec3 sampleImage(
     return color + colorAdd;
 }
 
+float squareWave(float x, float period) {
+    return 1.0 - 2.0 * step(period * 0.5, mod(x, period));
+}
+
+
 /* ===================== Phosphor ===================== */
 
 vec3 accumulateTriadResponse(
@@ -150,9 +155,9 @@ vec3 accumulateTriadResponse(
     float offset = 0.0;
     float fx = floor(triadPos.x);
 
-    offset += (mod(fx, 3.0) < 1.5 ? 1.0 : -1.0) * amp;
-    offset += (mod(fx, 5.0) < 2.5 ? 1.0 : -1.0) * (amp * 0.6);
-    offset += (mod(fx, 7.0) < 3.5 ? 1.0 : -1.0) * (amp * 0.4);
+    offset += squareWave(fx, 3.0) * amp;
+    offset += squareWave(fx, 5.0) * amp * 0.6;
+    offset += squareWave(fx, 7.0) * amp * 0.4;
 
     vec2 jittered = triadPos;
     jittered.y += offset;

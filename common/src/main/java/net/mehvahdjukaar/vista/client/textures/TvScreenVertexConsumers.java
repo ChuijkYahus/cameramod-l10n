@@ -1,7 +1,6 @@
 package net.mehvahdjukaar.vista.client.textures;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import net.mehvahdjukaar.moonlight.api.misc.WorldSavedDataType;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.client.CrtOverlay;
 import net.mehvahdjukaar.vista.client.VistaRenderTypes;
@@ -17,7 +16,6 @@ import net.minecraft.core.Holder;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.LivingEntity;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
 import java.util.function.Function;
@@ -52,9 +50,9 @@ public class TvScreenVertexConsumers {
     }
 
     public static VertexConsumer getTapeVC(MultiBufferSource buffer, @NotNull Holder<CassetteTape> tapeHolder, int scale,
-                                           int tickCount, boolean paused, IntAnimationState switchAnim) {
+                                           int tickCount, CrtOverlay overlay, IntAnimationState switchAnim) {
         ResourceLocation tapeTexture = tapeHolder.value().assetId();
-        return createAnimatedStripVC(buffer, tapeTexture, scale, tickCount, paused, switchAnim);
+        return createAnimatedStripVC(buffer, tapeTexture, scale, tickCount, overlay, switchAnim);
     }
 
     public static VertexConsumer getNoiseVC(MultiBufferSource buffer, int scale, IntAnimationState switchAnim) {
@@ -62,28 +60,27 @@ public class TvScreenVertexConsumers {
                 CrtOverlay.NONE, switchAnim, IntAnimationState.MAX_ANIM, buffer::getBuffer);
     }
 
-    public static VertexConsumer getBarsVC(MultiBufferSource buffer, int scale, boolean paused, IntAnimationState switchAnim) {
-        return createAnimatedStripVC(buffer, BARS_LOCATION, scale, 0, paused, switchAnim);
+    public static VertexConsumer getBarsVC(MultiBufferSource buffer, int scale, IntAnimationState switchAnim) {
+        return createAnimatedStripVC(buffer, BARS_LOCATION, scale, 0, CrtOverlay.NONE, switchAnim);
     }
 
     public static VertexConsumer getSmileTapeVC(MultiBufferSource buffer, LivingEntity player) {
         Smile smile = Smile.fromHealth(player);
         ResourceLocation id = SMILES.get(smile);
         int scale = 12;//always on a 1x1 tv
-        return createAnimatedStripVC(buffer, id, scale, player.tickCount, false, IntAnimationState.NO_ANIM);
+        return createAnimatedStripVC(buffer, id, scale, player.tickCount, CrtOverlay.NONE, IntAnimationState.NO_ANIM);
     }
 
     private static VertexConsumer createAnimatedStripVC(MultiBufferSource buffer,
                                                         ResourceLocation id,
                                                         int scale, int tickCount,
-                                                        boolean paused,
+                                                        CrtOverlay overlay,
                                                         IntAnimationState switchAnim) {
         AnimatedStripTexture animatedStrip = CassetteTexturesManager.INSTANCE.getAnimatedTexture(id);
         if (animatedStrip == null) {
             return getNoiseVC(buffer, scale, switchAnim); //missing
         }
 
-        CrtOverlay overlay = paused ? CrtOverlay.PAUSE : CrtOverlay.NONE;
         ResourceLocation textureId = animatedStrip.getTextureLocation();
         AnimationStripData stripData = animatedStrip.getStripData();
 
@@ -92,23 +89,13 @@ public class TvScreenVertexConsumers {
                         new AnimatedStripVertexConsumer(tickCount, stripData, buffer.getBuffer(rt)));
     }
 
-    public static VertexConsumer getLiveFeedVC(MultiBufferSource buffer,
-                                               LiveFeedTexture tex,
-                                               int scale, boolean paused,
-                                               IntAnimationState switchAnim,
-                                               IntAnimationState noiseAnim) {
-        CrtOverlay overlay = tex.getOverlay(paused);
-        return createVC(tex.getTextureLocation(), scale, 1, 1,
-                overlay, switchAnim, noiseAnim, buffer::getBuffer);
-    }
-
-    public static VertexConsumer getWebVC(MultiBufferSource buffer,
-                                          WebTexture tex,
-                                          int scale, boolean paused,
-                                          IntAnimationState switchAnim,
-                                          IntAnimationState noiseAnim) {
-        CrtOverlay overlay = paused ? CrtOverlay.PAUSE : CrtOverlay.NONE;
-        return createVC(tex.getResourceLocation(), scale, 1, 1,
+    public static VertexConsumer getSingleTextureVC(MultiBufferSource buffer,
+                                                    ResourceLocation textureId,
+                                                    CrtOverlay overlay,
+                                                    int scale,
+                                                    IntAnimationState switchAnim,
+                                                    IntAnimationState noiseAnim) {
+        return createVC(textureId, scale, 1, 1,
                 overlay, switchAnim, noiseAnim, buffer::getBuffer);
     }
 

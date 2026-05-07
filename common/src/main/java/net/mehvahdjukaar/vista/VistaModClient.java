@@ -80,7 +80,6 @@ public class VistaModClient {
     }
 
     public static void init() {
-
         ClientConfigs.init();
         ClientHelper.addBlockEntityRenderersRegistration(VistaModClient::registerBlockEntityRenderers);
         ClientHelper.addShaderRegistration(VistaModClient::registerShaders);

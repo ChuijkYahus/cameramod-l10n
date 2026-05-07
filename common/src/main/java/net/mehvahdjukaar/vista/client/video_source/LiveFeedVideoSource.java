@@ -2,6 +2,7 @@ package net.mehvahdjukaar.vista.client.video_source;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.mehvahdjukaar.moonlight.api.set.BlocksColorAPI;
+import net.mehvahdjukaar.vista.client.CrtOverlay;
 import net.mehvahdjukaar.vista.client.VistaRenderTypes;
 import net.mehvahdjukaar.vista.client.textures.LiveFeedTexture;
 import net.mehvahdjukaar.vista.client.textures.LiveFeedTexturesManager;
@@ -21,6 +22,8 @@ import org.jetbrains.annotations.Nullable;
 public class LiveFeedVideoSource implements IVideoSource {
 
     private final ViewFinderBlockEntity viewFinder;
+    private LiveFeedTexturesManager.Handle textureHandle;
+    private int lastScreenSize = -1;
     private ResourceLocation postShader = null;
 
     public LiveFeedVideoSource(ViewFinderBlockEntity viewFinder) {
@@ -55,12 +58,18 @@ public class LiveFeedVideoSource implements IVideoSource {
             int videoAnimationTick, boolean paused,
             IntAnimationState switchAnim, IntAnimationState staticAnim) {
 
-        LiveFeedTexture tex = LiveFeedTexturesManager.requestLiveFeedTexture(
-                viewFinder.getBroadcastUUID(), screenSize, shouldUpdate, postShader);
+        if (textureHandle == null || lastScreenSize != screenSize) {
+            this.textureHandle = LiveFeedTexturesManager.createHandle(viewFinder.getBroadcastUUID(), screenSize);
+            this.lastScreenSize = screenSize;
+        }
+        LiveFeedTexture tex = textureHandle.getTexture(postShader, shouldUpdate);
 
         VertexConsumer vc = null;
         if (tex != null) {
-            vc = TvScreenVertexConsumers.getLiveFeedVC(buffer, tex, pixelEffectRes, paused, switchAnim, staticAnim);
+            CrtOverlay overlay = tex.getOverlay(paused);
+            ResourceLocation textureLocation = tex.getTextureLocation();
+            vc = TvScreenVertexConsumers.getSingleTextureVC(buffer, textureLocation,
+                    overlay, pixelEffectRes, switchAnim, staticAnim);
         }
         if (vc == null) {
             vc = TvScreenVertexConsumers.getNoiseVC(buffer, pixelEffectRes, switchAnim);

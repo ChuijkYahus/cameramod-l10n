@@ -33,6 +33,7 @@ dependencies {
     modCompileOnly("curse.maven:jei-238222:7420583")
     modCompileOnly("com.terraformersmc:modmenu:4.0.6")
 
+    modImplementation("foundry.veil:veil-fabric-1.21.1:4.0.0")
 
     // modImplementation("cc.tweaked-cobalt:cobalt:0.93")
 }

@@ -4,9 +4,9 @@ import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.platform.TextureUtil;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.mehvahdjukaar.vista.VistaMod;
-import net.mehvahdjukaar.vista.client.web.FrameLookup;
 import net.mehvahdjukaar.vista.client.web.MediaFrame;
 import net.mehvahdjukaar.vista.client.web.MediaSession;
+import net.mehvahdjukaar.vista.client.web.MediaState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.client.renderer.texture.Dumpable;
@@ -46,15 +46,15 @@ public class WebTexture extends AbstractTexture implements Dumpable {
         }
     }
 
-    public FrameLookup uploadFrameAtTime(double seconds) {
-        FrameLookup lookup = session.lookupFrame(seconds);
+    public MediaState uploadFrameAtTime(double seconds) {
+        MediaState.Pair lookup = session.lookupFrame(seconds);
         boolean wasUploaded = pixels != null;
         MediaFrame frame = lookup.frame();
         if (frame != null && frame.image() != this.pixels) {
             uploadOnRenderThread(frame.image());
         }
-        if (!wasUploaded) return new FrameLookup(null, FrameLookup.State.LOADING);
-        return lookup;
+        if (!wasUploaded) return MediaState.LOADING;
+        return lookup.state();
     }
 
 
