@@ -40,7 +40,7 @@ public class WebTexturesManager {
             .build(new CacheLoader<>() {
                 @Override
                 public MediaSession load(String url) {
-                    return new MediaSession(url, MEDIA_CACHE_MANAGER, WEB_WORKER);
+                    return new MediaSession(url, VistaModClient.getFFmpeg(), MEDIA_CACHE_MANAGER, WEB_WORKER);
                 }
             });
 
@@ -55,7 +55,7 @@ public class WebTexturesManager {
             .build(new CacheLoader<>() {
                 @Override
                 public WebTexture load(ResourceLocation key) {
-                    throw new IllegalStateException("not implementede");
+                    throw new IllegalStateException("not supported!");
                 }
             });
 

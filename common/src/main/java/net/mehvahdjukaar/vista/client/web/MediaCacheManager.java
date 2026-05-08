@@ -55,14 +55,14 @@ public class MediaCacheManager {
                 existing.refCount++;
                 touch(existing.path);
             }
-            log("INFO", "Cache HIT for " + url + " -> " + existing.path + " (refCount=" + existing.refCount + ")");
+            VistaMod.LOGGER.info("Cache HIT for {} -> {} (refCount={})", url, existing.path, existing.refCount);
             return existing.path;
         }
 
         // Check if another thread is already downloading this URL
         CompletableFuture<Path> future = pendingDownloads.get(key);
         if (future != null && !future.isDone()) {
-            log("INFO", "Waiting for ongoing download of " + url);
+            VistaMod.LOGGER.info("Waiting for ongoing download of {}", url);
             return future.get(); // blocks until download finishes
         }
 
@@ -70,7 +70,7 @@ public class MediaCacheManager {
         CompletableFuture<Path> downloadFuture = new CompletableFuture<>();
         CompletableFuture<Path> previous = pendingDownloads.putIfAbsent(key, downloadFuture);
         if (previous != null) {
-            log("INFO", "Waiting for ongoing download of " + url);
+            VistaMod.LOGGER.info("Waiting for ongoing download of {}", url);
             return previous.get();
         }
 
@@ -83,7 +83,7 @@ public class MediaCacheManager {
                 touch(cachedPath);
                 enforceQuota();
             }
-            log("INFO", "Download & cache completed for " + url + " -> " + cachedPath);
+            VistaMod.LOGGER.info("Download & cache completed for {} -> {}", url, cachedPath);
             return cachedPath;
         } catch (Exception e) {
             downloadFuture.completeExceptionally(e);
@@ -100,21 +100,21 @@ public class MediaCacheManager {
         String key = hashUrl(url);
         CachedEntry entry = urlToEntry.get(key);
         if (entry == null) {
-            log("WARN", "Release called for unknown URL: " + url);
+            VistaMod.LOGGER.warn("Release called for unknown URL: {}", url);
             return;
         }
         synchronized (this) {
             entry.refCount--;
-            log("INFO", "Released " + url + ", new refCount=" + entry.refCount);
+            VistaMod.LOGGER.info("Released {}, new refCount={}", url, entry.refCount);
             if (entry.refCount <= 0) {
                 urlToEntry.remove(key);
                 refCounts.remove(entry.path);
                 lastAccess.remove(entry.path);
                 try {
                     Files.deleteIfExists(entry.path);
-                    log("INFO", "Deleted cached file " + entry.path + " (no more references)");
+                    VistaMod.LOGGER.info("Deleted cached file {} (no more references)", entry.path);
                 } catch (IOException e) {
-                    log("ERROR", "Failed to delete " + entry.path + ": " + e.getMessage());
+                    VistaMod.LOGGER.error("Failed to delete {}", entry.path, e);
                 }
             }
         }
@@ -140,7 +140,7 @@ public class MediaCacheManager {
                 }
             }
         }
-        log("INFO", "Restored " + urlToEntry.size() + " cached videos from disk");
+        VistaMod.LOGGER.info("Restored {} cached videos from disk", urlToEntry.size());
         enforceQuota(); // clean up if necessary
     }
 
@@ -154,7 +154,7 @@ public class MediaCacheManager {
         }
         if (total <= maxSizeBytes) return;
 
-        log("INFO", "Cache size " + (total / (1024 * 1024)) + " MB exceeds limit " + (maxSizeBytes / (1024 * 1024)) + " MB. Evicting...");
+        VistaMod.LOGGER.info("Cache size {} MB exceeds limit {} MB. Evicting...", total / (1024 * 1024), maxSizeBytes / (1024 * 1024));
         // LRU: sort by lastAccess, oldest first, only evict files with refCount == 0
         List<Map.Entry<Path, Long>> entries = new ArrayList<>(lastAccess.entrySet());
         entries.sort(Map.Entry.comparingByValue());
@@ -176,7 +176,7 @@ public class MediaCacheManager {
                     if (keyToRemove != null) urlToEntry.remove(keyToRemove);
                     refCounts.remove(p);
                     lastAccess.remove(p);
-                    log("INFO", "Evicted " + p + " (size " + (size / (1024)) + " KB)");
+                    VistaMod.LOGGER.info("Evicted {} (size {} KB)", p, size / (1024));
                     if (total <= maxSizeBytes) break;
                 } catch (IOException ignored) {
                 }
@@ -197,16 +197,6 @@ public class MediaCacheManager {
             return hex.toString();
         } catch (Exception e) {
             throw new RuntimeException("Hashing failed", e);
-        }
-    }
-
-    private void log(String level, String msg) {
-        if ("ERROR".equals(level)) {
-            VistaMod.LOGGER.error("[CacheManager] {}", msg);
-        } else if ("WARN".equals(level)) {
-            VistaMod.LOGGER.warn("[CacheManager] {}", msg);
-        } else {
-            VistaMod.LOGGER.info("[CacheManager] {}", msg);
         }
     }
 

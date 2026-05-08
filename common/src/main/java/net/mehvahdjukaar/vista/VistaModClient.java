@@ -97,7 +97,7 @@ public class VistaModClient {
     }
 
     @Nullable
-    public static CompletableFuture<FFmpeg> ffmpeg;
+    private static CompletableFuture<FFmpeg> ffmpeg;
 
     private static ModelLayerLocation loc(String name) {
         return new ModelLayerLocation(VistaMod.res(name), name);

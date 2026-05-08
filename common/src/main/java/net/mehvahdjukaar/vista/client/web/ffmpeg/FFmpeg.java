@@ -3,6 +3,7 @@ package net.mehvahdjukaar.vista.client.web.ffmpeg;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
+import net.minecraft.world.level.storage.loot.entries.LootPoolEntries;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -29,28 +30,17 @@ public final class FFmpeg {
     private final Path ffprobePath;
     private final OsType platform;
 
-    private final CompletableFuture<Void> readyFuture;
-
     public static CompletableFuture<FFmpeg> create() {
         FFmpeg instance = new FFmpeg(OsType.detect());
-        return instance.readyFuture.thenApply(unused -> instance);
+        return CompletableFuture.runAsync(instance::initialize)
+                .thenApply(unused -> instance);
     }
 
     private FFmpeg(OsType platform) {
         this.platform = platform;
+        LootPoolEntries
         this.ffmpegPath = PROGRAM_FOLDER.resolve(platform.ffmpegName);
         this.ffprobePath = PROGRAM_FOLDER.resolve(platform.ffprobeName);
-
-        // We run async. If initialize() throws an exception,
-        // readyFuture will be marked as 'completed exceptionally'.
-        this.readyFuture = CompletableFuture.runAsync(this::initialize);
-    }
-
-    /**
-     * Checks if the initialization task failed.
-     */
-    public boolean isFailed() {
-        return readyFuture.isCompletedExceptionally();
     }
 
     // ===== COMMON LOGIC =====
@@ -66,6 +56,7 @@ public final class FFmpeg {
             }
 
             if (!Files.exists(archive)) {
+                //await
                 FileDownloader.download(downloadUrl, archive);
             }
 
@@ -113,25 +104,11 @@ public final class FFmpeg {
         }
     }
 
-    public void waitUntilReady() throws IOException {
-        try {
-            // Use a reasonable timeout
-            readyFuture.get(10, TimeUnit.MINUTES);
-        } catch (ExecutionException e) {
-            // This retrieves the ACTUAL error thrown in initialize()
-            throw new IOException("FFmpeg initialization failed: " + e.getCause().getMessage(), e.getCause());
-        } catch (InterruptedException | TimeoutException e) {
-            throw new IOException("FFmpeg setup timed out or was interrupted", e);
-        }
-    }
-
     public Process runFFmpeg(String... args) throws IOException {
-        waitUntilReady();
         return run(ffmpegPath, args);
     }
 
     public Process runFFprobe(String... args) throws IOException {
-        waitUntilReady();
         return run(ffprobePath, args);
     }
 
