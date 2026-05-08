@@ -3,9 +3,15 @@ package net.mehvahdjukaar.vista;
 import com.google.common.collect.MapMaker;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import net.mehvahdjukaar.moonlight.api.client.CoreShaderContainer;
+import net.mehvahdjukaar.moonlight.api.misc.EventCalled;
 import net.mehvahdjukaar.moonlight.api.platform.ClientHelper;
+import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.platform.RegHelper;
 import net.mehvahdjukaar.moonlight.api.util.Utils;
+import net.mehvahdjukaar.supplementaries.client.screens.FunnyScreen;
+import net.mehvahdjukaar.supplementaries.client.screens.WelcomeMessageScreen;
+import net.mehvahdjukaar.supplementaries.common.utils.MiscUtils;
+import net.mehvahdjukaar.supplementaries.integration.CompatHandler;
 import net.mehvahdjukaar.vista.client.ViewFinderController;
 import net.mehvahdjukaar.vista.client.VistaDynamicResources;
 import net.mehvahdjukaar.vista.client.renderer.TvBlockEntityRenderer;
@@ -19,6 +25,7 @@ import net.mehvahdjukaar.vista.client.web.ffmpeg.FFmpegManager;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.model.geom.ModelLayerLocation;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.Input;
@@ -33,6 +40,7 @@ import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
+import java.util.Random;
 import java.util.function.Function;
 
 public class VistaModClient {
@@ -76,7 +84,7 @@ public class VistaModClient {
     @Nullable
     public static FFmpegManager getFfmpeg() {
         if (ffmpeg != null) return ffmpeg;
-        if (ClientConfigs.ENABLE_WIP.get()) {
+        if (true || ClientConfigs.ENABLE_WIP.get()) {
             ffmpeg = FFmpegManager.create();
         }
         return ffmpeg;
@@ -102,6 +110,22 @@ public class VistaModClient {
 
         RegHelper.registerDynamicResourceProvider(new VistaDynamicResources());
     }
+
+    @EventCalled
+    public static void onFirstScreen(Screen screen) {
+        Screen newScreen = screen;
+        //fires on first draw screen. config will be set after that
+        boolean unfunny = net.mehvahdjukaar.supplementaries.configs.ClientConfigs.General.UNFUNNY.get();
+        if (MiscUtils.Festivity.compute().isAprilsFool()) {
+            newScreen = new FunnyScreen(newScreen, unfunny);
+        }
+        if (!net.mehvahdjukaar.supplementaries.configs.ClientConfigs.General.NO_INCOMPATIBLE_MODS.get() && WelcomeMessageScreen.hasIncompat() && !PlatHelper.isDev()) {
+            newScreen = WelcomeMessageScreen.createIncompatibleMods(newScreen);
+        }
+        if (newScreen != screen) Minecraft.getInstance().setScreen(newScreen);
+
+    }
+
 
     private static void registerItemRenderers(ClientHelper.ItemRendererEvent event) {
         event.register(VistaMod.TV_ITEM.get(), new TvItemRenderer());

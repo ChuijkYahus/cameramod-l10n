@@ -1,22 +1,18 @@
 package net.mehvahdjukaar.vista.client.web;
 
+import net.mehvahdjukaar.vista.client.web.ffmpeg.UrlDownloader;
 import net.mehvahdjukaar.vista.VistaMod;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 /**
  * Manages persistent disk cache for video files downloaded from HTTP URLs.
@@ -126,24 +122,12 @@ public class MediaCacheManager {
 
     // ---------- private helpers ----------
     private Path downloadAndCache(String urlStr, String key) throws Exception {
-        log("INFO", "Downloading " + urlStr + " ...");
-        Path tempFile = Files.createTempFile("download_", ".tmp");
-        try {
-            HttpURLConnection conn = (HttpURLConnection) new URL(urlStr).openConnection();
-            conn.setRequestProperty("User-Agent", "Mozilla/5.0");
-            conn.setConnectTimeout(10000);
-            conn.setReadTimeout(30000);
-            try (InputStream in = conn.getInputStream()) {
-                Files.copy(in, tempFile, StandardCopyOption.REPLACE_EXISTING);
-            }
-            long size = Files.size(tempFile);
-            log("INFO", "Downloaded " + size + " bytes from " + urlStr);
-            Path cachedPath = cacheDir.resolve(key + ".video");
-            Files.move(tempFile, cachedPath, StandardCopyOption.REPLACE_EXISTING);
-            return cachedPath;
-        } finally {
-            Files.deleteIfExists(tempFile); // clean up temp if move fails
-        }
+        VistaMod.LOGGER.info("Downloading {} ...", urlStr);
+        Path cachedPath = cacheDir.resolve(key + ".video");
+        UrlDownloader.download(urlStr, cachedPath, "Mozilla/5.0");
+        long size = Files.size(cachedPath);
+        VistaMod.LOGGER.info("Downloaded {} bytes from {}", size, urlStr);
+        return cachedPath;
     }
 
     private void restoreFromDisk() throws IOException {
@@ -220,7 +204,13 @@ public class MediaCacheManager {
     }
 
     private void log(String level, String msg) {
-        System.out.printf("[CacheManager] [%s] %s%n", level, msg);
+        if ("ERROR".equals(level)) {
+            VistaMod.LOGGER.error("[CacheManager] {}", msg);
+        } else if ("WARN".equals(level)) {
+            VistaMod.LOGGER.warn("[CacheManager] {}", msg);
+        } else {
+            VistaMod.LOGGER.info("[CacheManager] {}", msg);
+        }
     }
 
     private static class CachedEntry {

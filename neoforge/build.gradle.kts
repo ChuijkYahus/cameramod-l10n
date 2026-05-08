@@ -18,7 +18,7 @@ dependencies {
     modImplementation("net.mehvahdjukaar:supplementaries-neoforge:${supplementaries_version}")
 
     //modImplementation("cc.tweaked-cobalt:cobalt:0.93")
-    modCompileOnly("curse.maven:exposure-871755:7033927")
+    modCompileOnly("curse.maven:exposure-871755:7862664")
     modCompileOnly("curse.maven:cc-tweaked-282001:5714512")
     modCompileOnly("curse.maven:jei-238222:7420587")
     modCompileOnly("curse.maven:sodium-394468:6382649")

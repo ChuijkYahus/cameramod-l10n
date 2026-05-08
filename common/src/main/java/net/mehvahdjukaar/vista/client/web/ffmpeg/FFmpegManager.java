@@ -3,14 +3,16 @@ package net.mehvahdjukaar.vista.client.web.ffmpeg;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
+import net.mehvahdjukaar.vista.VistaMod;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.URI;
-import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -43,7 +45,13 @@ public final class FFmpegManager {
             throw new RuntimeException("Failed to create bin folder", e);
         }
 
-        readyFuture = CompletableFuture.runAsync(this::initialize);
+        readyFuture = CompletableFuture.runAsync(() -> {
+            try {
+                this.initialize();
+            } catch (Exception e) {
+                VistaMod.LOGGER.error("FFmpeg initialization failed", e);
+            }
+        });
     }
 
 
@@ -60,7 +68,7 @@ public final class FFmpegManager {
             }
 
             if (!Files.exists(archive)) {
-                downloadWithRetry(downloadUrl, archive);
+                UrlDownloader.download(downloadUrl, archive);
             }
 
             extractAndInstall(archive);
@@ -90,6 +98,9 @@ public final class FFmpegManager {
         if (url.isEmpty()) {
             throw new IOException("Empty URL for key '" + key + "' in " + SOURCES_CONFIG_PATH);
         }
+        if (!url.startsWith("http")) {
+            url = "https://" + url;
+        }
         return url;
     }
 
@@ -110,69 +121,6 @@ public final class FFmpegManager {
             }
             Files.copy(in, SOURCES_CONFIG_PATH);
         }
-    }
-
-    private void downloadWithRetry(String url, Path target) throws IOException {
-        int attempts = 3;
-
-        for (int i = 1; i <= attempts; i++) {
-            try {
-                downloadFile(url, target);
-                return;
-            } catch (IOException e) {
-                System.err.println("Download failed (attempt " + i + "): " + e.getMessage());
-
-                if (i == attempts) throw e;
-
-                try {
-                    Thread.sleep(1000L * i);
-                } catch (InterruptedException ignored) {
-                }
-            }
-        }
-    }
-
-    private void downloadFile(String urlStr, Path target) throws IOException {
-        Path tmp = target.resolveSibling(target.getFileName() + ".part");
-
-        URLConnection conn = URI.create(urlStr).toURL().openConnection();
-        long expected = conn.getContentLengthLong();
-
-        try (InputStream in = conn.getInputStream();
-             OutputStream out = Files.newOutputStream(tmp,
-                     StandardOpenOption.CREATE,
-                     StandardOpenOption.TRUNCATE_EXISTING)) {
-
-            byte[] buf = new byte[16384];
-            long done = 0;
-            int r;
-            int lastPercent = -1;
-
-            while ((r = in.read(buf)) != -1) {
-                out.write(buf, 0, r);
-                done += r;
-
-                if (expected > 0) {
-                    int percent = (int) (done * 100 / expected);
-                    if (percent != lastPercent) {
-                        System.out.print("\rProgress: " + percent + "%");
-                        lastPercent = percent;
-                    }
-                }
-            }
-            System.out.println();
-        }
-
-        // Validate size
-        if (expected > 0 && Files.size(tmp) != expected) {
-            Files.deleteIfExists(tmp);
-            throw new IOException("Incomplete download (size mismatch)");
-        }
-
-        // Atomic move to final file
-        Files.move(tmp, target,
-                StandardCopyOption.REPLACE_EXISTING,
-                StandardCopyOption.ATOMIC_MOVE);
     }
 
     public void waitUntilReady() throws IOException {

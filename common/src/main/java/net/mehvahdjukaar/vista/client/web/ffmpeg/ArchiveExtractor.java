@@ -1,5 +1,6 @@
 package net.mehvahdjukaar.vista.client.web.ffmpeg;
 
+import net.mehvahdjukaar.vista.VistaMod;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -37,6 +38,7 @@ public final class ArchiveExtractor {
             }
             return false;
         } catch (Exception e) {
+            VistaMod.LOGGER.error("Failed to check if archive is valid: {}", archive, e);
             return false;
         }
     }

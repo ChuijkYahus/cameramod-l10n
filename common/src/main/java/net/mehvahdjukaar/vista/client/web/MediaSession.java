@@ -26,8 +26,12 @@ public class MediaSession implements AutoCloseable {
         this.loadFuture = CompletableFuture.runAsync(() -> load(url, ffmpeg, cacheManager), executor);
     }
 
-    private void load(String url, FFmpegManager ffmpeg, MediaCacheManager cacheManager) {
+    private void load(String url, @Nullable FFmpegManager ffmpeg, MediaCacheManager cacheManager) {
         try {
+            if (ffmpeg == null) {
+                this.failed = true;
+                return;
+            }
             Path videoPath = cacheManager.getOrDownload(url);
             if (closed) return;
             FFmpegMediaDecoder newDecoder = new FFmpegMediaDecoder(ffmpeg, this, videoPath);

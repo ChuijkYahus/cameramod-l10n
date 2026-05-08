@@ -1,5 +1,6 @@
 package net.mehvahdjukaar.vista.client.web;
 
+import net.mehvahdjukaar.vista.VistaMod;
 import com.mojang.blaze3d.platform.NativeImage;
 import net.mehvahdjukaar.vista.client.web.ffmpeg.FFmpegManager;
 
@@ -236,9 +237,18 @@ public class FFmpegMediaDecoder extends Thread {
     }
 
     private void log(String level, String msg, Exception... args) {
-        System.out.printf("[%s] [%s] %s%n", level, getName(), msg);
-        for (Exception e : args) {
-            e.printStackTrace();
+        if ("ERROR".equals(level)) {
+            if (args.length > 0) {
+                VistaMod.LOGGER.error("[{}] {}", getName(), msg, args[0]);
+            } else {
+                VistaMod.LOGGER.error("[{}] {}", getName(), msg);
+            }
+        } else if ("WARN".equals(level)) {
+            VistaMod.LOGGER.warn("[{}] {}", getName(), msg);
+        } else if ("DEBUG".equals(level)) {
+            VistaMod.LOGGER.debug("[{}] {}", getName(), msg);
+        } else {
+            VistaMod.LOGGER.info("[{}] {}", getName(), msg);
         }
     }
 }

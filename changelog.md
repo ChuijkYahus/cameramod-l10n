@@ -4,3 +4,4 @@
 - added a workaround to prevent an issue the mod Veil has (their issue remains.)
 - moved iris compat in common, hoping it will work on neo
 - added some code for flashback compat
+- some changes so curseforge will approve this file.
