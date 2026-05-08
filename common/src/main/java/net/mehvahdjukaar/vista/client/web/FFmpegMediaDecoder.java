@@ -1,13 +1,15 @@
 package net.mehvahdjukaar.vista.client.web;
 
-import net.mehvahdjukaar.vista.VistaMod;
 import com.mojang.blaze3d.platform.NativeImage;
-import net.mehvahdjukaar.vista.client.web.ffmpeg.FFmpegManager;
+import net.mehvahdjukaar.vista.client.web.ffmpeg.FFmpeg;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.*;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Decodes a local video file into a FrameBuffer (one frame at a time).
@@ -15,18 +17,24 @@ import java.util.List;
  * Runs in its own thread.
  */
 public class FFmpegMediaDecoder extends Thread {
-    private final FFmpegManager ffmpeg;
+    private static final AtomicInteger THREAD_COUNT = new AtomicInteger();
+
+    private final Logger logger;
+    private final FFmpeg ffmpeg;
     private final MediaSession buffer;
     private final Path videoPath;
     private volatile boolean running = true;
     private volatile boolean paused = false;
     private volatile double seekToSeconds = -1.0; // -1 means no seek requested
 
-    public FFmpegMediaDecoder(FFmpegManager ffmpeg, MediaSession buffer, Path videoPath) {
+
+    public FFmpegMediaDecoder(FFmpeg ffmpeg, MediaSession buffer, Path videoPath) {
         this.ffmpeg = ffmpeg;
         this.buffer = buffer;
         this.videoPath = videoPath;
-        setName("VideoDecoder-" + videoPath.getFileName());
+        String name = "VideoDecoder-" + THREAD_COUNT.incrementAndGet();
+        this.logger = LogManager.getLogger(name);
+        this.setName(name);
     }
 
     /**
@@ -34,7 +42,7 @@ public class FFmpegMediaDecoder extends Thread {
      */
     public void pause() {
         paused = true;
-        log("INFO", "Paused");
+        logger.info("Paused");
     }
 
     /**
@@ -45,7 +53,7 @@ public class FFmpegMediaDecoder extends Thread {
         synchronized (this) {
             notifyAll(); // wake up waiting thread
         }
-        log("INFO", "Resumed");
+        logger.info("Resumed");
     }
 
     /**
@@ -55,7 +63,7 @@ public class FFmpegMediaDecoder extends Thread {
         this.seekToSeconds = seconds;
         // Interrupt the current FFmpeg process gently
         // The main loop will detect seekToSeconds != -1 and restart
-        log("INFO", "Seek requested to " + seconds + "s");
+        logger.info("Seek requested to {}s", seconds);
     }
 
     /**
@@ -65,7 +73,7 @@ public class FFmpegMediaDecoder extends Thread {
         running = false;
         resumePlay(); // wake up if paused
         this.interrupt();
-        log("INFO", "Stopping decoder");
+        logger.info("Stopping decoder");
     }
 
     @Override
@@ -79,17 +87,17 @@ public class FFmpegMediaDecoder extends Thread {
                 int frameSize = width * height * 3;
                 double framerate = probeFrameRate(videoPath.toString());
                 if (!Double.isFinite(framerate) || framerate <= 0) {
-                    log("WARN", "Invalid probed framerate " + framerate + ", defaulting to 20 fps");
+                    logger.warn("Invalid probed framerate {}, defaulting to 20 fps", framerate);
                     framerate = 20.0;
                 }
                 int totalFrames = probeTotalFrames(videoPath.toString()); // may be -1
-                log("INFO", String.format("Video: %dx%d, %.3f fps, %d frames", width, height, framerate, totalFrames));
+                logger.info("Video: {}x{}, {} fps, {} frames", width, height, framerate, totalFrames);
 
                 // Build FFmpeg command, with seek if requested
                 String[] cmd = buildFFmpegCommand(seekToSeconds);
                 ffmpegProcess = ffmpeg.runFFmpeg(cmd);
                 if (seekToSeconds >= 0) {
-                    log("INFO", "Seeked to " + seekToSeconds + "s, restarting FFmpeg");
+                    logger.info("Seeked to " + seekToSeconds + "s, restarting FFmpeg");
                     seekToSeconds = -1.0; // reset
                 }
 
@@ -99,7 +107,7 @@ public class FFmpegMediaDecoder extends Thread {
                         // Pause handling
                         synchronized (this) {
                             while (paused && running) {
-                                log("DEBUG", "Decoder waiting (paused)");
+                                logger.debug("Decoder waiting (paused)");
                                 wait();
                             }
                         }
@@ -107,7 +115,7 @@ public class FFmpegMediaDecoder extends Thread {
 
                         // Check if a new seek was requested while we were decoding
                         if (seekToSeconds >= 0) {
-                            log("INFO", "Seek request detected, restarting FFmpeg");
+                            logger.info("Seek request detected, restarting FFmpeg");
                             ffmpegProcess.destroyForcibly();
                             ffmpegProcess.waitFor();
                             break; // break out of inner loop, outer loop will restart with new seek
@@ -116,7 +124,7 @@ public class FFmpegMediaDecoder extends Thread {
                         // Read one frame's raw RGB24 data
                         byte[] data = in.readNBytes(frameSize);
                         if (data.length < frameSize) {
-                            log("INFO", "End of stream (read " + data.length + " bytes)");
+                            logger.info("End of stream (read {} bytes)", data.length);
                             break;
                         }
 
@@ -126,32 +134,32 @@ public class FFmpegMediaDecoder extends Thread {
                         frameCount++;
 
                         if (frameCount % 100 == 0) {
-                            log("INFO", "Decoded " + frameCount + " frames, PTS=" + String.format("%.2f", pts));
+                            logger.info("Decoded {} frames, PTS={}", frameCount, String.format("%.2f", pts));
                         }
                     }
                 }
 
                 int exitCode = ffmpegProcess.waitFor();
                 if (exitCode != 0 && running) {
-                    log("WARN", "FFmpeg exited with code " + exitCode);
+                    logger.warn("FFmpeg exited with code {}", exitCode);
                 }
                 if (frameCount > 0 && seekToSeconds < 0) {
                     // natural end of file
-                    log("INFO", "Finished decoding, total frames: " + frameCount);
+                    logger.info("Finished decoding, total frames: " + frameCount);
                     buffer.setCompleted(true);
                     break;
                 }
             } catch (InterruptedException e) {
-                log("INFO", "Decoder interrupted");
+                logger.info("Decoder interrupted");
                 break;
             } catch (Exception e) {
-                log("ERROR", "Decoder crash: " + e.getMessage(), e);
+                logger.error("Decoder crash: {}", e.getMessage(), e);
                 break;
             } finally {
                 if (ffmpegProcess != null) ffmpegProcess.destroyForcibly();
             }
         }
-        log("INFO", "Decoder thread terminated");
+        logger.info("Decoder thread terminated");
     }
 
     private String[] buildFFmpegCommand(double seekSec) {
@@ -193,7 +201,7 @@ public class FFmpegMediaDecoder extends Thread {
                 return Double.parseDouble(line);
             }
         }
-        log("WARN", "Could not probe framerate, defaulting to 30 fps");
+        logger.warn("Could not probe framerate, defaulting to 30 fps");
         return 30.0;
     }
 
@@ -236,19 +244,4 @@ public class FFmpegMediaDecoder extends Thread {
         return img;
     }
 
-    private void log(String level, String msg, Exception... args) {
-        if ("ERROR".equals(level)) {
-            if (args.length > 0) {
-                VistaMod.LOGGER.error("[{}] {}", getName(), msg, args[0]);
-            } else {
-                VistaMod.LOGGER.error("[{}] {}", getName(), msg);
-            }
-        } else if ("WARN".equals(level)) {
-            VistaMod.LOGGER.warn("[{}] {}", getName(), msg);
-        } else if ("DEBUG".equals(level)) {
-            VistaMod.LOGGER.debug("[{}] {}", getName(), msg);
-        } else {
-            VistaMod.LOGGER.info("[{}] {}", getName(), msg);
-        }
-    }
 }

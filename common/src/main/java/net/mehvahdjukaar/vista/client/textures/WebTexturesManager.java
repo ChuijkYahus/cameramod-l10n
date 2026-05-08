@@ -40,7 +40,7 @@ public class WebTexturesManager {
             .build(new CacheLoader<>() {
                 @Override
                 public MediaSession load(String url) {
-                    return new MediaSession(url, VistaModClient.getFfmpeg(), MEDIA_CACHE_MANAGER, WEB_WORKER);
+                    return new MediaSession(url, MEDIA_CACHE_MANAGER, WEB_WORKER);
                 }
             });
 

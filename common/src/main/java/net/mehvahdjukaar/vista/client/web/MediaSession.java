@@ -1,7 +1,7 @@
 package net.mehvahdjukaar.vista.client.web;
 
 import net.mehvahdjukaar.vista.VistaMod;
-import net.mehvahdjukaar.vista.client.web.ffmpeg.FFmpegManager;
+import net.mehvahdjukaar.vista.client.web.ffmpeg.FFmpeg;
 import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Path;
@@ -22,11 +22,11 @@ public class MediaSession implements AutoCloseable {
     private volatile boolean failed;
     private volatile boolean closed;
 
-    public MediaSession(String url, FFmpegManager ffmpeg, MediaCacheManager cacheManager, Executor executor) {
+    public MediaSession(String url, @Nullable FFmpeg ffmpeg, MediaCacheManager cacheManager, Executor executor) {
         this.loadFuture = CompletableFuture.runAsync(() -> load(url, ffmpeg, cacheManager), executor);
     }
 
-    private void load(String url, @Nullable FFmpegManager ffmpeg, MediaCacheManager cacheManager) {
+    private void load(String url, @Nullable FFmpeg ffmpeg, MediaCacheManager cacheManager) {
         try {
             if (ffmpeg == null) {
                 this.failed = true;

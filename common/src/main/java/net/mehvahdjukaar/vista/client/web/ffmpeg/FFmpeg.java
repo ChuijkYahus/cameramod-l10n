@@ -3,7 +3,6 @@ package net.mehvahdjukaar.vista.client.web.ffmpeg;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
-import net.mehvahdjukaar.vista.VistaMod;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -15,10 +14,12 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Stream;
 
-public final class FFmpegManager {
+public final class FFmpeg {
 
     private static final Path SOURCES_CONFIG_PATH = Paths.get("ffmpeg_sources.json");
     private static final String SOURCES_RESOURCE_PATH = "/ffmpeg_sources.json";
@@ -30,52 +31,49 @@ public final class FFmpegManager {
 
     private final CompletableFuture<Void> readyFuture;
 
-    public static FFmpegManager create() {
-        return new FFmpegManager(OsType.detect());
+    public static CompletableFuture<FFmpeg> create() {
+        FFmpeg instance = new FFmpeg(OsType.detect());
+        return instance.readyFuture.thenApply(unused -> instance);
     }
 
-    private FFmpegManager(OsType platform) {
+    private FFmpeg(OsType platform) {
         this.platform = platform;
         this.ffmpegPath = PROGRAM_FOLDER.resolve(platform.ffmpegName);
         this.ffprobePath = PROGRAM_FOLDER.resolve(platform.ffprobeName);
 
-        try {
-            Files.createDirectories(PROGRAM_FOLDER);
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to create bin folder", e);
-        }
-
-        readyFuture = CompletableFuture.runAsync(() -> {
-            try {
-                this.initialize();
-            } catch (Exception e) {
-                VistaMod.LOGGER.error("FFmpeg initialization failed", e);
-            }
-        });
+        // We run async. If initialize() throws an exception,
+        // readyFuture will be marked as 'completed exceptionally'.
+        this.readyFuture = CompletableFuture.runAsync(this::initialize);
     }
 
+    /**
+     * Checks if the initialization task failed.
+     */
+    public boolean isFailed() {
+        return readyFuture.isCompletedExceptionally();
+    }
 
     // ===== COMMON LOGIC =====
     private void initialize() {
-        if (Files.exists(ffmpegPath) && Files.exists(ffprobePath)) return;
-
         try {
+            Files.createDirectories(PROGRAM_FOLDER);
+            if (Files.exists(ffmpegPath) && Files.exists(ffprobePath)) return;
             String downloadUrl = getDownloadUrlFromSources();
-            Path archive = PROGRAM_FOLDER.resolve(getArchiveName(downloadUrl));
+            Path archive = PROGRAM_FOLDER.resolve(ArchiveUtils.extractFileNameFromUrl(downloadUrl));
 
-            if (Files.exists(archive) && !ArchiveExtractor.isProbablyValid(archive)) {
+            if (Files.exists(archive) && !ArchiveUtils.isProbablyValid(archive)) {
                 Files.deleteIfExists(archive);
             }
 
             if (!Files.exists(archive)) {
-                UrlDownloader.download(downloadUrl, archive);
+                FileDownloader.download(downloadUrl, archive);
             }
 
             extractAndInstall(archive);
             Files.deleteIfExists(archive);
 
         } catch (Exception e) {
-            throw new RuntimeException("FFmpeg setup failed", e);
+            throw new RuntimeException("FFmpeg setup failed. Aborting.", e);
         }
     }
 
@@ -104,18 +102,10 @@ public final class FFmpegManager {
         return url;
     }
 
-    private String getArchiveName(String downloadUrl) throws IOException {
-        String fileName = Path.of(URI.create(downloadUrl).getPath()).getFileName().toString();
-        if (fileName.isEmpty()) {
-            throw new IOException("Could not resolve archive name from URL: " + downloadUrl);
-        }
-        return fileName;
-    }
-
     private void ensureSourcesConfigExists() throws IOException {
         if (Files.exists(SOURCES_CONFIG_PATH)) return;
 
-        try (InputStream in = FFmpegManager.class.getResourceAsStream(SOURCES_RESOURCE_PATH)) {
+        try (InputStream in = FFmpeg.class.getResourceAsStream(SOURCES_RESOURCE_PATH)) {
             if (in == null) {
                 throw new IOException("Resource not found: " + SOURCES_RESOURCE_PATH);
             }
@@ -125,9 +115,13 @@ public final class FFmpegManager {
 
     public void waitUntilReady() throws IOException {
         try {
-            readyFuture.get(5, TimeUnit.MINUTES);
-        } catch (Exception e) {
-            throw new IOException("Init failed", e);
+            // Use a reasonable timeout
+            readyFuture.get(10, TimeUnit.MINUTES);
+        } catch (ExecutionException e) {
+            // This retrieves the ACTUAL error thrown in initialize()
+            throw new IOException("FFmpeg initialization failed: " + e.getCause().getMessage(), e.getCause());
+        } catch (InterruptedException | TimeoutException e) {
+            throw new IOException("FFmpeg setup timed out or was interrupted", e);
         }
     }
 
@@ -176,10 +170,10 @@ public final class FFmpegManager {
     }
 
     private void extractAndInstall(Path archive) throws IOException, InterruptedException {
-        if (!ArchiveExtractor.isSupported(archive)) {
+        if (!ArchiveUtils.isSupported(archive)) {
             throw new IOException("Unsupported archive format: " + archive.getFileName());
         }
-        ArchiveExtractor.extract(archive, PROGRAM_FOLDER);
+        ArchiveUtils.extract(archive, PROGRAM_FOLDER);
         moveRequiredBinariesFromProgramFolder();
         if (platform.requiresExecutableBit) {
             markExecutables();

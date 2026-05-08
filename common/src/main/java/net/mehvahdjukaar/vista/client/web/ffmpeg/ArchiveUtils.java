@@ -3,6 +3,7 @@ package net.mehvahdjukaar.vista.client.web.ffmpeg;
 import net.mehvahdjukaar.vista.VistaMod;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -11,11 +12,8 @@ import java.util.Locale;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-public final class ArchiveExtractor {
+public final class ArchiveUtils {
     private static final long MIN_TAR_ARCHIVE_SIZE_BYTES = 1024L;
-
-    private ArchiveExtractor() {
-    }
 
     public static boolean isSupported(Path archive) {
         String name = archive.getFileName().toString().toLowerCase(Locale.ROOT);
@@ -108,4 +106,13 @@ public final class ArchiveExtractor {
                 || fileName.endsWith(".tar.bz2")
                 || fileName.endsWith(".tbz2");
     }
+
+    public static String extractFileNameFromUrl(String downloadUrl) throws IOException {
+        String fileName = Path.of(URI.create(downloadUrl).getPath()).getFileName().toString();
+        if (fileName.isEmpty()) {
+            throw new IOException("Could not resolve archive name from URL: " + downloadUrl);
+        }
+        return fileName;
+    }
+
 }

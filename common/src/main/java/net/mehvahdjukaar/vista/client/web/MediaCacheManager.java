@@ -1,6 +1,6 @@
 package net.mehvahdjukaar.vista.client.web;
 
-import net.mehvahdjukaar.vista.client.web.ffmpeg.UrlDownloader;
+import net.mehvahdjukaar.vista.client.web.ffmpeg.FileDownloader;
 import net.mehvahdjukaar.vista.VistaMod;
 
 import java.io.IOException;
@@ -37,7 +37,7 @@ public class MediaCacheManager {
         try {
             Files.createDirectories(cacheDir);
             restoreFromDisk();
-            log("INFO", "Cache initialized at " + cacheDir + ", max size = " + (maxSizeBytes / (1024 * 1024)) + " MB");
+            VistaMod.LOGGER.info("Media Cache initialized at {}, max size = {} MB", cacheDir, maxSizeBytes / (1024 * 1024));
         }catch (Exception e){
             throw new RuntimeException(e);
         }
@@ -122,11 +122,8 @@ public class MediaCacheManager {
 
     // ---------- private helpers ----------
     private Path downloadAndCache(String urlStr, String key) throws Exception {
-        VistaMod.LOGGER.info("Downloading {} ...", urlStr);
         Path cachedPath = cacheDir.resolve(key + ".video");
-        UrlDownloader.download(urlStr, cachedPath, "Mozilla/5.0");
-        long size = Files.size(cachedPath);
-        VistaMod.LOGGER.info("Downloaded {} bytes from {}", size, urlStr);
+        FileDownloader.download(urlStr, cachedPath, "Mozilla/5.0");
         return cachedPath;
     }
 

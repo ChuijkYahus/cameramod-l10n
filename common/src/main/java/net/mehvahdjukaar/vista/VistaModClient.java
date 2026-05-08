@@ -11,7 +11,6 @@ import net.mehvahdjukaar.moonlight.api.util.Utils;
 import net.mehvahdjukaar.supplementaries.client.screens.FunnyScreen;
 import net.mehvahdjukaar.supplementaries.client.screens.WelcomeMessageScreen;
 import net.mehvahdjukaar.supplementaries.common.utils.MiscUtils;
-import net.mehvahdjukaar.supplementaries.integration.CompatHandler;
 import net.mehvahdjukaar.vista.client.ViewFinderController;
 import net.mehvahdjukaar.vista.client.VistaDynamicResources;
 import net.mehvahdjukaar.vista.client.renderer.TvBlockEntityRenderer;
@@ -21,7 +20,7 @@ import net.mehvahdjukaar.vista.client.renderer.VistaLevelRenderer;
 import net.mehvahdjukaar.vista.client.textures.CassetteTexturesManager;
 import net.mehvahdjukaar.vista.client.textures.LiveFeedTexturesManager;
 import net.mehvahdjukaar.vista.client.textures.WebTexturesManager;
-import net.mehvahdjukaar.vista.client.web.ffmpeg.FFmpegManager;
+import net.mehvahdjukaar.vista.client.web.ffmpeg.FFmpeg;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
@@ -40,7 +39,7 @@ import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
-import java.util.Random;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
 public class VistaModClient {
@@ -81,24 +80,31 @@ public class VistaModClient {
             .weakValues()
             .makeMap();
 
-    @Nullable
-    public static FFmpegManager getFfmpeg() {
-        if (ffmpeg != null) return ffmpeg;
-        if (true || ClientConfigs.ENABLE_WIP.get()) {
-            ffmpeg = FFmpegManager.create();
+    public static synchronized FFmpeg getFFmpeg() {
+        if (ClientConfigs.ENABLE_WIP.get()) {
+            return null;
         }
-        return ffmpeg;
+        if (ffmpeg == null) {
+            ffmpeg = FFmpeg.create();
+        }
+        if (ffmpeg.isCompletedExceptionally()) {
+            return null;
+        } else if (ffmpeg.isDone()) {
+            return ffmpeg.resultNow();
+        }
+        // setup failed. we give up and have no ffmpeg for this game
+        return null;
     }
 
     @Nullable
-    public static FFmpegManager ffmpeg;
+    public static CompletableFuture<FFmpeg> ffmpeg;
 
     private static ModelLayerLocation loc(String name) {
         return new ModelLayerLocation(VistaMod.res(name), name);
     }
 
     public static void init() {
-        getFfmpeg();
+        getFFmpeg();
         ClientConfigs.init();
         ClientHelper.addBlockEntityRenderersRegistration(VistaModClient::registerBlockEntityRenderers);
         ClientHelper.addShaderRegistration(VistaModClient::registerShaders);

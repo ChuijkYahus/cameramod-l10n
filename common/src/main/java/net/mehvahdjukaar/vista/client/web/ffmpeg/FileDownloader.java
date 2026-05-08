@@ -18,11 +18,11 @@ import java.nio.file.StandardOpenOption;
 /**
  * A resilient HTTP downloader with resuming, retries, and progress reporting.
  */
-public final class UrlDownloader {
+public final class FileDownloader {
 
-    private static final int CONNECT_TIMEOUT = 10000;
-    private static final int READ_TIMEOUT = 10000;
-    private static final int MAX_ATTEMPTS = 5;
+    private static final int CONNECT_TIMEOUT = 60000;
+    private static final int READ_TIMEOUT = 60000;
+    private static final int MAX_ATTEMPTS = 10;
 
     /**
      * Optional callback to receive download progress (0‑100).
@@ -51,8 +51,10 @@ public final class UrlDownloader {
         Path tmp = target.resolveSibling(target.getFileName() + ".part");
         long downloadedBytes = Files.exists(tmp) ? Files.size(tmp) : 0;
 
+        VistaMod.LOGGER.info("Downloading {} ...", urlStr);
+
         int attempt = 0;
-        while (attempt < MAX_ATTEMPTS) {
+        while (true) {
             try {
                 downloadAttempt(urlStr, tmp, downloadedBytes, userAgent, progressCallback);
                 break; // success
@@ -73,6 +75,9 @@ public final class UrlDownloader {
                 downloadedBytes = Files.exists(tmp) ? Files.size(tmp) : 0;
             }
         }
+
+        VistaMod.LOGGER.info("Downloaded {} bytes from {}", downloadedBytes, urlStr);
+
 
         // Move the completed temporary file to the final destination
         moveFileAtomically(tmp, target);
@@ -175,7 +180,7 @@ public final class UrlDownloader {
                         int percent = (int) (downloaded * 100 / totalExpected);
                         if (percent != lastPercent) {
                             // Use debug level to avoid console spam – change to INFO only if needed
-                            VistaMod.LOGGER.debug("Downloading {} ... {}%", tmp.getFileName(), percent);
+                            VistaMod.LOGGER.info("Downloading {} ... {}%", tmp.getFileName(), percent);
                             if (progressCallback != null) {
                                 progressCallback.onProgress(percent);
                             }
