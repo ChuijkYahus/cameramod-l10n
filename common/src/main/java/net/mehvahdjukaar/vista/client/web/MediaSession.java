@@ -123,8 +123,9 @@ public class MediaSession implements AutoCloseable {
             currentDecoder.stopDecoder();
         }
         for (MediaFrame frame : frames) {
-            if (frame.image() != null) {
-                frame.image().close();
+            try {
+                frame.close();
+            } catch (Exception ignored) {
             }
         }
         frames.clear();

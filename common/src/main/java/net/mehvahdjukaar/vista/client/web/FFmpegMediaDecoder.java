@@ -3,8 +3,7 @@ package net.mehvahdjukaar.vista.client.web;
 import com.mojang.blaze3d.platform.NativeImage;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.client.web.ffmpeg.FFmpeg;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import net.mehvahdjukaar.vista.client.web.ffmpeg.FFmpegManager;
 
 import java.io.*;
 import java.nio.file.Path;

@@ -5,12 +5,8 @@ import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import net.mehvahdjukaar.moonlight.api.client.CoreShaderContainer;
 import net.mehvahdjukaar.moonlight.api.misc.EventCalled;
 import net.mehvahdjukaar.moonlight.api.platform.ClientHelper;
-import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.platform.RegHelper;
 import net.mehvahdjukaar.moonlight.api.util.Utils;
-import net.mehvahdjukaar.supplementaries.client.screens.FunnyScreen;
-import net.mehvahdjukaar.supplementaries.client.screens.WelcomeMessageScreen;
-import net.mehvahdjukaar.supplementaries.common.utils.MiscUtils;
 import net.mehvahdjukaar.vista.client.ViewFinderController;
 import net.mehvahdjukaar.vista.client.VistaDynamicResources;
 import net.mehvahdjukaar.vista.client.renderer.TvBlockEntityRenderer;
@@ -20,7 +16,9 @@ import net.mehvahdjukaar.vista.client.renderer.VistaLevelRenderer;
 import net.mehvahdjukaar.vista.client.textures.CassetteTexturesManager;
 import net.mehvahdjukaar.vista.client.textures.LiveFeedTexturesManager;
 import net.mehvahdjukaar.vista.client.textures.WebTexturesManager;
+import net.mehvahdjukaar.vista.client.ui.VistaWelcomeScreen;
 import net.mehvahdjukaar.vista.client.web.ffmpeg.FFmpeg;
+import net.mehvahdjukaar.vista.client.web.ffmpeg.FFmpegManager;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
@@ -81,31 +79,34 @@ public class VistaModClient {
             .makeMap();
 
     public static synchronized FFmpeg getFFmpeg() {
-        if (ClientConfigs.ENABLE_WIP.get()) {
+        if (ffmpegFuture == null) {
             return null;
         }
-        if (ffmpeg == null) {
-            ffmpeg = FFmpeg.create();
-        }
-        if (ffmpeg.isCompletedExceptionally()) {
+        if (ffmpegFuture.isCompletedExceptionally()) {
             return null;
-        } else if (ffmpeg.isDone()) {
-            return ffmpeg.resultNow();
+        } else if (ffmpegFuture.isDone()) {
+            return ffmpegFuture.resultNow();
         }
         // setup failed. we give up and have no ffmpeg for this game
         return null;
     }
 
+    private static void instantiateFFmpeg(@Nullable String url) {
+        ffmpegFuture = FFmpegManager.getOrDownload(url);
+    }
+
     @Nullable
-    private static CompletableFuture<FFmpeg> ffmpeg;
+    private static CompletableFuture<FFmpeg> ffmpegFuture;
 
     private static ModelLayerLocation loc(String name) {
         return new ModelLayerLocation(VistaMod.res(name), name);
     }
 
     public static void init() {
-        getFFmpeg();
         ClientConfigs.init();
+        //init instantly if it has the files
+        if (FFmpegManager.hasRequiredFiles() && ClientConfigs.canUseFFmpeg()) instantiateFFmpeg(null);
+
         ClientHelper.addBlockEntityRenderersRegistration(VistaModClient::registerBlockEntityRenderers);
         ClientHelper.addShaderRegistration(VistaModClient::registerShaders);
         ClientHelper.addModelLayerRegistration(VistaModClient::registerModelLayers);
@@ -120,16 +121,14 @@ public class VistaModClient {
     @EventCalled
     public static void onFirstScreen(Screen screen) {
         Screen newScreen = screen;
-        //fires on first draw screen. config will be set after that
-        boolean unfunny = net.mehvahdjukaar.supplementaries.configs.ClientConfigs.General.UNFUNNY.get();
-        if (MiscUtils.Festivity.compute().isAprilsFool()) {
-            newScreen = new FunnyScreen(newScreen, unfunny);
-        }
-        if (!net.mehvahdjukaar.supplementaries.configs.ClientConfigs.General.NO_INCOMPATIBLE_MODS.get() && WelcomeMessageScreen.hasIncompat() && !PlatHelper.isDev()) {
-            newScreen = WelcomeMessageScreen.createIncompatibleMods(newScreen);
+        if (ClientConfigs.canUseFFmpeg() && ffmpegFuture == null || true) {
+            newScreen = new VistaWelcomeScreen(newScreen,
+                    VistaModClient::instantiateFFmpeg,
+                    () -> instantiateFFmpeg(null),
+                    ClientConfigs::turnOffFFmpeg
+            );
         }
         if (newScreen != screen) Minecraft.getInstance().setScreen(newScreen);
-
     }
 
 

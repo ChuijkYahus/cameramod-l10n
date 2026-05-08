@@ -5,7 +5,9 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientWorldEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
+import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 import net.fabricmc.fabric.api.event.client.player.ClientPreAttackCallback;
+import net.mehvahdjukaar.supplementaries.common.events.ClientEvents;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.client.ViewFinderController;
@@ -17,9 +19,11 @@ import net.mehvahdjukaar.vista.mixins.fabric.SpriteSourcesAccessor;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.world.phys.Vec3;
 
 public class VistaFabricClient {
+static    boolean firstScreenShown;
 
     public static void init() {
         ClientTickEvents.END_CLIENT_TICK.register(VistaModClient::onClientTick);
@@ -31,6 +35,13 @@ public class VistaFabricClient {
 
         ClientPlayConnectionEvents.DISCONNECT .register((clientPacketListener, minecraft) -> {
             VistaModClient.onClientDisconnect();
+        });
+
+        ScreenEvents.AFTER_INIT.register((client, screen, scaledWidth, scaledHeight) -> {
+            if (!firstScreenShown && screen instanceof TitleScreen) {
+                VistaModClient.onFirstScreen(screen);
+                firstScreenShown = true;
+            }
         });
 
         WorldRenderEvents.AFTER_ENTITIES.register(worldRenderContext -> {

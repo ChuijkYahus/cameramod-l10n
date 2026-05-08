@@ -28,7 +28,7 @@ public class ClientConfigs {
     public static final Supplier<Float> VIGNETTE;
     public static final Supplier<Boolean> DRAW_DATE;
     public static final Supplier<Boolean> SCREEN_EFFECTS;
-    public static final Supplier<Boolean> ENABLE_WIP;
+    public static final Supplier<Boolean> ENABLE_PROJECTOR;
 
     static {
         ConfigBuilder builder = ConfigBuilder.create(VistaMod.MOD_ID, ConfigType.CLIENT);
@@ -88,9 +88,9 @@ public class ClientConfigs {
 
         builder.pop();
 
-        builder.push("wip");
-        ENABLE_WIP = builder.comment("enable wip features")
-                .define("enable_wip", false);
+        builder.push("wave_projector");
+        ENABLE_PROJECTOR = builder.comment("Enable wave projector")
+                .define("enable", false);
         builder.pop();
 
         builder.pop();
@@ -101,5 +101,14 @@ public class ClientConfigs {
 
     public static boolean rendersDebug() {
         return RENDER_DEBUG.get();
+    }
+
+
+    public static boolean canUseFFmpeg() {
+        return ENABLE_PROJECTOR.get();
+    }
+
+    public static void turnOffFFmpeg() {
+        SPEC.manuallySetValue(ENABLE_PROJECTOR, false);
     }
 }

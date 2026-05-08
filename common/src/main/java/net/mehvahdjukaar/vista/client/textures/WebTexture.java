@@ -20,14 +20,19 @@ import java.nio.file.Path;
 
 public class WebTexture extends AbstractTexture implements Dumpable {
     private final ResourceLocation textureLocation;
+    private final int screenSize;
     private final MediaSession session;
+
 
     @Nullable
     private NativeImage pixels;
+    @Nullable
+    private MediaFrame lastOriginalFrame;
 
-    public WebTexture(ResourceLocation textureLocation, MediaSession session) {
+    public WebTexture(ResourceLocation textureLocation, MediaSession session, int screenSize) {
         this.textureLocation = textureLocation;
         this.session = session;
+        this.screenSize = screenSize;
     }
 
     public ResourceLocation getResourceLocation() {
@@ -50,8 +55,9 @@ public class WebTexture extends AbstractTexture implements Dumpable {
         MediaState.Pair lookup = session.lookupFrame(seconds);
         boolean wasUploaded = pixels != null;
         MediaFrame frame = lookup.frame();
-        if (frame != null && frame.image() != this.pixels) {
-            uploadOnRenderThread(frame.image());
+        if (frame != null && frame != this.lastOriginalFrame) {
+            uploadOnRenderThread(frame.scaledImage(screenSize, screenSize));
+            this.lastOriginalFrame = frame;
         }
         if (!wasUploaded) return MediaState.LOADING;
         return lookup.state();
@@ -65,7 +71,7 @@ public class WebTexture extends AbstractTexture implements Dumpable {
             if (oldPixels == null) {
                 TextureUtil.prepareImage(this.getId(), newPixels.getWidth(), newPixels.getHeight());
             }
-            if (oldPixels != newPixels) this.upload();
+            this.upload();
         };
         if (RenderSystem.isOnRenderThread()) {
             upload.run();

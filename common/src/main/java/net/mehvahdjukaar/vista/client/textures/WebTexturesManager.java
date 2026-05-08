@@ -76,7 +76,7 @@ public class WebTexturesManager {
                     .computeIfAbsent(textureId,
                             resourceLocation -> {
                                 WebTexture texture = new WebTexture(resourceLocation,
-                                        SESSION_CACHE.getUnchecked(this.url));
+                                        SESSION_CACHE.getUnchecked(this.url), screenSize);
                                 texture.register();
                                 return texture;
                             });
