@@ -9,6 +9,7 @@ import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.client.web.MediaCacheManager;
 import net.mehvahdjukaar.vista.client.web.MediaSession;
+import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.minecraft.resources.ResourceLocation;
 
 import java.util.UUID;
@@ -76,7 +77,7 @@ public class WebTexturesManager {
                     .computeIfAbsent(textureId,
                             resourceLocation -> {
                                 WebTexture texture = new WebTexture(resourceLocation,
-                                        SESSION_CACHE.getUnchecked(this.url), screenSize);
+                                        SESSION_CACHE.getUnchecked(this.url), screenSize * ClientConfigs.LIVE_FEED_RESOLUTION_SCALE.get());
                                 texture.register();
                                 return texture;
                             });

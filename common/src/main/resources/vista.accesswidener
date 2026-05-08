@@ -15,7 +15,7 @@ accessible method net/minecraft/client/Camera move (FFF)V
 accessible field net/minecraft/client/Camera initialized Z
 accessible field net/minecraft/client/Camera level Lnet/minecraft/world/level/BlockGetter;
 
-
+accessible field net/minecraft/client/renderer/texture/DynamicTexture pixels Lcom/mojang/blaze3d/platform/NativeImage;
 #Render system state
 accessible field com/mojang/blaze3d/systems/RenderSystem savedProjectionMatrix Lorg/joml/Matrix4f;
 accessible field com/mojang/blaze3d/systems/RenderSystem savedVertexSorting Lcom/mojang/blaze3d/vertex/VertexSorting;

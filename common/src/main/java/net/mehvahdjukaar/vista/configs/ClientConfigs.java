@@ -4,6 +4,7 @@ import net.mehvahdjukaar.moonlight.api.platform.configs.ConfigBuilder;
 import net.mehvahdjukaar.moonlight.api.platform.configs.ConfigType;
 import net.mehvahdjukaar.moonlight.api.platform.configs.ModConfigHolder;
 import net.mehvahdjukaar.vista.VistaMod;
+import net.mehvahdjukaar.vista.client.textures.ScalingMode;
 import net.mehvahdjukaar.vista.integration.CompatHandler;
 
 import java.util.function.Supplier;
@@ -20,7 +21,7 @@ public class ClientConfigs {
     public static final Supplier<Double> MIN_UPDATE_FPS;
     public static final Supplier<Double> THROTTLING_UPDATE_MS;
     public static final Supplier<Double> UPDATE_DISTANCE;
-    public static final Supplier<Integer> RESOLUTION_SCALE;
+    public static final Supplier<Integer> LIVE_FEED_RESOLUTION_SCALE;
     public static final Supplier<Boolean> RENDER_DEBUG;
     public static final Supplier<Boolean> SCALE_PIXELS;
     public static final Supplier<Boolean> TURN_OFF_EFFECTS;
@@ -29,6 +30,10 @@ public class ClientConfigs {
     public static final Supplier<Boolean> DRAW_DATE;
     public static final Supplier<Boolean> SCREEN_EFFECTS;
     public static final Supplier<Boolean> ENABLE_PROJECTOR;
+    public static final Supplier<Integer> WEB_RESOLUTION_SCALE;
+    public static final Supplier<ScalingMode> SCALING_MODE;
+    public static final Supplier<Boolean> BILINEAR;
+
 
     static {
         ConfigBuilder builder = ConfigBuilder.create(VistaMod.MOD_ID, ConfigType.CLIENT);
@@ -76,7 +81,7 @@ public class ClientConfigs {
                 .comment("Distance from a TV after which the feed will update in real time")
                 .define("update_distance", 20, 1, 512d);
 
-        RESOLUTION_SCALE = builder
+        LIVE_FEED_RESOLUTION_SCALE = builder
                 .comment("Scale factor for live feed resolution")
                 .define("resolution_scale", 8, 1, 32);
 
@@ -91,6 +96,14 @@ public class ClientConfigs {
         builder.push("wave_projector");
         ENABLE_PROJECTOR = builder.comment("Enable wave projector")
                 .define("enable", false);
+        WEB_RESOLUTION_SCALE = builder
+                .comment("Scale factor for web images resolution")
+                .define("resolution_scale", 8, 1, 32);
+        SCALING_MODE = builder
+                .comment("Scaling mode for web images")
+                .define("scaling_mode", ScalingMode.COVER);
+        BILINEAR = builder.comment("Enable bilinear sampling for rescaled images. Enable for a less pixelated look")
+                .define("bilinear_sampling", false);
         builder.pop();
 
         builder.pop();

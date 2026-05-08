@@ -73,7 +73,7 @@ public class LiveFeedTexturesManager {
         public LiveFeedTexture getTexture(@Nullable ResourceLocation postShader, boolean requiresUpdate) {
 
             LiveFeedTexture texture = DynamicTextureRenderer.requestTexture(textureId, () ->
-                    new LiveFeedTexture(textureId, screenSize * ClientConfigs.RESOLUTION_SCALE.get(),
+                    new LiveFeedTexture(textureId, screenSize * ClientConfigs.LIVE_FEED_RESOLUTION_SCALE.get(),
                             LiveFeedTexturesManager::refreshTexture, uuid));
 
 
@@ -171,7 +171,7 @@ public class LiveFeedTexturesManager {
         MultiBufferSource.BufferSource bf = mc.renderBuffers().bufferSource();
 
         RenderSystem.backupProjectionMatrix();
-        float baseScale = TVBlockEntity.MIN_SCREEN_PIXEL_SIZE * ClientConfigs.RESOLUTION_SCALE.get();
+        float baseScale = TVBlockEntity.MIN_SCREEN_PIXEL_SIZE * ClientConfigs.LIVE_FEED_RESOLUTION_SCALE.get();
         float size = baseScale * (texture.getWidth() / baseScale);
         Matrix4f matrix4f = new Matrix4f().setOrtho(
                 0.0F, size, 0.0F, size, -1, 1);
