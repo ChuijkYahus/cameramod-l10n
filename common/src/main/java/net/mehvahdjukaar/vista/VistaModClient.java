@@ -121,7 +121,7 @@ public class VistaModClient {
     @EventCalled
     public static void onFirstScreen(Screen screen) {
         Screen newScreen = screen;
-        if (ClientConfigs.canUseFFmpeg() && ffmpegFuture == null || true) {
+        if ( ClientConfigs.canUseFFmpeg() && ffmpegFuture == null ) {
             newScreen = new VistaWelcomeScreen(newScreen,
                     VistaModClient::instantiateFFmpeg,
                     () -> instantiateFFmpeg(null),

@@ -16,16 +16,14 @@ import org.jetbrains.annotations.Nullable;
 public class WebTexture extends DynamicTexture {
     private final ResourceLocation textureLocation;
     private final MediaSession session;
-    private final int screenSize;
     @Nullable
     private MediaFrame lastOriginalFrame;
     private boolean wasFirstUploaded = false;
 
-    public WebTexture(ResourceLocation textureLocation, MediaSession session, int screenSize) {
-        super(screenSize, screenSize, false);
+    public WebTexture(ResourceLocation textureLocation, MediaSession session) {
+        super(session.getImageWidth(), session.getImageHeight(), false);
         this.textureLocation = textureLocation;
         this.session = session;
-        this.screenSize = screenSize;
     }
 
     public ResourceLocation getResourceLocation() {
@@ -45,17 +43,15 @@ public class WebTexture extends DynamicTexture {
     }
 
     public MediaState uploadFrameAtTime(double seconds) {
-        MediaState.Pair lookup = session.lookupFrame(seconds);
+        var lookup = session.lookupFrame(seconds);
         MediaFrame frame = lookup.frame();
         if (frame != null && frame != this.lastOriginalFrame) {
-            NativeImage scaledImage = frame.scaledImage(screenSize, screenSize);
-            uploadOnRenderThread(scaledImage);
+            uploadOnRenderThread(frame.image());
             this.lastOriginalFrame = frame;
         }
         if (!wasFirstUploaded) return MediaState.LOADING;
         return lookup.state();
     }
-
 
     private void uploadOnRenderThread(NativeImage newPixels) {
         Runnable upload = () -> {

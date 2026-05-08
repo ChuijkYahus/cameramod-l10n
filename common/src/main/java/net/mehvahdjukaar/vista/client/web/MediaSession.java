@@ -1,7 +1,10 @@
 package net.mehvahdjukaar.vista.client.web;
 
+import com.mojang.blaze3d.platform.NativeImage;
 import net.mehvahdjukaar.vista.VistaMod;
+import net.mehvahdjukaar.vista.client.textures.ImageRescaler;
 import net.mehvahdjukaar.vista.client.web.ffmpeg.FFmpeg;
+import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Path;
@@ -22,8 +25,22 @@ public class MediaSession implements AutoCloseable {
     private volatile boolean failed;
     private volatile boolean closed;
 
-    public MediaSession(String url, @Nullable FFmpeg ffmpeg, MediaCacheManager cacheManager, Executor executor) {
+    private final int targetWidth;
+    private final int targetHeight;
+
+    public MediaSession(String url, @Nullable FFmpeg ffmpeg, MediaCacheManager cacheManager, Executor executor,
+                        int targetWidth, int targetHeight) {
+        this.targetWidth = targetWidth;
+        this.targetHeight = targetHeight;
         this.loadFuture = CompletableFuture.runAsync(() -> load(url, ffmpeg, cacheManager), executor);
+    }
+
+    public int getImageHeight() {
+        return targetHeight;
+    }
+
+    public int getImageWidth() {
+        return targetWidth;
     }
 
     private void load(String url, @Nullable FFmpeg ffmpeg, MediaCacheManager cacheManager) {
@@ -44,7 +61,11 @@ public class MediaSession implements AutoCloseable {
     }
 
     public synchronized void add(MediaFrame frame) {
-        frames.add(frame);
+        NativeImage originalImg = frame.image();
+        NativeImage scaledImg = ImageRescaler.resize(originalImg, targetWidth, targetHeight,
+                ClientConfigs.SCALING_MODE.get(), ClientConfigs.BILINEAR.get());
+        if (originalImg != scaledImg) originalImg.close();
+        frames.add(new MediaFrame(scaledImg, frame.pts()));
     }
 
     public synchronized void setCompleted(boolean completed) {
@@ -63,28 +84,35 @@ public class MediaSession implements AutoCloseable {
         return size() > 0;
     }
 
-    public boolean isFailed() {
+    private boolean isFailed() {
         return failed || loadFuture.isCompletedExceptionally();
     }
 
     public MediaState.Pair lookupFrame(double seconds) {
         synchronized (this) {
-            if (closed) return MediaState.closed();
-            if (isFailed()) return MediaState.failed();
-            if (frames.isEmpty()) return MediaState.loading();
+            if (frames.isEmpty()) {
+                if (failed) return MediaState.pair(MediaState.FAILED, null);
+                return MediaState.loading();
+            }
+            MediaState state = MediaState.READY;
+            if (isFailed()) {
+                state = MediaState.FAILED;
+            } else if (closed) {
+                state = MediaState.CLOSED;
+            }
 
             double queryTime = seconds;
             double duration = getDurationSecondsLocked();
 
             if (completed && duration > 0 && queryTime >= duration) {
                 queryTime = queryTime % duration;
-                return MediaState.complete(getFrameAtTimeLocked(queryTime));
+                state = MediaState.COMPLETE;
             } else if (!completed && queryTime > getLastFrameTimeLocked()) {
                 queryTime = getLastFrameTimeLocked();
-                MediaState.buffering(getFrameAtTimeLocked(queryTime));
+                state = MediaState.BUFFERING;
             }
 
-            return MediaState.ready(getFrameAtTimeLocked(queryTime));
+            return MediaState.pair(state, getFrameAtTimeLocked(queryTime));
         }
     }
 

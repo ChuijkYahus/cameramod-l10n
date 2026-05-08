@@ -69,7 +69,7 @@ public class LiveFeedTexture extends RenderableDynamicTexture {
         int paused = references.getCount(RefType.LIVE);
         int live = references.getCount(RefType.PAUSED);
         if (live == 0 && paused != 0) {
-            return (paused == 0) ? CrtOverlay.NONE : CrtOverlay.PAUSE;
+            return CrtOverlay.PAUSE;
         }
         if (paused == 0 || !wantPaused) {
             return CrtOverlay.NONE;

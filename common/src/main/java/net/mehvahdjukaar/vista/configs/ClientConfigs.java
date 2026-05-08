@@ -118,7 +118,7 @@ public class ClientConfigs {
 
 
     public static boolean canUseFFmpeg() {
-        return ENABLE_PROJECTOR.get();
+        return ENABLE_PROJECTOR.get() || true   ;
     }
 
     public static void turnOffFFmpeg() {

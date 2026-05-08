@@ -38,16 +38,22 @@ public class WebUrlVideoSource implements IVideoSource {
         }
         WebTexture texture = textureHandle.getTexture();
         MediaState state = texture.uploadFrameAtTime(seconds);
-        if (state == MediaState.FAILED || state == MediaState.CLOSED) {
+        CrtOverlay overlay = CrtOverlay.NONE;
+        if (state == MediaState.CLOSED) {
+            overlay = CrtOverlay.DISCONNECT;
+        }
+
+        if (state == MediaState.FAILED) {
             return TvScreenVertexConsumers.getNoiseVC(buffer, pixelEffectRes, switchAnim);
         }
         ResourceLocation textureId = texture.getResourceLocation();
-        CrtOverlay overlay;
         if (state == MediaState.LOADING || state == MediaState.BUFFERING) {
             overlay = CrtOverlay.LOADING;
-        } else {
-            overlay = paused ? CrtOverlay.PAUSE : CrtOverlay.NONE;
         }
+        if (paused) {
+            overlay = CrtOverlay.PAUSE;
+        }
+
         return TvScreenVertexConsumers.getSingleTextureVC(buffer, textureId, overlay, pixelEffectRes, switchAnim, staticAnim);
 
     }

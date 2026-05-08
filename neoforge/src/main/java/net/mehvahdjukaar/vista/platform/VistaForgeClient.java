@@ -8,6 +8,7 @@ import net.mehvahdjukaar.vista.client.textures.GifPathSpriteSource;
 import net.mehvahdjukaar.vista.client.ui.ViewFinderHud;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec3;
@@ -25,6 +26,16 @@ public class VistaForgeClient {
     public static void onLevelLoaded(LevelEvent.Load event) {
         if (event.getLevel() instanceof ClientLevel cl) {
             VistaModClient.onLevelLoaded(cl);
+        }
+    }
+
+    private static boolean firstScreenShown;
+
+    @SubscribeEvent
+    public static void onScreenDrawPost(ScreenEvent.Init.Post event) {
+        if (!firstScreenShown && event.getScreen() instanceof TitleScreen) {
+            VistaModClient.onFirstScreen(event.getScreen());
+            firstScreenShown = true;
         }
     }
 

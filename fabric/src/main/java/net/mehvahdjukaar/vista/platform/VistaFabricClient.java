@@ -7,7 +7,6 @@ import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 import net.fabricmc.fabric.api.event.client.player.ClientPreAttackCallback;
-import net.mehvahdjukaar.supplementaries.common.events.ClientEvents;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.client.ViewFinderController;
@@ -23,7 +22,7 @@ import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.world.phys.Vec3;
 
 public class VistaFabricClient {
-static    boolean firstScreenShown;
+    static boolean firstScreenShown;
 
     public static void init() {
         ClientTickEvents.END_CLIENT_TICK.register(VistaModClient::onClientTick);
@@ -33,7 +32,7 @@ static    boolean firstScreenShown;
             VistaModClient.onLevelLoaded(clientLevel);
         });
 
-        ClientPlayConnectionEvents.DISCONNECT .register((clientPacketListener, minecraft) -> {
+        ClientPlayConnectionEvents.DISCONNECT.register((clientPacketListener, minecraft) -> {
             VistaModClient.onClientDisconnect();
         });
 

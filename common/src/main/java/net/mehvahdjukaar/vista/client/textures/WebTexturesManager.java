@@ -40,8 +40,8 @@ public class WebTexturesManager {
             })
             .build(new CacheLoader<>() {
                 @Override
-                public MediaSession load(String url) {
-                    return new MediaSession(url, VistaModClient.getFFmpeg(), MEDIA_CACHE_MANAGER, WEB_WORKER);
+                public MediaSession load(String key) {
+                    throw new IllegalStateException("not supported!");
                 }
             });
 
@@ -63,11 +63,13 @@ public class WebTexturesManager {
     public static class Handle {
 
         private final ResourceLocation textureId;
+        private final String sessionId;
         private final String url;
         private final int screenSize;
 
         public Handle(String url, UUID id, int screenSize) {
             this.textureId = makeUniqueTextureLoc(url, id, screenSize);
+            this.sessionId = makeUniqueSessionLoc(url, screenSize);
             this.url = url;
             this.screenSize = screenSize;
         }
@@ -76,11 +78,21 @@ public class WebTexturesManager {
             return TEXTURE_CACHE.asMap()
                     .computeIfAbsent(textureId,
                             resourceLocation -> {
-                                WebTexture texture = new WebTexture(resourceLocation,
-                                        SESSION_CACHE.getUnchecked(this.url), screenSize * ClientConfigs.LIVE_FEED_RESOLUTION_SCALE.get());
+                                MediaSession session = getSession();
+                                WebTexture texture = new WebTexture(resourceLocation, session);
                                 texture.register();
                                 return texture;
                             });
+        }
+
+        private MediaSession getSession() {
+            return SESSION_CACHE.asMap()
+                    .computeIfAbsent(sessionId, res -> {
+                        int imageSize = ClientConfigs.WEB_RESOLUTION_SCALE.get() * screenSize;
+                        return new MediaSession(url,
+                                VistaModClient.getFFmpeg(),
+                                MEDIA_CACHE_MANAGER, WEB_WORKER, imageSize, imageSize);
+                    });
         }
     }
 
@@ -97,8 +109,12 @@ public class WebTexturesManager {
         SESSION_CACHE.cleanUp();
     }
 
+    private static String makeUniqueSessionLoc(String url, int screenSize) {
+        return url + "@" + screenSize;
+    }
+
     private static ResourceLocation makeUniqueTextureLoc(String url, UUID uuid, int screenSize) {
-        String uniqueTextureKey = url + "_" + uuid + "_" + screenSize;
+        String uniqueTextureKey = url + "@" + uuid + "@" + screenSize;
         return VistaMod.res("web_feed/" + sanitizePath(uniqueTextureKey));
     }
 

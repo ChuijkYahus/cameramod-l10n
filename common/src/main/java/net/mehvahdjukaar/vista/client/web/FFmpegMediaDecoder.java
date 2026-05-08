@@ -2,6 +2,8 @@ package net.mehvahdjukaar.vista.client.web;
 
 import com.mojang.blaze3d.platform.NativeImage;
 import net.mehvahdjukaar.vista.VistaMod;
+import net.mehvahdjukaar.vista.client.textures.ImageRescaler;
+import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.mehvahdjukaar.vista.client.web.ffmpeg.FFmpeg;
 import net.mehvahdjukaar.vista.client.web.ffmpeg.FFmpegManager;
 
@@ -122,13 +124,14 @@ public class FFmpegMediaDecoder extends Thread {
                         // Read one frame's raw RGB24 data
                         byte[] data = in.readNBytes(frameSize);
                         if (data.length < frameSize) {
-                            VistaMod.LOGGER.info("End of stream (read {} bytes)", data.length);
+                            //end of data
                             break;
                         }
 
                         double pts = frameCount / framerate;
-                        NativeImage img = rgbBytesToNativeImage(width, height, data);
-                        buffer.add(new MediaFrame(img, pts));
+                        NativeImage rawImg = rgbBytesToNativeImage(width, height, data);
+
+                        buffer.add(new MediaFrame(rawImg, pts));
                         frameCount++;
 
                         if (frameCount % 100 == 0) {
