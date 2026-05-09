@@ -22,9 +22,8 @@ public class WatermediaTexture extends AbstractTexture implements IWebTexture {
 
     public WatermediaTexture(ResourceLocation textureLocation, ImageCache imageCache,
                              int width, int height, Executor executor) {
-        this.videoPlayer = new VideoPlayer(new MediaPlayerFactory(
-
-        ), Minecraft.getInstance());
+        //TODO: figure out width and height
+        this.videoPlayer = new VideoPlayer(new MediaPlayerFactory(), Minecraft.getInstance());
         this.imageCache = imageCache;
         this.textureLocation = textureLocation;
         this.videoPlayer.start(imageCache.uri);
