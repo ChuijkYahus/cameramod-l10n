@@ -2,15 +2,15 @@ package net.mehvahdjukaar.vista.integration.computer_craft;
 
 import dan200.computercraft.api.lua.LuaFunction;
 import dan200.computercraft.api.peripheral.IPeripheral;
-import net.mehvahdjukaar.vista.common.projector.SignalProjectorBlockEntity;
+import net.mehvahdjukaar.vista.common.wave_gate.WaveGateBlockEntity;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 
 public final class SignalProjectorPeripheral implements IPeripheral {
-    private final SignalProjectorBlockEntity tile;
+    private final WaveGateBlockEntity tile;
 
-    public SignalProjectorPeripheral(SignalProjectorBlockEntity tile) {
+    public SignalProjectorPeripheral(WaveGateBlockEntity tile) {
         this.tile = tile;
     }
 

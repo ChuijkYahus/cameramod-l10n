@@ -1,4 +1,4 @@
-package net.mehvahdjukaar.vista.common.projector;
+package net.mehvahdjukaar.vista.common.wave_gate;
 
 import net.mehvahdjukaar.moonlight.api.client.IScreenProvider;
 import net.mehvahdjukaar.vista.VistaMod;
@@ -24,7 +24,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.UUID;
 
-public class SignalProjectorBlockEntity extends BlockEntity implements IScreenProvider, IBroadcastSource {
+public class WaveGateBlockEntity extends BlockEntity implements IScreenProvider, IBroadcastSource {
 
     public Object ccPeripheral;
 
@@ -32,8 +32,8 @@ public class SignalProjectorBlockEntity extends BlockEntity implements IScreenPr
     private UUID myUUID;
     private IVideoSource videoSource = IVideoSource.EMPTY;
 
-    public SignalProjectorBlockEntity(BlockPos pos, BlockState state) {
-        super(VistaMod.SIGNAL_PROJECTOR_TILE.get(), pos, state);
+    public WaveGateBlockEntity(BlockPos pos, BlockState state) {
+        super(VistaMod.WAVE_GATE_TILE.get(), pos, state);
         this.myUUID = UUID.randomUUID();
     }
 

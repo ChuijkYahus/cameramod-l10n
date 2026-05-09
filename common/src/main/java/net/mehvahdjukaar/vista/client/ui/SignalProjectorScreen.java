@@ -1,7 +1,7 @@
 package net.mehvahdjukaar.vista.client.ui;
 
 import net.mehvahdjukaar.moonlight.api.platform.network.NetworkHelper;
-import net.mehvahdjukaar.vista.common.projector.SignalProjectorBlockEntity;
+import net.mehvahdjukaar.vista.common.wave_gate.WaveGateBlockEntity;
 import net.mehvahdjukaar.vista.network.ServerBoundSyncSignalProjectorPacket;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -11,17 +11,17 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 
 public class SignalProjectorScreen extends Screen {
-    private static final Component EDIT = Component.translatable("gui.vista.signal_projector.edit");
+    private static final Component EDIT = Component.translatable("gui.vista.wave_gate.edit");
 
     private EditBox editBox;
-    private final SignalProjectorBlockEntity tile;
+    private final WaveGateBlockEntity tile;
 
-    public SignalProjectorScreen(SignalProjectorBlockEntity te) {
+    public SignalProjectorScreen(WaveGateBlockEntity te) {
         super(EDIT);
         this.tile = te;
     }
 
-    public static void open(SignalProjectorBlockEntity te) {
+    public static void open(WaveGateBlockEntity te) {
         Minecraft.getInstance().setScreen(new SignalProjectorScreen(te));
     }
 
@@ -31,8 +31,8 @@ public class SignalProjectorScreen extends Screen {
         assert this.minecraft != null;
 
         String message = tile.getUrl();
-
-        this.editBox = new EditBox(this.font, this.width / 2 - 100, this.height / 4 + 10, 200, 20, this.title) {
+        int boxWidth = 360;
+        this.editBox = new EditBox(this.font, (this.width - boxWidth) / 2 - 100, this.height / 4 + 10, boxWidth, 20, this.title) {
             protected MutableComponent createNarrationMessage() {
                 return super.createNarrationMessage();
             }
@@ -50,7 +50,6 @@ public class SignalProjectorScreen extends Screen {
         String str = this.editBox.getValue();
         //  this.tile.setUrl(str); updated by packet layer
         NetworkHelper.sendToServer(new ServerBoundSyncSignalProjectorPacket(this.tile.getBlockPos(), str));
-
     }
 
     private void onDone() {

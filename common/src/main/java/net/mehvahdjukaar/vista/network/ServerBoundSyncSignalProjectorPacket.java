@@ -2,7 +2,7 @@ package net.mehvahdjukaar.vista.network;
 
 import net.mehvahdjukaar.moonlight.api.platform.network.Message;
 import net.mehvahdjukaar.vista.VistaMod;
-import net.mehvahdjukaar.vista.common.projector.SignalProjectorBlockEntity;
+import net.mehvahdjukaar.vista.common.wave_gate.WaveGateBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -32,7 +32,7 @@ public record ServerBoundSyncSignalProjectorPacket(
         if (context.getPlayer() instanceof ServerPlayer sender) {
             Level level = sender.level();
             BlockPos pos = this.pos;
-            if (level.hasChunkAt(pos) && level.getBlockEntity(pos) instanceof SignalProjectorBlockEntity proj) {
+            if (level.hasChunkAt(pos) && level.getBlockEntity(pos) instanceof WaveGateBlockEntity proj) {
                 if(!proj.canBeEditedBy(sender)){
                     VistaMod.LOGGER.warn("Player {} tried to edit signal projector at {} without permission",
                             sender.getName().getString(), pos);

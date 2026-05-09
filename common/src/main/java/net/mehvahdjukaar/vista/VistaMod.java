@@ -12,8 +12,8 @@ import net.mehvahdjukaar.vista.common.cassette.CassetteItem;
 import net.mehvahdjukaar.vista.common.cassette.CassetteTape;
 import net.mehvahdjukaar.vista.common.cassette.CassetteTapeLootFunction;
 import net.mehvahdjukaar.vista.common.cassette.HollowCassetteItem;
-import net.mehvahdjukaar.vista.common.projector.SignalProjectorBlock;
-import net.mehvahdjukaar.vista.common.projector.SignalProjectorBlockEntity;
+import net.mehvahdjukaar.vista.common.wave_gate.WaveGateBlock;
+import net.mehvahdjukaar.vista.common.wave_gate.WaveGateBlockEntity;
 import net.mehvahdjukaar.vista.common.tv.TVBlock;
 import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
 import net.mehvahdjukaar.vista.common.tv.TVItem;
@@ -104,14 +104,14 @@ public class VistaMod {
     public static final Supplier<BlockEntityType<ViewFinderBlockEntity>> VIEWFINDER_TILE = RegHelper.registerBlockEntityType(
             res("viewfinder"), ViewFinderBlockEntity::new, VIEWFINDER);
 
-    public static final RegSupplier<SignalProjectorBlock> SIGNAL_PROJECTOR =
-            RegHelper.registerBlockWithItem(VistaMod.res("wave_collector"), //wideband reciver, wideband listener, signal harvester
-                    () -> new SignalProjectorBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.COBBLESTONE)));
+    public static final RegSupplier<WaveGateBlock> WAVE_GATE =
+            RegHelper.registerBlockWithItem(VistaMod.res("wave_gate"), //wideband reciver, wideband listener, signal harvester
+                    () -> new WaveGateBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.COBBLESTONE)));
 
-    public static final RegSupplier<BlockEntityType<SignalProjectorBlockEntity>> SIGNAL_PROJECTOR_TILE =
-            RegHelper.registerBlockEntityType(VistaMod.res("wave_collector"),
-                    SignalProjectorBlockEntity::new,
-                    SIGNAL_PROJECTOR);
+    public static final RegSupplier<BlockEntityType<WaveGateBlockEntity>> WAVE_GATE_TILE =
+            RegHelper.registerBlockEntityType(VistaMod.res("wave_gate"),
+                    WaveGateBlockEntity::new,
+                    WAVE_GATE);
 
     public static final Supplier<CassetteItem> CASSETTE = RegHelper.registerItem(res("cassette"),
             () -> new CassetteItem(new Item.Properties()

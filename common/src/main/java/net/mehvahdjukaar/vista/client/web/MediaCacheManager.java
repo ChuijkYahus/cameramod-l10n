@@ -29,6 +29,7 @@ public class MediaCacheManager {
     private final Map<Path, Integer> refCounts = new ConcurrentHashMap<>();
     private final Map<Path, Long> lastAccess = new ConcurrentHashMap<>();
     private final Map<String, CompletableFuture<Path>> pendingDownloads = new ConcurrentHashMap<>();
+    private final Object downloadLock = new Object();
 
     public MediaCacheManager(Path baseDir, long maxSizeBytes)  {
         this.cacheDir = baseDir.resolve(CACHE_SUBDIR);
@@ -66,29 +67,42 @@ public class MediaCacheManager {
         }
 
         // Start a new download on the caller's worker thread.
-        CompletableFuture<Path> downloadFuture = new CompletableFuture<>();
-        CompletableFuture<Path> previous = pendingDownloads.putIfAbsent(key, downloadFuture);
-        if (previous != null) {
-            VistaMod.LOGGER.info("Waiting for ongoing download of {}", url);
-            return previous.get();
-        }
-
-        try {
-            Path cachedPath = downloadAndCache(url, key);
-            downloadFuture.complete(cachedPath);
-            synchronized (this) {
-                urlToEntry.put(key, new CachedEntry(cachedPath, 1));
-                refCounts.put(cachedPath, 1);
-                touch(cachedPath);
-                enforceQuota();
+        // Serialized to prevent multiple downloads at once
+        synchronized (downloadLock) {
+            // Re-check after acquiring lock
+            existing = urlToEntry.get(key);
+            if (existing != null && Files.exists(existing.path)) {
+                synchronized (this) {
+                    existing.refCount++;
+                    touch(existing.path);
+                }
+                return existing.path;
             }
-            VistaMod.LOGGER.info("Download & cache completed for {} -> {}", url, cachedPath);
-            return cachedPath;
-        } catch (Exception e) {
-            downloadFuture.completeExceptionally(e);
-            throw e;
-        } finally {
-            pendingDownloads.remove(key);
+            future = pendingDownloads.get(key);
+            if (future != null && !future.isDone()) {
+                return future.get();
+            }
+
+            CompletableFuture<Path> downloadFuture = new CompletableFuture<>();
+            pendingDownloads.put(key, downloadFuture);
+
+            try {
+                Path cachedPath = downloadAndCache(url, key);
+                downloadFuture.complete(cachedPath);
+                synchronized (this) {
+                    urlToEntry.put(key, new CachedEntry(cachedPath, 1));
+                    refCounts.put(cachedPath, 1);
+                    touch(cachedPath);
+                    enforceQuota();
+                }
+                VistaMod.LOGGER.info("Download & cache completed for {} -> {}", url, cachedPath);
+                return cachedPath;
+            } catch (Exception e) {
+                downloadFuture.completeExceptionally(e);
+                throw e;
+            } finally {
+                pendingDownloads.remove(key);
+            }
         }
     }
 

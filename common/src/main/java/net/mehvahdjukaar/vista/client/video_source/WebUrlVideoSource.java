@@ -29,7 +29,6 @@ public class WebUrlVideoSource implements IVideoSource {
                                                         boolean shouldUpdate, int screenSize, int pixelEffectRes,
                                                         int videoAnimationTick, boolean paused,
                                                         IntAnimationState switchAnim, IntAnimationState staticAnim) {
-        //return TvScreenVertexConsumers.getNoiseVC(buffer, pixelEffectRes, switchAnim);
 
         double seconds = (videoAnimationTick + partialTick) / 20.0;
         if (textureHandle == null || lastScreenSize != screenSize) {
@@ -46,7 +45,7 @@ public class WebUrlVideoSource implements IVideoSource {
         if (state == MediaState.FAILED) {
             return TvScreenVertexConsumers.getNoiseVC(buffer, pixelEffectRes, switchAnim);
         } else if (state == MediaState.LOADING) {
-            return TvScreenVertexConsumers.getWaitingVc(buffer, pixelEffectRes, switchAnim);
+            return TvScreenVertexConsumers.getWaitingVc(buffer, pixelEffectRes, videoAnimationTick, switchAnim);
         }
         if (state == MediaState.BUFFERING) {
             overlay = CrtOverlay.LOADING;

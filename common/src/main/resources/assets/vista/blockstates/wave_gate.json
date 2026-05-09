@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "vista:block/wave_gate"
+    },
+    "facing=east": {
+      "model": "vista:block/wave_gate",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "vista:block/wave_gate",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "vista:block/wave_gate",
+      "y": 270
+    }
+  }
+}

@@ -1,5 +1,6 @@
 {
   "block.vista.television": "Television",
+  "block.vista.wave_gate": "Wave Gate",
   "item.vista.cassette": "Cassette",
   "item.vista.hollow_cassette": "Hollow Cassette",
   "item.vista.picture_tape": "Picture Tape",
@@ -31,7 +32,7 @@
   "jukebox_song.vista.sojourn": "Hlzfss - Sojourn",
   "advancements.husbandry.vista.absolute_cinema.description": "Play a Cassette on a large screen Television.",
   "advancements.husbandry.vista.absolute_cinema.title": "Absolute Cinema",
-
+"gui.vista.wave_gate.edit": "Edit Wave Gate",
 
 
   "gui.vista.welcome.title": "Welcome to the Vista Mod",

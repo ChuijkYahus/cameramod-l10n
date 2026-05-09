@@ -61,8 +61,8 @@ public class TvScreenVertexConsumers {
                 CrtOverlay.NONE, switchAnim, IntAnimationState.MAX_ANIM, buffer::getBuffer);
     }
 
-    public static @NotNull VertexConsumer getWaitingVc(MultiBufferSource buffer, int scale, IntAnimationState switchAnim) {
-        return createAnimatedStripVC(buffer, BLACK_LOADING_LOCATION, scale, 0, CrtOverlay.NONE, switchAnim);
+    public static @NotNull VertexConsumer getWaitingVc(MultiBufferSource buffer, int scale, int tickCount,IntAnimationState switchAnim) {
+        return createAnimatedStripVC(buffer, BLACK_LOADING_LOCATION, scale, tickCount, CrtOverlay.NONE, switchAnim);
     }
 
     public static VertexConsumer getBarsVC(MultiBufferSource buffer, int scale, IntAnimationState switchAnim) {

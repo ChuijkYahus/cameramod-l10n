@@ -136,34 +136,6 @@ public class ViewFinderBlockEntityRenderer implements BlockEntityRenderer<ViewFi
     }
 
 
-    public static Vec3 fromQuaternion(Quaternionf q) {
-        float x = q.x;
-        float y = q.y;
-        float z = q.z;
-        float w = q.w;
-
-        // --- Yaw (Y axis) ---
-        float siny_cosp = 2.0f * (w * y + x * z);
-        float cosy_cosp = 1.0f - 2.0f * (y * y + x * x);
-        float yaw = (float) Math.atan2(siny_cosp, cosy_cosp);
-
-        // --- Pitch (X axis) ---
-        float sinp = 2.0f * (w * x - y * z);
-        float pitch;
-        if (Math.abs(sinp) >= 1.0f) {
-            pitch = (float) Math.copySign(Math.PI / 2.0, sinp); // clamp
-        } else {
-            pitch = (float) Math.asin(sinp);
-        }
-
-        // --- Roll (Z axis) ---
-        float sinr_cosp = 2.0f * (w * z + y * x);
-        float cosr_cosp = 1.0f - 2.0f * (z * z + x * x);
-        float roll = (float) Math.atan2(sinr_cosp, cosr_cosp);
-
-        return new Vec3((yaw), (pitch), (roll));
-    }
-
     public static LayerDefinition createMesh() {
         MeshDefinition meshdefinition = new MeshDefinition();
         PartDefinition partdefinition = meshdefinition.getRoot();

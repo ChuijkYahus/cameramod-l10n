@@ -22,8 +22,8 @@ public class WebTexturesManager {
     private static final long CACHE_EXPIRY_MINUTES = 2L;
 
 
-    private static final ExecutorService DOWNLOADER_WORKER = Executors.newSingleThreadExecutor(r -> {
-        Thread thread = new Thread(r, "WebDownloader");
+    private static final ExecutorService SESSION_LOADER_EXECUTOR = Executors.newCachedThreadPool(r -> {
+        Thread thread = new Thread(r, "WebMediaLoader");
         thread.setDaemon(true);
         return thread;
     });
@@ -92,7 +92,7 @@ public class WebTexturesManager {
                         int imageSize = ClientConfigs.WEB_RESOLUTION_SCALE.get() * screenSize;
                         return new MediaSession(url,
                                 VistaModClient.getFFmpeg(),
-                                MEDIA_CACHE_MANAGER, DOWNLOADER_WORKER, imageSize, imageSize);
+                                MEDIA_CACHE_MANAGER, SESSION_LOADER_EXECUTOR, imageSize, imageSize);
                     });
         }
     }

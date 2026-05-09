@@ -7,12 +7,10 @@ import net.mehvahdjukaar.moonlight.api.misc.EventCalled;
 import net.mehvahdjukaar.moonlight.api.platform.ClientHelper;
 import net.mehvahdjukaar.moonlight.api.platform.RegHelper;
 import net.mehvahdjukaar.moonlight.api.util.Utils;
+import net.mehvahdjukaar.supplementaries.reg.ModTextures;
 import net.mehvahdjukaar.vista.client.ViewFinderController;
 import net.mehvahdjukaar.vista.client.VistaDynamicResources;
-import net.mehvahdjukaar.vista.client.renderer.TvBlockEntityRenderer;
-import net.mehvahdjukaar.vista.client.renderer.TvItemRenderer;
-import net.mehvahdjukaar.vista.client.renderer.ViewFinderBlockEntityRenderer;
-import net.mehvahdjukaar.vista.client.renderer.VistaLevelRenderer;
+import net.mehvahdjukaar.vista.client.renderer.*;
 import net.mehvahdjukaar.vista.client.textures.CassetteTexturesManager;
 import net.mehvahdjukaar.vista.client.textures.LiveFeedTexturesManager;
 import net.mehvahdjukaar.vista.client.textures.WebTexturesManager;
@@ -40,6 +38,8 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
+import static net.minecraft.client.renderer.texture.TextureAtlas.LOCATION_BLOCKS;
+
 public class VistaModClient {
 
     private static final ResourceLocation SHULKER_SHEET = ResourceLocation.withDefaultNamespace("textures/atlas/shulker_boxes.png");
@@ -49,6 +49,7 @@ public class VistaModClient {
     public static final CoreShaderContainer STATIC_SHADER = new CoreShaderContainer(GameRenderer::getPositionColorShader);
 
     public static final ModelLayerLocation VIEWFINDER_MODEL = loc("viewfinder");
+    public static final Material WAVE_EFFECT = new Material(LOCATION_BLOCKS, VistaMod.res("block/wave_gate/wave"));
 
     public static final ResourceLocation LL_OVERLAY = VistaMod.res("textures/cassette_tape/liveleak.png");
     public static final ResourceLocation PAUSE_OVERLAY = VistaMod.res("textures/cassette_tape/pause.png");
@@ -150,6 +151,7 @@ public class VistaModClient {
     private static void registerBlockEntityRenderers(ClientHelper.BlockEntityRendererEvent event) {
         event.register(VistaMod.TV_TILE.get(), TvBlockEntityRenderer::new);
         event.register(VistaMod.VIEWFINDER_TILE.get(), ViewFinderBlockEntityRenderer::new);
+        event.register(VistaMod.WAVE_GATE_TILE.get(), WaveGateBlockEntityRenderer::new);
     }
 
     private static void registerShaders(ClientHelper.ShaderEvent event) {
