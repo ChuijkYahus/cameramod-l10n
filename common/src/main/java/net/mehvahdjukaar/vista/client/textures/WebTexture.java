@@ -49,7 +49,9 @@ public class WebTexture extends DynamicTexture {
             uploadOnRenderThread(frame.image());
             this.lastOriginalFrame = frame;
         }
-        if (!wasFirstUploaded) return MediaState.LOADING;
+        if (!wasFirstUploaded && lookup.state().isGood()){
+            return MediaState.LOADING;
+        }
         return lookup.state();
     }
 

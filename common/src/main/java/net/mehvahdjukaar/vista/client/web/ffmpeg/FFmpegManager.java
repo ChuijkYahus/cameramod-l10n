@@ -4,6 +4,8 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import net.mehvahdjukaar.vista.VistaMod;
+import net.mehvahdjukaar.vista.client.web.ArchiveUtils;
+import net.mehvahdjukaar.vista.client.web.FileDownloader;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;

@@ -1,4 +1,4 @@
-package net.mehvahdjukaar.vista.client.web.ffmpeg;
+package net.mehvahdjukaar.vista.client.web;
 
 import net.mehvahdjukaar.vista.VistaMod;
 import org.jetbrains.annotations.Nullable;
@@ -20,9 +20,9 @@ import java.nio.file.StandardOpenOption;
  */
 public final class FileDownloader {
 
-    private static final int CONNECT_TIMEOUT = 60000;
-    private static final int READ_TIMEOUT = 60000;
-    private static final int MAX_ATTEMPTS = 10;
+    private static final int CONNECT_TIMEOUT = 30000;
+    private static final int READ_TIMEOUT = 30000;
+    private static final int MAX_ATTEMPTS = 8;
 
     /**
      * Optional callback to receive download progress (0‑100).

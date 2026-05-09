@@ -15,6 +15,10 @@ public enum MediaState {
         return new Pair(null, LOADING);
     }
 
+    public boolean isGood() {
+        return this != FAILED && this != CLOSED;
+    }
+
     public static Pair pair(MediaState state, @Nullable MediaFrame frameAtTimeLocked) {
         return new Pair(frameAtTimeLocked, state);
     }

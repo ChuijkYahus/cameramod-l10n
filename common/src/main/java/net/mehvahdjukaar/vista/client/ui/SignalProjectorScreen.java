@@ -38,7 +38,7 @@ public class SignalProjectorScreen extends Screen {
             }
         };
         this.editBox.setValue(message);
-        this.editBox.setMaxLength(300);
+        this.editBox.setMaxLength(3000);
         this.addRenderableWidget(this.editBox);
         this.setInitialFocus(this.editBox);
         this.editBox.setFocused(true);

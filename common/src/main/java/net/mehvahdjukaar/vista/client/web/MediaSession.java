@@ -28,7 +28,8 @@ public class MediaSession implements AutoCloseable {
     private final int targetWidth;
     private final int targetHeight;
 
-    public MediaSession(String url, @Nullable FFmpeg ffmpeg, MediaCacheManager cacheManager, Executor executor,
+    public MediaSession(String url, @Nullable FFmpeg ffmpeg, MediaCacheManager cacheManager,
+                        Executor executor,
                         int targetWidth, int targetHeight) {
         this.targetWidth = targetWidth;
         this.targetHeight = targetHeight;

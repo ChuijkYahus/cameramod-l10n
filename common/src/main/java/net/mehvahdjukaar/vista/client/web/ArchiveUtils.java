@@ -1,4 +1,4 @@
-package net.mehvahdjukaar.vista.client.web.ffmpeg;
+package net.mehvahdjukaar.vista.client.web;
 
 import net.mehvahdjukaar.vista.VistaMod;
 import java.io.IOException;

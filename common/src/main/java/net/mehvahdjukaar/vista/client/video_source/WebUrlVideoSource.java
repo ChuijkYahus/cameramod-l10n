@@ -45,11 +45,13 @@ public class WebUrlVideoSource implements IVideoSource {
 
         if (state == MediaState.FAILED) {
             return TvScreenVertexConsumers.getNoiseVC(buffer, pixelEffectRes, switchAnim);
+        } else if (state == MediaState.LOADING) {
+            return TvScreenVertexConsumers.getWaitingVc(buffer, pixelEffectRes, switchAnim);
         }
-        ResourceLocation textureId = texture.getResourceLocation();
-        if (state == MediaState.LOADING || state == MediaState.BUFFERING) {
+        if (state == MediaState.BUFFERING) {
             overlay = CrtOverlay.LOADING;
         }
+        ResourceLocation textureId = texture.getResourceLocation();
         if (paused) {
             overlay = CrtOverlay.PAUSE;
         }
