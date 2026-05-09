@@ -61,12 +61,19 @@ public class WatermediaVideoTexture extends AbstractTexture implements IWebTextu
         wasPaused = paused;
 
         ImageCache.Status imageStatus = imageCache.getStatus();
-        return switch (imageStatus) {
-            case READY -> MediaStatus.READY;
-            case LOADING -> MediaStatus.LOADING;
-            case WAITING -> MediaStatus.BUFFERING;
-            case FAILED, FORGOTTEN -> MediaStatus.FAILED;
-        };
+
+        if (videoPlayer.isBroken() || videoPlayer.isEnded() || imageStatus == ImageCache.Status.FAILED || imageStatus == ImageCache.Status.FORGOTTEN) {
+            return MediaStatus.FAILED;
+        }
+        if (videoPlayer.isBuffering() || videoPlayer.isWaiting() || imageStatus == ImageCache.Status.WAITING) {
+            return MediaStatus.BUFFERING;
+        }
+
+        if (videoPlayer.isLoading() || imageStatus == ImageCache.Status.LOADING) {
+            return MediaStatus.LOADING;
+        }
+
+        return MediaStatus.READY;
     }
 
 }
