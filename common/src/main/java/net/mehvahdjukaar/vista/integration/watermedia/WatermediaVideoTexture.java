@@ -27,7 +27,7 @@ public class WatermediaVideoTexture extends AbstractTexture implements IWebTextu
         this.imageCache = imageCache;
         this.textureLocation = textureLocation;
         this.videoPlayer.start(imageCache.uri);
-        this.videoPlayer.setMuteMode(true);
+        this.videoPlayer.mute();
         this.videoPlayer.setRepeatMode(true);
     }
 
@@ -54,22 +54,23 @@ public class WatermediaVideoTexture extends AbstractTexture implements IWebTextu
 
     @Override
     public MediaStatus uploadFrameAtTime(int ticks, float deltaTime, boolean paused) {
-        if (paused != wasPaused) {
+        if (paused != this.wasPaused) {
             if (paused) videoPlayer.pause();
             else videoPlayer.resume();
         }
-        wasPaused = paused;
+        this.wasPaused = paused;
 
-        ImageCache.Status imageStatus = imageCache.getStatus();
 
-        if (videoPlayer.isBroken() || videoPlayer.isEnded() || imageStatus == ImageCache.Status.FAILED || imageStatus == ImageCache.Status.FORGOTTEN) {
+        if (videoPlayer.isBroken() || videoPlayer.isEnded()) {
             return MediaStatus.FAILED;
         }
-        if (videoPlayer.isBuffering() || videoPlayer.isWaiting() || imageStatus == ImageCache.Status.WAITING) {
+        if (videoPlayer.isBuffering() || videoPlayer.isWaiting()) {
             return MediaStatus.BUFFERING;
         }
 
-        if (videoPlayer.isLoading() || imageStatus == ImageCache.Status.LOADING) {
+        if (videoPlayer.isReady()) return MediaStatus.READY;
+
+        if (videoPlayer.isLoading()) {
             return MediaStatus.LOADING;
         }
 

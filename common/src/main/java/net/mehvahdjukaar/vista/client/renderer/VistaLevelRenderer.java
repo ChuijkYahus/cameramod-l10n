@@ -20,6 +20,7 @@ import net.minecraft.client.renderer.chunk.SectionRenderDispatcher;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Display;
 import net.minecraft.world.entity.Entity;
@@ -43,14 +44,16 @@ public class VistaLevelRenderer {
     private static final AtomicReference<SectionOcclusionGraph> MC_OWN_GRAPH = new AtomicReference<>(null);
     private static DummyCamera dummyCamera = new DummyCamera();
 
-    private static ViewFinderBlockEntity renderingLiveFeedVF = null;
+    private static ViewFinderBlockEntity currentRenderingViewFinder = null;
+
+    private static ResourceKey<Level> lastLevel = null;
 
     public static boolean isRenderingLiveFeed() {
-        return renderingLiveFeedVF != null;
+        return currentRenderingViewFinder != null;
     }
 
     public static boolean isViewFinderRenderingLiveFeed(ViewFinderBlockEntity vf) {
-        return renderingLiveFeedVF == vf;
+        return currentRenderingViewFinder == vf;
     }
 
     public static void clear() {
@@ -58,7 +61,7 @@ public class VistaLevelRenderer {
         dummyCamera = null;
         MC_OWN_GRAPH.set(null);
         MANAGED_GRAPHS.clear();
-        renderingLiveFeedVF = null;
+        currentRenderingViewFinder = null;
     }
 
     public static DummyCamera getDummyCamera() {
@@ -70,6 +73,14 @@ public class VistaLevelRenderer {
 
     public static void render(LiveFeedTexture text, ViewFinderBlockEntity tile) {
         Minecraft mc = Minecraft.getInstance();
+
+        if (mc.level == null) return;
+        //debounce dimension changing for some reason idk yet
+        if (mc.level.dimension() != lastLevel) {
+            lastLevel = mc.level.dimension();
+            return;
+        }
+
         RenderTarget mainTarget = mc.getMainRenderTarget();
         RenderTarget canvas = text.getRenderTarget();
         mc.mainRenderTarget = canvas;
@@ -90,7 +101,7 @@ public class VistaLevelRenderer {
         RenderSystemState oldRenderState = RenderSystemState.capture();
 
         try {
-            renderingLiveFeedVF = tile;
+            currentRenderingViewFinder = tile;
 
             float partialTicks = mc.getTimer().getGameTimeDeltaTicks();
             setupSceneCamera(tile, camera, partialTicks);
@@ -138,7 +149,7 @@ public class VistaLevelRenderer {
             RenderSystem.clear(GL11C.GL_DEPTH_BUFFER_BIT, ON_OSX);
 
             // swap back
-            renderingLiveFeedVF = null;
+            currentRenderingViewFinder = null;
 
             mc.mainRenderTarget = mainTarget;
             mc.gameRenderer.mainCamera = mainCamera;
@@ -187,7 +198,7 @@ public class VistaLevelRenderer {
     @SuppressWarnings("ConstantConditions")
     private static void setupSceneCamera(ViewFinderBlockEntity tile, Camera camera, float partialTicks) {
         Level level = tile.getLevel();
-       Quaternionf viewFinderRot = tile.getWorldOrientation(partialTicks);
+        Quaternionf viewFinderRot = tile.getWorldOrientation(partialTicks);
         //TODO: add Z for when looking up
         EntityAngles entityAngles = EntityAngles.fromQuaternion(viewFinderRot);
         float yaw = entityAngles.yaw();
