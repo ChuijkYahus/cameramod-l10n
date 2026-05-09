@@ -8,15 +8,13 @@ import java.io.*;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Decodes a local video file into a FrameBuffer (one frame at a time).
  * Supports pausing and seeking (by restarting FFmpeg at a new timestamp).
  * Runs in its own thread.
  */
-public class FFmpegMediaDecoder extends Thread {
-    private static final AtomicInteger THREAD_COUNT = new AtomicInteger();
+public class FFmpegMediaDecoder {
 
     private final FFmpeg ffmpeg;
     private final FFmpegMediaSession buffer;
@@ -30,8 +28,6 @@ public class FFmpegMediaDecoder extends Thread {
         this.ffmpeg = ffmpeg;
         this.buffer = buffer;
         this.videoPath = videoPath;
-        String name = "VideoDecoder-" + THREAD_COUNT.incrementAndGet();
-        this.setName(name);
     }
 
     /**
@@ -69,11 +65,9 @@ public class FFmpegMediaDecoder extends Thread {
     public void stopDecoder() {
         running = false;
         resumePlay(); // wake up if paused
-        this.interrupt();
         VistaMod.LOGGER.info("Stopping decoder");
     }
 
-    @Override
     public void run() {
         while (running) {
             Process ffmpegProcess = null;
@@ -94,7 +88,7 @@ public class FFmpegMediaDecoder extends Thread {
                 String[] cmd = buildFFmpegCommand(seekToSeconds);
                 ffmpegProcess = ffmpeg.runFFmpeg(cmd);
                 if (seekToSeconds >= 0) {
-                    VistaMod.LOGGER.info("Seeked to " + seekToSeconds + "s, restarting FFmpeg");
+                    VistaMod.LOGGER.info("Seeked to {}s, restarting FFmpeg", seekToSeconds);
                     seekToSeconds = -1.0; // reset
                 }
 
@@ -143,7 +137,7 @@ public class FFmpegMediaDecoder extends Thread {
                 }
                 if (frameCount > 0 && seekToSeconds < 0) {
                     // natural end of file
-                    VistaMod.LOGGER.info("Finished decoding, total frames: " + frameCount);
+                    VistaMod.LOGGER.info("Finished decoding, total frames: {}", frameCount);
                     buffer.setCompleted(true);
                     break;
                 }

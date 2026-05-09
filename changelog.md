@@ -1,1 +1,2 @@
-- fixed cassetes not working
+- added VERY experimental watermedia compat. off by default
+- random fixes

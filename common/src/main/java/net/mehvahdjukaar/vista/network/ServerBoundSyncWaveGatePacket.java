@@ -39,6 +39,7 @@ public record ServerBoundSyncWaveGatePacket(
                     return;
                 }
                 proj.setUrl(str);
+                proj.setChanged();
                 level.sendBlockUpdated(pos, level.getBlockState(pos), level.getBlockState(pos), 3);
             }
         }

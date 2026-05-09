@@ -130,14 +130,13 @@ public class WebTexturesManager {
     }
 
 
-    public static final IMediaSession createMediaSession(String url, int width, int height) {
+    public static IMediaSession createMediaSession(String url, int width, int height) {
         if (ClientConfigs.canUseWatermedia()) {
             return new WatermediaSession(url, SESSION_LOADER_EXECUTOR, width, height);
         } else {
             return new FFmpegMediaSession(url,
                     VistaModClient.getFFmpeg(),
                     MEDIA_CACHE_MANAGER, SESSION_LOADER_EXECUTOR, width, height);
-
         }
     }
 }

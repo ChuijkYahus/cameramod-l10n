@@ -54,15 +54,18 @@ public class WatermediaVideoTexture extends AbstractTexture implements IWebTextu
 
     @Override
     public MediaStatus uploadFrameAtTime(int ticks, float deltaTime, boolean paused) {
+        videoPlayer.mute();
         if (paused != this.wasPaused) {
             if (paused) videoPlayer.pause();
             else videoPlayer.resume();
         }
         this.wasPaused = paused;
 
-
-        if (videoPlayer.isBroken() || videoPlayer.isEnded()) {
+        if (videoPlayer.isBroken() || !videoPlayer.isValid()) {
             return MediaStatus.FAILED;
+        }
+        if (videoPlayer.isEnded()) {
+            return MediaStatus.CLOSED;
         }
         if (videoPlayer.isBuffering() || videoPlayer.isWaiting()) {
             return MediaStatus.BUFFERING;

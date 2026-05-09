@@ -81,7 +81,7 @@ void main() {
         int(GameTime * 24000.0 * 0.05 * 1000.0);
 
         int frameIndex =
-        int(millis * 0.02) % frameCount;
+        int(millis * 0.01) % frameCount;
 
         vOverlayFrameOffsetUV =
         vec2(0.0,

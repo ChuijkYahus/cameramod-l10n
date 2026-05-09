@@ -35,10 +35,10 @@ public class FFmpegMediaSession implements IMediaSession {
                               int targetWidth, int targetHeight) {
         this.targetWidth = targetWidth;
         this.targetHeight = targetHeight;
-        this.loadFuture = CompletableFuture.runAsync(() -> load(url, ffmpeg, cacheManager), executor);
+        this.loadFuture = CompletableFuture.runAsync(() -> asyncThreadJob(url, ffmpeg, cacheManager), executor);
     }
 
-    private void load(String url, @Nullable FFmpeg ffmpeg, MediaCacheManager cacheManager) {
+    private void asyncThreadJob(String url, @Nullable FFmpeg ffmpeg, MediaCacheManager cacheManager) {
         try {
             if (ffmpeg == null) {
                 this.failed = true;
@@ -48,7 +48,7 @@ public class FFmpegMediaSession implements IMediaSession {
             if (closed) return;
             FFmpegMediaDecoder newDecoder = new FFmpegMediaDecoder(ffmpeg, this, videoPath);
             this.decoder = newDecoder;
-            newDecoder.start();
+            newDecoder.run(); //blocking until done
         } catch (Exception e) {
             failed = true;
             VistaMod.LOGGER.error("Failed to load web video {}", url, e);

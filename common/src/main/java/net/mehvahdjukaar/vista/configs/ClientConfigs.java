@@ -121,7 +121,7 @@ public class ClientConfigs {
 
 
     public static boolean canUseFFmpeg() {
-        return ENABLE_FFMPEG.get() && (!CompatHandler.WATERMEDIA || VIDEO_ENGINE.get() == EngineMode.PREFER_FFMPEG);
+        return ENABLE_FFMPEG.get();
     }
 
     public static boolean canUseWatermedia() {
