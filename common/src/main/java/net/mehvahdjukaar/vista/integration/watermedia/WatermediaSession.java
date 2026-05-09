@@ -28,7 +28,7 @@ public class WatermediaSession implements IMediaSession {
 
     @Override
     public IWebTexture createTextureView(ResourceLocation resourceLocation) {
-        return this.imageCache.isVideo() ?
+        return true ?
                 new WatermediaVideoTexture(resourceLocation, imageCache, targetWidth, targetHeight, executor) :
                 new WatermediaImageTexture(resourceLocation, imageCache, targetWidth, targetHeight, executor);
     }
