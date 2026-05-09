@@ -29,10 +29,11 @@ public class ClientConfigs {
     public static final Supplier<Float> VIGNETTE;
     public static final Supplier<Boolean> DRAW_DATE;
     public static final Supplier<Boolean> SCREEN_EFFECTS;
-    public static final Supplier<Boolean> ENABLE_PROJECTOR;
+    public static final Supplier<Boolean> ENABLE_FFMPEG;
     public static final Supplier<Integer> WEB_RESOLUTION_SCALE;
     public static final Supplier<ScalingMode> SCALING_MODE;
     public static final Supplier<Boolean> BILINEAR;
+    public static final Supplier<EngineMode> VIDEO_ENGINE;
 
 
     static {
@@ -94,7 +95,9 @@ public class ClientConfigs {
         builder.pop();
 
         builder.push("wave_gate");
-        ENABLE_PROJECTOR = builder.comment("Enable FFmpeg use. This is needed if you want to use the Wave Gate")
+        VIDEO_ENGINE = CompatHandler.WATERMEDIA ? builder.comment("Toggle between local FFmpeg driven video loading and WaterMedia (VLC) mod usage. Requires Watermedia mod. FFmpeg mode has improved visuals and functionality, and likely supports more media types. Watermedia on the other hand supports youtube links")
+                                                  .define("video_engine", EngineMode.PREFER_FFMPEG) : () -> EngineMode.PREFER_FFMPEG;
+        ENABLE_FFMPEG = builder.comment("Enable FFmpeg use. This is needed if you want to use the Wave Gate")
                 .define("ffmpeg_enabled", true);
         WEB_RESOLUTION_SCALE = builder
                 .comment("Scale factor for web images resolution")
@@ -118,10 +121,19 @@ public class ClientConfigs {
 
 
     public static boolean canUseFFmpeg() {
-        return ENABLE_PROJECTOR.get() || true   ;
+        return ENABLE_FFMPEG.get() && (!CompatHandler.WATERMEDIA || VIDEO_ENGINE.get() == EngineMode.PREFER_FFMPEG);
+    }
+
+    public static boolean canUseWatermedia() {
+        return CompatHandler.WATERMEDIA && VIDEO_ENGINE.get() == EngineMode.PREFER_VLC;
     }
 
     public static void turnOffFFmpeg() {
-        SPEC.manuallySetValue(ENABLE_PROJECTOR, false);
+        SPEC.manuallySetValue(ENABLE_FFMPEG, false);
+    }
+
+    public enum EngineMode {
+        PREFER_FFMPEG,
+        PREFER_VLC
     }
 }

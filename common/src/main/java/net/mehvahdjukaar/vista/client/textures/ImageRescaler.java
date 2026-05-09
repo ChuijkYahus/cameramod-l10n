@@ -1,6 +1,7 @@
 package net.mehvahdjukaar.vista.client.textures;
 
 import com.mojang.blaze3d.platform.NativeImage;
+import net.mehvahdjukaar.moonlight.api.resources.textures.TextureCollager;
 import net.mehvahdjukaar.moonlight.api.resources.textures.TextureImage;
 import net.mehvahdjukaar.moonlight.api.util.math.Rect2D;
 

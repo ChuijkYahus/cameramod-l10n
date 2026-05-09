@@ -35,4 +35,5 @@ dependencies {
     modCompileOnly("curse.maven:sodium-394468:6382651")
 
     modCompileOnly("curse.maven:alexs-caves-924854:4806837")
+    modImplementation("curse.maven:watermedia-869524:7072353")
 }

@@ -22,6 +22,7 @@ public class CompatHandler {
     public static final boolean ENTITYCULLING = PlatHelper.isModLoaded("entityculling");
     public static final boolean ALEX_CAVES = PlatHelper.isModLoaded("alexs-caves");
     public static final boolean FLASHBACK = PlatHelper.isModLoaded("flashback");
+    public static final boolean WATERMEDIA = PlatHelper.isModLoaded("watermedia");
 
     public static void init() {
         if (EXPOSURE) ExposureCompat.init();

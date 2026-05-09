@@ -3,54 +3,47 @@ package net.mehvahdjukaar.vista.client.textures;
 import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.platform.TextureUtil;
 import com.mojang.blaze3d.systems.RenderSystem;
+import net.mehvahdjukaar.vista.client.web.FFmpegMediaSession;
 import net.mehvahdjukaar.vista.client.web.MediaFrame;
-import net.mehvahdjukaar.vista.client.web.MediaSession;
-import net.mehvahdjukaar.vista.client.web.MediaState;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.texture.AbstractTexture;
+import net.mehvahdjukaar.vista.client.web.MediaStatus;
 import net.minecraft.client.renderer.texture.DynamicTexture;
-import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.Nullable;
 
-public class WebTexture extends DynamicTexture {
+public class FFmpegWebTexture extends DynamicTexture implements IWebTexture {
+    private final FFmpegMediaSession session;
     private final ResourceLocation textureLocation;
-    private final MediaSession session;
     @Nullable
     private MediaFrame lastOriginalFrame;
     private boolean wasFirstUploaded = false;
 
-    public WebTexture(ResourceLocation textureLocation, MediaSession session) {
-        super(session.getImageWidth(), session.getImageHeight(), false);
-        this.textureLocation = textureLocation;
+    public FFmpegWebTexture(ResourceLocation textureLocation, FFmpegMediaSession session, int width, int height) {
+        super(width, height, false);
         this.session = session;
+        this.textureLocation = textureLocation;
     }
 
-    public ResourceLocation getResourceLocation() {
+    @Override
+    public ResourceLocation getTextureLocation() {
         return textureLocation;
     }
 
-    public void register() {
-        Minecraft.getInstance().getTextureManager().register(this.textureLocation, this);
+    @Override
+    public void close() {
+        //pixels are not closed here but by media frame
+        this.releaseId();
     }
 
-    public void unregister() {
-        TextureManager tm = Minecraft.getInstance().getTextureManager();
-        AbstractTexture texture = tm.getTexture(this.textureLocation);
-        if (texture == this) {
-            tm.release(this.textureLocation);
-        }
-    }
-
-    public MediaState uploadFrameAtTime(double seconds) {
+    @Override
+    public MediaStatus uploadFrameAtTime(double seconds, boolean paused) {
         var lookup = session.lookupFrame(seconds);
         MediaFrame frame = lookup.frame();
         if (frame != null && frame != this.lastOriginalFrame) {
             uploadOnRenderThread(frame.image());
             this.lastOriginalFrame = frame;
         }
-        if (!wasFirstUploaded && lookup.state().isGood()){
-            return MediaState.LOADING;
+        if (!wasFirstUploaded && lookup.state().isGood()) {
+            return MediaStatus.LOADING;
         }
         return lookup.state();
     }
@@ -72,9 +65,4 @@ public class WebTexture extends DynamicTexture {
         }
     }
 
-    @Override
-    public void close() {
-        //pixels are not closed here but by media frame
-        this.releaseId();
-    }
 }

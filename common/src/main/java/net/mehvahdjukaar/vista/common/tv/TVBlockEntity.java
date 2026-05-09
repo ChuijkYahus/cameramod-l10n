@@ -152,9 +152,7 @@ public class TVBlockEntity extends ItemDisplayTile {
             level.playSound(player, worldPosition, VistaMod.CASSETTE_EJECT_SOUND.get(),
                     SoundSource.BLOCKS, 1, 1);
             //pop current
-            Vec3 vec3 = hit.getLocation().add(new Vec3(hit.getDirection().step().mul(0.05f)));
-
-            vec3 = vec3.offsetRandom(this.level.random, 0.7F);
+            Vec3 vec3 = hit.getLocation().add(new Vec3(hit.getDirection().step().mul(0.5f)));
 
             ItemStack itemStack2 = current.copy();
             ItemEntity itemEntity = new ItemEntity(this.level, vec3.x(), vec3.y(), vec3.z(), itemStack2);

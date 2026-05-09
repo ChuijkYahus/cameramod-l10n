@@ -2,10 +2,7 @@ package net.mehvahdjukaar.vista.client.web;
 
 import com.mojang.blaze3d.platform.NativeImage;
 import net.mehvahdjukaar.vista.VistaMod;
-import net.mehvahdjukaar.vista.client.textures.ImageRescaler;
-import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.mehvahdjukaar.vista.client.web.ffmpeg.FFmpeg;
-import net.mehvahdjukaar.vista.client.web.ffmpeg.FFmpegManager;
 
 import java.io.*;
 import java.nio.file.Path;
@@ -22,14 +19,14 @@ public class FFmpegMediaDecoder extends Thread {
     private static final AtomicInteger THREAD_COUNT = new AtomicInteger();
 
     private final FFmpeg ffmpeg;
-    private final MediaSession buffer;
+    private final FFmpegMediaSession buffer;
     private final Path videoPath;
     private volatile boolean running = true;
     private volatile boolean paused = false;
     private volatile double seekToSeconds = -1.0; // -1 means no seek requested
 
 
-    public FFmpegMediaDecoder(FFmpeg ffmpeg, MediaSession buffer, Path videoPath) {
+    public FFmpegMediaDecoder(FFmpeg ffmpeg, FFmpegMediaSession buffer, Path videoPath) {
         this.ffmpeg = ffmpeg;
         this.buffer = buffer;
         this.videoPath = videoPath;

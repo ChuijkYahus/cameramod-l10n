@@ -3,9 +3,9 @@ package net.mehvahdjukaar.vista.client.video_source;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.mehvahdjukaar.vista.client.CrtOverlay;
 import net.mehvahdjukaar.vista.client.textures.TvScreenVertexConsumers;
-import net.mehvahdjukaar.vista.client.textures.WebTexture;
+import net.mehvahdjukaar.vista.client.textures.IWebTexture;
 import net.mehvahdjukaar.vista.client.textures.WebTexturesManager;
-import net.mehvahdjukaar.vista.client.web.MediaState;
+import net.mehvahdjukaar.vista.client.web.MediaStatus;
 import net.mehvahdjukaar.vista.common.tv.IntAnimationState;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.resources.ResourceLocation;
@@ -35,22 +35,22 @@ public class WebUrlVideoSource implements IVideoSource {
             this.textureHandle = WebTexturesManager.createHandle(url, projectorID, screenSize);
             this.lastScreenSize = screenSize;
         }
-        WebTexture texture = textureHandle.getTexture();
-        MediaState state = texture.uploadFrameAtTime(seconds);
+        IWebTexture texture = textureHandle.getTexture();
+        MediaStatus state = texture.uploadFrameAtTime(seconds, paused);
         CrtOverlay overlay = CrtOverlay.NONE;
-        if (state == MediaState.CLOSED) {
+        if (state == MediaStatus.CLOSED) {
             overlay = CrtOverlay.DISCONNECT;
         }
 
-        if (state == MediaState.FAILED) {
+        if (state == MediaStatus.FAILED) {
             return TvScreenVertexConsumers.getNoiseVC(buffer, pixelEffectRes, switchAnim);
-        } else if (state == MediaState.LOADING) {
+        } else if (state == MediaStatus.LOADING) {
             return TvScreenVertexConsumers.getWaitingVc(buffer, pixelEffectRes, videoAnimationTick, switchAnim);
         }
-        if (state == MediaState.BUFFERING) {
+        if (state == MediaStatus.BUFFERING) {
             overlay = CrtOverlay.LOADING;
         }
-        ResourceLocation textureId = texture.getResourceLocation();
+        ResourceLocation textureId = texture.getTextureLocation();
         if (paused) {
             overlay = CrtOverlay.PAUSE;
         }

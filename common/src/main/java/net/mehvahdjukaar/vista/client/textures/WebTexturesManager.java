@@ -7,9 +7,11 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.VistaModClient;
+import net.mehvahdjukaar.vista.client.web.FFmpegMediaSession;
+import net.mehvahdjukaar.vista.client.web.IMediaSession;
 import net.mehvahdjukaar.vista.client.web.MediaCacheManager;
-import net.mehvahdjukaar.vista.client.web.MediaSession;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
+import net.mehvahdjukaar.vista.integration.watermedia.WatermediaSession;
 import net.minecraft.resources.ResourceLocation;
 
 import java.util.UUID;
@@ -31,32 +33,36 @@ public class WebTexturesManager {
     private static final MediaCacheManager MEDIA_CACHE_MANAGER = new MediaCacheManager(
             PlatHelper.getGamePath(), DEFAULT_CACHE_SIZE_BYTES);
 
-    private static final LoadingCache<String, MediaSession> SESSION_CACHE = CacheBuilder.newBuilder()
+    private static final LoadingCache<String, IMediaSession> SESSION_CACHE = CacheBuilder.newBuilder()
             .expireAfterAccess(CACHE_EXPIRY_MINUTES, TimeUnit.MINUTES)
             .removalListener(notification -> {
-                MediaSession session = (MediaSession) notification.getValue();
+                IMediaSession session = (IMediaSession) notification.getValue();
                 if (session != null) {
-                    session.close();
+                    try {
+                        session.close();
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
                 }
             })
             .build(new CacheLoader<>() {
                 @Override
-                public MediaSession load(String key) {
+                public IMediaSession load(String key) {
                     throw new IllegalStateException("not supported!");
                 }
             });
 
-    private static final LoadingCache<ResourceLocation, WebTexture> TEXTURE_CACHE = CacheBuilder.newBuilder()
+    private static final LoadingCache<ResourceLocation, IWebTexture> TEXTURE_CACHE = CacheBuilder.newBuilder()
             .expireAfterAccess(CACHE_EXPIRY_MINUTES, TimeUnit.MINUTES)
             .removalListener(notification -> {
-                WebTexture texture = (WebTexture) notification.getValue();
+                IWebTexture texture = (IWebTexture) notification.getValue();
                 if (texture != null) {
                     RenderSystem.recordRenderCall(texture::unregister);
                 }
             })
             .build(new CacheLoader<>() {
                 @Override
-                public WebTexture load(ResourceLocation key) {
+                public IWebTexture load(ResourceLocation key) {
                     throw new IllegalStateException("not supported!");
                 }
             });
@@ -75,24 +81,22 @@ public class WebTexturesManager {
             this.screenSize = screenSize;
         }
 
-        public WebTexture getTexture() {
+        public IWebTexture getTexture() {
             return TEXTURE_CACHE.asMap()
                     .computeIfAbsent(textureId,
                             resourceLocation -> {
-                                MediaSession session = getSession();
-                                WebTexture texture = new WebTexture(resourceLocation, session);
+                                IMediaSession session = getSession();
+                                var texture = session.createTextureView(resourceLocation);
                                 texture.register();
                                 return texture;
                             });
         }
 
-        private MediaSession getSession() {
+        private IMediaSession getSession() {
             return SESSION_CACHE.asMap()
                     .computeIfAbsent(sessionId, res -> {
                         int imageSize = ClientConfigs.WEB_RESOLUTION_SCALE.get() * screenSize;
-                        return new MediaSession(url,
-                                VistaModClient.getFFmpeg(),
-                                MEDIA_CACHE_MANAGER, SESSION_LOADER_EXECUTOR, imageSize, imageSize);
+                        return createMediaSession(url, imageSize, imageSize);
                     });
         }
     }
@@ -123,5 +127,17 @@ public class WebTexturesManager {
         String sanitized = key.toLowerCase().replaceAll("[^a-z0-9/._-]", "_");
 
         return sanitized.isBlank() ? "unnamed" : sanitized;
+    }
+
+
+    public static final IMediaSession createMediaSession(String url, int width, int height) {
+        if (ClientConfigs.canUseWatermedia()) {
+            return new WatermediaSession(url, SESSION_LOADER_EXECUTOR, width, height);
+        } else {
+            return new FFmpegMediaSession(url,
+                    VistaModClient.getFFmpeg(),
+                    MEDIA_CACHE_MANAGER, SESSION_LOADER_EXECUTOR, width, height);
+
+        }
     }
 }

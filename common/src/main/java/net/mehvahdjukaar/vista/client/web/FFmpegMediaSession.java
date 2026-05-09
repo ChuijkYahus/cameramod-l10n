@@ -2,9 +2,11 @@ package net.mehvahdjukaar.vista.client.web;
 
 import com.mojang.blaze3d.platform.NativeImage;
 import net.mehvahdjukaar.vista.VistaMod;
+import net.mehvahdjukaar.vista.client.textures.FFmpegWebTexture;
 import net.mehvahdjukaar.vista.client.textures.ImageRescaler;
 import net.mehvahdjukaar.vista.client.web.ffmpeg.FFmpeg;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
+import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Path;
@@ -15,7 +17,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
-public class MediaSession implements AutoCloseable {
+public class FFmpegMediaSession implements IMediaSession {
     private final List<MediaFrame> frames = new ArrayList<>();
     private final CompletableFuture<Void> loadFuture;
 
@@ -28,20 +30,12 @@ public class MediaSession implements AutoCloseable {
     private final int targetWidth;
     private final int targetHeight;
 
-    public MediaSession(String url, @Nullable FFmpeg ffmpeg, MediaCacheManager cacheManager,
-                        Executor executor,
-                        int targetWidth, int targetHeight) {
+    public FFmpegMediaSession(String url, @Nullable FFmpeg ffmpeg, MediaCacheManager cacheManager,
+                              Executor executor,
+                              int targetWidth, int targetHeight) {
         this.targetWidth = targetWidth;
         this.targetHeight = targetHeight;
         this.loadFuture = CompletableFuture.runAsync(() -> load(url, ffmpeg, cacheManager), executor);
-    }
-
-    public int getImageHeight() {
-        return targetHeight;
-    }
-
-    public int getImageWidth() {
-        return targetWidth;
     }
 
     private void load(String url, @Nullable FFmpeg ffmpeg, MediaCacheManager cacheManager) {
@@ -89,17 +83,17 @@ public class MediaSession implements AutoCloseable {
         return failed || loadFuture.isCompletedExceptionally();
     }
 
-    public MediaState.Pair lookupFrame(double seconds) {
+    public MediaStatus.Pair lookupFrame(double seconds) {
         synchronized (this) {
             if (frames.isEmpty()) {
-                if (failed) return MediaState.pair(MediaState.FAILED, null);
-                return MediaState.loading();
+                if (failed) return MediaStatus.pair(MediaStatus.FAILED, null);
+                return MediaStatus.loading();
             }
-            MediaState state = MediaState.READY;
+            MediaStatus state = MediaStatus.READY;
             if (isFailed()) {
-                state = MediaState.FAILED;
+                state = MediaStatus.FAILED;
             } else if (closed) {
-                state = MediaState.CLOSED;
+                state = MediaStatus.CLOSED;
             }
 
             double queryTime = seconds;
@@ -107,13 +101,13 @@ public class MediaSession implements AutoCloseable {
 
             if (completed && duration > 0 && queryTime >= duration) {
                 queryTime = queryTime % duration;
-                state = MediaState.COMPLETE;
+                state = MediaStatus.COMPLETE;
             } else if (!completed && queryTime > getLastFrameTimeLocked()) {
                 queryTime = getLastFrameTimeLocked();
-                state = MediaState.BUFFERING;
+                state = MediaStatus.BUFFERING;
             }
 
-            return MediaState.pair(state, getFrameAtTimeLocked(queryTime));
+            return MediaStatus.pair(state, getFrameAtTimeLocked(queryTime));
         }
     }
 
@@ -159,5 +153,11 @@ public class MediaSession implements AutoCloseable {
         }
         frames.clear();
         completed = false;
+    }
+
+    @Override
+    public FFmpegWebTexture createTextureView(ResourceLocation resourceLocation) {
+
+        return new FFmpegWebTexture(resourceLocation, this, targetWidth, targetHeight);
     }
 }

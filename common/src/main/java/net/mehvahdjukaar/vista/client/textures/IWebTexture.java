@@ -1,0 +1,26 @@
+package net.mehvahdjukaar.vista.client.textures;
+
+import net.mehvahdjukaar.vista.client.web.MediaStatus;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.texture.AbstractTexture;
+import net.minecraft.client.renderer.texture.TextureManager;
+import net.minecraft.resources.ResourceLocation;
+
+public interface IWebTexture extends AutoCloseable {
+
+    ResourceLocation getTextureLocation();
+
+    default void register() {
+        Minecraft.getInstance().getTextureManager().register(this.getTextureLocation(), (AbstractTexture) this);
+    }
+
+    default void unregister() {
+        TextureManager tm = Minecraft.getInstance().getTextureManager();
+        AbstractTexture texture = tm.getTexture(this.getTextureLocation());
+        if (texture == this) {
+            tm.release(this.getTextureLocation());
+        }
+    }
+
+    MediaStatus uploadFrameAtTime(double seconds, boolean paused);
+}

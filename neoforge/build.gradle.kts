@@ -26,6 +26,7 @@ dependencies {
     modCompileOnly("curse.maven:distant-horizons-508933:7977110")
     modCompileOnly("maven.modrinth:iris:1.8.8+1.21.1-neoforge")
 
+    modCompileOnly("curse.maven:watermedia-869524:7072353")
 
     //  modImplementation("cc.tweaked:cc-tweaked-1.21.1-forge:1.117.0")
 }

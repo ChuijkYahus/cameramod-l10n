@@ -37,4 +37,8 @@ dependencies {
    // modCompileOnly("curse.maven:fsable-1312371:8007004")
 
     // modImplementation("cc.tweaked-cobalt:cobalt:0.93")
+
+    modImplementation("curse.maven:watermedia-869524:7072353")
+    modImplementation("curse.maven:watermedia-869524:7072353")
+
 }

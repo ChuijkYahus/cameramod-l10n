@@ -68,7 +68,7 @@ public class AnimatedStripTexture extends AbstractTexture implements Dumpable {
 
     private @Nullable SpriteContents loadContent(ResourceManager resourceManager) throws FileNotFoundException {
         Resource resource = resourceManager.getResourceOrThrow(this.fileLocation);
-        if (fileLocation.getPath().equals(".gif")) {
+        if (fileLocation.getPath().endsWith(".gif")) {
             return loadGifContent(fileLocation, resource);
         } else {
             return loadPngReshaping(fileLocation, resource);
