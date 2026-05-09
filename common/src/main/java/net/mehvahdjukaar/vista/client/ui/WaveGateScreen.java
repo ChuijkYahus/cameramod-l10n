@@ -32,15 +32,14 @@ public class WaveGateScreen extends Screen {
     public void init() {
         assert this.minecraft != null;
 
-        String message = tile.getUrl();
         int boxWidth = 360;
-        this.editBox = new EditBox(this.font, (this.width - boxWidth) / 2 , this.height / 4 + 10, boxWidth, 20, this.title) {
+        this.editBox = new EditBox(this.font, (this.width - boxWidth) / 2, this.height / 4 + 10, boxWidth, 20, this.title) {
             protected MutableComponent createNarrationMessage() {
                 return super.createNarrationMessage();
             }
         };
-        this.editBox.setValue(message);
         this.editBox.setMaxLength(3000);
+        this.editBox.setValue(tile.getUrl());
         this.addRenderableWidget(this.editBox);
         this.setInitialFocus(this.editBox);
         this.editBox.setFocused(true);

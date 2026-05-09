@@ -1,7 +1,2 @@
-- view finders can be properly rotated with turn table
-- improved view finder rotation logic to match the new imporved one in supplementaries
-- view finders can display post shaders of the lenses they have. Can be stacked when wearing a mob head.
-- added a workaround to prevent an issue the mod Veil has (their issue remains.)
-- moved iris compat in common, hoping it will work on neo
-- added some code for flashback compat
-- some changes so curseforge will approve this file.
+- added web gates, a block that allows TVs to display any direct MEDIA urls
+- view finder zoom level can be controlled with redstone
