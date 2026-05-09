@@ -10,13 +10,13 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
 
-public record ServerBoundSyncSignalProjectorPacket(
+public record ServerBoundSyncWaveGatePacket(
         BlockPos pos, String str) implements Message {
 
-    public static final TypeAndCodec<RegistryFriendlyByteBuf, ServerBoundSyncSignalProjectorPacket> CODEC = Message.makeType(
-            VistaMod.res("c2s_set_url"), ServerBoundSyncSignalProjectorPacket::new);
+    public static final TypeAndCodec<RegistryFriendlyByteBuf, ServerBoundSyncWaveGatePacket> CODEC = Message.makeType(
+            VistaMod.res("c2s_set_url"), ServerBoundSyncWaveGatePacket::new);
 
-    public ServerBoundSyncSignalProjectorPacket(FriendlyByteBuf buf) {
+    public ServerBoundSyncWaveGatePacket(FriendlyByteBuf buf) {
         this(buf.readBlockPos(), buf.readUtf());
     }
 

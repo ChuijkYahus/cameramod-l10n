@@ -12,8 +12,6 @@ import net.mehvahdjukaar.vista.common.cassette.CassetteItem;
 import net.mehvahdjukaar.vista.common.cassette.CassetteTape;
 import net.mehvahdjukaar.vista.common.cassette.CassetteTapeLootFunction;
 import net.mehvahdjukaar.vista.common.cassette.HollowCassetteItem;
-import net.mehvahdjukaar.vista.common.wave_gate.WaveGateBlock;
-import net.mehvahdjukaar.vista.common.wave_gate.WaveGateBlockEntity;
 import net.mehvahdjukaar.vista.common.tv.TVBlock;
 import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
 import net.mehvahdjukaar.vista.common.tv.TVItem;
@@ -21,6 +19,8 @@ import net.mehvahdjukaar.vista.common.tv.enderman.AngeredFromTvCondition;
 import net.mehvahdjukaar.vista.common.tv.enderman.EndermanFreezeWhenLookedAtThroughTVGoal;
 import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlock;
 import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
+import net.mehvahdjukaar.vista.common.wave_gate.WaveGateBlock;
+import net.mehvahdjukaar.vista.common.wave_gate.WaveGateBlockEntity;
 import net.mehvahdjukaar.vista.configs.CommonConfigs;
 import net.mehvahdjukaar.vista.integration.CompatHandler;
 import net.mehvahdjukaar.vista.integration.supplementaries.SuppCompat;
@@ -51,6 +51,7 @@ import net.minecraft.world.level.storage.loot.predicates.LootItemConditionType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Supplier;
 
@@ -208,6 +209,11 @@ public class VistaMod {
         CompatHandler.init();
 
         RegHelper.addItemsToTabsRegistration(VistaMod::addItemsToTabs);
+        RegHelper.registerSimpleRecipeCondition(VistaMod.res("flag"),
+                s -> {
+                    if (Objects.equals(s, "wave_gate")) return CommonConfigs.isWaveGateCraftable();
+                    return true;
+                });
 
         if (PlatHelper.getPhysicalSide().isClient()) {
             VistaModClient.init();
@@ -233,11 +239,11 @@ public class VistaMod {
         event.add(CreativeModeTabs.TOOLS_AND_UTILITIES, HOLLOW_CASSETTE.get());
         event.addAfter(CreativeModeTabs.TOOLS_AND_UTILITIES, i -> i.is(C_MUSIC_DISCS), SOJOURN_MUSIC_DISC.get());
 
-        if (CompatHandler.COMPUTER_CRAFT) {
-            //   event.add(CreativeModeTabs.FUNCTIONAL_BLOCKS, SIGNAL_PROJECTOR.get());
+        if (CommonConfigs.isWaveGateCraftable()) {
+            event.add(CreativeModeTabs.FUNCTIONAL_BLOCKS, WAVE_GATE.get());
         } else {
             if (event.getTab().hasAnyItems()) {
-                // event.add(CreativeModeTabs.OP_BLOCKS, SIGNAL_PROJECTOR.get());
+                event.add(CreativeModeTabs.OP_BLOCKS, WAVE_GATE.get());
             }
         }
 

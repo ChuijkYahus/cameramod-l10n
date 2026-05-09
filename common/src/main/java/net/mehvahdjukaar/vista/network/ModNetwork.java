@@ -10,7 +10,7 @@ public class ModNetwork {
 
     private static void registerMessages(NetworkHelper.RegisterMessagesEvent event) {
         event.registerBidirectional(SyncViewFinderPacket.CODEC);
-        event.registerServerBound(ServerBoundSyncSignalProjectorPacket.CODEC);
+        event.registerServerBound(ServerBoundSyncWaveGatePacket.CODEC);
         event.registerClientBound(ClientBoundControlViewFinderPacket.CODEC);
     }
 }

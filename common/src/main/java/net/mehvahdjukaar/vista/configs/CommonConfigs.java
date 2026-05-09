@@ -1,10 +1,10 @@
 package net.mehvahdjukaar.vista.configs;
 
-import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.platform.configs.ConfigBuilder;
 import net.mehvahdjukaar.moonlight.api.platform.configs.ConfigType;
 import net.mehvahdjukaar.moonlight.api.platform.configs.ModConfigHolder;
 import net.mehvahdjukaar.vista.VistaMod;
+import net.mehvahdjukaar.vista.integration.CompatHandler;
 
 import java.util.function.Supplier;
 
@@ -16,6 +16,7 @@ public class CommonConfigs {
     public static final Supplier<Integer> MAX_CONNECTED_TV_SIZE;
     public static final Supplier<Boolean> CREEPER_DROP;
     public static final Supplier<Boolean> CHEST_DROP;
+    public static final Supplier<Mode> WAVE_GATE_MODE;
 
     static {
         ConfigBuilder builder = ConfigBuilder.create(VistaMod.MOD_ID, ConfigType.COMMON_SYNCED);
@@ -30,6 +31,9 @@ public class CommonConfigs {
         CHEST_DROP = builder
                 .comment("Whether loot chests could contain cassette tapes.")
                 .define("chest_drop", true);
+
+        WAVE_GATE_MODE = builder.comment("Where the wave gate is obtainable.")
+                .define("wave_gate_enabled", Mode.CREATIVE_ONLY);
         builder.pop();
 
         SPEC = builder.build();
@@ -38,6 +42,22 @@ public class CommonConfigs {
 
     public static void init() {
 
+    }
+
+    public static boolean isWaveGateOn() {
+        return WAVE_GATE_MODE.get() != Mode.OFF;
+    }
+
+    public static boolean isWaveGateCraftable() {
+        Mode mode = WAVE_GATE_MODE.get();
+        if (CompatHandler.COMPUTER_CRAFT && mode != Mode.OFF) return true;
+        return mode == Mode.CRAFTABLE;
+    }
+
+    public enum Mode {
+        CRAFTABLE,
+        CREATIVE_ONLY,
+        OFF
     }
 
 }

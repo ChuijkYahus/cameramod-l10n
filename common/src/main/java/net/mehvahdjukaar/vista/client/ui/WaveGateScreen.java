@@ -2,27 +2,29 @@ package net.mehvahdjukaar.vista.client.ui;
 
 import net.mehvahdjukaar.moonlight.api.platform.network.NetworkHelper;
 import net.mehvahdjukaar.vista.common.wave_gate.WaveGateBlockEntity;
-import net.mehvahdjukaar.vista.network.ServerBoundSyncSignalProjectorPacket;
+import net.mehvahdjukaar.vista.network.ServerBoundSyncWaveGatePacket;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 
-public class SignalProjectorScreen extends Screen {
+public class WaveGateScreen extends Screen {
     private static final Component EDIT = Component.translatable("gui.vista.wave_gate.edit");
 
     private EditBox editBox;
     private final WaveGateBlockEntity tile;
 
-    public SignalProjectorScreen(WaveGateBlockEntity te) {
+    public WaveGateScreen(WaveGateBlockEntity te) {
         super(EDIT);
         this.tile = te;
     }
 
     public static void open(WaveGateBlockEntity te) {
-        Minecraft.getInstance().setScreen(new SignalProjectorScreen(te));
+        Minecraft.getInstance().setScreen(new WaveGateScreen(te));
     }
 
 
@@ -32,7 +34,7 @@ public class SignalProjectorScreen extends Screen {
 
         String message = tile.getUrl();
         int boxWidth = 360;
-        this.editBox = new EditBox(this.font, (this.width - boxWidth) / 2 - 100, this.height / 4 + 10, boxWidth, 20, this.title) {
+        this.editBox = new EditBox(this.font, (this.width - boxWidth) / 2 , this.height / 4 + 10, boxWidth, 20, this.title) {
             protected MutableComponent createNarrationMessage() {
                 return super.createNarrationMessage();
             }
@@ -42,6 +44,8 @@ public class SignalProjectorScreen extends Screen {
         this.addRenderableWidget(this.editBox);
         this.setInitialFocus(this.editBox);
         this.editBox.setFocused(true);
+
+        this.addRenderableWidget(Button.builder(CommonComponents.GUI_DONE, (button) -> this.onDone()).bounds(this.width / 2 - 100, this.height / 4 + 120, 200, 20).build());
     }
 
     @Override
@@ -49,7 +53,7 @@ public class SignalProjectorScreen extends Screen {
         //update this client immediately
         String str = this.editBox.getValue();
         //  this.tile.setUrl(str); updated by packet layer
-        NetworkHelper.sendToServer(new ServerBoundSyncSignalProjectorPacket(this.tile.getBlockPos(), str));
+        NetworkHelper.sendToServer(new ServerBoundSyncWaveGatePacket(this.tile.getBlockPos(), str));
     }
 
     private void onDone() {

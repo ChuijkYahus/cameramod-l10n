@@ -11,6 +11,7 @@ import net.mehvahdjukaar.moonlight.api.resources.pack.PackGenerationStrategy;
 import net.mehvahdjukaar.moonlight.api.resources.pack.ResourceGenTask;
 import net.mehvahdjukaar.moonlight.api.resources.pack.ResourceSink;
 import net.mehvahdjukaar.vista.VistaMod;
+import net.mehvahdjukaar.vista.configs.CommonConfigs;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.world.item.DyeColor;
@@ -187,6 +188,20 @@ public class VistaDynamicResources extends DynamicClientResourceProvider {
 
 
         });
+
+        //this is not correct for multiplayer! TODO: figure out a better solution
+        if(!CommonConfigs.isWaveGateCraftable()){
+            consumer.accept((resourceManager, resourceSink) -> {
+                resourceSink.copyResource(resourceManager,
+                        ResType.BLOCK_TEXTURES.getPath(VistaMod.res("wave_gate/side_creative")),
+                                ResType.BLOCK_TEXTURES.getPath(VistaMod.res("wave_gate/side")),
+                        false);
+                resourceSink.copyResource(resourceManager,
+                        ResType.BLOCK_TEXTURES.getPath(VistaMod.res("wave_gate/top_creative")),
+                        ResType.BLOCK_TEXTURES.getPath(VistaMod.res("wave_gate/top")),
+                        false);
+            });
+        }
     }
 
     /** helper: round to 4 decimal places for nicer JSON numbers */

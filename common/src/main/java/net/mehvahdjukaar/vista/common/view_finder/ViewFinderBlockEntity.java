@@ -75,7 +75,6 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
 
     public static void tick(Level level, BlockPos pos, BlockState state, ViewFinderBlockEntity tile) {
         tile.orientation.tick();
-
         if (tile.zoom != tile.powerLevelWantedZoom && tile.getCurrentUser() == null) {
             int zoomDiff = tile.powerLevelWantedZoom - tile.zoom;
             int zoomStep = Mth.clamp(zoomDiff, -1, 1);

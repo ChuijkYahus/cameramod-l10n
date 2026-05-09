@@ -1,7 +1,5 @@
 package net.mehvahdjukaar.vista.client;
 
-import com.mojang.blaze3d.platform.GlStateManager;
-import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import net.mehvahdjukaar.vista.VistaMod;
@@ -13,6 +11,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderStateShard;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.ShaderInstance;
+import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.DyeColor;
 
@@ -60,7 +59,7 @@ public class VistaRenderTypes extends RenderType {
                                 }))
                         .createCompositeState(false);
 
-                return create("camera_view", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS,
+                return create("vista_camera_view", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS,
                         1536, true, false, compositeState);
             });
 
@@ -85,7 +84,7 @@ public class VistaRenderTypes extends RenderType {
     }
 
     public static final RenderType NOISE =
-            create("noise", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS,
+            create("vista_noise", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS,
                     1536, true, false,
                     RenderType.CompositeState.builder()
                             .setShaderState(STATIC_SHADER_STATE)
@@ -107,4 +106,18 @@ public class VistaRenderTypes extends RenderType {
     public static ResourceLocation getColoredShader(DyeColor c) {
         return VistaMod.res("shaders/post/" + c.getSerializedName() + "_tint.json");
     }
+
+
+    public static final RenderType WAVE_PARTICLE =
+            create("vista_wave_gate", DefaultVertexFormat.NEW_ENTITY,
+                    VertexFormat.Mode.QUADS,
+                    1536, true, false,
+                    RenderType.CompositeState.builder()
+                            .setShaderState(POSITION_COLOR_TEX_LIGHTMAP_SHADER)
+                            .setTextureState(new RenderStateShard.TextureStateShard(TextureAtlas.LOCATION_BLOCKS,
+                                    false, false))
+                            .setTransparencyState(NO_TRANSPARENCY)
+                            .setLightmapState(LIGHTMAP)
+                            .setOverlayState(NO_OVERLAY)
+                            .createCompositeState(false));
 }

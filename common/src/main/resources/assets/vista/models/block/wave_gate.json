@@ -5,6 +5,7 @@
 	"textures": {
 		"1": "vista:block/wave_gate/top",
 		"2": "vista:block/wave_gate/side",
+		"particle": "vista:block/wave_gate/side",
 		"3": "vista:block/wave_gate/antenna"
 	},
 	"elements": [

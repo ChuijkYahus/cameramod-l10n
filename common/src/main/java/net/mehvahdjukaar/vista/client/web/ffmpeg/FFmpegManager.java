@@ -21,9 +21,9 @@ import java.util.stream.Stream;
 
 public final class FFmpegManager {
 
-    private static final Path SOURCES_CONFIG_PATH = Paths.get("ffmpeg_sources.json");
-    private static final String SOURCES_RESOURCE_PATH = "/ffmpeg_sources.json";
-    private static final Path PROGRAM_FOLDER = Paths.get("ffmpeg_bin");
+    private static final Path SOURCES_CONFIG_PATH = Paths.get("vista_ffmpeg_sources.json");
+    private static final String SOURCES_RESOURCE_PATH = "/vista_ffmpeg_sources.json";
+    private static final Path PROGRAM_FOLDER = Paths.get("vista_ffmpeg_bin");
 
     private static final OsType OS_TYPE = OsType.detect();
     private static final Path FFMPEG_PATH = PROGRAM_FOLDER.resolve(OS_TYPE.ffmpegName);

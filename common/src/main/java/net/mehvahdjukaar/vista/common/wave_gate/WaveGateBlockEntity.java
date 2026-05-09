@@ -2,11 +2,12 @@ package net.mehvahdjukaar.vista.common.wave_gate;
 
 import net.mehvahdjukaar.moonlight.api.client.IScreenProvider;
 import net.mehvahdjukaar.vista.VistaMod;
-import net.mehvahdjukaar.vista.client.ui.SignalProjectorScreen;
+import net.mehvahdjukaar.vista.client.ui.WaveGateScreen;
 import net.mehvahdjukaar.vista.client.video_source.IVideoSource;
 import net.mehvahdjukaar.vista.client.video_source.WebUrlVideoSource;
 import net.mehvahdjukaar.vista.common.broadcast.LevelBEBroadcastLocation;
 import net.mehvahdjukaar.vista.common.cassette.IBroadcastSource;
+import net.mehvahdjukaar.vista.configs.CommonConfigs;
 import net.mehvahdjukaar.vista.integration.CompatHandler;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -44,7 +45,7 @@ public class WaveGateBlockEntity extends BlockEntity implements IScreenProvider,
 
     @Override
     public void openScreen(Level level, Player player, Direction direction, Vec3 pos) {
-        SignalProjectorScreen.open(this);
+        WaveGateScreen.open(this);
     }
 
     @Override
@@ -93,6 +94,6 @@ public class WaveGateBlockEntity extends BlockEntity implements IScreenProvider,
     }
 
     public boolean canBeEditedBy(Player player) {
-        return CompatHandler.COMPUTER_CRAFT || player.canUseGameMasterBlocks();
+        return CommonConfigs.isWaveGateCraftable() || player.canUseGameMasterBlocks();
     }
 }

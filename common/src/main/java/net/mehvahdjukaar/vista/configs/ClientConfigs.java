@@ -93,9 +93,9 @@ public class ClientConfigs {
 
         builder.pop();
 
-        builder.push("wave_projector");
-        ENABLE_PROJECTOR = builder.comment("Enable wave projector")
-                .define("enable", false);
+        builder.push("wave_gate");
+        ENABLE_PROJECTOR = builder.comment("Enable FFmpeg use. This is needed if you want to use the Wave Gate")
+                .define("ffmpeg_enabled", true);
         WEB_RESOLUTION_SCALE = builder
                 .comment("Scale factor for web images resolution")
                 .define("resolution_scale", 8, 1, 32);

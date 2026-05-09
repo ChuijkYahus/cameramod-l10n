@@ -5,14 +5,13 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import net.mehvahdjukaar.moonlight.api.client.util.RotHlpr;
 import net.mehvahdjukaar.moonlight.api.client.util.VertexUtil;
-import net.mehvahdjukaar.supplementaries.client.particles.StreamerParticle;
 import net.mehvahdjukaar.vista.VistaModClient;
+import net.mehvahdjukaar.vista.client.VistaRenderTypes;
 import net.mehvahdjukaar.vista.common.wave_gate.WaveGateBlock;
 import net.mehvahdjukaar.vista.common.wave_gate.WaveGateBlockEntity;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.util.Mth;
@@ -35,7 +34,7 @@ public class WaveGateBlockEntityRenderer implements BlockEntityRenderer<WaveGate
         Camera camera = Minecraft.getInstance().gameRenderer.getMainCamera();
         poseStack.pushPose();
         poseStack.translate(0.5, 14 / 16f, 0.5);
-       // poseStack.mulPose(RotHlpr.rot(tile.getBlockState().getValue(WaveGateBlock.FACING)));
+        // poseStack.mulPose(RotHlpr.rot(tile.getBlockState().getValue(WaveGateBlock.FACING)));
 
         var camPos = camera.getPosition();
 
@@ -61,15 +60,15 @@ public class WaveGateBlockEntityRenderer implements BlockEntityRenderer<WaveGate
         int lv = VertexUtil.lightV(packedLight);
 
         VertexConsumer builder = VistaModClient.WAVE_EFFECT.buffer(bufferSource,
-                resourceLocation -> RenderType.beaconBeam(resourceLocation, true));
+                r -> VistaRenderTypes.WAVE_PARTICLE);
 
         float time = (ticks + partialTick) * 0.08f;
 
         float baseWidth = 6 / 16f;
         float baseHeight = 3.5f / 16f;
 
-        float width = baseWidth +  (1 + Mth.sin(time * 1.97f + 1.3f)) * 0.01f;
-        float height = baseHeight +  Mth.sin(time * 2.171f + 4.7f)*2 * 0.01f;
+        float width = baseWidth + (1 + Mth.sin(time * 1.97f + 1.3f)) * 0.01f;
+        float height = baseHeight + Mth.sin(time * 2.171f + 4.7f) * 2 * 0.01f;
 
         VertexUtil.addQuad(
                 builder,

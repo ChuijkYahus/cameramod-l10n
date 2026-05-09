@@ -21,14 +21,12 @@ public final class VistaWelcomeScreen extends Screen {
     private final Component messageText;
 
     private int ticksUntilEnable;
-    private boolean showingCustom;          // are we in custom URL mode?
+    private boolean showingCustom;
 
-    // Main mode widgets
     private Button disableButton;
     private Button defaultButton;
     private Button customButton;
 
-    // Custom mode widgets
     private EditBox urlField;
     private Button confirmCustomButton;
     private Button backButton;
@@ -42,7 +40,7 @@ public final class VistaWelcomeScreen extends Screen {
         super(Component.translatable("gui.vista.welcome.title").withStyle(ChatFormatting.LIGHT_PURPLE, ChatFormatting.BOLD));
         this.lastScreen = lastScreen;
         this.messageText = Component.translatable("gui.vista.welcome.message",
-                Component.literal("WIP"));
+                Component.translatable("block.vista.wave_gate"));
         this.onCustom = callback;
         this.onDefault = onDefault;
         this.onDisable = onDisable;

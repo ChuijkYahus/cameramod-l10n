@@ -7,16 +7,16 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 
-public final class SignalProjectorPeripheral implements IPeripheral {
+public final class WaveGatePeripheral implements IPeripheral {
     private final WaveGateBlockEntity tile;
 
-    public SignalProjectorPeripheral(WaveGateBlockEntity tile) {
+    public WaveGatePeripheral(WaveGateBlockEntity tile) {
         this.tile = tile;
     }
 
     @Override
     public String getType() {
-        return "cassette_burner";
+        return "wave_gate";
     }
 
     @LuaFunction
@@ -27,6 +27,7 @@ public final class SignalProjectorPeripheral implements IPeripheral {
     @LuaFunction
     public void setUrl(String url) {
         tile.setUrl(url);
+        tile.getLevel().sendBlockUpdated(tile.getBlockPos(),tile.getBlockState(),tile.getBlockState(),3);
     }
 
 
@@ -34,7 +35,7 @@ public final class SignalProjectorPeripheral implements IPeripheral {
     public boolean equals(@Nullable IPeripheral obj) {
         if (obj == this) return true;
         if (obj == null || obj.getClass() != this.getClass()) return false;
-        var that = (SignalProjectorPeripheral) obj;
+        var that = (WaveGatePeripheral) obj;
         return Objects.equals(this.tile, that.tile);
     }
 
