@@ -13,15 +13,15 @@ import org.watermedia.videolan4j.factory.MediaPlayerFactory;
 import java.io.IOException;
 import java.util.concurrent.Executor;
 
-public class WatermediaTexture extends AbstractTexture implements IWebTexture {
+public class WatermediaVideoTexture extends AbstractTexture implements IWebTexture {
 
     private final ResourceLocation textureLocation;
     private final ImageCache imageCache;
     private final VideoPlayer videoPlayer;
     private boolean wasPaused = false;
 
-    public WatermediaTexture(ResourceLocation textureLocation, ImageCache imageCache,
-                             int width, int height, Executor executor) {
+    public WatermediaVideoTexture(ResourceLocation textureLocation, ImageCache imageCache,
+                                  int width, int height, Executor executor) {
         //TODO: figure out width and height
         this.videoPlayer = new VideoPlayer(new MediaPlayerFactory(), Minecraft.getInstance());
         this.imageCache = imageCache;
@@ -53,9 +53,10 @@ public class WatermediaTexture extends AbstractTexture implements IWebTexture {
     }
 
     @Override
-    public MediaStatus uploadFrameAtTime(double seconds, boolean paused) {
+    public MediaStatus uploadFrameAtTime(int ticks, float deltaTime, boolean paused) {
         if (paused != wasPaused) {
-            videoPlayer.setPauseMode(paused);
+            if (paused) videoPlayer.pause();
+            else videoPlayer.resume();
         }
         wasPaused = paused;
 

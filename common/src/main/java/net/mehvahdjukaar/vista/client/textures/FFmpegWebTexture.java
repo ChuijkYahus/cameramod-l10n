@@ -35,7 +35,9 @@ public class FFmpegWebTexture extends DynamicTexture implements IWebTexture {
     }
 
     @Override
-    public MediaStatus uploadFrameAtTime(double seconds, boolean paused) {
+    public MediaStatus uploadFrameAtTime(int ticks, float deltaTime, boolean paused) {
+        double seconds = (ticks + deltaTime) / 20.0;
+
         var lookup = session.lookupFrame(seconds);
         MediaFrame frame = lookup.frame();
         if (frame != null && frame != this.lastOriginalFrame) {

@@ -30,13 +30,13 @@ public class WebUrlVideoSource implements IVideoSource {
                                                         int videoAnimationTick, boolean paused,
                                                         IntAnimationState switchAnim, IntAnimationState staticAnim) {
 
-        double seconds = (videoAnimationTick + partialTick) / 20.0;
         if (textureHandle == null || lastScreenSize != screenSize) {
             this.textureHandle = WebTexturesManager.createHandle(url, projectorID, screenSize);
             this.lastScreenSize = screenSize;
         }
+
         IWebTexture texture = textureHandle.getTexture();
-        MediaStatus state = texture.uploadFrameAtTime(seconds, paused);
+        MediaStatus state = texture.uploadFrameAtTime(videoAnimationTick, partialTick, paused);
         CrtOverlay overlay = CrtOverlay.NONE;
         if (state == MediaStatus.CLOSED) {
             overlay = CrtOverlay.DISCONNECT;

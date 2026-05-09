@@ -22,5 +22,5 @@ public interface IWebTexture extends AutoCloseable {
         }
     }
 
-    MediaStatus uploadFrameAtTime(double seconds, boolean paused);
+    MediaStatus uploadFrameAtTime(int ticks, float deltaTime, boolean paused);
 }
