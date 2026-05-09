@@ -6,6 +6,7 @@ import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
 import org.watermedia.api.image.ImageCache;
+import org.watermedia.api.image.ImageRenderer;
 
 import java.io.IOException;
 import java.util.concurrent.Executor;
@@ -20,7 +21,7 @@ public class WatermediaImageTexture extends AbstractTexture implements IWebTextu
         //TODO: figure out width and height
         this.imageCache = imageCache;
         this.textureLocation = textureLocation;
-        this.id = imageCache.getRenderer().texture(0, 0, true);
+        //this.id = imageCache.getRenderer().texture(0, 0, true);
     }
 
     @Override
@@ -44,8 +45,10 @@ public class WatermediaImageTexture extends AbstractTexture implements IWebTextu
 
     @Override
     public MediaStatus uploadFrameAtTime(int ticks, float deltaTime, boolean paused) {
-        this.id = imageCache.getRenderer().texture(ticks, deltaTime, true);
-       return MediaStatus.READY;
+        ImageRenderer renderer = imageCache.getRenderer();
+        if (renderer == null) return MediaStatus.LOADING;
+        this.id = renderer.texture(ticks, deltaTime, true);
+        return MediaStatus.READY;
     }
 
 }
