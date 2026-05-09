@@ -34,6 +34,7 @@ dependencies {
     modCompileOnly("com.terraformersmc:modmenu:4.0.6")
     modCompileOnly("maven.modrinth:flashback:0.32.0")
     modCompileOnly("foundry.veil:veil-fabric-1.21.1:4.0.0")
+   // modCompileOnly("curse.maven:fsable-1312371:8007004")
 
     // modImplementation("cc.tweaked-cobalt:cobalt:0.93")
 }

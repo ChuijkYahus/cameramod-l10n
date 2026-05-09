@@ -1,2 +1,3 @@
 - added web gates, a block that allows TVs to display any direct MEDIA urls
 - view finder zoom level can be controlled with redstone
+- fixes

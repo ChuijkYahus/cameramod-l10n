@@ -56,6 +56,11 @@ public class ViewFinderBlockEntityRenderer implements BlockEntityRenderer<ViewFi
     }
 
     @Override
+    public boolean shouldRender(ViewFinderBlockEntity blockEntity, Vec3 cameraPos) {
+        return BlockEntityRenderer.super.shouldRender(blockEntity, cameraPos) && !blockEntity.isInvisible();
+    }
+
+    @Override
     public void render(ViewFinderBlockEntity tile, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource,
                        int packedLight, int packedOverlay) {
         this.renderModel(tile, partialTick, poseStack, bufferSource, packedLight, packedOverlay);

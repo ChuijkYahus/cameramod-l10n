@@ -64,6 +64,7 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
     private int powerLevelWantedZoom = 0;
     private int zoom = 1;
     private boolean locked = false;
+    private boolean invisible = false;
 
 
     public ViewFinderBlockEntity(BlockPos pos, BlockState state) {
@@ -97,6 +98,7 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
         this.locked = tag.getBoolean("locked");
         this.zoom = tag.getInt("zoom");
         this.powerLevelWantedZoom = tag.getInt("wanted_zoom");
+        if(tag.contains("invisible"))this.invisible = tag.getBoolean("invisible");
         if (level != null) this.ensureLinked(level, LevelBEBroadcastLocation.of(this));
 
         Quaternionf quat;
@@ -122,7 +124,9 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
         tag.putBoolean("locked", this.locked);
         tag.putInt("zoom", this.zoom);
         tag.putInt("wanted_zoom", this.powerLevelWantedZoom);
+        if(this.invisible) tag.putBoolean("invisible", this.invisible);
     }
+
 
     @Override
     protected Component getDefaultName() {
@@ -222,6 +226,10 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
     public void setChanged() {
         super.setChanged();
         //recomputes it
+    }
+
+    public boolean isInvisible() {
+        return invisible;
     }
 
     @Override
