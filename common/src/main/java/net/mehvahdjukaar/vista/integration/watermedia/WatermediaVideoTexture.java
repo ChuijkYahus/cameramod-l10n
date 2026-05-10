@@ -11,26 +11,26 @@ import org.watermedia.api.player.videolan.VideoPlayer;
 import org.watermedia.videolan4j.factory.MediaPlayerFactory;
 
 import java.io.IOException;
+import java.net.URI;
 import java.util.concurrent.Executor;
 
 public class WatermediaVideoTexture extends AbstractTexture implements IWebTexture {
 
     private final ResourceLocation textureLocation;
     private final WatermediaSession session;
-    private final ImageCache imageCache;
     private final VideoPlayer videoPlayer;
     private boolean wasPaused = false;
 
-    public WatermediaVideoTexture(ResourceLocation textureLocation, WatermediaSession session, ImageCache imageCache,
+    public WatermediaVideoTexture(ResourceLocation textureLocation, WatermediaSession session, URI uri,
                                   int width, int height, Executor executor) {
         //TODO: figure out width and height
         this.videoPlayer = new VideoPlayer(new MediaPlayerFactory(), Minecraft.getInstance());
         this.session = session;
-        this.imageCache = imageCache;
         this.textureLocation = textureLocation;
-        this.videoPlayer.start(imageCache.uri);
+        this.videoPlayer.start(uri);
         this.videoPlayer.mute();
         this.videoPlayer.setRepeatMode(true);
+        this.videoPlayer.setVolume(0);
     }
 
     @Override

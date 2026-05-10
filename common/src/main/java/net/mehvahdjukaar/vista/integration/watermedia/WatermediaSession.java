@@ -5,7 +5,6 @@ import net.mehvahdjukaar.vista.client.web.IMediaSession;
 import net.minecraft.resources.ResourceLocation;
 import org.watermedia.api.image.ImageAPI;
 import org.watermedia.api.image.ImageCache;
-import org.watermedia.api.network.patchs.YoutubePatch;
 import org.watermedia.shaded.kiulian.downloader.downloader.client.DefaultClients;
 
 import java.lang.reflect.Field;
@@ -32,25 +31,34 @@ public class WatermediaSession implements IMediaSession {
 
     public static void initHack() {
         try {
-            Field field = YoutubePatch.class.getDeclaredField("WORKING_CLIENT");
+            var c = Class.forName("org.watermedia.api.network.patchs.YoutubePatch");
+            Field field = c.getDeclaredField("WORKING_CLIENT");
             field.setAccessible(true);
             field.set(null, DefaultClients.VALUES[0]);
-        } catch (Exception ignored) {
+        } catch (Throwable ignored) {
         }
 
     }
 
     @Override
     public IWebTexture createTextureView(ResourceLocation resourceLocation) {
-        //true || imageCache.getException() != null || imageCache.isVideo() || imageCache.getRenderer() == null
-        return (!imageCache.uri.toString().endsWith(".gif")) ?
-                new WatermediaVideoTexture(resourceLocation, this, imageCache, targetWidth, targetHeight, executor) :
+        return isVideo() ?
+                new WatermediaVideoTexture(resourceLocation, this, imageCache.uri, targetWidth, targetHeight, executor) :
                 new WatermediaImageTexture(resourceLocation, this, imageCache, targetWidth, targetHeight, executor);
     }
 
     @Override
     public boolean shouldRefreshTexture(IWebTexture tt) {
+        if (isVideo()) {
+            //this was a video after all. we make a texture then
+            return tt instanceof WatermediaImageTexture;
+        }
         return false;
+    }
+
+    private boolean isVideo() {
+        ImageCache.Status status = imageCache.getStatus();
+        return (status == ImageCache.Status.READY && imageCache.isVideo()) || status == ImageCache.Status.FAILED;
     }
 
     @Override
