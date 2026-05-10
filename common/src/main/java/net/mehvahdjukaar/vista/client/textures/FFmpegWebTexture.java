@@ -24,6 +24,11 @@ public class FFmpegWebTexture extends DynamicTexture implements IWebTexture {
     }
 
     @Override
+    public FFmpegMediaSession getSession() {
+        return session;
+    }
+
+    @Override
     public ResourceLocation getTextureLocation() {
         return textureLocation;
     }

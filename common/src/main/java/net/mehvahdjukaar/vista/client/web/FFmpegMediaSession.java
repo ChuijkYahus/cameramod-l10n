@@ -3,6 +3,7 @@ package net.mehvahdjukaar.vista.client.web;
 import com.mojang.blaze3d.platform.NativeImage;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.client.textures.FFmpegWebTexture;
+import net.mehvahdjukaar.vista.client.textures.IWebTexture;
 import net.mehvahdjukaar.vista.client.textures.ImageRescaler;
 import net.mehvahdjukaar.vista.client.web.ffmpeg.FFmpeg;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
@@ -79,7 +80,7 @@ public class FFmpegMediaSession implements IMediaSession {
         return size() > 0;
     }
 
-    private boolean isFailed() {
+    public boolean isFailed() {
         return failed || loadFuture.isCompletedExceptionally();
     }
 
@@ -157,7 +158,11 @@ public class FFmpegMediaSession implements IMediaSession {
 
     @Override
     public FFmpegWebTexture createTextureView(ResourceLocation resourceLocation) {
-
         return new FFmpegWebTexture(resourceLocation, this, targetWidth, targetHeight);
+    }
+
+    @Override
+    public boolean shouldRefreshTexture(IWebTexture tt) {
+        return false;
     }
 }

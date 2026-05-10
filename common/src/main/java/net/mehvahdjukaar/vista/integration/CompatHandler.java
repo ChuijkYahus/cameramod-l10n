@@ -9,6 +9,7 @@ import net.mehvahdjukaar.vista.integration.entity_culling.EntityCullingCompat;
 import net.mehvahdjukaar.vista.integration.exposure.ExposureCompat;
 import net.mehvahdjukaar.vista.integration.flashback.FlashbackCompat;
 import net.mehvahdjukaar.vista.integration.iris.IrisCompat;
+import net.mehvahdjukaar.vista.integration.watermedia.WatermediaSession;
 import net.minecraft.world.item.CreativeModeTabs;
 
 public class CompatHandler {
@@ -29,7 +30,8 @@ public class CompatHandler {
         if (COMPUTER_CRAFT) CCCompat.init();
         PlatHelper.addCommonSetup(() -> {
             if (COMPUTER_CRAFT) CCCompat.setup();
-        });
+            if(PlatHelper.getPhysicalSide().isClient() && WATERMEDIA) WatermediaSession.initHack();
+            });
     }
 
 

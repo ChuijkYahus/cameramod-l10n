@@ -7,9 +7,9 @@ import net.minecraft.resources.ResourceLocation;
 //can create multiple texture views
 public interface IMediaSession extends AutoCloseable {
 
-
     IWebTexture createTextureView(ResourceLocation resourceLocation);
 
+    boolean shouldRefreshTexture(IWebTexture tt);
 
-
+    boolean isFailed();
 }

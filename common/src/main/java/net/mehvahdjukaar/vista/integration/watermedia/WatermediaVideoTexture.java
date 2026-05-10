@@ -16,19 +16,26 @@ import java.util.concurrent.Executor;
 public class WatermediaVideoTexture extends AbstractTexture implements IWebTexture {
 
     private final ResourceLocation textureLocation;
+    private final WatermediaSession session;
     private final ImageCache imageCache;
     private final VideoPlayer videoPlayer;
     private boolean wasPaused = false;
 
-    public WatermediaVideoTexture(ResourceLocation textureLocation, ImageCache imageCache,
+    public WatermediaVideoTexture(ResourceLocation textureLocation, WatermediaSession session, ImageCache imageCache,
                                   int width, int height, Executor executor) {
         //TODO: figure out width and height
         this.videoPlayer = new VideoPlayer(new MediaPlayerFactory(), Minecraft.getInstance());
+        this.session = session;
         this.imageCache = imageCache;
         this.textureLocation = textureLocation;
         this.videoPlayer.start(imageCache.uri);
         this.videoPlayer.mute();
         this.videoPlayer.setRepeatMode(true);
+    }
+
+    @Override
+    public WatermediaSession getSession() {
+        return session;
     }
 
     @Override

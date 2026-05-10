@@ -1,5 +1,6 @@
 package net.mehvahdjukaar.vista.configs;
 
+import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.platform.configs.ConfigBuilder;
 import net.mehvahdjukaar.moonlight.api.platform.configs.ConfigType;
 import net.mehvahdjukaar.moonlight.api.platform.configs.ModConfigHolder;
@@ -7,7 +8,9 @@ import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.client.textures.ScalingMode;
 import net.mehvahdjukaar.vista.integration.CompatHandler;
 
+import java.util.List;
 import java.util.function.Supplier;
+import java.util.regex.Pattern;
 
 public class ClientConfigs {
 
@@ -34,6 +37,8 @@ public class ClientConfigs {
     public static final Supplier<ScalingMode> SCALING_MODE;
     public static final Supplier<Boolean> BILINEAR;
     public static final Supplier<EngineMode> VIDEO_ENGINE;
+    public static final Supplier<List<String>> SAFE_URLS;
+    public static Pattern safeRegex;
 
 
     static {
@@ -95,8 +100,8 @@ public class ClientConfigs {
         builder.pop();
 
         builder.push("wave_gate");
-        VIDEO_ENGINE = CompatHandler.WATERMEDIA ? builder.comment("Toggle between local FFmpeg driven video loading and WaterMedia (VLC) mod usage. Requires Watermedia mod. FFmpeg mode has improved visuals and functionality, and likely supports more media types. Watermedia on the other hand supports youtube links")
-                                                  .define("video_engine", EngineMode.PREFER_FFMPEG) : () -> EngineMode.PREFER_FFMPEG;
+        VIDEO_ENGINE = CompatHandler.WATERMEDIA ? builder.comment("Toggle between local FFmpeg driven video loading and WaterMedia (VLC) mod usage. Requires Watermedia mod. FFmpeg mode has improved visuals and functionality, and likely supports more media types. Watermedia on the other hand supports youtube links. The first mode uses both, prioritizing our local FFmpeg impl and falling back to watermedia on media player links.")
+                                                  .define("media_engine", EngineMode.TRY_FFMPEG_FIRST_THEN_VLC) : () -> EngineMode.TRY_FFMPEG_FIRST_THEN_VLC;
         ENABLE_FFMPEG = builder.comment("Enable FFmpeg use. This is needed if you want to use the Wave Gate")
                 .define("ffmpeg_enabled", true);
         WEB_RESOLUTION_SCALE = builder
@@ -107,10 +112,21 @@ public class ClientConfigs {
                 .define("scaling_mode", ScalingMode.COVER);
         BILINEAR = builder.comment("Enable bilinear sampling for rescaled images. Enable for a less pixelated look")
                 .define("bilinear_sampling", false);
+        SAFE_URLS = builder.comment("A list of regex which will filter out valid URLs. At least one of these must match for a URL video to work")
+                .define("save_urls", List.of());
         builder.pop();
 
         builder.pop();
 
+        builder.onChange(() -> {
+            List<String> elements = SAFE_URLS.get();
+            if (elements.isEmpty()) {
+                safeRegex = Pattern.compile(".*");
+            } else {
+                String combined = String.join("|", elements);
+                safeRegex = Pattern.compile(combined);
+            }
+        });
         SPEC = builder.build();
         SPEC.forceLoad();
     }
@@ -125,15 +141,21 @@ public class ClientConfigs {
     }
 
     public static boolean canUseWatermedia() {
-        return CompatHandler.WATERMEDIA && VIDEO_ENGINE.get() == EngineMode.PREFER_VLC;
+        if (PlatHelper.isDev()) return true;
+        return CompatHandler.WATERMEDIA && VIDEO_ENGINE.get() == EngineMode.USE_VLC;
     }
 
     public static void turnOffFFmpeg() {
         SPEC.manuallySetValue(ENABLE_FFMPEG, false);
     }
 
+    public static boolean isSafeUrl(String input) {
+        return safeRegex.matcher(input).find();
+    }
+
     public enum EngineMode {
-        PREFER_FFMPEG,
-        PREFER_VLC
+        TRY_FFMPEG_FIRST_THEN_VLC,
+        USE_FFMPEG,
+        USE_VLC
     }
 }

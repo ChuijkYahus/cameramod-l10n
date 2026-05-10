@@ -10,14 +10,18 @@ import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.client.web.FFmpegMediaSession;
 import net.mehvahdjukaar.vista.client.web.IMediaSession;
 import net.mehvahdjukaar.vista.client.web.MediaCacheManager;
+import net.mehvahdjukaar.vista.client.web.ffmpeg.FFmpeg;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
+import net.mehvahdjukaar.vista.integration.CompatHandler;
 import net.mehvahdjukaar.vista.integration.watermedia.WatermediaSession;
 import net.minecraft.resources.ResourceLocation;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 
 public class WebTexturesManager {
     private static final long DEFAULT_CACHE_SIZE_BYTES = 512L * 1024L * 1024L;
@@ -82,14 +86,21 @@ public class WebTexturesManager {
         }
 
         public IWebTexture getTexture() {
-            return TEXTURE_CACHE.asMap()
+            //refresh sessions first for loading cache.
+
+            IMediaSession session = getSession();
+
+            IWebTexture wt = TEXTURE_CACHE.asMap()
                     .computeIfAbsent(textureId,
                             resourceLocation -> {
-                                IMediaSession session = getSession();
-                                var texture = session.createTextureView(resourceLocation);
+                                IWebTexture texture = session.createTextureView(resourceLocation);
                                 texture.register();
                                 return texture;
                             });
+            if (session.shouldRefreshTexture(wt)) {
+                TEXTURE_CACHE.invalidate(textureId);
+            }
+            return wt;
         }
 
         private IMediaSession getSession() {
@@ -131,12 +142,34 @@ public class WebTexturesManager {
 
 
     public static IMediaSession createMediaSession(String url, int width, int height) {
-        if (ClientConfigs.canUseWatermedia()) {
-            return new WatermediaSession(url, SESSION_LOADER_EXECUTOR, width, height);
+        ClientConfigs.EngineMode engine = ClientConfigs.VIDEO_ENGINE.get();
+
+        FFmpeg fFmpeg = VistaModClient.getFFmpeg();
+        if (CompatHandler.WATERMEDIA && engine != ClientConfigs.EngineMode.USE_FFMPEG) {
+            if (engine == ClientConfigs.EngineMode.USE_VLC || !looksLikeMedia(url)) {
+                return createWatermediaSession(url, width, height);
+            } else {
+                return new AlternativeSession(
+                        () -> createFFmpegSession(url, width, height, fFmpeg),
+                        () -> createWatermediaSession(url, width, height)
+                );
+            }
         } else {
-            return new FFmpegMediaSession(url,
-                    VistaModClient.getFFmpeg(),
-                    MEDIA_CACHE_MANAGER, SESSION_LOADER_EXECUTOR, width, height);
+            return createFFmpegSession(url, width, height, fFmpeg);
         }
+    }
+
+    private static @NotNull WatermediaSession createWatermediaSession(String url, int width, int height) {
+        return new WatermediaSession(url, SESSION_LOADER_EXECUTOR, width, height);
+    }
+
+    private static @NotNull FFmpegMediaSession createFFmpegSession(String url, int width, int height, FFmpeg fFmpeg) {
+        return new FFmpegMediaSession(url, fFmpeg, MEDIA_CACHE_MANAGER, SESSION_LOADER_EXECUTOR, width, height);
+    }
+
+    private static final Pattern MEDIA_EXT = Pattern.compile("\\.[a-zA-Z0-9]+(?:\\?.*)?$");
+
+    public static boolean looksLikeMedia(String url) {
+        return MEDIA_EXT.matcher(url).find();
     }
 }

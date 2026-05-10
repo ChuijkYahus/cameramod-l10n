@@ -132,7 +132,7 @@ public class LiveFeedTexturesManager {
 
             VistaLevelRenderer.render(text, vf);
 
-            if (ClientConfigs.DRAW_DATE.get() || VistaMod.isFunny()) {
+            if (ClientConfigs.DRAW_DATE.get() || VistaMod.isFunny() || true) {
                 LocalDateTime now = LocalDateTime.now();
                 DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM/dd HH:mm:ss");
                 String cctvTimestamp = now.format(formatter);
@@ -140,7 +140,7 @@ public class LiveFeedTexturesManager {
             }
 
 
-            if (VistaMod.isFunny()) {
+            if (VistaMod.isFunny() || true) {
                 drawOverlay(text, VistaModClient.LL_OVERLAY);
             }
         };
@@ -194,7 +194,6 @@ public class LiveFeedTexturesManager {
     private static void drawOverlay(LiveFeedTexture text, ResourceLocation overlayTexture) {
         Minecraft mc = Minecraft.getInstance();
         RenderTarget oldTarget = mc.getMainRenderTarget();
-
 
         AbstractTexture texture = mc.getTextureManager().getTexture(overlayTexture);
 

@@ -1,5 +1,6 @@
 package net.mehvahdjukaar.vista.client.textures;
 
+import net.mehvahdjukaar.vista.client.web.IMediaSession;
 import net.mehvahdjukaar.vista.client.web.MediaStatus;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.AbstractTexture;
@@ -21,6 +22,8 @@ public interface IWebTexture extends AutoCloseable {
             tm.release(this.getTextureLocation());
         }
     }
+
+    IMediaSession getSession();
 
     MediaStatus uploadFrameAtTime(int ticks, float deltaTime, boolean paused);
 }

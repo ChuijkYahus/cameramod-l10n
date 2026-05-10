@@ -7,6 +7,7 @@ import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.mehvahdjukaar.moonlight.api.util.math.Vec2i;
 import net.mehvahdjukaar.vista.VistaMod;
+import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.client.renderer.texture.SpriteContents;
 import net.minecraft.client.renderer.texture.atlas.SpriteSource;
 import net.minecraft.client.renderer.texture.atlas.SpriteSourceType;
@@ -27,6 +28,7 @@ import javax.imageio.metadata.IIOMetadataNode;
 import javax.imageio.stream.ImageInputStream;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -88,7 +90,8 @@ public class GifPathSpriteSource implements SpriteSource {
             int maxTextureSize = RenderSystem.maxSupportedTextureSize() / 2;
             NativeImage strip = buildTiledAtlas(frames, w, h, maxTextureSize);
             // NativeImage strip = buildVerticalStrip(frames, w, h);
-            // strip.writeToFile(new File("temp_image_dump.png")); // debug if needed
+            strip.writeToFile(new File("temp_image_dump.png")); // debug if needed
+
 
             AnimationMetadataSection anim = buildAnimationMeta(frameTicks, w, h, frames.size());
 

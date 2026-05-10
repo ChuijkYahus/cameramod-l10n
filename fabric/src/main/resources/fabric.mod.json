@@ -23,7 +23,7 @@
       "net.mehvahdjukaar.vista.integration.jei.JEICompat"
     ],
     "modmenu": [
-      "net.mehvahdjukaar.vista.integration.modmenu.fabric.ModMenuCompat"
+      "net.mehvahdjukaar.vista.integration.modmenu.platform.ModMenuCompat"
     ]
   },
   "mixins": [

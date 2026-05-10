@@ -7,6 +7,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
 import org.watermedia.api.image.ImageCache;
 import org.watermedia.api.image.ImageRenderer;
+import org.watermedia.shaded.kiulian.downloader.downloader.client.Client;
+import org.watermedia.shaded.kiulian.downloader.parser.ParserImpl;
 
 import java.io.IOException;
 import java.util.concurrent.Executor;
@@ -14,14 +16,21 @@ import java.util.concurrent.Executor;
 public class WatermediaImageTexture extends AbstractTexture implements IWebTexture {
 
     private final ResourceLocation textureLocation;
+    private final WatermediaSession session;
     private final ImageCache imageCache;
 
-    public WatermediaImageTexture(ResourceLocation textureLocation, ImageCache imageCache,
+    public WatermediaImageTexture(ResourceLocation textureLocation, WatermediaSession session, ImageCache imageCache,
                                   int width, int height, Executor executor) {
         //TODO: figure out width and height
+        this.session = session;
         this.imageCache = imageCache;
         this.textureLocation = textureLocation;
-        //this.id = imageCache.getRenderer().texture(0, 0, true);
+            //this.id = imageCache.getRenderer().texture(0, 0, true);
+    }
+
+    @Override
+    public WatermediaSession getSession() {
+        return session;
     }
 
     @Override

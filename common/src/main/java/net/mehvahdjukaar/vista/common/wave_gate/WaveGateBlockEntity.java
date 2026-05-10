@@ -1,14 +1,15 @@
 package net.mehvahdjukaar.vista.common.wave_gate;
 
 import net.mehvahdjukaar.moonlight.api.client.IScreenProvider;
+import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.client.ui.WaveGateScreen;
 import net.mehvahdjukaar.vista.client.video_source.IVideoSource;
 import net.mehvahdjukaar.vista.client.video_source.WebUrlVideoSource;
 import net.mehvahdjukaar.vista.common.broadcast.LevelBEBroadcastLocation;
 import net.mehvahdjukaar.vista.common.cassette.IBroadcastSource;
+import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.mehvahdjukaar.vista.configs.CommonConfigs;
-import net.mehvahdjukaar.vista.integration.CompatHandler;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
@@ -90,7 +91,11 @@ public class WaveGateBlockEntity extends BlockEntity implements IScreenProvider,
 
     public void setUrl(String url) {
         this.url = url;
-        this.videoSource = url.isBlank() ? IVideoSource.EMPTY : new WebUrlVideoSource(url, myUUID);
+
+        if (PlatHelper.getPhysicalSide().isClient()) {
+            this.videoSource = (url.isBlank() || !ClientConfigs.isSafeUrl(url)) ? IVideoSource.EMPTY :
+                    new WebUrlVideoSource(url, myUUID);
+        }
     }
 
     public boolean canBeEditedBy(Player player) {
