@@ -177,11 +177,11 @@ public class VistaMod {
         }
 
 
+        //view finder not turning player when first used.
         //TODO: improve watermedia
         //TODO: fix channel 2 being blue
         //TODO: fix pause not working
         //TODO: alex mobs shaders compat
-        //TODO: check clock overlay
         //TODO: check panes not working for some
         //night vision and ctr effects for view finders
         //better way to get a clock overlay on tvs
@@ -263,6 +263,6 @@ public class VistaMod {
 
 
     public static boolean isFunny() {
-        return PlatHelper.isDev() || (CompatHandler.SUPPLEMENTARIES && SuppCompat.isFunny());
+        return (CompatHandler.SUPPLEMENTARIES && SuppCompat.isFunny());
     }
 }

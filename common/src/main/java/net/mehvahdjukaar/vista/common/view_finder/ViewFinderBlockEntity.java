@@ -61,8 +61,8 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
 
     private final LiveFeedVideoSource videoSource;
     private UUID myUUID;
-    private int powerLevelWantedZoom = 0;
-    private int zoom = 1;
+    private int powerLevelWantedZoom = 1;
+    private int zoom = 1; //from 1 to 44
     private boolean locked = false;
     private boolean invisible = false;
 
@@ -79,7 +79,7 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
         if (tile.zoom != tile.powerLevelWantedZoom && tile.getCurrentUser() == null) {
             int zoomDiff = tile.powerLevelWantedZoom - tile.zoom;
             int zoomStep = Mth.clamp(zoomDiff, -1, 1);
-            tile.zoom += zoomStep;
+            tile.setZoomLevel(tile.zoom + zoomStep);
         }
     }
 
@@ -96,7 +96,7 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
 
         this.myUUID = tag.getUUID("UUID");
         this.locked = tag.getBoolean("locked");
-        this.zoom = tag.getInt("zoom");
+        this.setZoomLevel(tag.getInt("zoom"));
         this.powerLevelWantedZoom = tag.getInt("wanted_zoom");
         if(tag.contains("invisible"))this.invisible = tag.getBoolean("invisible");
         if (level != null) this.ensureLinked(level, LevelBEBroadcastLocation.of(this));
@@ -124,7 +124,7 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
         tag.putBoolean("locked", this.locked);
         tag.putInt("zoom", this.zoom);
         tag.putInt("wanted_zoom", this.powerLevelWantedZoom);
-        if(this.invisible) tag.putBoolean("invisible", this.invisible);
+        if(this.invisible) tag.putBoolean("invisible", true);
     }
 
 
@@ -177,7 +177,7 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
 
     public void updateRedstonePower(int directPower) {
         int prevWantedZoom = this.powerLevelWantedZoom;
-        this.powerLevelWantedZoom = (int) Mth.map(directPower, 0, 15, 0, MAX_ZOOM);
+        this.powerLevelWantedZoom = (int) Mth.map(directPower, 0, 15, 1, MAX_ZOOM);
         if (powerLevelWantedZoom != prevWantedZoom) {
             this.setChanged(); //update clients
         }
@@ -308,7 +308,7 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
 
     public void setTrustedInternalAttributes(Quaternionf localRotation, int zoom, boolean locked) {
         this.setLocalOrientation(localRotation);
-        this.zoom = zoom;
+        this.setZoomLevel( zoom);
         this.locked = locked;
     }
 

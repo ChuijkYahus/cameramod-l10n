@@ -7,7 +7,6 @@ import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.mehvahdjukaar.moonlight.api.util.math.Vec2i;
 import net.mehvahdjukaar.vista.VistaMod;
-import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.client.renderer.texture.SpriteContents;
 import net.minecraft.client.renderer.texture.atlas.SpriteSource;
 import net.minecraft.client.renderer.texture.atlas.SpriteSourceType;
@@ -92,7 +91,6 @@ public class GifPathSpriteSource implements SpriteSource {
             // NativeImage strip = buildVerticalStrip(frames, w, h);
             strip.writeToFile(new File("temp_image_dump.png")); // debug if needed
 
-
             AnimationMetadataSection anim = buildAnimationMeta(frameTicks, w, h, frames.size());
 
             FrameSize size = new FrameSize(w, h);
@@ -107,7 +105,7 @@ public class GifPathSpriteSource implements SpriteSource {
         return null;
     }
 
-    // --- helpers ---
+// --- helpers ---
 
     private static ImageReader gifReader(ImageInputStream iis) throws IOException {
         Iterator<ImageReader> it = ImageIO.getImageReadersByFormatName("gif");
@@ -117,53 +115,41 @@ public class GifPathSpriteSource implements SpriteSource {
         return r;
     }
 
-    /**
-     * Read GIF delays and convert to Minecraft "ticks" (1 tick = 50ms).
-     * Uses error accumulation so fractional tick parts are distributed and total duration matches GIF.
-     */
     private static List<Integer> readFrameTicks(ImageReader reader, int count) {
-        // read centiseconds (cs) per frame first
         List<Integer> centis = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {
-            int cs = 5; // fallback 5 cs = 50 ms
+            int cs = 5;
             try {
                 var meta = reader.getImageMetadata(i);
                 var root = (IIOMetadataNode) meta.getAsTree("javax_imageio_gif_image_1.0");
                 var gce = (IIOMetadataNode) root.getElementsByTagName("GraphicControlExtension").item(0);
                 if (gce != null) cs = Math.max(1, Integer.parseInt(gce.getAttribute("delayTime")));
-            } catch (Exception ignored) {
-            }
+            } catch (Exception ignored) {}
             centis.add(cs);
         }
 
-        // Convert centiseconds -> milliseconds
         List<Integer> millis = new ArrayList<>(count);
         int totalMs = 0;
         for (int cs : centis) {
-            int ms = cs * 10; // centiseconds -> ms
+            int ms = cs * 10;
             millis.add(ms);
             totalMs += ms;
         }
 
-        // Now distribute into ticks (50 ms each) using error accumulation to preserve total duration
         List<Integer> ticks = new ArrayList<>(count);
         double accError = 0.0;
         for (int ms : millis) {
-            double exactTicks = ms / 50.0;      // exact fractional tick count for this frame
+            double exactTicks = ms / 50.0;
             double tickWithError = exactTicks + accError;
-            int assigned = Math.max(1, (int) Math.round(tickWithError)); // at least 1 tick
-            // update error: what remains after assigning integer ticks
+            int assigned = Math.max(1, (int) Math.round(tickWithError));
             accError = tickWithError - assigned;
             ticks.add(assigned);
         }
 
-        // If rounding caused total ticks to be zero (shouldn't) or we want to enforce a minimum, ensure >=1 each already done.
-        // Optional: adjust sum to match expected total ticks (best-effort)
         int expectedTotalTicks = Math.max(1, (int) Math.round(totalMs / 50.0));
         int actualTotalTicks = ticks.stream().mapToInt(Integer::intValue).sum();
         if (actualTotalTicks != expectedTotalTicks && count > 0) {
             int diff = expectedTotalTicks - actualTotalTicks;
-            // distribute the difference across frames (one tick at a time)
             int idx = 0;
             int step = diff > 0 ? 1 : -1;
             diff = Math.abs(diff);
@@ -172,49 +158,35 @@ public class GifPathSpriteSource implements SpriteSource {
                 idx = (idx + 1) % count;
             }
         }
-
         return ticks;
     }
-
-
-    // === Fixed GIF frame reader (handles offsets + disposal) ===
 
     private static final String GIF_IMAGE_META = "javax_imageio_gif_image_1.0";
     private static final String GIF_STREAM_META = "javax_imageio_gif_stream_1.0";
 
     private static List<BufferedImage> readFramesComposited(ImageReader reader, int count, int[] outWH) throws IOException {
-        // --- 1) logical screen size ---
+
+        // --- logical screen size only ---
         IIOMetadata streamMeta = reader.getStreamMetadata();
-        int screenW = -1, screenH = -1, bgIndex = -1;
-        Color bgColor = new Color(0, true); // fully transparent
+
+        int screenW = -1;
+        int screenH = -1;
 
         if (streamMeta != null) {
-            IIOMetadataNode root = (IIOMetadataNode) streamMeta.getAsTree(GIF_STREAM_META);
-            IIOMetadataNode lsd = (IIOMetadataNode) root.getElementsByTagName("LogicalScreenDescriptor").item(0);
-            if (lsd != null) {
-                screenW = Integer.parseInt(lsd.getAttribute("logicalScreenWidth"));
-                screenH = Integer.parseInt(lsd.getAttribute("logicalScreenHeight"));
-            }
-            IIOMetadataNode bg = (IIOMetadataNode) root.getElementsByTagName("GlobalColorTable").item(0);
-            if (bg != null) {
-                String s = bg.getAttribute("backgroundColorIndex");
-                if (!s.isEmpty()) bgIndex = Integer.parseInt(s);
-                try {
-                    int size = Integer.parseInt(bg.getAttribute("sizeOfGlobalColorTable"));
-                    int[] r = new int[size], g = new int[size], b = new int[size];
-                    for (int i = 0; i < size; i++) {
-                        IIOMetadataNode ce = (IIOMetadataNode) bg.getElementsByTagName("ColorTableEntry").item(i);
-                        if (ce != null) {
-                            r[i] = Integer.parseInt(ce.getAttribute("red"));
-                            g[i] = Integer.parseInt(ce.getAttribute("green"));
-                            b[i] = Integer.parseInt(ce.getAttribute("blue"));
-                        }
-                    }
-                    if (bgIndex >= 0 && bgIndex < r.length) {
-                        bgColor = new Color(r[bgIndex], g[bgIndex], b[bgIndex], 0);
-                    }
-                } catch (Exception ignored) {
+            try {
+                IIOMetadataNode root =
+                        (IIOMetadataNode) streamMeta.getAsTree(GIF_STREAM_META);
+
+                IIOMetadataNode lsd =
+                        (IIOMetadataNode) root
+                                .getElementsByTagName("LogicalScreenDescriptor")
+                                .item(0);
+
+                if (lsd != null) {
+                    screenW = Integer.parseInt(lsd.getAttribute("logicalScreenWidth"));
+                    screenH = Integer.parseInt(lsd.getAttribute("logicalScreenHeight"));
                 }
+            } catch (Exception ignored) {
             }
         }
 
@@ -223,61 +195,135 @@ public class GifPathSpriteSource implements SpriteSource {
             screenW = first.getWidth();
             screenH = first.getHeight();
         }
+
         outWH[0] = screenW;
         outWH[1] = screenH;
 
-        // --- 2) compositing ---
-        BufferedImage canvas = new BufferedImage(screenW, screenH, BufferedImage.TYPE_INT_ARGB);
+        // --- compositing canvas ---
+        BufferedImage canvas =
+                new BufferedImage(screenW, screenH, BufferedImage.TYPE_INT_ARGB);
+
         Graphics2D gCanvas = canvas.createGraphics();
+
+        gCanvas.setComposite(AlphaComposite.Clear);
+        gCanvas.fillRect(0, 0, screenW, screenH);
+
         gCanvas.setComposite(AlphaComposite.SrcOver);
-        gCanvas.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+
+        gCanvas.setRenderingHint(
+                RenderingHints.KEY_INTERPOLATION,
+                RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR
+        );
 
         BufferedImage prevSnapshot = null;
+
         List<BufferedImage> out = new ArrayList<>(count);
 
         for (int i = 0; i < count; i++) {
+
             IIOMetadata meta = reader.getImageMetadata(i);
             FrameMeta fm = parseFrameMeta(meta);
 
-            // snapshot before drawing for disposal=3
+            // snapshot BEFORE drawing current frame
             if (fm.disposal == 3) {
-                if (prevSnapshot == null || prevSnapshot.getWidth() != screenW || prevSnapshot.getHeight() != screenH) {
-                    prevSnapshot = new BufferedImage(screenW, screenH, BufferedImage.TYPE_INT_ARGB);
-                }
-                prevSnapshot.getRaster().setDataElements(0, 0, screenW, screenH,
-                        canvas.getRaster().getDataElements(0, 0, screenW, screenH, null));
+                prevSnapshot =
+                        new BufferedImage(screenW, screenH, BufferedImage.TYPE_INT_ARGB);
+
+                prevSnapshot.getRaster().setDataElements(
+                        0,
+                        0,
+                        screenW,
+                        screenH,
+                        canvas.getRaster().getDataElements(
+                                0,
+                                0,
+                                screenW,
+                                screenH,
+                                null
+                        )
+                );
             }
 
             BufferedImage frameImg = reader.read(i);
-            gCanvas.drawImage(frameImg, fm.left, fm.top, null);
 
-            BufferedImage copy = new BufferedImage(screenW, screenH, BufferedImage.TYPE_INT_ARGB);
-            copy.getRaster().setDataElements(0, 0, screenW, screenH,
-                    canvas.getRaster().getDataElements(0, 0, screenW, screenH, null));
+            // Some readers return already composited full-size frames.
+            boolean fullCanvasFrame =
+                    frameImg.getWidth() == screenW &&
+                            frameImg.getHeight() == screenH;
+
+            if (fullCanvasFrame) {
+                gCanvas.drawImage(frameImg, 0, 0, null);
+            } else {
+                gCanvas.drawImage(frameImg, fm.left, fm.top, null);
+            }
+
+            BufferedImage copy =
+                    new BufferedImage(screenW, screenH, BufferedImage.TYPE_INT_ARGB);
+
+            copy.getRaster().setDataElements(
+                    0,
+                    0,
+                    screenW,
+                    screenH,
+                    canvas.getRaster().getDataElements(
+                            0,
+                            0,
+                            screenW,
+                            screenH,
+                            null
+                    )
+            );
+
             out.add(copy);
 
-            // disposal for next
+            // disposal AFTER current frame
             switch (fm.disposal) {
-                case 2 -> { // restore to background
-                    gCanvas.setComposite(AlphaComposite.Src);
-                    gCanvas.setColor(bgColor);
-                    gCanvas.fillRect(fm.left, fm.top, fm.width, fm.height);
+
+                // restore to transparent
+                case 2 -> {
+                    gCanvas.setComposite(AlphaComposite.Clear);
+
+                    gCanvas.fillRect(
+                            fm.left,
+                            fm.top,
+                            fm.width,
+                            fm.height
+                    );
+
                     gCanvas.setComposite(AlphaComposite.SrcOver);
                 }
-                case 3 -> { // restore to previous
+
+                // restore to previous
+                case 3 -> {
                     if (prevSnapshot != null) {
-                        canvas.getRaster().setDataElements(0, 0, screenW, screenH,
-                                prevSnapshot.getRaster().getDataElements(0, 0, screenW, screenH, null));
+                        canvas.getRaster().setDataElements(
+                                0,
+                                0,
+                                screenW,
+                                screenH,
+                                prevSnapshot.getRaster().getDataElements(
+                                        0,
+                                        0,
+                                        screenW,
+                                        screenH,
+                                        null
+                                )
+                        );
                     }
                 }
+
+                // 0/1 -> keep previous contents
             }
         }
 
         gCanvas.dispose();
-        if (out.isEmpty()) throw new IOException("GIF contained no frames");
+
+        if (out.isEmpty()) {
+            throw new IOException("GIF contained no frames");
+        }
+
         return out;
     }
-
     private static class FrameMeta {
         int left, top, width, height;
         int disposal; // 0/1 none, 2 background, 3 previous
@@ -298,7 +344,7 @@ public class GifPathSpriteSource implements SpriteSource {
                 String disp = gce.getAttribute("disposalMethod");
                 if ("restoreToBackgroundColor".equals(disp)) fm.disposal = 2;
                 else if ("restoreToPrevious".equals(disp)) fm.disposal = 3;
-                else fm.disposal = 1;
+                else fm.disposal = 1; // 0 and 1 both mean “do not dispose”
             } else {
                 fm.disposal = 1;
             }
@@ -310,107 +356,79 @@ public class GifPathSpriteSource implements SpriteSource {
         return fm;
     }
 
+    // --- Original atlas layout (no padding) ---
     public static Vec2i computeAtlasLayout(int frameCount, int frameW, int frameH, int maxWidth, int maxHeight) {
-        // Best fit layout: [rows, cols]
         int bestRows = 1;
         int bestCols = frameCount;
-        int minEmpty = frameCount; // minimize empty slots
+        int minEmpty = frameCount;
 
-        // Try all possible column counts first (vertical strips)
         for (int cols = 1; cols <= frameCount; cols++) {
             int rows = (int) Math.ceil(frameCount / (double) cols);
-
             int atlasW = cols * frameW;
             int atlasH = rows * frameH;
-
-            if (atlasW > maxWidth || atlasH > maxHeight) continue; // too big
-
+            if (atlasW > maxWidth || atlasH > maxHeight) continue;
             int emptySlots = rows * cols - frameCount;
-
-            // Prefer fewer empty slots; break ties by more vertical orientation (fewer rows)
             if (emptySlots < minEmpty || (emptySlots == minEmpty && rows < bestRows)) {
                 minEmpty = emptySlots;
                 bestRows = rows;
                 bestCols = cols;
-
-                if (emptySlots == 0) break; // perfect fit
+                if (emptySlots == 0) break;
             }
         }
-
         return new Vec2i(bestRows, bestCols);
     }
 
-    private static NativeImage buildTiledAtlas(
-            List<BufferedImage> frames,
-            int frameW,
-            int frameH,
-            int maxTextureSize
-    ) {
+    private static NativeImage buildTiledAtlas(List<BufferedImage> frames, int frameW, int frameH, int maxTextureSize) {
         int frameCount = frames.size();
-
-        // --- Compute rows and columns using vertical-strip preference ---
         Vec2i layout = computeAtlasLayout(frameCount, frameW, frameH, maxTextureSize, maxTextureSize);
         int rows = layout.x();
         int cols = layout.y();
-
         int atlasW = cols * frameW;
         int atlasH = rows * frameH;
 
-        NativeImage out = new NativeImage(
-                NativeImage.Format.RGBA,
-                atlasW,
-                atlasH,
-                true
-        );
+        NativeImage out = new NativeImage(NativeImage.Format.RGBA, atlasW, atlasH, true);
 
         for (int i = 0; i < frameCount; i++) {
             int col = i / rows;   // vertical strips: fill columns first
             int row = i % rows;
-
             int xOff = col * frameW;
             int yOff = row * frameH;
-
             copyArgbToAbgr(frames.get(i), out, xOff, yOff, frameW, frameH);
         }
-
         return out;
     }
 
+    // Vertical strip variant (unchanged)
     private static NativeImage buildVerticalStrip(List<BufferedImage> frames, int w, int h) {
         NativeImage out = new NativeImage(NativeImage.Format.RGBA, w, h * frames.size(), true);
         for (int i = 0; i < frames.size(); i++) {
-            int yOff = i * h;
-            copyArgbToAbgr(frames.get(i), out, 0, yOff, w, h);
+            copyArgbToAbgr(frames.get(i), out, 0, i * h, w, h);
         }
         return out;
     }
 
+    // Faster pixel copy using a single array fetch
     private static void copyArgbToAbgr(BufferedImage src, NativeImage dst, int dx, int dy, int w, int h) {
+        int[] srcPixels = src.getRGB(0, 0, w, h, null, 0, w);
         for (int y = 0; y < h; y++) {
             for (int x = 0; x < w; x++) {
-                int argb = src.getRGB(x, y);
+                int argb = srcPixels[y * w + x];
                 int a = (argb >>> 24) & 0xFF;
                 int r = (argb >>> 16) & 0xFF;
                 int g = (argb >>> 8) & 0xFF;
-                int b = (argb) & 0xFF;
+                int b = argb & 0xFF;
                 int abgr = (a << 24) | (b << 16) | (g << 8) | r;
                 dst.setPixelRGBA(dx + x, dy + y, abgr);
             }
         }
     }
 
-    /**
-     * Build proper Minecraft animation metadata with correct frame timing.
-     */
+    // Animation metadata (unchanged)
     private static AnimationMetadataSection buildAnimationMeta(List<Integer> ticks, int w, int h, int frameCount) {
-        // Ensure ticks size >= frames (GIF metadata should match, but be safe)
         if (ticks.size() < frameCount) {
-            // pad with last value
             int last = ticks.isEmpty() ? 1 : Math.max(1, ticks.getLast());
             while (ticks.size() < frameCount) ticks.add(last);
         }
-
-        // Check if all frames have the same duration
         boolean uniform = true;
         int first = Math.max(1, ticks.getFirst());
         for (int i = 1; i < frameCount; i++) {
@@ -419,28 +437,14 @@ public class GifPathSpriteSource implements SpriteSource {
                 break;
             }
         }
-
         if (uniform) {
-            // Use empty frames list and set default frameTime to the GIF delay (in ticks).
-            int frameTime = first; // <-- this is the "time between frames" parameter
-            return new AnimationMetadataSection(
-                    List.of(), // no per-frame overrides
-                    w, h,
-                    Math.max(1, frameTime),
-                    false
-            );
+            return new AnimationMetadataSection(List.of(), w, h, Math.max(1, first), false);
         } else {
-            // Provide per-frame durations; default frameTime is ignored.
             List<AnimationFrame> frames = new ArrayList<>(frameCount);
             for (int i = 0; i < frameCount; i++) {
                 frames.add(new AnimationFrame(i, Math.max(1, ticks.get(i))));
             }
-            return new AnimationMetadataSection(
-                    frames,
-                    w, h,
-                    1,      // default; unused because frames have explicit times
-                    false
-            );
+            return new AnimationMetadataSection(frames, w, h, 1, false);
         }
     }
 

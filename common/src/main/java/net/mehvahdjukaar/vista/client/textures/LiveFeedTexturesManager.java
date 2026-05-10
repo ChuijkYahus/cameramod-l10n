@@ -132,7 +132,7 @@ public class LiveFeedTexturesManager {
 
             VistaLevelRenderer.render(text, vf);
 
-            if (ClientConfigs.DRAW_DATE.get() || VistaMod.isFunny() || true) {
+            if (ClientConfigs.DRAW_DATE.get() || VistaMod.isFunny()) {
                 LocalDateTime now = LocalDateTime.now();
                 DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM/dd HH:mm:ss");
                 String cctvTimestamp = now.format(formatter);
@@ -140,7 +140,7 @@ public class LiveFeedTexturesManager {
             }
 
 
-            if (VistaMod.isFunny() || true) {
+            if (VistaMod.isFunny()) {
                 drawOverlay(text, VistaModClient.LL_OVERLAY);
             }
         };
@@ -162,17 +162,18 @@ public class LiveFeedTexturesManager {
     }
 
 
-    private static void drawText(LiveFeedTexture texture, String text,
+    private static void drawText(LiveFeedTexture target, String text,
                                  int x, int y, boolean shadow, boolean background) {
         Minecraft mc = Minecraft.getInstance();
         RenderTarget oldTarget = mc.getMainRenderTarget();
+        target.getRenderTarget().bindWrite(true);
 
         Font font = mc.font;
         MultiBufferSource.BufferSource bf = mc.renderBuffers().bufferSource();
 
         RenderSystem.backupProjectionMatrix();
         float baseScale = TVBlockEntity.MIN_SCREEN_PIXEL_SIZE * ClientConfigs.LIVE_FEED_RESOLUTION_SCALE.get();
-        float size = baseScale * (texture.getWidth() / baseScale);
+        float size = baseScale * (target.getWidth() / baseScale);
         Matrix4f matrix4f = new Matrix4f().setOrtho(
                 0.0F, size, 0.0F, size, -1, 1);
         RenderSystem.setProjectionMatrix(matrix4f, VertexSorting.ORTHOGRAPHIC_Z);
@@ -191,9 +192,10 @@ public class LiveFeedTexturesManager {
     }
 
 
-    private static void drawOverlay(LiveFeedTexture text, ResourceLocation overlayTexture) {
+    private static void drawOverlay(LiveFeedTexture target, ResourceLocation overlayTexture) {
         Minecraft mc = Minecraft.getInstance();
         RenderTarget oldTarget = mc.getMainRenderTarget();
+        target.getRenderTarget().bindWrite(true);
 
         AbstractTexture texture = mc.getTextureManager().getTexture(overlayTexture);
 
