@@ -30,8 +30,8 @@ public class CompatHandler {
         if (COMPUTER_CRAFT) CCCompat.init();
         PlatHelper.addCommonSetup(() -> {
             if (COMPUTER_CRAFT) CCCompat.setup();
-            if(PlatHelper.getPhysicalSide().isClient() && WATERMEDIA) WatermediaSession.initHack();
-            });
+            if (PlatHelper.getPhysicalSide().isClient() && WATERMEDIA) WatermediaSession.initHack();
+        });
     }
 
 

@@ -39,6 +39,5 @@ dependencies {
     // modImplementation("cc.tweaked-cobalt:cobalt:0.93")
 
     modImplementation("curse.maven:watermedia-869524:7072353")
-    modImplementation("curse.maven:watermedia-869524:7072353")
 
 }

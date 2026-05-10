@@ -3,6 +3,7 @@ package net.mehvahdjukaar.vista.client.web;
 import net.mehvahdjukaar.vista.VistaMod;
 
 import java.io.IOException;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -44,9 +45,28 @@ public class MediaCacheManager {
     }
 
     /**
-     * Obtains a local path for the given URL. Downloads if not already cached.
+     * Obtains a local path for the given URL.
+     * <p>
+     * For HTTP/HTTPS URLs, the video is downloaded (and cached) if not already present.
+     * For local filesystem paths or {@code file://} URLs, the path is used directly with no caching.
      */
     public Path getOrDownload(String url) throws Exception {
+        // Handle local filesystem paths or file:// URLs without going through HTTP download/caching
+        try {
+            URI uri = URI.create(url);
+            String scheme = uri.getScheme();
+            if (scheme == null || scheme.equalsIgnoreCase("file")) {
+                Path localPath = (scheme == null) ? Path.of(url) : Path.of(uri);
+                if (!Files.exists(localPath)) {
+                    throw new IOException("Local media file does not exist: " + localPath);
+                }
+                VistaMod.LOGGER.info("Using local media file {} for URL {}", localPath, url);
+                return localPath;
+            }
+        } catch (IllegalArgumentException ignored) {
+            // If URI parsing fails, fall back to HTTP handling below
+        }
+
         String key = hashUrl(url);
         // Fast path: already cached and available
         CachedEntry existing = urlToEntry.get(key);

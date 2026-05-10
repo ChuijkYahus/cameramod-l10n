@@ -68,6 +68,6 @@ public class WatermediaSession implements IMediaSession {
 
     @Override
     public void close() {
-        //imageCache.deuse();
+        imageCache.deuse();
     }
 }

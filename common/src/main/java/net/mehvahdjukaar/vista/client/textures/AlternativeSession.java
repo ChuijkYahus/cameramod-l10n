@@ -9,6 +9,7 @@ import java.util.function.Supplier;
 public class AlternativeSession implements IMediaSession {
 
     private final Supplier<IMediaSession> fallbackSupplier;
+    @Nullable
     private IMediaSession primary;
     @Nullable
     private IMediaSession fallback;
@@ -19,7 +20,7 @@ public class AlternativeSession implements IMediaSession {
     }
 
     private IMediaSession getActiveSession() {
-        if (primary.isFailed()) {
+        if (primary == null || primary.isFailed()) {
             if (fallback == null) {
                 fallback = fallbackSupplier.get();
                 try {
