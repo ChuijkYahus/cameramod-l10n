@@ -24,6 +24,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
@@ -35,13 +36,24 @@ public class WaveGateBlock extends WaterBlock implements EntityBlock {
     public static final MapCodec<WaveGateBlock> CODEC = simpleCodec(WaveGateBlock::new);
     public static final VoxelShape SHAPE = Block.box(0, 0, 0, 16, 7, 16);
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
+    public static final BooleanProperty POWERED = BlockStateProperties.POWERED;
 
     public WaveGateBlock(Properties properties) {
         super(properties);
         this.registerDefaultState(this.stateDefinition.any()
                 .setValue(FACING, Direction.NORTH)
+                .setValue(POWERED, false)
                 .setValue(WATERLOGGED, false)
         );
+    }
+
+    @Override
+    protected void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock, BlockPos neighborPos, boolean movedByPiston) {
+        super.neighborChanged(state, level, pos, neighborBlock, neighborPos, movedByPiston);
+        boolean shouldBePowered = level.hasNeighborSignal(pos);
+        if (shouldBePowered != state.getValue(POWERED)) {
+            level.setBlock(pos, state.cycle(POWERED), 3);
+        }
     }
 
     @Override
@@ -73,7 +85,7 @@ public class WaveGateBlock extends WaterBlock implements EntityBlock {
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         super.createBlockStateDefinition(builder);
-        builder.add(FACING);
+        builder.add(FACING, POWERED);
     }
 
     @Override

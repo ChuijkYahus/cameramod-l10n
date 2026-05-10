@@ -1,3 +1,4 @@
-- many random fixes
-- default mode for the wave gate is to first try using native ffmpeg impl then flalback to watermedia if available
-- also added some hacks to prevent some bugs with watermedia
+- wave gates can be powered
+- improved watrmedia version handling
+- improved watermedia media handling
+- added support for local files (natively, no need for watermedia)

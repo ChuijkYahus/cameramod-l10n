@@ -55,7 +55,7 @@ public class WatermediaImageTexture extends AbstractTexture implements IWebTextu
     @Override
     public MediaStatus uploadFrameAtTime(int ticks, float deltaTime, boolean paused) {
         ImageRenderer renderer = imageCache.getRenderer();
-        if (renderer == null) return MediaStatus.FAILED;
+        if (renderer == null) return MediaStatus.LOADING;
         if (renderer.textures.length == 0) return MediaStatus.LOADING;
         this.id = renderer.texture(ticks, deltaTime, true);
         return switch (imageCache.getStatus()) {

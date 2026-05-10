@@ -57,6 +57,8 @@ public class VistaModClient {
     public static final ResourceLocation DISCONNECT_OVERLAY = VistaMod.res("textures/cassette_tape/disconnect.png");
     public static final ResourceLocation LOADING_OVERLAY = VistaMod.res("textures/cassette_tape/loading.png");
 
+    public static final ResourceLocation REFRESH_ICON = ResourceLocation.withDefaultNamespace("icon/search");
+
     public static final Material VIEW_FINDER_MATERIAL = new Material(SHULKER_SHEET,
             VistaMod.res("entity/view_finder/viewfinder"));
 

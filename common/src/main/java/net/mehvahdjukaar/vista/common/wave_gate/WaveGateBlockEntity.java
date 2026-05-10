@@ -41,7 +41,7 @@ public class WaveGateBlockEntity extends BlockEntity implements IScreenProvider,
 
     @Override
     public @Nullable IVideoSource getBroadcastVideo() {
-        return videoSource;
+        return getBlockState().getValue(WaveGateBlock.POWERED) ? IVideoSource.EMPTY : videoSource;
     }
 
     @Override

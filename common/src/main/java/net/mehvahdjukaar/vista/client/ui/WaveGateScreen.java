@@ -1,16 +1,19 @@
 package net.mehvahdjukaar.vista.client.ui;
 
 import net.mehvahdjukaar.moonlight.api.platform.network.NetworkHelper;
+import net.mehvahdjukaar.vista.VistaModClient;
+import net.mehvahdjukaar.vista.client.textures.WebTexturesManager;
 import net.mehvahdjukaar.vista.common.wave_gate.WaveGateBlockEntity;
 import net.mehvahdjukaar.vista.network.ServerBoundSyncWaveGatePacket;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.components.*;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.options.AccessibilityOptionsScreen;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.resources.ResourceLocation;
 
 public class WaveGateScreen extends Screen {
     private static final Component EDIT = Component.translatable("gui.vista.wave_gate.edit");
@@ -32,8 +35,14 @@ public class WaveGateScreen extends Screen {
     public void init() {
         assert this.minecraft != null;
 
-        int boxWidth = 360;
-        this.editBox = new EditBox(this.font, (this.width - boxWidth) / 2, this.height / 4 + 10, boxWidth, 20, this.title) {
+        int buttonSize = 20;
+        int spacing = 4;
+        int boxWidth = 360 - buttonSize - spacing;
+        int totalWidth = boxWidth + spacing + buttonSize;
+        int left = (this.width - totalWidth) / 2;
+        int top = this.height / 4 + 10;
+
+        this.editBox = new EditBox(this.font, left, top, boxWidth, 20, this.title) {
             protected MutableComponent createNarrationMessage() {
                 return super.createNarrationMessage();
             }
@@ -43,6 +52,19 @@ public class WaveGateScreen extends Screen {
         this.addRenderableWidget(this.editBox);
         this.setInitialFocus(this.editBox);
         this.editBox.setFocused(true);
+
+        // Square refresh button with a simple glyph icon, next to the text box
+        Button refreshButton = SpriteIconButton.builder(Component.literal("⟳"), (button) -> {
+                    String url = tile.getUrl();
+                    if (url != null && !url.isBlank()) {
+                        WebTexturesManager.invalidateUrl(url);
+                    }
+                }, true)
+                .width(boxWidth)
+                .sprite(VistaModClient.REFRESH_ICON, 15, 15)
+                .build();
+        refreshButton.setTooltip(Tooltip.create(Component.literal("refresh")));
+        this.addRenderableWidget(refreshButton);
 
         this.addRenderableWidget(Button.builder(CommonComponents.GUI_DONE, (button) -> this.onDone()).bounds(this.width / 2 - 100, this.height / 4 + 120, 200, 20).build());
     }

@@ -15,6 +15,7 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.util.Mth;
+import net.minecraft.world.level.block.state.BlockState;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
@@ -31,14 +32,15 @@ public class WaveGateBlockEntityRenderer implements BlockEntityRenderer<WaveGate
     public void render(WaveGateBlockEntity tile, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource,
                        int packedLight, int packedOverlay) {
 
+        BlockState blockState = tile.getBlockState();
+        if (blockState.getValue(WaveGateBlock.POWERED)) return;
+
         Camera camera = Minecraft.getInstance().gameRenderer.getMainCamera();
         poseStack.pushPose();
         poseStack.translate(0.5, 14 / 16f, 0.5);
         // poseStack.mulPose(RotHlpr.rot(tile.getBlockState().getValue(WaveGateBlock.FACING)));
 
-        var camPos = camera.getPosition();
-
-        var facingRot = RotHlpr.rot(tile.getBlockState().getValue(WaveGateBlock.FACING));
+        var facingRot = RotHlpr.rot(blockState.getValue(WaveGateBlock.FACING));
 
         poseStack.mulPose(facingRot);
 

@@ -17,7 +17,10 @@ import net.mehvahdjukaar.vista.integration.watermedia.WatermediaSession;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -56,6 +59,10 @@ public class WebTexturesManager {
                 }
             });
 
+    // Track which session and texture keys belong to each URL for fast invalidation.
+    private static final Map<String, Set<String>> URL_TO_SESSIONS = new ConcurrentHashMap<>();
+    private static final Map<String, Set<ResourceLocation>> URL_TO_TEXTURES = new ConcurrentHashMap<>();
+
     private static final LoadingCache<ResourceLocation, IWebTexture> TEXTURE_CACHE = CacheBuilder.newBuilder()
             .expireAfterAccess(CACHE_EXPIRY_MINUTES, TimeUnit.MINUTES)
             .removalListener(notification -> {
@@ -83,6 +90,10 @@ public class WebTexturesManager {
             this.sessionId = makeUniqueSessionLoc(url, screenSize);
             this.url = url;
             this.screenSize = screenSize;
+
+            // Register mappings so we can invalidate by URL later.
+            URL_TO_TEXTURES.computeIfAbsent(url, k -> ConcurrentHashMap.newKeySet()).add(this.textureId);
+            URL_TO_SESSIONS.computeIfAbsent(url, k -> ConcurrentHashMap.newKeySet()).add(this.sessionId);
         }
 
         public IWebTexture getTexture() {
@@ -123,6 +134,33 @@ public class WebTexturesManager {
 
         SESSION_CACHE.invalidateAll();
         SESSION_CACHE.cleanUp();
+
+        URL_TO_SESSIONS.clear();
+        URL_TO_TEXTURES.clear();
+    }
+
+    /**
+     * Invalidates all media sessions and textures associated with the given URL.
+     * This forces a fresh load the next time any screen requests that URL.
+     */
+    public static void invalidateUrl(String url) {
+        // Invalidate all sessions registered for this URL
+        Set<String> sessionKeys = URL_TO_SESSIONS.remove(url);
+        if (sessionKeys != null) {
+            for (String key : sessionKeys) {
+                SESSION_CACHE.invalidate(key);
+            }
+        }
+        SESSION_CACHE.cleanUp();
+
+        // Invalidate all textures registered for this URL
+        Set<ResourceLocation> textureKeys = URL_TO_TEXTURES.remove(url);
+        if (textureKeys != null) {
+            for (ResourceLocation key : textureKeys) {
+                TEXTURE_CACHE.invalidate(key);
+            }
+        }
+        TEXTURE_CACHE.cleanUp();
     }
 
     private static String makeUniqueSessionLoc(String url, int screenSize) {

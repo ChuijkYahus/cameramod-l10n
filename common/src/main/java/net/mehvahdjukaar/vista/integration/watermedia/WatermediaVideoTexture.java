@@ -6,7 +6,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
-import org.watermedia.api.image.ImageCache;
 import org.watermedia.api.player.videolan.VideoPlayer;
 import org.watermedia.videolan4j.factory.MediaPlayerFactory;
 
@@ -19,7 +18,6 @@ public class WatermediaVideoTexture extends AbstractTexture implements IWebTextu
     private final ResourceLocation textureLocation;
     private final WatermediaSession session;
     private final VideoPlayer videoPlayer;
-    private boolean wasPaused = false;
 
     public WatermediaVideoTexture(ResourceLocation textureLocation, WatermediaSession session, URI uri,
                                   int width, int height, Executor executor) {
@@ -62,19 +60,18 @@ public class WatermediaVideoTexture extends AbstractTexture implements IWebTextu
     @Override
     public MediaStatus uploadFrameAtTime(int ticks, float deltaTime, boolean paused) {
         videoPlayer.mute();
-        if (paused != this.wasPaused) {
+        if (videoPlayer.isPaused() != paused) {
             if (paused) videoPlayer.pause();
             else videoPlayer.resume();
         }
-        this.wasPaused = paused;
 
-        if (videoPlayer.isBroken() || !videoPlayer.isValid()) {
+        if (videoPlayer.isBroken()) {
             return MediaStatus.FAILED;
         }
         if (videoPlayer.isEnded()) {
             return MediaStatus.CLOSED;
         }
-        if (videoPlayer.isBuffering() || videoPlayer.isWaiting()) {
+        if (videoPlayer.isBuffering()) {
             return MediaStatus.BUFFERING;
         }
 
@@ -83,8 +80,14 @@ public class WatermediaVideoTexture extends AbstractTexture implements IWebTextu
         if (videoPlayer.isLoading()) {
             return MediaStatus.LOADING;
         }
+        if (videoPlayer.isReady()) return MediaStatus.READY;
 
-        return MediaStatus.READY;
+        if (videoPlayer.isWaiting()) {
+            return MediaStatus.LOADING;
+        }
+
+        return MediaStatus.LOADING;
+
     }
 
 }
