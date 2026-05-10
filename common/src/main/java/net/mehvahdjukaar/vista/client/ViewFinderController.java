@@ -44,12 +44,14 @@ public class ViewFinderController {
     private static boolean turnedLastTick = false;
 
     private static int viewFinderZoom = 0;
+    private static boolean justStarted = false;
 
     public static void startControlling(ViewFinderBlockEntity tile) {
         Minecraft mc = Minecraft.getInstance();
         if (viewFinder == null) {
             viewFinder = tile;
             lastCameraType = mc.options.getCameraType();
+            justStarted = true;
         } //if not it means we entered from manoeuvre mode gui
         mc.options.setCameraType(CameraType.THIRD_PERSON_BACK);
         MutableComponent message = Component.translatable("message.vista.viewfinder.control",
@@ -75,6 +77,7 @@ public class ViewFinderController {
         lastCameraYaw = 0;
         lastCameraPitch = 0;
         turnedLastTick = false;
+        justStarted = false;
         if (lastCameraType != null) {
             Minecraft.getInstance().options.setCameraType(lastCameraType);
         }
@@ -100,8 +103,19 @@ public class ViewFinderController {
 
         // lerp camera
         Vec3 targetCameraPos = centerCannonPos.add(0, 0.5, 0);
-        float targetYRot = camera.getYRot() + yawIncrease;
-        float targetXRot = Mth.clamp(camera.getXRot() + pitchIncrease, -90, 90);
+
+        float targetYRot;
+        float targetXRot;
+
+        if (justStarted) {
+            EntityAngles angles = EntityAngles.fromQuaternion(viewFinder.getWorldOrientation(partialTick));
+            targetYRot = angles.yaw();
+            targetXRot = angles.pitch();
+            justStarted = false;
+        } else {
+            targetYRot = camera.getYRot() + yawIncrease;
+            targetXRot = Mth.clamp(camera.getXRot() + pitchIncrease, -90, 90);
+        }
 
         camera.setPosition(targetCameraPos);
         camera.setRotation(targetYRot, targetXRot);

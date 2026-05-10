@@ -177,7 +177,6 @@ public class VistaMod {
         }
 
 
-        //view finder not turning player when first used.
         //TODO: improve watermedia
         //TODO: fix channel 2 being blue
         //TODO: fix pause not working

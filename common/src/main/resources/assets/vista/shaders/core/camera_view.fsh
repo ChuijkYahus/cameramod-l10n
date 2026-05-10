@@ -112,10 +112,11 @@ vec3 sampleImage(
     vec3 color = texture(Sampler0, uv).rgb;
 
     if (vOverlayEnabled == 1) {
+        vec2 localTexUV = (uv - frameOriginUV) / SpriteDimensions;
         vec2 overlayUV = vec2(
-        uv.x,
-        (uv.y - frameOriginUV.y) * vOverlayFrameHeightUV
-        + vOverlayFrameOffsetUV.y
+            localTexUV.x,
+            localTexUV.y * vOverlayFrameHeightUV
+            + vOverlayFrameOffsetUV.y
         );
 
         vec4 overlayColor = texture(Sampler1, overlayUV);

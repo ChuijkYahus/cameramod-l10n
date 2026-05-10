@@ -1,2 +1,3 @@
-- added VERY experimental watermedia compat. off by default
-- random fixes
+- many random fixes
+- default mode for the wave gate is to first try using native ffmpeg impl then flalback to watermedia if available
+- also added some hacks to prevent some bugs with watermedia
