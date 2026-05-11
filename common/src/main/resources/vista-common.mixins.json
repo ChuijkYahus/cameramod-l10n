@@ -5,9 +5,12 @@
   "package": "net.mehvahdjukaar.vista.mixins",
   "mixins": [
     "AnvilMenuMixin",
+    "ChunkMapMixin",
     "CompatGeckoLibMixin",
     "EndermanMixin",
-    "PlayerMixin"
+    "PlayerMixin",
+    "ServerPlayerMixin",
+    "accessor.ChunkMapAccessor"
   ],
   "client": [
     "CameraMixin",

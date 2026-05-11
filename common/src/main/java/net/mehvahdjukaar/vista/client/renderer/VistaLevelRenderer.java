@@ -62,6 +62,7 @@ public class VistaLevelRenderer {
         MC_OWN_GRAPH.set(null);
         MANAGED_GRAPHS.clear();
         currentRenderingViewFinder = null;
+        CameraChunkLoadingManager.clear();
     }
 
     public static DummyCamera getDummyCamera() {
@@ -75,11 +76,12 @@ public class VistaLevelRenderer {
         Minecraft mc = Minecraft.getInstance();
 
         if (mc.level == null) return;
-        //debounce dimension changing for some reason idk yet
         if (mc.level.dimension() != lastLevel) {
             lastLevel = mc.level.dimension();
             return;
         }
+
+        CameraChunkLoadingManager.registerCamera(tile);
 
         RenderTarget mainTarget = mc.getMainRenderTarget();
         RenderTarget canvas = text.getRenderTarget();
@@ -89,12 +91,10 @@ public class VistaLevelRenderer {
         Camera mainCamera = mc.gameRenderer.mainCamera;
         mc.gameRenderer.mainCamera = camera;
 
-        // save old state
         float oldRenderDistance = mc.gameRenderer.renderDistance;
         PostChain oldPostEffect = mc.gameRenderer.postEffect;
         boolean wasEffectActive = mc.gameRenderer.effectActive;
 
-        // switch to feed camera state
         LevelRendererCameraState oldCameraState = LevelRendererCameraState.capture(mc.levelRenderer);
         LevelRendererCameraState feedCameraState = text.getRendererState();
 
@@ -111,10 +111,15 @@ public class VistaLevelRenderer {
 
             text.applyPostChain();
 
-            // use camera fov
             float fov = tile.getFOV();
+            int cameraRenderDist = calculateRenderDistance(fov);
 
-            mc.gameRenderer.renderDistance = Math.min(oldRenderDistance, calculateRenderDistance(fov));
+            feedCameraState.setCameraRenderDistance(cameraRenderDist);
+            
+            Vec3 cameraPos = camera.getPosition();
+            feedCameraState.repositionCamera(cameraPos.x, cameraPos.z);
+
+            mc.gameRenderer.renderDistance = Math.min(oldRenderDistance, cameraRenderDist);
             RenderSystem.clear(16640, ON_OSX);
             FogRenderer.setupNoFog();
             RenderSystem.enableCull();
@@ -124,10 +129,8 @@ public class VistaLevelRenderer {
             MANAGED_GRAPHS.add(feedCameraState.getOcclusionGraph());
             MC_OWN_GRAPH.set(oldCameraState.getOcclusionGraph());
 
-            // already wrapped outside; don't double-wrap this or it fucks everything over omg.
             renderLevel(mc, canvas, camera, fov);
 
-            // save updated feed camera state
             feedCameraState.copyFrom(mc.levelRenderer);
 
             if (mc.gameRenderer.postEffect != null && mc.gameRenderer.effectActive) {
@@ -140,21 +143,16 @@ public class VistaLevelRenderer {
         } finally {
             MC_OWN_GRAPH.set(null);
 
-            // restore old camera state
             oldCameraState.apply(mc.levelRenderer);
 
-            // restore old render state
             oldRenderState.apply();
-            // clear depth only; clearing color here causes visible world/water popping
             RenderSystem.clear(GL11C.GL_DEPTH_BUFFER_BIT, ON_OSX);
 
-            // swap back
             currentRenderingViewFinder = null;
 
             mc.mainRenderTarget = mainTarget;
             mc.gameRenderer.mainCamera = mainCamera;
 
-            // restore post process
             mc.gameRenderer.postEffect = oldPostEffect;
             mc.gameRenderer.effectActive = wasEffectActive;
             mc.gameRenderer.renderDistance = oldRenderDistance;
@@ -261,19 +259,15 @@ public class VistaLevelRenderer {
 
         SectionOcclusionGraph graph = lr.sectionOcclusionGraph;
 
+        Entity cameraEntity = camera.entity;
+        double cameraX = cameraPosition.x;
+        double cameraY = cameraPosition.y;
+        double cameraZ = cameraPosition.z;
 
-        // Get player's exact coordinates
-        Entity cameraEntity = camera.entity; //this.minecraft.player
-        double playerX = cameraEntity.getX();
-        double playerY = cameraEntity.getY();
-        double playerZ = cameraEntity.getZ();
+        int cameraSectionX = SectionPos.posToSectionCoord(cameraX);
+        int cameraSectionY = SectionPos.posToSectionCoord(cameraY);
+        int cameraSectionZ = SectionPos.posToSectionCoord(cameraZ);
 
-        // Convert world coordinates to section (chunk) coordinates
-        int cameraSectionX = SectionPos.posToSectionCoord(playerX);
-        int cameraSectionY = SectionPos.posToSectionCoord(playerY);
-        int cameraSectionZ = SectionPos.posToSectionCoord(playerZ);
-
-        // If the camera has moved to a new section, update the renderer's tracking and reposition the view area
         if (lr.lastCameraSectionX != cameraSectionX ||
                 lr.lastCameraSectionY != cameraSectionY ||
                 lr.lastCameraSectionZ != cameraSectionZ) {
@@ -282,24 +276,20 @@ public class VistaLevelRenderer {
             lr.lastCameraSectionY = cameraSectionY;
             lr.lastCameraSectionZ = cameraSectionZ;
 
-            //view area is not swapped and is always centered on actual player
-            //lr.viewArea.repositionCamera(playerX, playerZ);
+            lr.viewArea.repositionCamera(cameraX, cameraZ);
         }
 
-        // Update the section render dispatcher with the camera position
         lr.sectionRenderDispatcher.setCamera(cameraPosition);
 
         clientLevel.getProfiler().popPush("cull");
         minecraft.getProfiler().popPush("culling");
 
-        // Camera's block position (rounded to nearest block)
         BlockPos cameraBlockPos = camera.getBlockPosition();
 
         Player player = minecraft.player;
-        // Compute camera position in 8-block "units" for occlusion checks
-        double cameraUnitX = Math.floor(player.getX() / 8.0);
-        double cameraUnitY = Math.floor(player.getY() / 8.0);
-        double cameraUnitZ = Math.floor(player.getZ() / 8.0);
+        double cameraUnitX = Math.floor(cameraX / 8.0);
+        double cameraUnitY = Math.floor(cameraY / 8.0);
+        double cameraUnitZ = Math.floor(cameraZ / 8.0);
 
         // If the camera has moved to a new 8-block unit, invalidate the occlusion graph
         if (cameraUnitX != lr.prevCamX ||

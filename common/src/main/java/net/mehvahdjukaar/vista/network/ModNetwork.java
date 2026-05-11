@@ -12,5 +12,6 @@ public class ModNetwork {
         event.registerBidirectional(SyncViewFinderPacket.CODEC);
         event.registerServerBound(ServerBoundSyncWaveGatePacket.CODEC);
         event.registerClientBound(ClientBoundControlViewFinderPacket.CODEC);
+        event.registerServerBound(ServerBoundCameraChunkRequestPacket.CODEC);
     }
 }

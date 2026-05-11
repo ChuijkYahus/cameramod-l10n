@@ -178,6 +178,7 @@ public class VistaModClient {
         if (p == null) return;
 
         ViewFinderController.onClientTick(minecraft);
+        CameraChunkLoadingManager.tick();
     }
 
     public static void onRenderTickEnd(Minecraft minecraft) {
