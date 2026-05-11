@@ -28,6 +28,7 @@ import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
@@ -169,6 +170,10 @@ public class ViewFinderBlock extends DirectionalBlock implements EntityBlock, IR
             }
             if (player instanceof ServerPlayer sp) {
                 //same as super but sends custom packet
+                if (sp.gameMode.getGameModeForPlayer() == GameType.ADVENTURE &&
+                        tile.getAdventureModeOperation() == ViewFinderBlockEntity.AdventureModeOperation.NO_INTERACTION) {
+                    return ItemInteractionResult.sidedSuccess(level.isClientSide());
+                }
                 if (tile.canBeUsedBy(pos, player)) {
                     tile.setCurrentUser(player.getUUID());
                     NetworkHelper.sendToClientPlayer(sp, new ClientBoundControlViewFinderPacket(TileOrEntityTarget.of(tile)));

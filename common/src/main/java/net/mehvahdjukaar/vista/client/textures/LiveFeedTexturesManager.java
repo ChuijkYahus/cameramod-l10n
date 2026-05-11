@@ -102,6 +102,8 @@ public class LiveFeedTexturesManager {
     @SuppressWarnings("ConstantConditions")
     public static void clear() {
         UPDATE_TIMES.clear();
+        //TODO: change just invalidate our own
+        DynamicTextureRenderer.clearCache();
     }
 
     public static void onRenderTickEnd() {

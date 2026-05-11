@@ -17,6 +17,7 @@ Follow these rules exactly:
 - ALWAYS use *mixin* tools when possible.
 - Unless specified, don't worry about compiling stuff. User will run compileJava and report eventual errors.
 - If you want to see the MC sources or libraries sources you really have to use the mixin tools.
+- **REALLY** If you have a reference to a field or element, search THAT using the mixin tools instead of searching by string!
 
 ## Efficiency
 - Avoid reading an entire class unless you are certain you need it. Prefer targeted reads (methods, fields, specific ranges).
@@ -24,3 +25,25 @@ Follow these rules exactly:
 - If you are making too many MCP calls for information the user can provide, ask the user instead.
 - Favor simpler solutions first, unless the user specifies otherwise.
 - Only run syntax/lint checks on large changes that are likely to introduce errors.
+
+
+### AI use of IntelliJ / mixin MCP tools
+
+- The AI MUST prefer IntelliJ MCP / mixin tools over shell/grep/cat for reading code and navigating symbols.
+- For **small, local edits** (known classes, no new mixins, no vanilla/deps inspection):
+  - Use at most a few **targeted** IDE calls:
+    - Direct `read_file` by known path, and/or
+    - `search_symbol` for a specific class/method, then `read_file` on that file.
+  - AVOID:
+    - Broad project-wide `search_text` / `search_regex` when the file/symbol is already known.
+    - Re-reading the same file multiple times; read once, then patch.
+    - Looking up vanilla implementation your model already probably learned unless chasing a specific issue that requires looking up the source code precisely.
+  - As a soft cap, stay around **≤ 8 IDE tool calls** total unless there’s a concrete reason (e.g. a compile/runtime error you’re actively chasing).
+
+- For **vanilla/dependency/mixin work** (locating targets, injection points, bytecode, cross-mod conflicts):
+  - Aggressively use the dedicated `mixin_*` tools (type hierarchy, references, call graph, bytecode) instead of any form of text search.
+  - It is acceptable to use more tool calls here, but prefer precise symbol-based queries over broad regex searches.
+
+- General:
+  - “ALWAYS prefer mixin/IDE tools” means **use them instead of shell/grep**, NOT “fire many unfocused searches.”
+  - When in doubt: first try “read the one file I care about” or “lookup this one symbol,” and only then escalate to wider searches.

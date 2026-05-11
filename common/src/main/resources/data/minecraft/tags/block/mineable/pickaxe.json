@@ -1,6 +1,7 @@
 {
   "replace": false,
   "values": [
-    "vista:viewfinder"
+    "vista:viewfinder",
+    "vista:wave_gate"
   ]
 }

@@ -29,6 +29,7 @@ public class VistaFabricClient {
         HudRenderCallback.EVENT.register(VistaFabricClient::onRenderHud);
 
         ClientWorldEvents.AFTER_CLIENT_WORLD_CHANGE.register((minecraft, clientLevel) -> {
+            VistaModClient.onLevelUnloaded(clientLevel);
             VistaModClient.onLevelLoaded(clientLevel);
         });
 

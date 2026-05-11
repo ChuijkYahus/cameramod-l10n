@@ -65,6 +65,7 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
     private int zoom = 1; //from 1 to 44
     private boolean locked = false;
     private boolean invisible = false;
+    private AdventureModeOperation adventureModeOperation = AdventureModeOperation.NONE;
 
 
     public ViewFinderBlockEntity(BlockPos pos, BlockState state) {
@@ -98,7 +99,10 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
         this.locked = tag.getBoolean("locked");
         this.setZoomLevel(tag.getInt("zoom"));
         this.powerLevelWantedZoom = tag.getInt("wanted_zoom");
-        if(tag.contains("invisible"))this.invisible = tag.getBoolean("invisible");
+        if (tag.contains("invisible")) this.invisible = tag.getBoolean("invisible");
+        if (tag.contains("adventure_mode")) {
+            this.adventureModeOperation = AdventureModeOperation.fromName(tag.getString("adventure_mode"));
+        }
         if (level != null) this.ensureLinked(level, LevelBEBroadcastLocation.of(this));
 
         Quaternionf quat;
@@ -124,7 +128,8 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
         tag.putBoolean("locked", this.locked);
         tag.putInt("zoom", this.zoom);
         tag.putInt("wanted_zoom", this.powerLevelWantedZoom);
-        if(this.invisible) tag.putBoolean("invisible", true);
+        if (this.invisible) tag.putBoolean("invisible", true);
+        tag.putString("adventure_mode", this.adventureModeOperation.name());
     }
 
 
@@ -377,5 +382,29 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
 
     public boolean shouldRotatePlayerFaceWhenManeuvering() {
         return false;
+    }
+
+    public AdventureModeOperation getAdventureModeOperation() {
+        return adventureModeOperation;
+    }
+
+    public void setAdventureModeOperation(AdventureModeOperation adventureModeOperation) {
+        this.adventureModeOperation = adventureModeOperation;
+        this.setChanged();
+    }
+
+    public enum AdventureModeOperation {
+        NONE,
+        VIEW_ONLY,
+        NO_INTERACTION;
+
+        public static AdventureModeOperation fromName(String name) {
+            for (AdventureModeOperation value : values()) {
+                if (value.name().equalsIgnoreCase(name)) {
+                    return value;
+                }
+            }
+            return NONE;
+        }
     }
 }

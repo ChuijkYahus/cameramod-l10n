@@ -19,6 +19,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
@@ -48,6 +49,7 @@ public class ViewFinderController {
 
     public static void startControlling(ViewFinderBlockEntity tile) {
         Minecraft mc = Minecraft.getInstance();
+        if (isAdventureNoInteraction(tile)) return;
         if (viewFinder == null) {
             viewFinder = tile;
             lastCameraType = mc.options.getCameraType();
@@ -136,6 +138,7 @@ public class ViewFinderController {
     public static boolean onPlayerRotated(double yawAdd, double pitchAdd) {
         if (isActive()) {
             if (isLocked()) return true;
+            if (isAdventureViewOnly()) return true;
             float scale = 0.2f;
             yawIncrease += (float) (yawAdd * scale);
             pitchIncrease += (float) (pitchAdd * scale);
@@ -170,6 +173,7 @@ public class ViewFinderController {
     public static boolean onMouseScrolled(double scrollDelta) {
         if (!isActive()) return false;
         if (isLocked()) return true;
+        if (isAdventureViewOnly()) return true;
 
         if (scrollDelta != 0) {
             int newZoom = (Math.clamp((int) (viewFinder.getZoomLevel() + scrollDelta), 1, ViewFinderBlockEntity.MAX_ZOOM));
@@ -189,6 +193,7 @@ public class ViewFinderController {
     @EventCalled
     public static boolean onPlayerAttack() {
         if (!isActive()) return false;
+        if (isAdventureViewOnly()) return true;
         toggleLock();
         return true;
     }
@@ -196,6 +201,7 @@ public class ViewFinderController {
     @EventCalled
     public static boolean onPlayerUse() {
         if (!isActive()) return false;
+        if (isAdventureViewOnly()) return true;
         toggleLock();
         return true;
     }
@@ -293,6 +299,21 @@ public class ViewFinderController {
         } else {
             PostShadersHelper.toggleEffect(null, LENSES_GROUP);
         }
+    }
+
+    private static boolean isAdventureNoInteraction(ViewFinderBlockEntity tile) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.gameMode == null) return false;
+        if (mc.gameMode.getPlayerMode() != GameType.ADVENTURE) return false;
+        return tile.getAdventureModeOperation() == ViewFinderBlockEntity.AdventureModeOperation.NO_INTERACTION;
+    }
+
+    private static boolean isAdventureViewOnly() {
+        if (viewFinder == null) return false;
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.gameMode == null) return false;
+        if (mc.gameMode.getPlayerMode() != GameType.ADVENTURE) return false;
+        return viewFinder.getAdventureModeOperation() == ViewFinderBlockEntity.AdventureModeOperation.VIEW_ONLY;
     }
 
 

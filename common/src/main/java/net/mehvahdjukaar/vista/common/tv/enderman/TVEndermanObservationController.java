@@ -95,6 +95,7 @@ public class TVEndermanObservationController {
         Vec3 right = screenNormal.cross(up);
 
         for (Player player : players) {
+            if (player.isCreative()) continue;
             TVSpectatorView viewResult = getPlayerHit(player, screenCenterPos, screenNormal, right, up, screenW, screenH);
             if (viewResult != null) result.add(viewResult);
         }

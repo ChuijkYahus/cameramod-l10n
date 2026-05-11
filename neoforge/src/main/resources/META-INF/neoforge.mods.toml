@@ -36,13 +36,14 @@ modUrl = "${mod_homepage}"
 [[dependencies.${ mod_id }]]
     modId = "moonlight"
     mandatory = true
+    type = "required"
     versionRange = "[${moonlight_min_version},)"
     ordering = "NONE"
     side = "BOTH"
 
 [[dependencies.${ mod_id }]]
     modId = "watermedia"
-    mandatory = false
+    type = "optional"
     versionRange = "[,3.0.0)"
     ordering = "NONE"
     side = "CLIENT"

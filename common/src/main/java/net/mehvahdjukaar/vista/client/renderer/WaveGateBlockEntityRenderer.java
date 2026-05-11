@@ -70,7 +70,7 @@ public class WaveGateBlockEntityRenderer implements BlockEntityRenderer<WaveGate
         float baseHeight = 3.5f / 16f;
 
         float width = baseWidth + (1 + Mth.sin(time * 1.97f + 1.3f)) * 0.01f;
-        float height = baseHeight + Mth.sin(time * 2.171f + 4.7f) * 2 * 0.01f;
+        float height = baseHeight + (1 + Mth.cos(time * 2.171f + 4.7f)) * 0.02f;
 
         VertexUtil.addQuad(
                 builder,

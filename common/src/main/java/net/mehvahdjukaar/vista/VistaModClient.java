@@ -200,6 +200,11 @@ public class VistaModClient {
         }
     }
 
+    public static void onLevelUnloaded(ClientLevel cl){
+        KNOWN_LEVELS_BY_DIMENSION.remove(cl.dimension());
+        LiveFeedTexturesManager.clear();
+    }
+
     public static void onLevelLoaded(ClientLevel cl) {
         KNOWN_LEVELS_BY_DIMENSION.put(cl.dimension(), cl);
     }

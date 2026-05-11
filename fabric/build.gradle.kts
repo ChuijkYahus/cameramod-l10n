@@ -24,6 +24,7 @@ dependencies {
 
     modImplementation("curse.maven:supplementaries-412082:8044264")
             //modImplementation("net.mehvahdjukaar:supplementaries-fabric:${supplementaries_version}")
+    modImplementation("curse.maven:watermedia-869524:7072353")
 
     modCompileOnly("curse.maven:irisshaders-455508:6213635")
     modCompileOnly("curse.maven:exposure-871755:7862665")
@@ -35,12 +36,11 @@ dependencies {
     modCompileOnly("maven.modrinth:flashback:0.32.0")
     modCompileOnly("curse.maven:geckolib-388172:7707138")
 
-    modRuntimeOnly("foundry.veil:veil-fabric-1.21.1:4.0.0")
-    modRuntimeOnly("curse.maven:fsable-1312371:8007004")
-    implementation("org.apache.maven:maven-artifact:3.9.9")
-    modRuntimeOnly("dev.ryanhcode.sable-companion:sable-companion-fabric-1.21.1:1.6.0")
+   // modRuntimeOnly("foundry.veil:veil-fabric-1.21.1:4.0.0")
+   // modRuntimeOnly("curse.maven:fsable-1312371:8007004")
+    //implementation("org.apache.maven:maven-artifact:3.9.9")
+    //modRuntimeOnly("dev.ryanhcode.sable-companion:sable-companion-fabric-1.21.1:1.6.0")
 
     // modImplementation("cc.tweaked-cobalt:cobalt:0.93")
 
-    modImplementation("curse.maven:watermedia-869524:7072353")
 }

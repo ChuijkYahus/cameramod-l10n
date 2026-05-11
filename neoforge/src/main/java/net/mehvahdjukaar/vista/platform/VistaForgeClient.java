@@ -29,6 +29,13 @@ public class VistaForgeClient {
         }
     }
 
+    @SubscribeEvent
+    public static void onLevelUnloaded(LevelEvent.Unload event) {
+        if (event.getLevel() instanceof ClientLevel cl && cl == Minecraft.getInstance().level) {
+            VistaModClient.onLevelUnloaded(cl);
+        }
+    }
+
     private static boolean firstScreenShown;
 
     @SubscribeEvent
