@@ -60,9 +60,11 @@ public class WaveGateScreen extends Screen {
                         WebTexturesManager.invalidateUrl(url);
                     }
                 }, true)
-                .width(boxWidth)
+                .size(buttonSize, buttonSize)
                 .sprite(VistaModClient.REFRESH_ICON, 15, 15)
                 .build();
+        refreshButton.setX(left + boxWidth + spacing);
+        refreshButton.setY(top);
         refreshButton.setTooltip(Tooltip.create(Component.literal("refresh")));
         this.addRenderableWidget(refreshButton);
 

@@ -53,7 +53,7 @@ public class WatermediaVideoTexture extends AbstractTexture implements IWebTextu
 
     @Override
     public void close() {
-        super.close();
+        super.close(); //this.id is -1 so nothing happens
         videoPlayer.release();
     }
 

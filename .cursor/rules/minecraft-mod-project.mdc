@@ -16,6 +16,7 @@ Follow these rules exactly:
 - REALLY don't use regex searches! Mixin tools will give you ABSOLUTE answers. Don't do things stubbornly. Ask the user when in doubt.
 - ALWAYS use *mixin* tools when possible.
 - Unless specified, don't worry about compiling stuff. User will run compileJava and report eventual errors.
+- If you want to see the MC sources or libraries sources you really have to use the mixin tools.
 
 ## Efficiency
 - Avoid reading an entire class unless you are certain you need it. Prefer targeted reads (methods, fields, specific ranges).
