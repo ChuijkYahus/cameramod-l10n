@@ -7,9 +7,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
 import org.watermedia.api.image.ImageCache;
 import org.watermedia.api.image.ImageRenderer;
-import org.watermedia.shaded.kiulian.downloader.downloader.client.Client;
-import org.watermedia.shaded.kiulian.downloader.parser.ParserImpl;
-
 import java.io.IOException;
 import java.util.concurrent.Executor;
 
@@ -43,12 +40,23 @@ public class WatermediaImageTexture extends AbstractTexture implements IWebTextu
         return id;
     }
 
+    /**
+     * Do not let Minecraft manage the GL texture id for Watermedia images.
+     * The underlying ImageRenderer / ImageCache owns the texture lifetime.
+     */
+    @Override
+    public void releaseId() {
+        // no-op: GL texture is managed by Watermedia
+    }
+
     @Override
     public void load(ResourceManager resourceManager) throws IOException {
     }
 
     @Override
     public void close() {
+        // Image lifetime is managed by WatermediaSession / ImageCache.
+        // We intentionally do not call releaseId() here.
         super.close();
     }
 

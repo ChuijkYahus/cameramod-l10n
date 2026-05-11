@@ -18,6 +18,7 @@ public class WatermediaVideoTexture extends AbstractTexture implements IWebTextu
     private final ResourceLocation textureLocation;
     private final WatermediaSession session;
     private final VideoPlayer videoPlayer;
+    private volatile boolean released = false;
 
     public WatermediaVideoTexture(ResourceLocation textureLocation, WatermediaSession session, URI uri,
                                   int width, int height, Executor executor) {
@@ -43,6 +44,10 @@ public class WatermediaVideoTexture extends AbstractTexture implements IWebTextu
 
     @Override
     public int getId() {
+        // After release, avoid returning a deleted texture name.
+        if (released) {
+            return 0;
+        }
         return videoPlayer.texture();
     }
 
@@ -53,8 +58,20 @@ public class WatermediaVideoTexture extends AbstractTexture implements IWebTextu
 
     @Override
     public void close() {
-        super.close(); //this.id is -1 so nothing happens
-        videoPlayer.release();
+        if (!released) {
+            released = true;
+            // Let Watermedia clean up its own GL texture.
+            videoPlayer.release();
+        }
+    }
+
+    /**
+     * Do not let Minecraft manage the GL texture id for Watermedia videos.
+     * The underlying VideoPlayer / RenderAPI owns the texture lifetime.
+     */
+    @Override
+    public void releaseId() {
+        // no-op: GL texture is managed by Watermedia
     }
 
     @Override

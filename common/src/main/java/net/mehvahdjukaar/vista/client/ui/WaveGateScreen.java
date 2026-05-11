@@ -65,7 +65,7 @@ public class WaveGateScreen extends Screen {
                 .build();
         refreshButton.setX(left + boxWidth + spacing);
         refreshButton.setY(top);
-        refreshButton.setTooltip(Tooltip.create(Component.literal("refresh")));
+        refreshButton.setTooltip(Tooltip.create(Component.translatable("gui.vista.refresh")));
         this.addRenderableWidget(refreshButton);
 
         this.addRenderableWidget(Button.builder(CommonComponents.GUI_DONE, (button) -> this.onDone()).bounds(this.width / 2 - 100, this.height / 4 + 120, 200, 20).build());

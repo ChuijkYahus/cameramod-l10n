@@ -33,6 +33,8 @@ dependencies {
     modCompileOnly("curse.maven:jei-238222:7420587")
     //modCompileOnly("curse.maven:irisshaders-455508:6213635")
     modCompileOnly("curse.maven:sodium-394468:6382651")
+    //due to geckolib state machine nonsense
+    modCompileOnly("curse.maven:geckolib-388172:7707149")
 
     modCompileOnly("curse.maven:alexs-caves-924854:4806837")
     modImplementation("curse.maven:watermedia-869524:7072353")

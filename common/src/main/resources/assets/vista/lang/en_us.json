@@ -39,5 +39,6 @@
   "gui.vista.welcome.install_defaults": "Install defaults",
   "gui.vista.welcome.install_custom": "Install custom",
   "gui.vista.welcome.custom_hint": "FFmpeg binaries URL:",
-  "gui.vista.welcome.download": "Download"
+  "gui.vista.welcome.download": "Download",
+  "gui.vista.refresh": "Refresh"
 }
