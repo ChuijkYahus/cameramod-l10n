@@ -6,6 +6,7 @@
   "mixins": [
     "AnvilMenuMixin",
     "ChunkMapMixin",
+    "ChunkTrackingViewMixin",
     "CompatGeckoLibMixin",
     "EndermanMixin",
     "PlayerMixin",
@@ -14,6 +15,8 @@
   ],
   "client": [
     "CameraMixin",
+    "ClientChunkCacheMixin",
+    "ClientChunkCacheStorageMixin",
     "CompatIrisBobbingMixin",
     "CompatIrisDhCompat",
     "CompatIrisMixin",
@@ -24,7 +27,10 @@
     "KeyboardHandlerMixin",
     "LevelRendererMixin",
     "LocalPlayerMixin",
-    "MouseHandlerMixin"
+    "MouseHandlerMixin",
+    "RenderSectionMixin",
+    "SectionOcclusionGraphMixin",
+    "ViewAreaMixin"
   ],
   "injectors": {
     "defaultRequire": 1

@@ -3,6 +3,7 @@ package net.mehvahdjukaar.vista.mixins.accessor;
 import net.minecraft.server.level.ChunkMap;
 import net.minecraft.server.level.ChunkTrackingView;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.ChunkPos;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Invoker;
 
@@ -14,4 +15,7 @@ public interface ChunkMapAccessor {
     
     @Invoker("getPlayerViewDistance")
     int vista$getPlayerViewDistance(ServerPlayer player);
+    
+    @Invoker("markChunkPendingToSend")
+    void vista$markChunkPendingToSend(ServerPlayer player, ChunkPos chunkPos);
 }
