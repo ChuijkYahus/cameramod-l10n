@@ -74,7 +74,7 @@ public class CameraChunkLoadingManager {
     }
     
     private static void sendChunkLoadRequest(BlockPos cameraPos, boolean register) {
-        NetworkHelper.sendToServer(new ServerBoundCameraChunkRequestPacket(cameraPos, register));
+        NetworkHelper.sendToServer(new ServerBoundCameraChunkRequestPacket(cameraPos, register, (byte) CHUNK_RADIUS));
     }
     
     public static Set<ChunkPos> getDesiredChunks() {

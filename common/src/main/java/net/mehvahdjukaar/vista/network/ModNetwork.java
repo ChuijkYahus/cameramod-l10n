@@ -13,5 +13,6 @@ public class ModNetwork {
         event.registerServerBound(ServerBoundSyncWaveGatePacket.CODEC);
         event.registerClientBound(ClientBoundControlViewFinderPacket.CODEC);
         event.registerServerBound(ServerBoundCameraChunkRequestPacket.CODEC);
+        event.registerClientBound(ClientBoundSyncExtraChunksPacket.CODEC);
     }
 }

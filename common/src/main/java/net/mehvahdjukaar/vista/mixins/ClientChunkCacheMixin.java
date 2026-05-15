@@ -1,5 +1,6 @@
 package net.mehvahdjukaar.vista.mixins;
 
+import net.mehvahdjukaar.vista.common.ExtraChunkViewData;
 import net.minecraft.client.multiplayer.ClientChunkCache;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
@@ -14,52 +15,52 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.function.Consumer;
 
+/**
+ * Prevents the client's circular-buffer chunk cache from evicting chunks that belong
+ * to a camera zone registered in {@link ExtraChunkViewData#CLIENT_INSTANCE}.
+ *
+ * The circular buffer is indexed by {@code floorMod(x/z, viewRange)}, so when the
+ * player moves far from a zone origin, another chunk overwrites that slot and evicts
+ * the zone chunk. We keep our own {@code Map<Long, LevelChunk>} reference so
+ * {@code getChunk} always returns real data for the pinned RenderSection to compile.
+ */
 @Mixin(ClientChunkCache.class)
 public class ClientChunkCacheMixin {
 
-    /**
-     * Permanent reference to chunk (0,0). The ClientChunkCache uses a circular buffer
-     * keyed by floorMod(x/z, viewRange). When the player is far from origin, another
-     * chunk X with floorMod(X.x, viewRange)==0 & floorMod(X.z, viewRange)==0 overwrites
-     * slot 0, evicting chunk (0,0). We keep our own reference so getChunk(0,0) always
-     * returns real data for the pinned section to compile against.
-     */
     @Unique
-    private LevelChunk vista$pinnedChunk00;
+    private final Map<Long, LevelChunk> vista$pinnedChunks = new HashMap<>();
 
-    /**
-     * Short-circuit getChunk before the circular-buffer lookup for chunk (0,0).
-     * This ensures block data is always available for the pinned RenderSection to
-     * compile against, regardless of what the circular buffer slot currently holds.
-     */
+    /** Short-circuit getChunk for any pinned zone chunk before the circular-buffer lookup. */
     @Inject(method = "getChunk(IILnet/minecraft/world/level/chunk/status/ChunkStatus;Z)Lnet/minecraft/world/level/chunk/LevelChunk;",
             at = @At("HEAD"), cancellable = true)
     private void vista$getPinnedChunk(int x, int z, ChunkStatus status, boolean require,
             CallbackInfoReturnable<LevelChunk> cir) {
-        if (x == 0 && z == 0 && this.vista$pinnedChunk00 != null) {
-            cir.setReturnValue(this.vista$pinnedChunk00);
+        if (ExtraChunkViewData.CLIENT_INSTANCE.containsChunk(x, z)) {
+            LevelChunk chunk = this.vista$pinnedChunks.get(ChunkPos.asLong(x, z));
+            if (chunk != null) {
+                cir.setReturnValue(chunk);
+            }
         }
     }
 
-    /**
-     * When the server sends chunk (0,0) save a permanent reference so that even
-     * after the circular buffer evicts it we can still serve it from getChunk.
-     */
+    /** When the server sends a zone chunk, save a permanent reference. */
     @Inject(method = "replaceWithPacketData", at = @At("RETURN"))
     private void vista$capturePinnedChunk(int x, int z, FriendlyByteBuf buffer, CompoundTag tag,
             Consumer<ClientboundLevelChunkPacketData.BlockEntityTagOutput> consumer,
             CallbackInfoReturnable<LevelChunk> cir) {
-        if (x == 0 && z == 0 && cir.getReturnValue() != null) {
-            this.vista$pinnedChunk00 = cir.getReturnValue();
+        if (ExtraChunkViewData.CLIENT_INSTANCE.containsChunk(x, z) && cir.getReturnValue() != null) {
+            this.vista$pinnedChunks.put(ChunkPos.asLong(x, z), cir.getReturnValue());
         }
     }
 
-    /** Prevent a server-initiated drop packet from clearing our pinned reference. */
+    /** Prevent a server-initiated drop packet from clearing a pinned zone chunk. */
     @Inject(method = "drop", at = @At("HEAD"), cancellable = true)
-    private void vista$preventDropChunk00(ChunkPos chunkPos, CallbackInfo ci) {
-        if (chunkPos.x == 0 && chunkPos.z == 0) {
+    private void vista$preventDropPinnedChunk(ChunkPos chunkPos, CallbackInfo ci) {
+        if (ExtraChunkViewData.CLIENT_INSTANCE.containsChunk(chunkPos.x, chunkPos.z)) {
             ci.cancel();
         }
     }

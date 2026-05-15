@@ -4,6 +4,7 @@ import com.mojang.serialization.Codec;
 import net.mehvahdjukaar.moonlight.api.misc.*;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.platform.RegHelper;
+import net.mehvahdjukaar.moonlight.api.platform.network.NetworkHelper;
 import net.mehvahdjukaar.vista.common.ExtraChunkViewData;
 import net.mehvahdjukaar.vista.common.ModLootOverrides;
 import net.mehvahdjukaar.vista.common.broadcast.BroadcastLocationType;
@@ -25,6 +26,7 @@ import net.mehvahdjukaar.vista.common.wave_gate.WaveGateBlockEntity;
 import net.mehvahdjukaar.vista.configs.CommonConfigs;
 import net.mehvahdjukaar.vista.integration.CompatHandler;
 import net.mehvahdjukaar.vista.integration.supplementaries.SuppCompat;
+import net.mehvahdjukaar.vista.network.ClientBoundSyncExtraChunksPacket;
 import net.mehvahdjukaar.vista.network.ModNetwork;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
@@ -41,8 +43,8 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.monster.EnderMan;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.*;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.SoundType;
@@ -273,5 +275,11 @@ public class VistaMod {
 
     public static boolean isFunny() {
         return (CompatHandler.SUPPLEMENTARIES && SuppCompat.isFunny());
+    }
+
+    public static void onPlayerLoggedIn(ServerPlayer sp) {
+        var attach = TRACKED_CAMERAS_ATTACH.getOrCreate(sp);
+        attach.addZone(new ChunkPos(3, 2), 5);
+        NetworkHelper.sendToClientPlayer(sp, new ClientBoundSyncExtraChunksPacket(attach));
     }
 }

@@ -17,6 +17,7 @@ import net.mehvahdjukaar.vista.client.textures.WebTexturesManager;
 import net.mehvahdjukaar.vista.client.ui.VistaWelcomeScreen;
 import net.mehvahdjukaar.vista.client.web.ffmpeg.FFmpeg;
 import net.mehvahdjukaar.vista.client.web.ffmpeg.FFmpegManager;
+import net.mehvahdjukaar.vista.common.ExtraChunkViewData;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
@@ -204,6 +205,8 @@ public class VistaModClient {
     public static void onLevelUnloaded(ClientLevel cl){
         KNOWN_LEVELS_BY_DIMENSION.remove(cl.dimension());
         LiveFeedTexturesManager.clear();
+
+        ExtraChunkViewData.CLIENT_INSTANCE.clearZones();
     }
 
     public static void onLevelLoaded(ClientLevel cl) {

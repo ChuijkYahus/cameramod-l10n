@@ -2,7 +2,7 @@ package net.mehvahdjukaar.vista.mixins;
 
 import com.mojang.logging.LogUtils;
 import net.mehvahdjukaar.vista.common.ExtraChunkViewData;
-import net.mehvahdjukaar.vista.client.renderer.PinnedSections;
+import net.mehvahdjukaar.vista.common.IPinnableRenderSection;
 import net.minecraft.client.renderer.ViewArea;
 import net.minecraft.client.renderer.chunk.SectionRenderDispatcher;
 import net.minecraft.world.level.ChunkPos;
@@ -33,12 +33,13 @@ public class ViewAreaMixin {
      * After the normal torus grid is built, append one extra Y-column of RenderSections
      * for every chunk position registered in ExtraChunkViewData. These slots sit beyond
      * the torus index range so repositionCamera never moves them.
+     *
+     * The pinned flag is stored on each section itself via {@link IPinnableRenderSection};
+     * no global state is needed.
      */
     @Inject(method = "createSections", at = @At("TAIL"))
     private void vista$appendPinnedSections(SectionRenderDispatcher dispatcher, CallbackInfo ci) {
-        PinnedSections.clear();
-
-        Set<ChunkPos> extraChunks = ExtraChunkViewData.getAllChunks();
+        Set<ChunkPos> extraChunks = ExtraChunkViewData.CLIENT_INSTANCE.getAllChunks();
         if (extraChunks.isEmpty()) return;
 
         int normalSize = this.sections.length;
@@ -57,7 +58,9 @@ public class ViewAreaMixin {
                     VISTA_LOGGER.error("Failed to create pinned RenderSection at ({}, {}, {})", blockX, yOrigin, blockZ);
                 } else {
                     extended[newIndex] = section;
-                    PinnedSections.register(newIndex);
+                    if (section instanceof IPinnableRenderSection ps) {
+                        ps.vista$setPinned(true);
+                    }
                 }
                 slotOffset++;
             }
