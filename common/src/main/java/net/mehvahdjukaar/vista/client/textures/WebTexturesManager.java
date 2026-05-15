@@ -17,6 +17,8 @@ import net.mehvahdjukaar.vista.integration.watermedia.WatermediaSession;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
 
+import java.net.URI;
+import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -60,8 +62,8 @@ public class WebTexturesManager {
             });
 
     // Track which session and texture keys belong to each URL for fast invalidation.
-    private static final Map<String, Set<String>> URL_TO_SESSIONS = new ConcurrentHashMap<>();
-    private static final Map<String, Set<ResourceLocation>> URL_TO_TEXTURES = new ConcurrentHashMap<>();
+    private static final Map<URI, Set<String>> URL_TO_SESSIONS = new ConcurrentHashMap<>();
+    private static final Map<URI, Set<ResourceLocation>> URL_TO_TEXTURES = new ConcurrentHashMap<>();
 
     private static final LoadingCache<ResourceLocation, IWebTexture> TEXTURE_CACHE = CacheBuilder.newBuilder()
             .expireAfterAccess(CACHE_EXPIRY_MINUTES, TimeUnit.MINUTES)
@@ -82,18 +84,18 @@ public class WebTexturesManager {
 
         private final ResourceLocation textureId;
         private final String sessionId;
-        private final String url;
+        private final URI uri;
         private final int screenSize;
 
-        public Handle(String url, UUID id, int screenSize) {
-            this.textureId = makeUniqueTextureLoc(url, id, screenSize);
-            this.sessionId = makeUniqueSessionLoc(url, screenSize);
-            this.url = url;
+        public Handle(URI uri, UUID id, int screenSize) {
+            this.textureId = makeUniqueTextureLoc(uri, id, screenSize);
+            this.sessionId = makeUniqueSessionLoc(uri, screenSize);
+            this.uri = uri;
             this.screenSize = screenSize;
 
             // Register mappings so we can invalidate by URL later.
-            URL_TO_TEXTURES.computeIfAbsent(url, k -> ConcurrentHashMap.newKeySet()).add(this.textureId);
-            URL_TO_SESSIONS.computeIfAbsent(url, k -> ConcurrentHashMap.newKeySet()).add(this.sessionId);
+            URL_TO_TEXTURES.computeIfAbsent(uri, k -> ConcurrentHashMap.newKeySet()).add(this.textureId);
+            URL_TO_SESSIONS.computeIfAbsent(uri, k -> ConcurrentHashMap.newKeySet()).add(this.sessionId);
         }
 
         public IWebTexture getTexture() {
@@ -118,13 +120,13 @@ public class WebTexturesManager {
             return SESSION_CACHE.asMap()
                     .computeIfAbsent(sessionId, res -> {
                         int imageSize = ClientConfigs.WEB_RESOLUTION_SCALE.get() * screenSize;
-                        return createMediaSession(url, imageSize, imageSize);
+                        return createMediaSession(uri, imageSize, imageSize);
                     });
         }
     }
 
 
-    public static Handle createHandle(String url, UUID projectorUUID, int screenSize) {
+    public static Handle createHandle(URI url, UUID projectorUUID, int screenSize) {
         return new Handle(url, projectorUUID, screenSize);
     }
 
@@ -163,12 +165,12 @@ public class WebTexturesManager {
         TEXTURE_CACHE.cleanUp();
     }
 
-    private static String makeUniqueSessionLoc(String url, int screenSize) {
-        return url + "@" + screenSize;
+    private static String makeUniqueSessionLoc(URI url, int screenSize) {
+        return url.toString() + "@" + screenSize;
     }
 
-    private static ResourceLocation makeUniqueTextureLoc(String url, UUID uuid, int screenSize) {
-        String uniqueTextureKey = url + "@" + uuid + "@" + screenSize;
+    private static ResourceLocation makeUniqueTextureLoc(URI url, UUID uuid, int screenSize) {
+        String uniqueTextureKey = url.toString() + "@" + uuid + "@" + screenSize;
         return VistaMod.res("web_feed/" + sanitizePath(uniqueTextureKey));
     }
 
@@ -179,9 +181,8 @@ public class WebTexturesManager {
     }
 
 
-    public static IMediaSession createMediaSession(String url, int width, int height) {
+    public static IMediaSession createMediaSession(URI url, int width, int height) {
         ClientConfigs.EngineMode engine = ClientConfigs.VIDEO_ENGINE.get();
-
         FFmpeg fFmpeg = VistaModClient.getFFmpeg();
         if (CompatHandler.WATERMEDIA && engine != ClientConfigs.EngineMode.USE_FFMPEG) {
             if (engine == ClientConfigs.EngineMode.USE_VLC || !looksLikeMedia(url)) {
@@ -197,17 +198,17 @@ public class WebTexturesManager {
         }
     }
 
-    private static @NotNull WatermediaSession createWatermediaSession(String url, int width, int height) {
-        return new WatermediaSession(url, SESSION_LOADER_EXECUTOR, width, height);
+    private static @NotNull WatermediaSession createWatermediaSession(URI uri, int width, int height) {
+        return new WatermediaSession(uri, SESSION_LOADER_EXECUTOR, width, height);
     }
 
-    private static @NotNull FFmpegMediaSession createFFmpegSession(String url, int width, int height, FFmpeg fFmpeg) {
-        return new FFmpegMediaSession(url, fFmpeg, MEDIA_CACHE_MANAGER, SESSION_LOADER_EXECUTOR, width, height);
+    private static @NotNull FFmpegMediaSession createFFmpegSession(URI uri, int width, int height, FFmpeg fFmpeg) {
+        return new FFmpegMediaSession(uri, fFmpeg, MEDIA_CACHE_MANAGER, SESSION_LOADER_EXECUTOR, width, height);
     }
 
     private static final Pattern MEDIA_EXT = Pattern.compile("\\.[a-zA-Z0-9]+(?:\\?.*)?$");
 
-    public static boolean looksLikeMedia(String url) {
-        return MEDIA_EXT.matcher(url).find();
+    public static boolean looksLikeMedia(URI url) {
+        return MEDIA_EXT.matcher(url.toString()).find();
     }
 }

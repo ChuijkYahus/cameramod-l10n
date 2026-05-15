@@ -15,9 +15,7 @@ import net.mehvahdjukaar.vista.common.tv.connection.RectSelection;
 import net.mehvahdjukaar.vista.configs.CommonConfigs;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.world.Containers;
-import net.minecraft.world.InteractionHand;
-import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.*;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -25,6 +23,7 @@ import net.minecraft.world.item.Equipable;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
@@ -42,7 +41,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.HashMap;
 import java.util.Map;
 
-public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, Equipable, IOptionalEntityBlock {
+public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, Equipable, IOptionalEntityBlock, WorldlyContainerHolder {
 
     public static final MapCodec<TVBlock> CODEC = simpleCodec(TVBlock::new);
     public static final EnumProperty<PowerState> POWER_STATE = EnumProperty.create("powered", PowerState.class);
@@ -65,6 +64,14 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
     }
 
     @Override
+    public WorldlyContainer getContainer(BlockState state, LevelAccessor level, BlockPos pos) {
+        BlockEntity master = getMasterBlockEntity(level, pos, state);
+        if (master instanceof WorldlyContainer wc) return wc;
+        return EmptyWorldlyContainer.INSTANCE;
+    }
+
+
+    @Override
     public EquipmentSlot getEquipmentSlot() {
         return EquipmentSlot.HEAD;
     }
@@ -75,7 +82,7 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
     }
 
     @Nullable
-    private TVBlockEntity getMasterBlockEntity(Level level, BlockPos pos, BlockState state) {
+    private TVBlockEntity getMasterBlockEntity(LevelAccessor level, BlockPos pos, BlockState state) {
         //find bottom left
         //for block that cant have tile entity first iterate down (depending on the connection state), then left until you either dont reach no more tv blocks or you reach one that has a tile entity
         TVType type = state.getValue(CONNECTION);

@@ -9,6 +9,7 @@ import org.watermedia.shaded.kiulian.downloader.downloader.client.DefaultClients
 
 import java.lang.reflect.Field;
 import java.net.URI;
+import java.nio.file.Paths;
 import java.util.concurrent.Executor;
 
 public class WatermediaSession implements IMediaSession {
@@ -19,10 +20,10 @@ public class WatermediaSession implements IMediaSession {
     private final int targetWidth;
     private final int targetHeight;
 
-    public WatermediaSession(String url, Executor executor,
+    public WatermediaSession(URI uri, Executor executor,
                              int targetWidth, int targetHeight) {
         //TODO: check executor
-        this.imageCache = ImageAPI.getCache(URI.create(url.trim()), executor);
+        this.imageCache = ImageAPI.getCache(uri, executor);
         this.executor = executor;
         this.targetWidth = targetWidth;
         this.targetHeight = targetHeight;

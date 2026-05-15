@@ -10,6 +10,7 @@ import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.Nullable;
 
+import java.net.URI;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -31,28 +32,28 @@ public class FFmpegMediaSession implements IMediaSession {
     private final int targetWidth;
     private final int targetHeight;
 
-    public FFmpegMediaSession(String url, @Nullable FFmpeg ffmpeg, MediaCacheManager cacheManager,
+    public FFmpegMediaSession(URI uri, @Nullable FFmpeg ffmpeg, MediaCacheManager cacheManager,
                               Executor executor,
                               int targetWidth, int targetHeight) {
         this.targetWidth = targetWidth;
         this.targetHeight = targetHeight;
-        this.loadFuture = CompletableFuture.runAsync(() -> asyncThreadJob(url, ffmpeg, cacheManager), executor);
+        this.loadFuture = CompletableFuture.runAsync(() -> asyncThreadJob(uri, ffmpeg, cacheManager), executor);
     }
 
-    private void asyncThreadJob(String url, @Nullable FFmpeg ffmpeg, MediaCacheManager cacheManager) {
+    private void asyncThreadJob(URI uri, @Nullable FFmpeg ffmpeg, MediaCacheManager cacheManager) {
         try {
             if (ffmpeg == null) {
                 this.failed = true;
                 return;
             }
-            Path videoPath = cacheManager.getOrDownload(url);
+            Path videoPath = cacheManager.getOrDownload(uri);
             if (closed) return;
             FFmpegMediaDecoder newDecoder = new FFmpegMediaDecoder(ffmpeg, this, videoPath);
             this.decoder = newDecoder;
             newDecoder.run(); //blocking until done
         } catch (Exception e) {
             failed = true;
-            VistaMod.LOGGER.error("Failed to load web video {}", url, e);
+            VistaMod.LOGGER.error("Failed to load web video {}", uri, e);
         }
     }
 
