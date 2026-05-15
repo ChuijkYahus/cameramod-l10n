@@ -1,5 +1,6 @@
 package net.mehvahdjukaar.vista.mixins;
 
+import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.common.ExtraChunkViewData;
 import net.mehvahdjukaar.vista.common.IChunkViewWithZones;
 import net.minecraft.server.level.ChunkTrackingView;
@@ -56,10 +57,16 @@ public class ChunkTrackingViewMixin implements IChunkViewWithZones {
     private void vista$addExtraZoneChunks(Consumer<ChunkPos> action, CallbackInfo ci) {
         if (vista$zones == null || vista$zones.getZones().isEmpty()) return;
         ChunkTrackingView self = (ChunkTrackingView) (Object) this;
+        int added = 0;
         for (ChunkPos pos : vista$zones.getAllChunks()) {
             if (!self.isInViewDistance(pos.x, pos.z)) {
                 action.accept(pos);
+                added++;
             }
+        }
+        if (added > 0) {
+            VistaMod.LOGGER.info(
+                    "[Vista/Chunks] ChunkTrackingView.forEach emitting {} extra zone chunks into tracking diff", added);
         }
     }
 }

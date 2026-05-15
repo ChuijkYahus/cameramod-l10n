@@ -18,4 +18,8 @@ public interface ChunkMapAccessor {
     
     @Invoker("markChunkPendingToSend")
     void vista$markChunkPendingToSend(ServerPlayer player, ChunkPos chunkPos);
+
+    @Invoker("getChunkToSend")
+    @org.jetbrains.annotations.Nullable
+    net.minecraft.world.level.chunk.LevelChunk vista$getChunkToSend(long chunkPos);
 }

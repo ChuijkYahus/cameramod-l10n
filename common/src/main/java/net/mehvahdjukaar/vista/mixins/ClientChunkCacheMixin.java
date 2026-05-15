@@ -54,6 +54,8 @@ public class ClientChunkCacheMixin {
             CallbackInfoReturnable<LevelChunk> cir) {
         if (ExtraChunkViewData.CLIENT_INSTANCE.containsChunk(x, z) && cir.getReturnValue() != null) {
             this.vista$pinnedChunks.put(ChunkPos.asLong(x, z), cir.getReturnValue());
+            net.mehvahdjukaar.vista.VistaMod.LOGGER.info(
+                    "[Vista/Chunks] Client received zone chunk ({}, {})", x, z);
         }
     }
 

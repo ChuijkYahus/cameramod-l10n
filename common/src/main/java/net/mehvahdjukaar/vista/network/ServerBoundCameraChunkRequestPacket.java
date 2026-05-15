@@ -34,8 +34,11 @@ public record ServerBoundCameraChunkRequestPacket(
     public void handle(Context context) {
         if (!(context.getPlayer() instanceof ServerPlayer player)) return;
 
-        ExtraChunkViewData data = VistaMod.TRACKED_CAMERAS_ATTACH.getOrCreate(player);
+        ExtraChunkViewData data = VistaMod.EXTRA_VIEW_AREAS.getOrCreate(player);
         ChunkPos cameraChunk = new ChunkPos(cameraPos);
+
+        VistaMod.LOGGER.info("[Vista/Chunks] Received {} request for camera at {} (chunk {}) radius={}",
+                register ? "REGISTER" : "UNREGISTER", cameraPos, cameraChunk, radius);
 
         if (register) {
             data.addZone(cameraChunk, radius);
@@ -44,20 +47,26 @@ public record ServerBoundCameraChunkRequestPacket(
             data.removeZone(cameraChunk);
         }
 
-        // Sync updated zone list back to client so it can rebuild its ViewArea
         NetworkHelper.sendToClientPlayer(player, new ClientBoundSyncExtraChunksPacket(data));
     }
 
-    /** Force-queue all chunks in the newly added zone to be sent to the player. */
     private static void sendCameraZoneChunks(ServerPlayer player, ExtraChunkViewData data, ChunkPos center) {
         ServerLevel level = (ServerLevel) player.level();
         ChunkMapAccessor chunkMap = (ChunkMapAccessor) level.getChunkSource().chunkMap;
 
-        // Iterate only the zone we just added (last element)
         ExtraChunkViewData.Zone zone = data.getZones().getLast();
+        int sent = 0, missing = 0;
         for (ChunkPos pos : zone.chunks()) {
-            chunkMap.vista$markChunkPendingToSend(player, pos);
+            boolean loaded = chunkMap.vista$getChunkToSend(pos.toLong()) != null;
+            if (loaded) {
+                chunkMap.vista$markChunkPendingToSend(player, pos);
+                data.markZoneChunkQueued(pos);
+                sent++;
+            } else {
+                missing++;
+            }
         }
+        VistaMod.LOGGER.info("[Vista/Chunks] Zone around {}: queued={} not-loaded={}", center, sent, missing);
     }
 
     @Override

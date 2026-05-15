@@ -98,7 +98,7 @@ public class FFmpegMediaDecoder {
                         // Pause handling
                         synchronized (this) {
                             while (paused && running) {
-                                VistaMod.LOGGER.debug("Decoder waiting (paused)");
+                                VistaMod.LOGGER.info("Decoder waiting (paused)");
                                 wait();
                             }
                         }

@@ -72,7 +72,7 @@ public class VistaMod {
 
     //not synced. no need to sync to have all players synced. we just send to each players their own, not the others. hence we handle syncing manually
     //just serves as a way to store stuff on server since server needs to send chunks to players
-    public static final IAttachmentType<ExtraChunkViewData, ServerPlayer> TRACKED_CAMERAS_ATTACH =
+    public static final IAttachmentType<ExtraChunkViewData, ServerPlayer> EXTRA_VIEW_AREAS =
             RegHelper.registerDataAttachment(res("tracked_cameras"),
                     () -> RegHelper.AttachmentBuilder.create(ExtraChunkViewData::new),
                     ServerPlayer.class);
@@ -278,7 +278,7 @@ public class VistaMod {
     }
 
     public static void onPlayerLoggedIn(ServerPlayer sp) {
-        var attach = TRACKED_CAMERAS_ATTACH.getOrCreate(sp);
+        var attach = EXTRA_VIEW_AREAS.getOrCreate(sp);
         attach.addZone(new ChunkPos(3, 2), 5);
         NetworkHelper.sendToClientPlayer(sp, new ClientBoundSyncExtraChunksPacket(attach));
     }

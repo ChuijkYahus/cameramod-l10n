@@ -105,7 +105,7 @@ public final class FileDownloader {
                     StandardCopyOption.ATOMIC_MOVE);
         } catch (UnsupportedOperationException | IOException e) {
             // Fallback: non‑atomic move (copy + delete) – still safer than leaving a .part file
-            VistaMod.LOGGER.debug("Atomic move not supported, using standard move: {}", e.getMessage());
+            VistaMod.LOGGER.info("Atomic move not supported, using standard move: {}", e.getMessage());
             Files.move(source, target, StandardCopyOption.REPLACE_EXISTING);
         }
     }

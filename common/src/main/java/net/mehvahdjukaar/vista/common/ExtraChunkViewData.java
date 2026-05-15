@@ -16,7 +16,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  *
  * One singleton lives on the client ({@link #CLIENT_INSTANCE}); one instance per
  * {@link net.minecraft.server.level.ServerPlayer} is stored in
- * {@link net.mehvahdjukaar.vista.VistaMod#TRACKED_CAMERAS_ATTACH}.
+ * {@link net.mehvahdjukaar.vista.VistaMod#EXTRA_VIEW_AREAS}.
  */
 public class ExtraChunkViewData {
 
@@ -94,20 +94,43 @@ public class ExtraChunkViewData {
 
     private final List<Zone> zones = new CopyOnWriteArrayList<>();
 
+    /**
+     * Server-only: tracks which zone chunk positions have already been queued via
+     * {@code markChunkPendingToSend}. This prevents {@code vista$flushPendingZoneChunks}
+     * from re-queuing chunks on every player move tick, which would cause duplicate
+     * chunk sends and repeated NeoForge ChunkWatch events.
+     * Not serialized — runtime state only.
+     */
+    private final Set<Long> queuedZoneChunks = new HashSet<>();
+
     public ExtraChunkViewData() {
+    }
+
+    /** Mark a zone chunk as already queued (server side). */
+    public void markZoneChunkQueued(ChunkPos pos) {
+        queuedZoneChunks.add(pos.toLong());
+    }
+
+    /** Returns true if this zone chunk has already been queued (server side). */
+    public boolean isZoneChunkQueued(ChunkPos pos) {
+        return queuedZoneChunks.contains(pos.toLong());
     }
 
     public void addZone(ChunkPos center, int radius) {
         zones.add(new Zone(center, (byte) radius));
+        // New zone → clear queued state so the flush re-evaluates all zone chunks
+        queuedZoneChunks.clear();
     }
 
     /** Removes all zones whose centre matches the given chunk position. */
     public void removeZone(ChunkPos center) {
         zones.removeIf(z -> z.center().equals(center));
+        queuedZoneChunks.clear();
     }
 
     public void clearZones() {
         zones.clear();
+        queuedZoneChunks.clear();
     }
 
     public List<Zone> getZones() {
