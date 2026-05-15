@@ -32,14 +32,14 @@ public class MediaCacheManager {
     private final Map<String, CompletableFuture<Path>> pendingDownloads = new ConcurrentHashMap<>();
     private final Object downloadLock = new Object();
 
-    public MediaCacheManager(Path baseDir, long maxSizeBytes)  {
+    public MediaCacheManager(Path baseDir, long maxSizeBytes) {
         this.cacheDir = baseDir.resolve(CACHE_SUBDIR);
         this.maxSizeBytes = maxSizeBytes;
         try {
             Files.createDirectories(cacheDir);
             restoreFromDisk();
             VistaMod.LOGGER.info("Media Cache initialized at {}, max size = {} MB", cacheDir, maxSizeBytes / (1024 * 1024));
-        }catch (Exception e){
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
@@ -50,24 +50,23 @@ public class MediaCacheManager {
      * For HTTP/HTTPS URLs, the video is downloaded (and cached) if not already present.
      * For local filesystem paths or {@code file://} URLs, the path is used directly with no caching.
      */
-    public Path getOrDownload(String url) throws Exception {
+    public Path getOrDownload(URI uri) throws Exception {
         // Handle local filesystem paths or file:// URLs without going through HTTP download/caching
         try {
-            URI uri = URI.create(url);
             String scheme = uri.getScheme();
             if (scheme == null || scheme.equalsIgnoreCase("file")) {
-                Path localPath = (scheme == null) ? Path.of(url) : Path.of(uri);
+                Path localPath = (scheme == null) ? Path.of(uri.toString()) : Path.of(uri);
                 if (!Files.exists(localPath)) {
                     throw new IOException("Local media file does not exist: " + localPath);
                 }
-                VistaMod.LOGGER.info("Using local media file {} for URL {}", localPath, url);
+                VistaMod.LOGGER.info("Using local media file {} for URL {}", localPath, uri.toString());
                 return localPath;
             }
         } catch (IllegalArgumentException ignored) {
             // If URI parsing fails, fall back to HTTP handling below
         }
 
-        String key = hashUrl(url);
+        String key = hashUrl(uri.toString());
         // Fast path: already cached and available
         CachedEntry existing = urlToEntry.get(key);
         if (existing != null && Files.exists(existing.path)) {
@@ -75,14 +74,14 @@ public class MediaCacheManager {
                 existing.refCount++;
                 touch(existing.path);
             }
-            VistaMod.LOGGER.info("Cache HIT for {} -> {} (refCount={})", url, existing.path, existing.refCount);
+            VistaMod.LOGGER.info("Cache HIT for {} -> {} (refCount={})", uri.toString(), existing.path, existing.refCount);
             return existing.path;
         }
 
         // Check if another thread is already downloading this URL
         CompletableFuture<Path> future = pendingDownloads.get(key);
         if (future != null && !future.isDone()) {
-            VistaMod.LOGGER.info("Waiting for ongoing download of {}", url);
+            VistaMod.LOGGER.info("Waiting for ongoing download of {}", uri.toString());
             return future.get(); // blocks until download finishes
         }
 
@@ -107,7 +106,7 @@ public class MediaCacheManager {
             pendingDownloads.put(key, downloadFuture);
 
             try {
-                Path cachedPath = downloadAndCache(url, key);
+                Path cachedPath = downloadAndCache(uri.toString(), key);
                 downloadFuture.complete(cachedPath);
                 synchronized (this) {
                     urlToEntry.put(key, new CachedEntry(cachedPath, 1));
@@ -115,7 +114,7 @@ public class MediaCacheManager {
                     touch(cachedPath);
                     enforceQuota();
                 }
-                VistaMod.LOGGER.info("Download & cache completed for {} -> {}", url, cachedPath);
+                VistaMod.LOGGER.info("Download & cache completed for {} -> {}", uri.toString(), cachedPath);
                 return cachedPath;
             } catch (Exception e) {
                 downloadFuture.completeExceptionally(e);
@@ -129,16 +128,16 @@ public class MediaCacheManager {
     /**
      * Releases a reference to a previously obtained URL. When refCount reaches zero, the file is deleted.
      */
-    public void release(String url) {
-        String key = hashUrl(url);
+    public void release(URI uri) {
+        String key = hashUrl(uri.toString());
         CachedEntry entry = urlToEntry.get(key);
         if (entry == null) {
-            VistaMod.LOGGER.warn("Release called for unknown URL: {}", url);
+            VistaMod.LOGGER.warn("Release called for unknown URL: {}", uri.toString());
             return;
         }
         synchronized (this) {
             entry.refCount--;
-            VistaMod.LOGGER.info("Released {}, new refCount={}", url, entry.refCount);
+            VistaMod.LOGGER.info("Released {}, new refCount={}", uri.toString(), entry.refCount);
             if (entry.refCount <= 0) {
                 urlToEntry.remove(key);
                 refCounts.remove(entry.path);

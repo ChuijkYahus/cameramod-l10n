@@ -26,10 +26,8 @@ public class VistaForge {
 
     public VistaForge(IEventBus bus) {
         modBus = new WeakReference<>(bus);
-        RegHelper.startRegisteringFor(bus);
         VistaMod.init();
         NeoForge.EVENT_BUS.register(this);
-
     }
 
     @SubscribeEvent
