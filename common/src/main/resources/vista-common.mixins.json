@@ -20,6 +20,7 @@
     "CompatIrisDhCompat",
     "CompatIrisMixin",
     "CompatIrisRenderingMixin",
+    "DebugRendererMixin",
     "FrustumMixin",
     "GameRendererMixin",
     "ItemRendererMixin",

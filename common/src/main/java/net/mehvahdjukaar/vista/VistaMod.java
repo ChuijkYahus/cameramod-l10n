@@ -279,7 +279,7 @@ public class VistaMod {
 
     public static void onPlayerLoggedIn(ServerPlayer sp) {
         var attach = EXTRA_VIEW_AREAS.getOrCreate(sp);
-        attach.addZone(new ChunkPos(3, 2), 5);
+        attach.addZone(new ChunkPos(10, 7), 5);
         NetworkHelper.sendToClientPlayer(sp, new ClientBoundSyncExtraChunksPacket(attach));
     }
 }

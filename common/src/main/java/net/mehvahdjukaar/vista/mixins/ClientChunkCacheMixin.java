@@ -1,5 +1,6 @@
 package net.mehvahdjukaar.vista.mixins;
 
+import net.mehvahdjukaar.vista.client.IClientChunkCacheExt;
 import net.mehvahdjukaar.vista.common.ExtraChunkViewData;
 import net.minecraft.client.multiplayer.ClientChunkCache;
 import net.minecraft.nbt.CompoundTag;
@@ -15,6 +16,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -29,10 +31,15 @@ import java.util.function.Consumer;
  * {@code getChunk} always returns real data for the pinned RenderSection to compile.
  */
 @Mixin(ClientChunkCache.class)
-public class ClientChunkCacheMixin {
+public class ClientChunkCacheMixin implements IClientChunkCacheExt {
 
     @Unique
     private final Map<Long, LevelChunk> vista$pinnedChunks = new HashMap<>();
+
+    @Override
+    public Map<Long, LevelChunk> vista$getPinnedChunks() {
+        return Collections.unmodifiableMap(vista$pinnedChunks);
+    }
 
     /** Short-circuit getChunk for any pinned zone chunk before the circular-buffer lookup. */
     @Inject(method = "getChunk(IILnet/minecraft/world/level/chunk/status/ChunkStatus;Z)Lnet/minecraft/world/level/chunk/LevelChunk;",

@@ -4,6 +4,7 @@ import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.common.ExtraChunkViewData;
 import net.mehvahdjukaar.vista.common.IChunkViewWithZones;
 import net.mehvahdjukaar.vista.mixins.accessor.ChunkMapAccessor;
+import net.minecraft.client.renderer.debug.DebugRenderer;
 import net.minecraft.server.level.ChunkMap;
 import net.minecraft.server.level.ChunkTrackingView;
 import net.minecraft.server.level.ServerPlayer;
@@ -44,12 +45,11 @@ public class ChunkMapMixin {
         int flushed = 0;
         for (ChunkPos pos : data.getAllChunks()) {
             // Only queue chunks outside normal view that haven't been queued yet
-            if (!view.isInViewDistance(pos.x, pos.z) && !data.isZoneChunkQueued(pos)
-                    && self.vista$getChunkToSend(pos.toLong()) != null) {
+
                 self.vista$markChunkPendingToSend(player, pos);
                 data.markZoneChunkQueued(pos);
                 flushed++;
-            }
+
         }
         if (flushed > 0) {
             VistaMod.LOGGER.info("[Vista/Chunks] applyChunkTrackingView flushed {} zone chunks for {}", flushed, player.getName().getString());
