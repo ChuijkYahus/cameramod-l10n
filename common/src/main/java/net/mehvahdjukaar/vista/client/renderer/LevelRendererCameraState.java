@@ -21,17 +21,26 @@ public class LevelRendererCameraState {
     private double prevCamRotY = Double.MIN_VALUE;
     @Nullable
     private ViewArea viewArea;
+    @Nullable
+    private ViewArea capturedViewArea;
     private int lastViewDistance;
+
     @Nullable
     private SectionOcclusionGraph sectionOcclusionGraph;
     private ObjectArrayList<SectionRenderDispatcher.RenderSection> visibleSections = new ObjectArrayList<>(10000);
     
     private int cameraRenderDistance = 8;
+    private boolean isPersistentCameraState = false;
 
     public LevelRendererCameraState() {
     }
+    
+    public LevelRendererCameraState(boolean isPersistent) {
+        this.isPersistentCameraState = isPersistent;
+    }
 
     public void copyFrom(LevelRenderer lr) {
+        // this.viewArea = lr.viewArea;
         this.lastViewDistance = lr.lastViewDistance;
         this.sectionOcclusionGraph = lr.sectionOcclusionGraph;
         this.lastCameraSectionX = lr.lastCameraSectionX;
@@ -43,6 +52,10 @@ public class LevelRendererCameraState {
         this.prevCamRotX = lr.prevCamRotX;
         this.prevCamRotY = lr.prevCamRotY;
         this.visibleSections = lr.visibleSections;
+        
+        if (!isPersistentCameraState) {
+           // this.capturedViewArea = lr.viewArea;
+        }
     }
 
     public static LevelRendererCameraState capture(LevelRenderer lr) {
@@ -54,9 +67,12 @@ public class LevelRendererCameraState {
     public void apply(LevelRenderer lr) {
         if (this.sectionOcclusionGraph == null) {
             this.sectionOcclusionGraph = new SectionOcclusionGraph();
+            this.sectionOcclusionGraph.waitAndReset(lr.viewArea);
+
         }
-        
-        if (this.viewArea == null) {
+
+        boolean needsReset = false;
+        if (isPersistentCameraState && this.viewArea == null) {
             Minecraft mc = Minecraft.getInstance();
             Level level = mc.level;
             if (level != null) {
@@ -66,14 +82,20 @@ public class LevelRendererCameraState {
                     this.cameraRenderDistance,
                     lr
                 );
+                needsReset = true;
             }
         }
-        
-        if (this.viewArea != null) {
-            this.sectionOcclusionGraph.waitAndReset(this.viewArea);
-            lr.viewArea = this.viewArea;
+
+        ViewArea targetViewArea = isPersistentCameraState ? this.viewArea : this.capturedViewArea;
+
+        if (targetViewArea != null) {
+            if (needsReset) {
+               // this.sectionOcclusionGraph.waitAndReset(targetViewArea);
+            }
+         //   lr.viewArea = targetViewArea;
         }
-        
+
+        //  lr.viewArea = this.viewArea;
         lr.sectionOcclusionGraph = this.sectionOcclusionGraph;
         lr.visibleSections = this.visibleSections;
         lr.lastViewDistance = this.lastViewDistance;

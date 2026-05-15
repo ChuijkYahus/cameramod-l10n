@@ -22,9 +22,9 @@ dependencies {
 
     modImplementation("net.mehvahdjukaar:moonlight-fabric:${moonlight_version}")
 
-    modImplementation("curse.maven:supplementaries-412082:8044264")
+    modCompileOnly("curse.maven:supplementaries-412082:8044264")
             //modImplementation("net.mehvahdjukaar:supplementaries-fabric:${supplementaries_version}")
-    modImplementation("curse.maven:watermedia-869524:7072353")
+    modCompileOnly("curse.maven:watermedia-869524:7072353")
 
     modCompileOnly("curse.maven:irisshaders-455508:6213635")
     modCompileOnly("curse.maven:exposure-871755:7862665")

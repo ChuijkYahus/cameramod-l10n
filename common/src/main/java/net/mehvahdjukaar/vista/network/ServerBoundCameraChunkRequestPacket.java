@@ -32,11 +32,11 @@ public record ServerBoundCameraChunkRequestPacket(
             if (register) {
                 tracker.vista$addCameraPosition(cameraPos);
             } else {
-                tracker.vista$removeCameraPosition(cameraPos);
+             //   tracker.vista$removeCameraPosition(cameraPos);
             }
 
             ServerLevel level = (ServerLevel) player.level();
-            level.getChunkSource().chunkMap.move(player);
+         //   level.getChunkSource().chunkMap.move(player);
         }
     }
 

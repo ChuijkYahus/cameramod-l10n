@@ -4,6 +4,7 @@ import com.mojang.serialization.Codec;
 import net.mehvahdjukaar.moonlight.api.misc.*;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.platform.RegHelper;
+import net.mehvahdjukaar.vista.common.ExtraChunkViewData;
 import net.mehvahdjukaar.vista.common.ModLootOverrides;
 import net.mehvahdjukaar.vista.common.broadcast.BroadcastLocationType;
 import net.mehvahdjukaar.vista.common.broadcast.BroadcastManager;
@@ -35,10 +36,12 @@ import net.minecraft.resources.RegistryFileCodec;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.monster.EnderMan;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.*;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -64,6 +67,13 @@ public class VistaMod {
         return ResourceLocation.fromNamespaceAndPath(MOD_ID, name);
     }
 
+
+    //not synced. no need to sync to have all players synced. we just send to each players their own, not the others. hence we handle syncing manually
+    //just serves as a way to store stuff on server since server needs to send chunks to players
+    public static final IAttachmentType<ExtraChunkViewData, ServerPlayer> TRACKED_CAMERAS_ATTACH =
+            RegHelper.registerDataAttachment(res("tracked_cameras"),
+                    () -> RegHelper.AttachmentBuilder.create(ExtraChunkViewData::new),
+                    ServerPlayer.class);
 
     public static final ResourceKey<Registry<CassetteTape>> CASSETTE_TAPE_REGISTRY_KEY =
             RegHelper.registerDataPackRegistry(res("cassette_tape"),

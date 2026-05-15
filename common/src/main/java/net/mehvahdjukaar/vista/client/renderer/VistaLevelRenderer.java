@@ -243,7 +243,7 @@ public class VistaLevelRenderer {
             return false;
         }
 
-        if (CompatHandler.SODIUM) return false; //?? todo: give this a custom impl that follows what sodium does
+        if (CompatHandler.SODIUM) return false;
 
         Vec3 cameraPosition = camera.getPosition();
         Minecraft minecraft = Minecraft.getInstance();
@@ -259,15 +259,19 @@ public class VistaLevelRenderer {
 
         SectionOcclusionGraph graph = lr.sectionOcclusionGraph;
 
-        Entity cameraEntity = camera.entity;
-        double cameraX = cameraPosition.x;
-        double cameraY = cameraPosition.y;
-        double cameraZ = cameraPosition.z;
 
-        int cameraSectionX = SectionPos.posToSectionCoord(cameraX);
-        int cameraSectionY = SectionPos.posToSectionCoord(cameraY);
-        int cameraSectionZ = SectionPos.posToSectionCoord(cameraZ);
+        // Get player's exact coordinates
+        Entity cameraEntity = camera.entity; //this.minecraft.player
+        double playerX = cameraEntity.getX();
+        double playerY = cameraEntity.getY();
+        double playerZ = cameraEntity.getZ();
 
+        // Convert world coordinates to section (chunk) coordinates
+        int cameraSectionX = SectionPos.posToSectionCoord(playerX);
+        int cameraSectionY = SectionPos.posToSectionCoord(playerY);
+        int cameraSectionZ = SectionPos.posToSectionCoord(playerZ);
+
+        // If the camera has moved to a new section, update the renderer's tracking and reposition the view area
         if (lr.lastCameraSectionX != cameraSectionX ||
                 lr.lastCameraSectionY != cameraSectionY ||
                 lr.lastCameraSectionZ != cameraSectionZ) {
@@ -276,7 +280,7 @@ public class VistaLevelRenderer {
             lr.lastCameraSectionY = cameraSectionY;
             lr.lastCameraSectionZ = cameraSectionZ;
 
-            lr.viewArea.repositionCamera(cameraX, cameraZ);
+            //lr.viewArea.repositionCamera(cameraX, cameraZ);
         }
 
         lr.sectionRenderDispatcher.setCamera(cameraPosition);
@@ -287,55 +291,43 @@ public class VistaLevelRenderer {
         BlockPos cameraBlockPos = camera.getBlockPosition();
 
         Player player = minecraft.player;
-        double cameraUnitX = Math.floor(cameraX / 8.0);
-        double cameraUnitY = Math.floor(cameraY / 8.0);
-        double cameraUnitZ = Math.floor(cameraZ / 8.0);
+        // Compute camera position in 8-block "units" for occlusion checks
+        double cameraUnitX = Math.floor(player.getX() / 8.0);
+        double cameraUnitY = Math.floor(player.getY() / 8.0);
+        double cameraUnitZ = Math.floor(player.getZ() / 8.0);
 
-        // If the camera has moved to a new 8-block unit, invalidate the occlusion graph
         if (cameraUnitX != lr.prevCamX ||
                 cameraUnitY != lr.prevCamY ||
                 cameraUnitZ != lr.prevCamZ) {
-            //this should never triger for us since the camera never moves
-            graph.invalidate(); //needs full update
-            //update graph if player itself moved so we discard stale far away sections
+            graph.invalidate();
         }
 
-        // Store current 8-block unit for future comparisons
         lr.prevCamX = cameraUnitX;
         lr.prevCamY = cameraUnitY;
         lr.prevCamZ = cameraUnitZ;
 
         minecraft.getProfiler().popPush("update");
 
-        // If the frustum has not already been captured
         if (!hasCapturedFrustum) {
             boolean smartCulling = minecraft.smartCull;
 
-            // Disable smart culling for spectators inside solid blocks
             if (isSpectator && clientLevel.getBlockState(cameraBlockPos).isSolidRender(clientLevel, cameraBlockPos)) {
-                //    smartCulling = false;
             }
 
-            // Adjust entity view scale based on render distance and scaling option
-            double entityViewScale = Mth.clamp( //TODO: change these
+            double entityViewScale = Mth.clamp(
                     (double) minecraft.options.getEffectiveRenderDistance() / 8.0, 1.0, 2.5
             ) * minecraft.options.entityDistanceScaling().get();
             Entity.setViewScale(entityViewScale);
 
             minecraft.getProfiler().push("section_occlusion_graph");
 
-            // Update occlusion graph to determine which sections are visible
-            //needs full update should be performed when new chunks came into view (our camera moved too much compared to the vista cam)
             graph.update(smartCulling, camera, frustum, lr.visibleSections);
 
             minecraft.getProfiler().pop();
 
-
-            // Divide camera rotation by 2 to track significant rotation changes
             double cameraRotXHalf = Math.floor(camera.getXRot() / 2.0);
             double cameraRotYHalf = Math.floor(camera.getYRot() / 2.0);
 
-            // Apply frustum update if the graph changed or camera rotated significantly
             if (graph.consumeFrustumUpdate() ||
                     cameraRotXHalf != lr.prevCamRotX ||
                     cameraRotYHalf != lr.prevCamRotY) {
