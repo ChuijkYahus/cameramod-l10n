@@ -4,6 +4,7 @@ import net.mehvahdjukaar.moonlight.api.block.ItemDisplayTile;
 import net.mehvahdjukaar.moonlight.api.util.Utils;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.client.video_source.IVideoSource;
+import net.mehvahdjukaar.vista.common.cassette.IBroadcastSource;
 import net.mehvahdjukaar.vista.common.cassette.ITvCassette;
 import net.mehvahdjukaar.vista.common.tv.enderman.TVEndermanObservationController;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
@@ -27,6 +28,8 @@ import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.UUID;
 
 public class TVBlockEntity extends ItemDisplayTile {
 
@@ -257,5 +260,17 @@ public class TVBlockEntity extends ItemDisplayTile {
         ItemStack displayed = this.getDisplayedItem();
         if (displayed.getItem() instanceof ITvCassette tc) return tc.getAnalogSignalStrength(displayed);
         return 0;
+    }
+
+    @Nullable
+    public UUID getViewingFeedId() {
+        if (this.isPaused() || !this.getBlockState().getValue(TVBlock.POWER_STATE).isOn()) {
+            return null;
+        }
+        if (level != null && level.isClientSide) {
+            return this.videoSource instanceof IBroadcastSource bc ? bc.getBroadcastUUID() : null;
+        } else {
+            return getDisplayedItem().get(VistaMod.LINKED_FEED_COMPONENT.get());
+        }
     }
 }

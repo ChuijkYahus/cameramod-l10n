@@ -3,6 +3,7 @@ package net.mehvahdjukaar.vista.common.cassette;
 import net.mehvahdjukaar.vista.client.video_source.IVideoSource;
 import net.mehvahdjukaar.vista.common.broadcast.BroadcastManager;
 import net.mehvahdjukaar.vista.common.broadcast.IBroadcastLocation;
+import net.minecraft.core.GlobalPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
@@ -28,4 +29,6 @@ public interface IBroadcastSource {
     UUID getBroadcastUUID();
 
     @Nullable IVideoSource getBroadcastVideo();
+
+    GlobalPos getBroadcastOrigin();
 }

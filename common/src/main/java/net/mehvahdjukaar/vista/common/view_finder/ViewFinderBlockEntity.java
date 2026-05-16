@@ -15,6 +15,7 @@ import net.mehvahdjukaar.vista.integration.CompatHandler;
 import net.mehvahdjukaar.vista.network.SyncViewFinderPacket;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.GlobalPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
@@ -197,6 +198,11 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
     @Override
     public @Nullable IVideoSource getBroadcastVideo() {
         return this.videoSource;
+    }
+
+    @Override
+    public GlobalPos getBroadcastOrigin() {
+        return new GlobalPos(level.dimension(), this.getBlockPos());
     }
 
     public void setRestraint(YawPitchRestraint restraint) {

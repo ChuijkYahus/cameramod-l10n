@@ -12,6 +12,7 @@ import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.mehvahdjukaar.vista.configs.CommonConfigs;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.GlobalPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
@@ -42,6 +43,11 @@ public class WaveGateBlockEntity extends BlockEntity implements IScreenProvider,
     @Override
     public @Nullable IVideoSource getBroadcastVideo() {
         return getBlockState().getValue(WaveGateBlock.POWERED) ? IVideoSource.EMPTY : videoSource;
+    }
+
+    @Override
+    public GlobalPos getBroadcastOrigin() {
+        return new GlobalPos(level.dimension(), this.getBlockPos());
     }
 
     @Override

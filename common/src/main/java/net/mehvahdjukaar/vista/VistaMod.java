@@ -278,8 +278,8 @@ public class VistaMod {
     }
 
     public static void onPlayerLoggedIn(ServerPlayer sp) {
-        var attach = EXTRA_VIEW_AREAS.getOrCreate(sp);
-        attach.addZone(new ChunkPos(10, 7), 5);
-        NetworkHelper.sendToClientPlayer(sp, new ClientBoundSyncExtraChunksPacket(attach));
+        // Zones are populated server-side by ServerCameraChunkManager on the first tick.
+        // Send an empty sync now so the client starts with a clean slate.
+        NetworkHelper.sendToClientPlayer(sp, new ClientBoundSyncExtraChunksPacket(new ExtraChunkViewData()));
     }
 }

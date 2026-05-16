@@ -1,8 +1,10 @@
 package net.mehvahdjukaar.vista.platform;
 
 import net.mehvahdjukaar.moonlight.api.platform.RegHelper;
+import net.mehvahdjukaar.vista.ServerCameraChunkManager;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.item.FallingBlockEntity;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -34,6 +36,13 @@ public class VistaForge {
     public void onEntityJoin(EntityJoinLevelEvent event) {
         if (event.getLevel() instanceof ServerLevel serverLevel) {
             VistaMod.addEntityGoal(event.getEntity(), serverLevel);
+        }
+    }
+
+    @SubscribeEvent
+    public void onPlayerLoggedOut(PlayerEvent.PlayerLoggedOutEvent event) {
+        if (event.getEntity() instanceof ServerPlayer sp) {
+            ServerCameraChunkManager.onPlayerLeave(sp);
         }
     }
 

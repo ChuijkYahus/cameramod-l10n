@@ -5,6 +5,7 @@ import net.mehvahdjukaar.moonlight.api.platform.configs.ConfigType;
 import net.mehvahdjukaar.moonlight.api.platform.configs.ModConfigHolder;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.integration.CompatHandler;
+import net.minecraft.server.level.ServerLevel;
 
 import java.util.function.Supplier;
 
@@ -52,6 +53,11 @@ public class CommonConfigs {
         Mode mode = WAVE_GATE_MODE.get();
         if (CompatHandler.COMPUTER_CRAFT && mode != Mode.OFF) return true;
         return mode == Mode.CRAFTABLE;
+    }
+
+    //TODO:
+    public static int distanceFromTvForServerToLoadViewFinders(ServerLevel level) {
+        return level.getServer().getPlayerList().getViewDistance();
     }
 
     public enum Mode {

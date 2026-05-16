@@ -2,6 +2,7 @@ package net.mehvahdjukaar.vista.common;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import net.minecraft.core.GlobalPos;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.world.level.ChunkPos;
@@ -19,10 +20,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * {@link net.mehvahdjukaar.vista.VistaMod#EXTRA_VIEW_AREAS}.
  */
 public class ExtraChunkViewData {
-
-    // -------------------------------------------------------------------------
-    // Zone record
-    // -------------------------------------------------------------------------
 
     public record Zone(ChunkPos center, byte radius) {
 
@@ -55,10 +52,6 @@ public class ExtraChunkViewData {
         }
     }
 
-    // -------------------------------------------------------------------------
-    // Codecs for the whole instance (list of zones)
-    // -------------------------------------------------------------------------
-
     public static final Codec<ExtraChunkViewData> CODEC = Zone.CODEC.listOf().xmap(
             zones -> {
                 ExtraChunkViewData d = new ExtraChunkViewData();
@@ -88,11 +81,8 @@ public class ExtraChunkViewData {
         }
     };
 
-    // -------------------------------------------------------------------------
-    // Instance state
-    // -------------------------------------------------------------------------
-
     private final List<Zone> zones = new CopyOnWriteArrayList<>();
+
 
     /**
      * Server-only: tracks which zone chunk positions have already been queued via
