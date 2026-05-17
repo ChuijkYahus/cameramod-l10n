@@ -1,8 +1,8 @@
 package net.mehvahdjukaar.vista.mixins;
 
 import net.mehvahdjukaar.vista.VistaMod;
-import net.mehvahdjukaar.vista.common.ExtraChunkViewData;
-import net.mehvahdjukaar.vista.common.IChunkViewWithZones;
+import net.mehvahdjukaar.vista.common.chunk_tracking.ExtraChunkViewData;
+import net.mehvahdjukaar.vista.common.chunk_tracking.IChunkViewWithZones;
 import net.minecraft.server.level.ChunkTrackingView;
 import net.minecraft.world.level.ChunkPos;
 import org.spongepowered.asm.mixin.Mixin;

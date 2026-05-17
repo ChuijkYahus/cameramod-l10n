@@ -30,5 +30,4 @@ public interface IBroadcastSource {
 
     @Nullable IVideoSource getBroadcastVideo();
 
-    GlobalPos getBroadcastOrigin();
 }

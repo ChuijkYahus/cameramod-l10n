@@ -46,11 +46,6 @@ public class WaveGateBlockEntity extends BlockEntity implements IScreenProvider,
     }
 
     @Override
-    public GlobalPos getBroadcastOrigin() {
-        return new GlobalPos(level.dimension(), this.getBlockPos());
-    }
-
-    @Override
     public void openScreen(Level level, Player player, Direction direction, Vec3 pos) {
         WaveGateScreen.open(this);
     }

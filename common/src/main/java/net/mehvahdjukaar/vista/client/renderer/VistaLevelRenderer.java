@@ -62,7 +62,6 @@ public class VistaLevelRenderer {
         MC_OWN_GRAPH.set(null);
         MANAGED_GRAPHS.clear();
         currentRenderingViewFinder = null;
-        CameraChunkLoadingManager.clear();
     }
 
     public static DummyCamera getDummyCamera() {
@@ -80,8 +79,6 @@ public class VistaLevelRenderer {
             lastLevel = mc.level.dimension();
             return;
         }
-
-        CameraChunkLoadingManager.registerCamera(tile);
 
         RenderTarget mainTarget = mc.getMainRenderTarget();
         RenderTarget canvas = text.getRenderTarget();

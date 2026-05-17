@@ -1,6 +1,6 @@
 package net.mehvahdjukaar.vista.mixins;
 
-import net.mehvahdjukaar.vista.common.ExtraChunkViewData;
+import net.mehvahdjukaar.vista.common.chunk_tracking.ExtraChunkViewData;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;

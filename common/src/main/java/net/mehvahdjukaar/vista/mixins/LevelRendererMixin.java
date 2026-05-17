@@ -4,25 +4,49 @@ import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import com.llamalad7.mixinextras.sugar.Local;
 import net.mehvahdjukaar.vista.client.renderer.VistaLevelRenderer;
+import net.mehvahdjukaar.vista.common.chunk_tracking.ILevelRendererExt;
+import net.mehvahdjukaar.vista.common.chunk_tracking.IViewAreaExt;
 import net.minecraft.client.Camera;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.SectionOcclusionGraph;
+import net.minecraft.client.renderer.ViewArea;
 import net.minecraft.client.renderer.chunk.SectionRenderDispatcher;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.ChunkPos;
+import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(LevelRenderer.class)
-public class LevelRendererMixin {
+public class LevelRendererMixin implements ILevelRendererExt {
 
     @Shadow
     public SectionOcclusionGraph sectionOcclusionGraph;
+
+    @Shadow @Nullable
+    public ViewArea viewArea;
+
+    /**
+     * Rebuilds only the pinned (extra-zone) render section slots, leaving all
+     * existing compiled chunk geometry intact. Replaces the heavy
+     * {@code allChanged()} call for zone-data changes.
+     */
+    @Unique
+    @Override
+    public void vista$refreshPinnedSections() {
+        if (viewArea instanceof IViewAreaExt va) {
+            va.vista$rebuildPinnedSections();
+        }
+        if (sectionOcclusionGraph != null) {
+            sectionOcclusionGraph.invalidate();
+        }
+    }
 
     @ModifyReturnValue(method = "shouldShowEntityOutlines", at = @At(value = "RETURN"))
     public boolean vista$disableEntityOutlines(boolean original) {

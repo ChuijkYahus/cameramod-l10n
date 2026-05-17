@@ -1,4 +1,4 @@
-package net.mehvahdjukaar.vista.common;
+package net.mehvahdjukaar.vista.common.chunk_tracking;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
@@ -13,13 +13,20 @@ import java.util.concurrent.CopyOnWriteArrayList;
 /**
  * Per-instance registry of extra chunk zones that should be pinned into the ViewArea
  * and kept visible regardless of player position or frustum.
- * Each zone is a circle (Euclidean) of chunks centred on a fixed world chunk position.
  *
- * One singleton lives on the client ({@link #CLIENT_INSTANCE}); one instance per
- * {@link net.minecraft.server.level.ServerPlayer} is stored in
- * {@link net.mehvahdjukaar.vista.VistaMod#EXTRA_VIEW_AREAS}.
+ * <p>Each zone is a Euclidean circle of chunks centred on a fixed world chunk position,
+ * tagged with the {@link GlobalPos} of the ViewFinder that originated it.
+ *
+ * <p>The base class holds only zone geometry and wire-format codecs. Server-specific
+ * runtime state (force-load tracking, send-queue bookkeeping) lives in the subclass
+ * {@link ServerExtraChunkViewData}, which is what the per-player server attachment stores.
+ *
+ * <p>One plain instance of this class serves as the client-side singleton
+ * ({@link #CLIENT_INSTANCE}), updated by incoming sync packets.
  */
 public class ExtraChunkViewData {
+
+    // ── Zone record ────────────────────────────────────────────────────────────
 
     public record Zone(ChunkPos center, byte radius) {
 
@@ -29,7 +36,10 @@ public class ExtraChunkViewData {
         ).apply(inst, Zone::new));
 
         public static final StreamCodec<RegistryFriendlyByteBuf, Zone> STREAM_CODEC = StreamCodec.of(
-                (buf, zone) -> { buf.writeLong(zone.center.toLong()); buf.writeByte(zone.radius); },
+                (buf, zone) -> {
+                    buf.writeLong(zone.center.toLong());
+                    buf.writeByte(zone.radius);
+                },
                 buf -> new Zone(new ChunkPos(buf.readLong()), buf.readByte())
         );
 
@@ -51,6 +61,8 @@ public class ExtraChunkViewData {
             return result;
         }
     }
+
+    // ── Serialization ──────────────────────────────────────────────────────────
 
     public static final Codec<ExtraChunkViewData> CODEC = Zone.CODEC.listOf().xmap(
             zones -> {
@@ -81,47 +93,43 @@ public class ExtraChunkViewData {
         }
     };
 
-    private final List<Zone> zones = new CopyOnWriteArrayList<>();
+    // ── State ──────────────────────────────────────────────────────────────────
 
+    protected final List<Zone> zones = new CopyOnWriteArrayList<>();
+
+    public ExtraChunkViewData() {}
+
+    // ── Zone management ────────────────────────────────────────────────────────
 
     /**
-     * Server-only: tracks which zone chunk positions have already been queued via
-     * {@code markChunkPendingToSend}. This prevents {@code vista$flushPendingZoneChunks}
-     * from re-queuing chunks on every player move tick, which would cause duplicate
-     * chunk sends and repeated NeoForge ChunkWatch events.
-     * Not serialized — runtime state only.
+     * Adds a zone derived from a ViewFinder at {@code source}.
+     *
+     * @param center chunk position around which the zone is centred
+     * @param radius Euclidean radius in chunks
      */
-    private final Set<Long> queuedZoneChunks = new HashSet<>();
-
-    public ExtraChunkViewData() {
-    }
-
-    /** Mark a zone chunk as already queued (server side). */
-    public void markZoneChunkQueued(ChunkPos pos) {
-        queuedZoneChunks.add(pos.toLong());
-    }
-
-    /** Returns true if this zone chunk has already been queued (server side). */
-    public boolean isZoneChunkQueued(ChunkPos pos) {
-        return queuedZoneChunks.contains(pos.toLong());
-    }
-
     public void addZone(ChunkPos center, int radius) {
         zones.add(new Zone(center, (byte) radius));
-        // New zone → clear queued state so the flush re-evaluates all zone chunks
-        queuedZoneChunks.clear();
+        onZonesChanged();
     }
 
     /** Removes all zones whose centre matches the given chunk position. */
     public void removeZone(ChunkPos center) {
         zones.removeIf(z -> z.center().equals(center));
-        queuedZoneChunks.clear();
+        onZonesChanged();
     }
 
     public void clearZones() {
         zones.clear();
-        queuedZoneChunks.clear();
+        onZonesChanged();
     }
+
+    /**
+     * Called after any mutation of {@link #zones}.
+     * Subclasses use this to clear derived caches (e.g. queued chunk sets).
+     */
+    protected void onZonesChanged() {}
+
+    // ── Queries ────────────────────────────────────────────────────────────────
 
     public List<Zone> getZones() {
         return Collections.unmodifiableList(zones);
@@ -144,9 +152,7 @@ public class ExtraChunkViewData {
         return chunks;
     }
 
-    // -------------------------------------------------------------------------
-    // Client singleton
-    // -------------------------------------------------------------------------
+    // ── Client singleton ───────────────────────────────────────────────────────
 
     /** Client-side singleton – updated by {@code ClientBoundSyncExtraChunksPacket}. */
     public static final ExtraChunkViewData CLIENT_INSTANCE = new ExtraChunkViewData();

@@ -1,7 +1,7 @@
 package net.mehvahdjukaar.vista.mixins;
 
 import net.mehvahdjukaar.vista.client.IClientChunkCacheExt;
-import net.mehvahdjukaar.vista.common.ExtraChunkViewData;
+import net.mehvahdjukaar.vista.common.chunk_tracking.ExtraChunkViewData;
 import net.minecraft.client.multiplayer.ClientChunkCache;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;

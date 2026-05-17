@@ -5,7 +5,8 @@ import net.mehvahdjukaar.moonlight.api.misc.*;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.platform.RegHelper;
 import net.mehvahdjukaar.moonlight.api.platform.network.NetworkHelper;
-import net.mehvahdjukaar.vista.common.ExtraChunkViewData;
+import net.mehvahdjukaar.vista.common.chunk_tracking.ExtraChunkViewData;
+import net.mehvahdjukaar.vista.common.chunk_tracking.ServerExtraChunkViewData;
 import net.mehvahdjukaar.vista.common.ModLootOverrides;
 import net.mehvahdjukaar.vista.common.broadcast.BroadcastLocationType;
 import net.mehvahdjukaar.vista.common.broadcast.BroadcastManager;
@@ -44,7 +45,6 @@ import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.monster.EnderMan;
 import net.minecraft.world.item.*;
-import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.SoundType;
@@ -72,9 +72,9 @@ public class VistaMod {
 
     //not synced. no need to sync to have all players synced. we just send to each players their own, not the others. hence we handle syncing manually
     //just serves as a way to store stuff on server since server needs to send chunks to players
-    public static final IAttachmentType<ExtraChunkViewData, ServerPlayer> EXTRA_VIEW_AREAS =
-            RegHelper.registerDataAttachment(res("tracked_cameras"),
-                    () -> RegHelper.AttachmentBuilder.create(ExtraChunkViewData::new),
+    public static final IAttachmentType<ServerExtraChunkViewData, ServerPlayer> EXTRA_VIEW_AREAS =
+            RegHelper.registerDataAttachment(res("camera_chunks"),
+                    () -> RegHelper.AttachmentBuilder.create(ServerExtraChunkViewData::new),
                     ServerPlayer.class);
 
     public static final ResourceKey<Registry<CassetteTape>> CASSETTE_TAPE_REGISTRY_KEY =

@@ -1,7 +1,7 @@
 package net.mehvahdjukaar.vista.mixins;
 
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
-import net.mehvahdjukaar.vista.common.IPinnableRenderSection;
+import net.mehvahdjukaar.vista.common.chunk_tracking.IPinnableRenderSection;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;

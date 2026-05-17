@@ -4,7 +4,8 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.vista.client.IClientChunkCacheExt;
-import net.mehvahdjukaar.vista.common.ExtraChunkViewData;
+import net.mehvahdjukaar.vista.common.chunk_tracking.ExtraChunkViewData;
+import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientChunkCache;
 import net.minecraft.client.renderer.LevelRenderer;
@@ -46,8 +47,9 @@ public class VistaChunksDebugRenderer implements DebugRenderer.SimpleDebugRender
     public void render(PoseStack ps, MultiBufferSource buf, double camX, double camY, double camZ) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null) return;
+        if(!ClientConfigs.rendersDebug())return;
 
-        ClientChunkCache chunkSource = (ClientChunkCache) mc.level.getChunkSource();
+        ClientChunkCache chunkSource = mc.level.getChunkSource();
         Map<Long, LevelChunk> pinned = (chunkSource instanceof IClientChunkCacheExt ext)
                 ? ext.vista$getPinnedChunks() : Map.of();
         camY += 60;

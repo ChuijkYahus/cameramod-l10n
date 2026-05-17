@@ -1,11 +1,14 @@
 package net.mehvahdjukaar.vista;
 
 import net.mehvahdjukaar.moonlight.api.platform.network.NetworkHelper;
-import net.mehvahdjukaar.vista.common.ExtraChunkViewData;
+import net.mehvahdjukaar.vista.common.broadcast.IBroadcastLocation;
+import net.mehvahdjukaar.vista.common.chunk_tracking.ExtraChunkViewData;
+import net.mehvahdjukaar.vista.common.chunk_tracking.ServerExtraChunkViewData;
 import net.mehvahdjukaar.vista.common.broadcast.BroadcastManager;
 import net.mehvahdjukaar.vista.common.cassette.IBroadcastSource;
 import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
 import net.mehvahdjukaar.vista.configs.CommonConfigs;
+import net.mehvahdjukaar.vista.mixins.accessor.ChunkMapAccessor;
 import net.mehvahdjukaar.vista.network.ClientBoundSyncExtraChunksPacket;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
@@ -17,7 +20,11 @@ import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.chunk.status.ChunkStatus;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
 /**
  * Server-authoritative camera chunk manager.
@@ -46,16 +53,15 @@ public class ServerCameraChunkManager {
 
     public static final int CHUNK_RADIUS = 4;
     private static final int TICK_INTERVAL = 40;
+    /** How often (in ticks) we retry sending zone chunks that weren't loaded on the first attempt. */
+    private static final int FLUSH_INTERVAL = 5;
 
     /**
-     * ViewFinder GlobalPos → number of players currently watching it (for ref-counting setChunkForced).
+     * ViewFinder GlobalPos → number of players currently watching it.
+     * Used for ref-counting {@code setChunkForced} across multiple players.
+     * Global server state — intentionally not per-player.
      */
     private static final Map<GlobalPos, Integer> forcedViewfinders = new HashMap<>();
-
-    /**
-     * Player UUID → set of ViewFinder GlobalPos they are currently watching.
-     */
-    private static final Map<UUID, Set<GlobalPos>> playerViewfinders = new HashMap<>();
 
     // ── Per-player tick ───────────────────────────────────────────────────────
 
@@ -64,11 +70,21 @@ public class ServerCameraChunkManager {
      * Updates are staggered so not all players recalculate on the same tick.
      */
     public static void onServerPlayerTick(ServerPlayer player) {
+        if(true)return;
         long gameTime = player.serverLevel().getGameTime();
+
+        // Periodic flush: retry sending zone chunks that weren't loaded on the first attempt.
+        // Runs more frequently than the zone-detection scan so chunks appear promptly after
+        // force-loading completes (which is async and may take several ticks).
+        if ((gameTime + player.getId()) % FLUSH_INTERVAL == 0) {
+            flushPendingZoneChunks(player);
+        }
+
         if ((gameTime + player.getId()) % TICK_INTERVAL != 0) return;
 
+        ServerExtraChunkViewData data = VistaMod.EXTRA_VIEW_AREAS.getOrCreate(player);
         Set<GlobalPos> desired = findViewFindersNeededForPlayer(player);
-        Set<GlobalPos> current = playerViewfinders.getOrDefault(player.getUUID(), Set.of());
+        Set<GlobalPos> current = data.getTrackedWantedZoneCenters();
         if (desired.equals(current)) return;
 
         Set<GlobalPos> added = new HashSet<>(desired);
@@ -95,10 +111,10 @@ public class ServerCameraChunkManager {
             }
         }
 
-        playerViewfinders.put(player.getUUID(), desired);
+        // Persist the new tracked set inside the per-player attachment.
+        data.setTrackedWantedZoneCenters(desired);
 
-        // Rebuild ExtraChunkViewData — same-dimension ViewFinders only
-        ExtraChunkViewData data = VistaMod.EXTRA_VIEW_AREAS.getOrCreate(player);
+        // Rebuild zones (same-dimension ViewFinders only; cross-dim only force-loads).
         data.clearZones();
         for (GlobalPos vf : desired) {
             if (vf.dimension().equals(player.level().dimension())) {
@@ -109,6 +125,34 @@ public class ServerCameraChunkManager {
         NetworkHelper.sendToClientPlayer(player, new ClientBoundSyncExtraChunksPacket(data));
         VistaMod.LOGGER.debug("[Vista] {} zones updated: {} viewfinders, {} same-dim zones",
                 player.getName().getString(), desired.size(), data.getZones().size());
+    }
+
+    // ── Zone chunk flushing ───────────────────────────────────────────────────
+
+    /**
+     * Directly calls {@code markChunkPendingToSend} for every zone chunk that is now
+     * loaded but not yet queued. This is the server-side counterpart to
+     * {@code ChunkMapMixin.vista$flushPendingZoneChunks} and runs independently of
+     * player movement so chunks are sent promptly after force-loading completes.
+     */
+    private static void flushPendingZoneChunks(ServerPlayer player) {
+        ServerExtraChunkViewData data = VistaMod.EXTRA_VIEW_AREAS.getOrCreate(player);
+        if (data.getZones().isEmpty()) return;
+
+        ChunkMapAccessor chunkMap = (ChunkMapAccessor) player.serverLevel().getChunkSource().chunkMap;
+        int flushed = 0;
+        for (ChunkPos pos : data.getAllChunks()) {
+            if (!player.getChunkTrackingView().isInViewDistance(pos.x, pos.z) && !data.isZoneChunkQueued(pos)) {
+                if (chunkMap.vista$getChunkToSend(pos.toLong()) != null) {
+                    chunkMap.vista$markChunkPendingToSend(player, pos);
+                    data.markZoneChunkQueued(pos);
+                    flushed++;
+                }
+            }
+        }
+        if (flushed > 0) {
+            VistaMod.LOGGER.debug("[Vista] Periodic flush sent {} zone chunks to {}", flushed, player.getName().getString());
+        }
     }
 
     // ── ViewFinder discovery ──────────────────────────────────────────────────
@@ -132,10 +176,12 @@ public class ServerCameraChunkManager {
                     if (!(be instanceof TVBlockEntity tv)) continue;
                     UUID feedId = tv.getViewingFeedId();
                     if (feedId == null) continue;
-                    IBroadcastSource broadcast = bm.getBroadcast(feedId, false);
-                    if (broadcast == null) continue;
+                    IBroadcastLocation broadCastLoc = bm.getFeedLocationById(feedId);
+                    if (broadCastLoc == null) continue;
 
-                    GlobalPos chunkPosToSend = broadcast.getBroadcastOrigin();
+                    GlobalPos chunkPosToSend = broadCastLoc.getChunkSendPosition();
+                    if (chunkPosToSend == null) continue;
+
                     //TODO: send chunks even if outside of current dim.
                     if (chunkPosToSend.dimension().equals(level.dimension())) {
                         // Skip ViewFinders already within the player's normal view (server sends them naturally)
@@ -171,9 +217,7 @@ public class ServerCameraChunkManager {
      * Call when a player disconnects to release their force-loading references.
      */
     public static void onPlayerLeave(ServerPlayer player) {
-        Set<GlobalPos> watching = playerViewfinders.remove(player.getUUID());
-        if (watching == null) return;
-
+        Set<GlobalPos> watching = VistaMod.EXTRA_VIEW_AREAS.getOrCreate(player).getTrackedWantedZoneCenters();
         for (GlobalPos vf : watching) {
             int refs = forcedViewfinders.getOrDefault(vf, 0) - 1;
             if (refs <= 0) {
@@ -191,6 +235,5 @@ public class ServerCameraChunkManager {
      */
     public static void clearAll() {
         forcedViewfinders.clear();
-        playerViewfinders.clear();
     }
 }

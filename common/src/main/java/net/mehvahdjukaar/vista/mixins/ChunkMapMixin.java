@@ -1,10 +1,10 @@
 package net.mehvahdjukaar.vista.mixins;
 
 import net.mehvahdjukaar.vista.VistaMod;
-import net.mehvahdjukaar.vista.common.ExtraChunkViewData;
-import net.mehvahdjukaar.vista.common.IChunkViewWithZones;
+import net.mehvahdjukaar.vista.common.chunk_tracking.ExtraChunkViewData;
+import net.mehvahdjukaar.vista.common.chunk_tracking.IChunkViewWithZones;
+import net.mehvahdjukaar.vista.common.chunk_tracking.ServerExtraChunkViewData;
 import net.mehvahdjukaar.vista.mixins.accessor.ChunkMapAccessor;
-import net.minecraft.client.renderer.debug.DebugRenderer;
 import net.minecraft.server.level.ChunkMap;
 import net.minecraft.server.level.ChunkTrackingView;
 import net.minecraft.server.level.ServerPlayer;
@@ -39,20 +39,21 @@ public class ChunkMapMixin {
      */
     @Inject(method = "applyChunkTrackingView", at = @At("RETURN"))
     private void vista$flushPendingZoneChunks(ServerPlayer player, ChunkTrackingView view, CallbackInfo ci) {
-        ExtraChunkViewData data = VistaMod.EXTRA_VIEW_AREAS.getOrCreate(player);
+        ServerExtraChunkViewData data = VistaMod.EXTRA_VIEW_AREAS.getOrCreate(player);
         if (data.getZones().isEmpty()) return;
         ChunkMapAccessor self = (ChunkMapAccessor) (Object) this;
         int flushed = 0;
         for (ChunkPos pos : data.getAllChunks()) {
-            // Only queue chunks outside normal view that haven't been queued yet
-
-                self.vista$markChunkPendingToSend(player, pos);
-                data.markZoneChunkQueued(pos);
-                flushed++;
-
+            if (!view.isInViewDistance(pos.x, pos.z) && !data.isZoneChunkQueued(pos)) {
+                if (self.vista$getChunkToSend(pos.toLong()) != null) {
+                    self.vista$markChunkPendingToSend(player, pos);
+                    data.markZoneChunkQueued(pos);
+                    flushed++;
+                }
+            }
         }
         if (flushed > 0) {
-            VistaMod.LOGGER.info("[Vista/Chunks] applyChunkTrackingView flushed {} zone chunks for {}", flushed, player.getName().getString());
+            VistaMod.LOGGER.debug("[Vista/Chunks] applyChunkTrackingView flushed {} zone chunks for {}", flushed, player.getName().getString());
         }
     }
 

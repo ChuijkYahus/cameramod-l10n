@@ -9,6 +9,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import org.jetbrains.annotations.Nullable;
 
 public record LevelBEBroadcastLocation(GlobalPos globalPos) implements IBroadcastLocation {
 
@@ -57,4 +58,8 @@ public record LevelBEBroadcastLocation(GlobalPos globalPos) implements IBroadcas
         }
     }
 
+    @Override
+    public @Nullable GlobalPos getChunkSendPosition() {
+        return globalPos;
+    }
 }

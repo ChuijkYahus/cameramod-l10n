@@ -1,4 +1,4 @@
-package net.mehvahdjukaar.vista.common;
+package net.mehvahdjukaar.vista.common.chunk_tracking;
 
 import net.mehvahdjukaar.vista.mixins.ChunkMapMixin;
 import net.mehvahdjukaar.vista.mixins.ChunkTrackingViewMixin;

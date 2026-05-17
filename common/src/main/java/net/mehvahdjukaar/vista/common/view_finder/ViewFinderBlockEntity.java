@@ -200,11 +200,6 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
         return this.videoSource;
     }
 
-    @Override
-    public GlobalPos getBroadcastOrigin() {
-        return new GlobalPos(level.dimension(), this.getBlockPos());
-    }
-
     public void setRestraint(YawPitchRestraint restraint) {
         //this.restraint = restraint;
         //TODO: this is bugged. Restraints dont work properly. Disabled for now.

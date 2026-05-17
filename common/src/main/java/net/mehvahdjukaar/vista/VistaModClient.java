@@ -7,7 +7,6 @@ import net.mehvahdjukaar.moonlight.api.misc.EventCalled;
 import net.mehvahdjukaar.moonlight.api.platform.ClientHelper;
 import net.mehvahdjukaar.moonlight.api.platform.RegHelper;
 import net.mehvahdjukaar.moonlight.api.util.Utils;
-import net.mehvahdjukaar.supplementaries.reg.ModTextures;
 import net.mehvahdjukaar.vista.client.ViewFinderController;
 import net.mehvahdjukaar.vista.client.VistaDynamicResources;
 import net.mehvahdjukaar.vista.client.renderer.*;
@@ -17,7 +16,7 @@ import net.mehvahdjukaar.vista.client.textures.WebTexturesManager;
 import net.mehvahdjukaar.vista.client.ui.VistaWelcomeScreen;
 import net.mehvahdjukaar.vista.client.web.ffmpeg.FFmpeg;
 import net.mehvahdjukaar.vista.client.web.ffmpeg.FFmpegManager;
-import net.mehvahdjukaar.vista.common.ExtraChunkViewData;
+import net.mehvahdjukaar.vista.common.chunk_tracking.ExtraChunkViewData;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
@@ -179,7 +178,6 @@ public class VistaModClient {
         if (p == null) return;
 
         ViewFinderController.onClientTick(minecraft);
-        CameraChunkLoadingManager.tick();
     }
 
     public static void onRenderTickEnd(Minecraft minecraft) {
