@@ -152,8 +152,4 @@ public class ExtraChunkViewData {
         return chunks;
     }
 
-    // ── Client singleton ───────────────────────────────────────────────────────
-
-    /** Client-side singleton – updated by {@code ClientBoundSyncExtraChunksPacket}. */
-    public static final ExtraChunkViewData CLIENT_INSTANCE = new ExtraChunkViewData();
 }

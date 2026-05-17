@@ -6,6 +6,7 @@ import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.platform.RegHelper;
 import net.mehvahdjukaar.moonlight.api.platform.network.NetworkHelper;
 import net.mehvahdjukaar.vista.common.chunk_tracking.ExtraChunkViewData;
+import net.mehvahdjukaar.vista.common.chunk_tracking.ServerCameraChunkManager;
 import net.mehvahdjukaar.vista.common.chunk_tracking.ServerExtraChunkViewData;
 import net.mehvahdjukaar.vista.common.ModLootOverrides;
 import net.mehvahdjukaar.vista.common.broadcast.BroadcastLocationType;
@@ -281,5 +282,10 @@ public class VistaMod {
         // Zones are populated server-side by ServerCameraChunkManager on the first tick.
         // Send an empty sync now so the client starts with a clean slate.
         NetworkHelper.sendToClientPlayer(sp, new ClientBoundSyncExtraChunksPacket(new ExtraChunkViewData()));
+    }
+
+    public static void onServerPlayerTick(ServerPlayer p) {
+        ServerCameraChunkManager.onServerPlayerTick(p);
+
     }
 }

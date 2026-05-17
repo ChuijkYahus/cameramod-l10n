@@ -13,6 +13,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(DebugRenderer.class)
 public class DebugRendererMixin {
 
+    //TODO: do with event
     @Unique
     private final VistaChunksDebugRenderer vista$debugRenderer = new VistaChunksDebugRenderer();
 

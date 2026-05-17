@@ -1,5 +1,6 @@
 package net.mehvahdjukaar.vista.mixins;
 
+import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.common.chunk_tracking.ExtraChunkViewData;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -17,7 +18,7 @@ public class ClientChunkCacheStorageMixin {
 
     @Inject(method = "inRange", at = @At("HEAD"), cancellable = true)
     private void vista$alwaysInRangeForPinnedZone(int x, int z, CallbackInfoReturnable<Boolean> cir) {
-        if (ExtraChunkViewData.CLIENT_INSTANCE.containsChunk(x, z)) {
+        if (VistaModClient.CLIENT_EXTRA_CHUNK_VIEW_DATA.containsChunk(x, z)) {
             cir.setReturnValue(true);
         }
     }

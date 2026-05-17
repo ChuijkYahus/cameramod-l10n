@@ -1,6 +1,7 @@
 package net.mehvahdjukaar.vista.mixins;
 
 import com.mojang.logging.LogUtils;
+import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.common.chunk_tracking.ExtraChunkViewData;
 import net.mehvahdjukaar.vista.common.chunk_tracking.ILevelRendererExt;
 import net.mehvahdjukaar.vista.common.chunk_tracking.IPinnableRenderSection;
@@ -86,7 +87,7 @@ public class ViewAreaMixin implements IViewAreaExt {
 
     @Unique
     private void vista$buildPinnedSections(SectionRenderDispatcher dispatcher) {
-        Set<ChunkPos> extraChunks = ExtraChunkViewData.CLIENT_INSTANCE.getAllChunks();
+        Set<ChunkPos> extraChunks = VistaModClient.CLIENT_EXTRA_CHUNK_VIEW_DATA.getAllChunks();
         if (extraChunks.isEmpty()) return;
 
         int base = this.sections.length;

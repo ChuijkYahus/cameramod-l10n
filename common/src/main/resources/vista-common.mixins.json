@@ -10,7 +10,6 @@
     "CompatGeckoLibMixin",
     "EndermanMixin",
     "PlayerMixin",
-    "ServerPlayerMixin",
     "accessor.ChunkMapAccessor"
   ],
   "client": [

@@ -1,18 +1,17 @@
 package net.mehvahdjukaar.vista.platform;
 
-import net.mehvahdjukaar.moonlight.api.platform.RegHelper;
-import net.mehvahdjukaar.vista.ServerCameraChunkManager;
+import net.mehvahdjukaar.vista.common.chunk_tracking.ServerCameraChunkManager;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.item.FallingBlockEntity;
+import net.minecraft.world.entity.player.Player;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
-import net.neoforged.neoforge.event.level.LevelEvent;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 
 import java.lang.ref.WeakReference;
 
@@ -46,5 +45,10 @@ public class VistaForge {
         }
     }
 
+    @SubscribeEvent
+    public void onServerPlayerTick(PlayerTickEvent.Post event) {
+        Player entity = event.getEntity();
+        if (entity instanceof ServerPlayer sp) VistaMod.onServerPlayerTick(sp);
+    }
 
 }

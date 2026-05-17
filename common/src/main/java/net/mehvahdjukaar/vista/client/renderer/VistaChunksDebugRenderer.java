@@ -3,6 +3,7 @@ package net.mehvahdjukaar.vista.client.renderer;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
+import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.client.IClientChunkCacheExt;
 import net.mehvahdjukaar.vista.common.chunk_tracking.ExtraChunkViewData;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
@@ -85,7 +86,7 @@ public class VistaChunksDebugRenderer implements DebugRenderer.SimpleDebugRender
             }
         }
 
-        ExtraChunkViewData zoneData = ExtraChunkViewData.CLIENT_INSTANCE;
+        ExtraChunkViewData zoneData = VistaModClient.CLIENT_EXTRA_CHUNK_VIEW_DATA;
         if (zoneData.getZones().isEmpty()) return;
 
         // ── Player view-distance border ───────────────────────────────────────

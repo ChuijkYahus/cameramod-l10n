@@ -75,11 +75,15 @@ public class VistaModClient {
         return null;
     });
 
+    public static final ExtraChunkViewData CLIENT_EXTRA_CHUNK_VIEW_DATA = new ExtraChunkViewData();
 
     //hack since the resource key to level mapping isn't guaranteed 1:1. Don't even know if this will be used by any mods because in vanilla it isn't
     private static final Map<ResourceKey<Level>, Level> KNOWN_LEVELS_BY_DIMENSION = new MapMaker()
             .weakValues()
             .makeMap();
+
+    @Nullable
+    private static CompletableFuture<FFmpeg> ffmpegFuture;
 
     public static synchronized FFmpeg getFFmpeg() {
         if (ffmpegFuture == null) {
@@ -97,9 +101,6 @@ public class VistaModClient {
     private static void instantiateFFmpeg(@Nullable String url) {
         ffmpegFuture = FFmpegManager.getOrDownload(url);
     }
-
-    @Nullable
-    private static CompletableFuture<FFmpeg> ffmpegFuture;
 
     private static ModelLayerLocation loc(String name) {
         return new ModelLayerLocation(VistaMod.res(name), name);
@@ -204,7 +205,7 @@ public class VistaModClient {
         KNOWN_LEVELS_BY_DIMENSION.remove(cl.dimension());
         LiveFeedTexturesManager.clear();
 
-        ExtraChunkViewData.CLIENT_INSTANCE.clearZones();
+        CLIENT_EXTRA_CHUNK_VIEW_DATA.clearZones();
     }
 
     public static void onLevelLoaded(ClientLevel cl) {

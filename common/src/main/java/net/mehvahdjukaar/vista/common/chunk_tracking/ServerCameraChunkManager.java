@@ -1,11 +1,10 @@
-package net.mehvahdjukaar.vista;
+package net.mehvahdjukaar.vista.common.chunk_tracking;
 
+import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.platform.network.NetworkHelper;
-import net.mehvahdjukaar.vista.common.broadcast.IBroadcastLocation;
-import net.mehvahdjukaar.vista.common.chunk_tracking.ExtraChunkViewData;
-import net.mehvahdjukaar.vista.common.chunk_tracking.ServerExtraChunkViewData;
+import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.common.broadcast.BroadcastManager;
-import net.mehvahdjukaar.vista.common.cassette.IBroadcastSource;
+import net.mehvahdjukaar.vista.common.broadcast.IBroadcastLocation;
 import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
 import net.mehvahdjukaar.vista.configs.CommonConfigs;
 import net.mehvahdjukaar.vista.mixins.accessor.ChunkMapAccessor;
@@ -20,11 +19,7 @@ import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.chunk.status.ChunkStatus;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * Server-authoritative camera chunk manager.
@@ -53,7 +48,9 @@ public class ServerCameraChunkManager {
 
     public static final int CHUNK_RADIUS = 4;
     private static final int TICK_INTERVAL = 40;
-    /** How often (in ticks) we retry sending zone chunks that weren't loaded on the first attempt. */
+    /**
+     * How often (in ticks) we retry sending zone chunks that weren't loaded on the first attempt.
+     */
     private static final int FLUSH_INTERVAL = 5;
 
     /**
@@ -61,7 +58,7 @@ public class ServerCameraChunkManager {
      * Used for ref-counting {@code setChunkForced} across multiple players.
      * Global server state — intentionally not per-player.
      */
-    private static final Map<GlobalPos, Integer> forcedViewfinders = new HashMap<>();
+    private static final Map<GlobalPos, Integer> linkedViewFindersTrackedByPlayers = new HashMap<>();
 
     // ── Per-player tick ───────────────────────────────────────────────────────
 
@@ -71,6 +68,9 @@ public class ServerCameraChunkManager {
      */
     public static void onServerPlayerTick(ServerPlayer player) {
         if(true)return;
+        boolean sends = CommonConfigs.SEND_CHUNKS_VIEWED_BY_VIEW_FINDER.get();
+        boolean loads = CommonConfigs.LOAD_CHUNKS_VIEWED_BY_VIEW_FINDER.get() || PlatHelper.isDev();
+        if (!sends && !loads) return;
         long gameTime = player.serverLevel().getGameTime();
 
         // Periodic flush: retry sending zone chunks that weren't loaded on the first attempt.
@@ -92,25 +92,26 @@ public class ServerCameraChunkManager {
         Set<GlobalPos> removed = new HashSet<>(current);
         removed.removeAll(desired);
 
-        for (GlobalPos vf : added) {
-            int refs = forcedViewfinders.getOrDefault(vf, 0);
-            if (refs == 0) {
-                ServerLevel vfLevel = player.getServer().getLevel(vf.dimension());
-                if (vfLevel != null) setChunksForceLoaded(vfLevel, vf.pos(), true);
+        if(loads) {
+            for (GlobalPos vf : added) {
+                int refs = linkedViewFindersTrackedByPlayers.getOrDefault(vf, 0);
+                if (refs == 0) {
+                    ServerLevel vfLevel = player.getServer().getLevel(vf.dimension());
+                    if (vfLevel != null) setChunksForceLoaded(vfLevel, vf.pos(), true);
+                }
+                linkedViewFindersTrackedByPlayers.put(vf, refs + 1);
             }
-            forcedViewfinders.put(vf, refs + 1);
-        }
-        for (GlobalPos vf : removed) {
-            int refs = forcedViewfinders.getOrDefault(vf, 0) - 1;
-            if (refs <= 0) {
-                forcedViewfinders.remove(vf);
-                ServerLevel vfLevel = player.getServer().getLevel(vf.dimension());
-                if (vfLevel != null) setChunksForceLoaded(vfLevel, vf.pos(), false);
-            } else {
-                forcedViewfinders.put(vf, refs);
+            for (GlobalPos vf : removed) {
+                int refs = linkedViewFindersTrackedByPlayers.getOrDefault(vf, 0) - 1;
+                if (refs <= 0) {
+                    linkedViewFindersTrackedByPlayers.remove(vf);
+                    ServerLevel vfLevel = player.getServer().getLevel(vf.dimension());
+                    if (vfLevel != null) setChunksForceLoaded(vfLevel, vf.pos(), false);
+                } else {
+                    linkedViewFindersTrackedByPlayers.put(vf, refs);
+                }
             }
         }
-
         // Persist the new tracked set inside the per-player attachment.
         data.setTrackedWantedZoneCenters(desired);
 
@@ -219,13 +220,13 @@ public class ServerCameraChunkManager {
     public static void onPlayerLeave(ServerPlayer player) {
         Set<GlobalPos> watching = VistaMod.EXTRA_VIEW_AREAS.getOrCreate(player).getTrackedWantedZoneCenters();
         for (GlobalPos vf : watching) {
-            int refs = forcedViewfinders.getOrDefault(vf, 0) - 1;
+            int refs = linkedViewFindersTrackedByPlayers.getOrDefault(vf, 0) - 1;
             if (refs <= 0) {
-                forcedViewfinders.remove(vf);
+                linkedViewFindersTrackedByPlayers.remove(vf);
                 ServerLevel vfLevel = player.getServer().getLevel(vf.dimension());
                 if (vfLevel != null) setChunksForceLoaded(vfLevel, vf.pos(), false);
             } else {
-                forcedViewfinders.put(vf, refs);
+                linkedViewFindersTrackedByPlayers.put(vf, refs);
             }
         }
     }
@@ -234,6 +235,6 @@ public class ServerCameraChunkManager {
      * Clear all state on server stop.
      */
     public static void clearAll() {
-        forcedViewfinders.clear();
+        linkedViewFindersTrackedByPlayers.clear();
     }
 }

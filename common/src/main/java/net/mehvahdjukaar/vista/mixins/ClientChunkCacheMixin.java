@@ -1,5 +1,7 @@
 package net.mehvahdjukaar.vista.mixins;
 
+import net.mehvahdjukaar.vista.VistaMod;
+import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.client.IClientChunkCacheExt;
 import net.mehvahdjukaar.vista.common.chunk_tracking.ExtraChunkViewData;
 import net.minecraft.client.multiplayer.ClientChunkCache;
@@ -46,7 +48,7 @@ public class ClientChunkCacheMixin implements IClientChunkCacheExt {
             at = @At("HEAD"), cancellable = true)
     private void vista$getPinnedChunk(int x, int z, ChunkStatus status, boolean require,
             CallbackInfoReturnable<LevelChunk> cir) {
-        if (ExtraChunkViewData.CLIENT_INSTANCE.containsChunk(x, z)) {
+        if (VistaModClient.CLIENT_EXTRA_CHUNK_VIEW_DATA.containsChunk(x, z)) {
             LevelChunk chunk = this.vista$pinnedChunks.get(ChunkPos.asLong(x, z));
             if (chunk != null) {
                 cir.setReturnValue(chunk);
@@ -59,7 +61,7 @@ public class ClientChunkCacheMixin implements IClientChunkCacheExt {
     private void vista$capturePinnedChunk(int x, int z, FriendlyByteBuf buffer, CompoundTag tag,
             Consumer<ClientboundLevelChunkPacketData.BlockEntityTagOutput> consumer,
             CallbackInfoReturnable<LevelChunk> cir) {
-        if (ExtraChunkViewData.CLIENT_INSTANCE.containsChunk(x, z) && cir.getReturnValue() != null) {
+        if (VistaModClient.CLIENT_EXTRA_CHUNK_VIEW_DATA.containsChunk(x, z) && cir.getReturnValue() != null) {
             this.vista$pinnedChunks.put(ChunkPos.asLong(x, z), cir.getReturnValue());
             net.mehvahdjukaar.vista.VistaMod.LOGGER.info(
                     "[Vista/Chunks] Client received zone chunk ({}, {})", x, z);
@@ -69,7 +71,7 @@ public class ClientChunkCacheMixin implements IClientChunkCacheExt {
     /** Prevent a server-initiated drop packet from clearing a pinned zone chunk. */
     @Inject(method = "drop", at = @At("HEAD"), cancellable = true)
     private void vista$preventDropPinnedChunk(ChunkPos chunkPos, CallbackInfo ci) {
-        if (ExtraChunkViewData.CLIENT_INSTANCE.containsChunk(chunkPos.x, chunkPos.z)) {
+        if (VistaModClient.CLIENT_EXTRA_CHUNK_VIEW_DATA.containsChunk(chunkPos.x, chunkPos.z)) {
             ci.cancel();
         }
     }

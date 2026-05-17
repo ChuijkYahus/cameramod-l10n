@@ -15,7 +15,7 @@ dependencies {
     modImplementation("net.mehvahdjukaar:moonlight-neoforge:${moonlight_version}")
     accessTransformers("net.mehvahdjukaar:moonlight-neoforge:${moonlight_version}")
 
-    modImplementation("curse.maven:supplementaries-412082:8051628")
+    modCompileOnly("curse.maven:supplementaries-412082:8051628")
 
     //modImplementation("cc.tweaked-cobalt:cobalt:0.93")
     modCompileOnly("curse.maven:exposure-871755:7862664")
@@ -32,9 +32,9 @@ dependencies {
     //  modImplementation("cc.tweaked:cc-tweaked-1.21.1-forge:1.117.0")
 
 
-    modRuntimeOnly("foundry.veil:veil-neoforge-1.21.1:4.0.0")
-    modRuntimeOnly("curse.maven:fsable-1312371:8007005")
-    implementation("org.apache.maven:maven-artifact:3.9.9")
-    modRuntimeOnly("dev.ryanhcode.sable-companion:sable-companion-common-1.21.1:1.6.0")
+     modRuntimeOnly("foundry.veil:veil-neoforge-1.21.1:4.0.0")
+    //  modRuntimeOnly("curse.maven:fsable-1312371:8007005")
+    // implementation("org.apache.maven:maven-artifact:3.9.9")
+    //  modRuntimeOnly("dev.ryanhcode.sable-companion:sable-companion-common-1.21.1:1.6.0")
 
 }

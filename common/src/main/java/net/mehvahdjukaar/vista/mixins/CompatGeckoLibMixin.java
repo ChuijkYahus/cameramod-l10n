@@ -15,7 +15,7 @@ import software.bernie.geckolib.model.GeoModel;
 public class CompatGeckoLibMixin<T extends GeoAnimatable> {
 
     @Inject(method = "handleAnimations", at = @At("HEAD"), cancellable = true)
-    public void vista$blockGeckoStateMachineStuff(T animatable, long instanceId, AnimationState<T> animationState, float partialTick, CallbackInfo ci) {
+    public void vista$blockGeckoStateMachineStuffThatShouldProbablyNotEvenExist(T animatable, long instanceId, AnimationState<T> animationState, float partialTick, CallbackInfo ci) {
         if (VistaLevelRenderer.isRenderingLiveFeed()) ci.cancel();
     }
 }

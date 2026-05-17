@@ -18,11 +18,17 @@ public class CommonConfigs {
     public static final Supplier<Boolean> CREEPER_DROP;
     public static final Supplier<Boolean> CHEST_DROP;
     public static final Supplier<Mode> WAVE_GATE_MODE;
+    public static final Supplier<Boolean> SEND_CHUNKS_VIEWED_BY_VIEW_FINDER;
+    public static final Supplier<Boolean> LOAD_CHUNKS_VIEWED_BY_VIEW_FINDER;
 
     static {
         ConfigBuilder builder = ConfigBuilder.create(VistaMod.MOD_ID, ConfigType.COMMON_SYNCED);
 
         builder.push("general");
+        SEND_CHUNKS_VIEWED_BY_VIEW_FINDER = builder.comment("Allows the server to send chunks that a player could be able to see from one of the tvs nearby that is linked to a view finder far away.")
+                .define("send_chunks_viewed_by_view_finders", true);
+        LOAD_CHUNKS_VIEWED_BY_VIEW_FINDER = builder.comment("Server loads chunks that are near a far away view finder linked to a tv that's close to at least 1 player. Will increase server strain")
+                .define("chunkload_chunks_viewed_by_view_finders", false);
         MAX_CONNECTED_TV_SIZE = builder
                 .comment("Maximum size of connected TVs (in blocks). Set to 1 to disable multi-block TVs.")
                 .define("max_connected_tv_size", 8, 1, 32);

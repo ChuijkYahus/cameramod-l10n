@@ -2,6 +2,7 @@ package net.mehvahdjukaar.vista.network;
 
 import net.mehvahdjukaar.moonlight.api.platform.network.Message;
 import net.mehvahdjukaar.vista.VistaMod;
+import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.common.chunk_tracking.ExtraChunkViewData;
 import net.mehvahdjukaar.vista.common.chunk_tracking.ILevelRendererExt;
 import net.minecraft.client.Minecraft;
@@ -32,7 +33,7 @@ public record ClientBoundSyncExtraChunksPacket(ExtraChunkViewData data) implemen
 
     @Override
     public void handle(Context context) {
-        ExtraChunkViewData client = ExtraChunkViewData.CLIENT_INSTANCE;
+        ExtraChunkViewData client = VistaModClient.CLIENT_EXTRA_CHUNK_VIEW_DATA;
 
         // Capture old chunk set before mutation so we can decide whether a rebuild is needed.
         Set<ChunkPos> oldChunks = new HashSet<>(client.getAllChunks());
