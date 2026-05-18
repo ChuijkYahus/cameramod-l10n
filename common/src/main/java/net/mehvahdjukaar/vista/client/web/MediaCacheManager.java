@@ -2,6 +2,7 @@ package net.mehvahdjukaar.vista.client.web;
 
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.client.web.files.FileDownloadUtils;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.net.URI;
@@ -52,6 +53,10 @@ public class MediaCacheManager {
      * For local filesystem paths or {@code file://} URLs, the path is used directly with no caching.
      */
     public Path getOrDownload(URI uri) throws Exception {
+        return getOrDownload(uri, null);
+    }
+
+    public Path getOrDownload(URI uri, @Nullable FileDownloadUtils.ProgressCallback progressCallback) throws Exception {
         // Handle local filesystem paths or file:// URLs without going through HTTP download/caching
         try {
             String scheme = uri.getScheme();
@@ -107,7 +112,7 @@ public class MediaCacheManager {
             pendingDownloads.put(key, downloadFuture);
 
             try {
-                Path cachedPath = downloadAndCache(uri.toString(), key);
+                Path cachedPath = downloadAndCache(uri.toString(), key, progressCallback);
                 downloadFuture.complete(cachedPath);
                 synchronized (this) {
                     urlToEntry.put(key, new CachedEntry(cachedPath, 1));
@@ -154,9 +159,9 @@ public class MediaCacheManager {
     }
 
     // ---------- private helpers ----------
-    private Path downloadAndCache(String urlStr, String key) throws Exception {
+    private Path downloadAndCache(String urlStr, String key, @Nullable FileDownloadUtils.ProgressCallback progressCallback) throws Exception {
         Path cachedPath = cacheDir.resolve(key + ".video");
-        FileDownloadUtils.download(urlStr, cachedPath, "Mozilla/5.0");
+        FileDownloadUtils.download(urlStr, cachedPath, "Mozilla/5.0", progressCallback);
         return cachedPath;
     }
 

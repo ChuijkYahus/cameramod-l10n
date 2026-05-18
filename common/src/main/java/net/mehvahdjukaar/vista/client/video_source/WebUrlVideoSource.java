@@ -1,6 +1,7 @@
 package net.mehvahdjukaar.vista.client.video_source;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.client.CrtOverlay;
 import net.mehvahdjukaar.vista.client.textures.IWebTexture;
 import net.mehvahdjukaar.vista.client.textures.TvScreenVertexConsumers;
@@ -82,7 +83,14 @@ public class WebUrlVideoSource implements IVideoSource {
         if (state == MediaStatus.FAILED) {
             return TvScreenVertexConsumers.getNoiseVC(buffer, pixelEffectRes, switchAnim);
         } else if (state == MediaStatus.LOADING) {
-            return TvScreenVertexConsumers.getDownloadingVc(buffer, pixelEffectRes, videoAnimationTick, switchAnim);
+            int progress = texture.getDownloadProgress();
+            if (progress < 0 && VistaModClient.isFFmpegDownloading()) {
+                progress = VistaModClient.getFFmpegDownloadProgress();
+            }
+            if (progress >= 0) {
+                return TvScreenVertexConsumers.getDownloadingVc(buffer, pixelEffectRes, progress, switchAnim);
+            }
+            return TvScreenVertexConsumers.getWaitingVc(buffer, pixelEffectRes, videoAnimationTick, switchAnim);
         }
         if (state == MediaStatus.BUFFERING) {
             overlay = CrtOverlay.LOADING;

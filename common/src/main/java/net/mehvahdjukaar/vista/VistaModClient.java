@@ -109,6 +109,13 @@ public class VistaModClient {
         return ffmpegFuture != null && !ffmpegFuture.isDone();
     }
 
+    public static int getFFmpegDownloadProgress() {
+        if (!isFFmpegDownloading()) {
+            return -1;
+        }
+        return FFmpegManager.getDownloadProgress();
+    }
+
     @Nullable
     public static synchronized CompletableFuture<FFmpeg> getFFmpegFuture() {
         return ffmpegFuture;

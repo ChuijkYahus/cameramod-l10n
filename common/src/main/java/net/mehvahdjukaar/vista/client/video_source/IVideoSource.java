@@ -49,11 +49,14 @@ public interface IVideoSource {
         public @NotNull VertexConsumer getVideoFrameBuilder(
                 float partialTick, MultiBufferSource buffer,
                 boolean shouldUpdate, int screenSize, int pixelEffectRes,
-                int videoAnimationTick, boolean paused,
-                IntAnimationState switchAnim, IntAnimationState staticAnim) {
+            int videoAnimationTick, boolean paused,
+            IntAnimationState switchAnim, IntAnimationState staticAnim) {
 
             if (VistaModClient.isFFmpegDownloading()) {
-                return TvScreenVertexConsumers.getDownloadingVc(buffer, pixelEffectRes, videoAnimationTick, switchAnim);
+                int progress = VistaModClient.getFFmpegDownloadProgress();
+                if (progress >= 0) {
+                    return TvScreenVertexConsumers.getDownloadingVc(buffer, pixelEffectRes, progress, switchAnim);
+                }
             }
             return TvScreenVertexConsumers.getBarsVC(buffer, pixelEffectRes, switchAnim);
         }

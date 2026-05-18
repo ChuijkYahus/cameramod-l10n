@@ -29,6 +29,7 @@ public class FFmpegMediaSession implements IMediaSession {
     private volatile boolean completed;
     private volatile boolean failed;
     private volatile boolean closed;
+    private volatile int downloadProgress = 0;
 
     private final int targetWidth;
     private final int targetHeight;
@@ -43,7 +44,7 @@ public class FFmpegMediaSession implements IMediaSession {
 
     private void asyncThreadJob(URI uri, @Nullable FFmpeg ffmpeg, MediaCacheManager cacheManager) {
         try {
-            Path videoPath = cacheManager.getOrDownload(uri);
+            Path videoPath = cacheManager.getOrDownload(uri, percent -> this.downloadProgress = percent);
             if (closed) return;
 
             FFmpeg effectiveFfmpeg = ffmpeg;
@@ -65,6 +66,8 @@ public class FFmpegMediaSession implements IMediaSession {
         } catch (Exception e) {
             failed = true;
             VistaMod.LOGGER.error("Failed to load web video {}", uri, e);
+        } finally {
+            this.downloadProgress = -1;
         }
     }
 
@@ -94,6 +97,11 @@ public class FFmpegMediaSession implements IMediaSession {
 
     public boolean isFailed() {
         return failed || loadFuture.isCompletedExceptionally();
+    }
+
+    @Override
+    public int getDownloadProgress() {
+        return downloadProgress;
     }
 
     public MediaStatus.Pair lookupFrame(double seconds) {

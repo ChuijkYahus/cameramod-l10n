@@ -12,4 +12,8 @@ public interface IMediaSession extends AutoCloseable {
     boolean shouldRefreshTexture(IWebTexture tt);
 
     boolean isFailed();
+
+    default int getDownloadProgress() {
+        return -1;
+    }
 }

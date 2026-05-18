@@ -15,6 +15,7 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.core.Holder;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
 import org.jetbrains.annotations.NotNull;
 
@@ -56,8 +57,8 @@ public class TvScreenVertexConsumers {
                 CrtOverlay.NONE, switchAnim, IntAnimationState.MAX_ANIM, buffer::getBuffer);
     }
 
-    public static @NotNull VertexConsumer getDownloadingVc(MultiBufferSource buffer, int scale, int tickCount, IntAnimationState switchAnim) {
-        return createAnimatedStripVC(buffer, VistaModClient.DOWNLOADING_SCREEN, scale, tickCount, CrtOverlay.NONE, switchAnim);
+    public static @NotNull VertexConsumer getDownloadingVc(MultiBufferSource buffer, int scale, int progressPercent, IntAnimationState switchAnim) {
+        return createProgressStripVC(buffer, VistaModClient.DOWNLOADING_SCREEN, scale, progressPercent, CrtOverlay.NONE, switchAnim);
     }
 
     public static @NotNull VertexConsumer getWaitingVc(MultiBufferSource buffer, int scale, int tickCount, IntAnimationState switchAnim) {
@@ -81,6 +82,23 @@ public class TvScreenVertexConsumers {
                                                         int scale, int tickCount,
                                                         CrtOverlay overlay,
                                                         IntAnimationState switchAnim) {
+        return createStripVC(buffer, id, scale, tickCount, overlay, switchAnim, false);
+    }
+
+    private static VertexConsumer createProgressStripVC(MultiBufferSource buffer,
+                                                        ResourceLocation id,
+                                                        int scale, int progressPercent,
+                                                        CrtOverlay overlay,
+                                                        IntAnimationState switchAnim) {
+        return createStripVC(buffer, id, scale, progressPercent, overlay, switchAnim, true);
+    }
+
+    private static VertexConsumer createStripVC(MultiBufferSource buffer,
+                                                ResourceLocation id,
+                                                int scale, int value,
+                                                CrtOverlay overlay,
+                                                IntAnimationState switchAnim,
+                                                boolean directFrameIndex) {
         AnimatedStripTexture animatedStrip = CassetteTexturesManager.INSTANCE.getAnimatedTexture(id);
         if (animatedStrip == null) {
             return getNoiseVC(buffer, scale, switchAnim); //missing
@@ -88,10 +106,17 @@ public class TvScreenVertexConsumers {
 
         ResourceLocation textureId = animatedStrip.getTextureLocation();
         AnimationStripData stripData = animatedStrip.getStripData();
+        int frameIndex = directFrameIndex ? progressToFrameIndex(stripData, value) : value;
 
         return createVC(textureId, scale, stripData.frameRelativeW(), stripData.frameRelativeH(),
                 overlay, switchAnim, IntAnimationState.NO_ANIM, rt ->
-                        new AnimatedStripVertexConsumer(tickCount, stripData, buffer.getBuffer(rt)));
+                        new AnimatedStripVertexConsumer(frameIndex, stripData, buffer.getBuffer(rt), directFrameIndex));
+    }
+
+    private static int progressToFrameIndex(AnimationStripData stripData, int progressPercent) {
+        int clamped = Mth.clamp(progressPercent, 0, 100);
+        int maxFrameIndex = Math.max(0, stripData.frameCount() - 1);
+        return Mth.clamp(Math.round(clamped * maxFrameIndex / 100.0f), 0, maxFrameIndex);
     }
 
     public static VertexConsumer getSingleTextureVC(MultiBufferSource buffer,

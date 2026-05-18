@@ -26,4 +26,8 @@ public interface IWebTexture extends AutoCloseable {
     IMediaSession getSession();
 
     MediaStatus uploadFrameAtTime(int ticks, float deltaTime, boolean paused);
+
+    default int getDownloadProgress() {
+        return getSession().getDownloadProgress();
+    }
 }

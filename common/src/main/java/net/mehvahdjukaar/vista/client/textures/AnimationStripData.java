@@ -61,17 +61,21 @@ public record AnimationStripData(
 
     public float getU(float u, int time) {
         int frameIndex = getFrameIndexFromTime(time);
+        return getUForFrame(u, frameIndex);
+    }
 
+    public float getUForFrame(float u, int frameIndex) {
         int col = frameIndex / atlasRows;
-
         return u * frameRelativeW + col * frameRelativeW;
     }
 
     public float getV(float v, int time) {
         int frameIndex = getFrameIndexFromTime(time);
+        return getVForFrame(v, frameIndex);
+    }
 
+    public float getVForFrame(float v, int frameIndex) {
         int row = frameIndex % atlasRows;
-
         return v * frameRelativeH + row * frameRelativeH;
     }
     /**

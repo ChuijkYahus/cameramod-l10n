@@ -24,6 +24,7 @@ public final class FFmpegManager {
     private static final Path SOURCES_CONFIG_PATH = Paths.get("vista_ffmpeg_sources.json");
     private static final String SOURCES_RESOURCE_PATH = "/vista_ffmpeg_sources.json";
     private static final Path PROGRAM_FOLDER = Paths.get("vista_ffmpeg_bin");
+    private static volatile int downloadProgress = -1;
 
     private static final OsType OS_TYPE = OsType.detect();
     private static final Path FFMPEG_PATH = PROGRAM_FOLDER.resolve(OS_TYPE.ffmpegName);
@@ -33,10 +34,15 @@ public final class FFmpegManager {
         return CompletableFuture.supplyAsync(() -> initialize(customUrl));
     }
 
+    public static int getDownloadProgress() {
+        return downloadProgress;
+    }
+
     private static FFmpeg initialize(@Nullable String customUrl) {
         try {
             Files.createDirectories(PROGRAM_FOLDER);
             if (!hasRequiredFiles()) {
+                downloadProgress = -1;
                 String downloadUrl = customUrl != null ? customUrl : getDownloadUrlFromSources();
                 Path archive = PROGRAM_FOLDER.resolve(ArchiveUtils.extractFileNameFromUrl(downloadUrl));
 
@@ -46,15 +52,18 @@ public final class FFmpegManager {
 
                 if (!Files.exists(archive)) {
                     //await
-                    FileDownloadUtils.download(downloadUrl, archive);
+                    FileDownloadUtils.download(downloadUrl, archive, null, percent -> downloadProgress = percent);
                 }
 
                 extractAndInstall(archive);
                 Files.deleteIfExists(archive);
+                downloadProgress = -1;
             } else {
+                downloadProgress = -1;
                 VistaMod.LOGGER.info("FFmpeg binaries found at {}", FFMPEG_PATH);
             }
         } catch (Exception e) {
+            downloadProgress = -1;
             throw new RuntimeException("FFmpeg setup failed. Aborting.", e);
         }
         return new FFmpeg(FFMPEG_PATH, FFPROBE_PATH);

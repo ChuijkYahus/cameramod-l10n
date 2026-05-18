@@ -7,16 +7,26 @@ public class AnimatedStripVertexConsumer implements VertexConsumer {
     private final VertexConsumer delegate;
     private final AnimationStripData stripData;
     private final int frameIndex;
+    private final boolean directFrameIndex;
 
     public AnimatedStripVertexConsumer(int frameIndex, AnimationStripData stripData, VertexConsumer delegate) {
+        this(frameIndex, stripData, delegate, false);
+    }
+
+    public AnimatedStripVertexConsumer(int frameIndex, AnimationStripData stripData, VertexConsumer delegate, boolean directFrameIndex) {
         this.frameIndex = frameIndex;
         this.stripData = stripData;
         this.delegate = delegate;
+        this.directFrameIndex = directFrameIndex;
     }
 
     @Override
     public VertexConsumer setUv(float u, float v) {
-        this.delegate.setUv(this.stripData.getU(u, frameIndex), this.stripData.getV(v, frameIndex));
+        if (directFrameIndex) {
+            this.delegate.setUv(this.stripData.getUForFrame(u, frameIndex), this.stripData.getVForFrame(v, frameIndex));
+        } else {
+            this.delegate.setUv(this.stripData.getU(u, frameIndex), this.stripData.getV(v, frameIndex));
+        }
         return this;
     }
 
@@ -52,6 +62,10 @@ public class AnimatedStripVertexConsumer implements VertexConsumer {
 
     @Override
     public void addVertex(float x, float y, float z, int color, float u, float v, int packedOverlay, int packedLight, float normalX, float normalY, float normalZ) {
-        this.delegate.addVertex(x, y, z, color, this.stripData.getU(u, frameIndex), this.stripData.getV(v, frameIndex), packedOverlay, packedLight, normalX, normalY, normalZ);
+        if (directFrameIndex) {
+            this.delegate.addVertex(x, y, z, color, this.stripData.getUForFrame(u, frameIndex), this.stripData.getVForFrame(v, frameIndex), packedOverlay, packedLight, normalX, normalY, normalZ);
+        } else {
+            this.delegate.addVertex(x, y, z, color, this.stripData.getU(u, frameIndex), this.stripData.getV(v, frameIndex), packedOverlay, packedLight, normalX, normalY, normalZ);
+        }
     }
 }
