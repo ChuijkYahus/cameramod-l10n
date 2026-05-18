@@ -58,6 +58,7 @@ public class ServerExtraChunkViewData extends ExtraChunkViewData {
 
     @Override
     protected void onZonesChanged() {
+        super.onZonesChanged();
         queuedZoneChunks.clear();
     }
 

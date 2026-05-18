@@ -4,6 +4,7 @@ import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.client.ClientChunkStuffHelper;
+import net.mehvahdjukaar.vista.client.renderer.VistaLevelRenderer;
 import net.mehvahdjukaar.vista.common.chunk_tracking.IPinnableRenderSection;
 import net.minecraft.client.Camera;
 import net.minecraft.client.renderer.SectionOcclusionGraph;
@@ -37,12 +38,15 @@ public class SectionOcclusionGraphMixin {
 
     /**
      * Seed every pinned section as an additional BFS root after the normal player-section
-     * seed. Pinned sections live beyond the torus range and are never reached by normal
-     * propagation.
+     * seed. Only active during ViewFinder feed renders: the feed camera is positioned at
+     * the ViewFinder, so its BFS starts from the normal section torus (centred on the
+     * player) and might not naturally reach the pinned sections without explicit seeds.
+     * During the player's own render this is skipped — pinned chunks are irrelevant there.
      */
     @SuppressWarnings("unchecked")
     @Inject(method = "initializeQueueForFullUpdate", at = @At("TAIL"))
     private void vista$seedPinnedSections(Camera camera, Queue nodeQueue, CallbackInfo ci) {
+        if (!VistaLevelRenderer.isRenderingLiveFeed()) return;
         if (this.viewArea == null) return;
         for (SectionRenderDispatcher.RenderSection section : this.viewArea.sections) {
             if (section instanceof IPinnableRenderSection ps && ps.vista$isPinned()) {
@@ -53,12 +57,22 @@ public class SectionOcclusionGraphMixin {
     }
 
     /**
-     * Unconditionally append every pinned section to the visible list after frustum
-     * culling, bypassing the Frustum.isVisible check (which would always cull them).
+     * Appends pinned sections to the visible list during ViewFinder feed renders only.
+     *
+     * <p>During the player's own render the feed camera is inactive; pinned sections are
+     * at the ViewFinder's location (potentially hundreds of chunks away) and must not be
+     * drawn to the player's view.
+     *
+     * <p>During feed renders the feed camera IS at the ViewFinder, so the normal BFS +
+     * {@link #vista$allowPinnedChunk} handles reachability. We still add them
+     * unconditionally here because the ViewArea torus is centred on the player, meaning
+     * pinned sections may sit outside the torus index range and never enter the BFS even
+     * with the view-distance patch.
      */
     @Inject(method = "addSectionsInFrustum", at = @At("TAIL"))
     private void vista$addPinnedSectionsToVisible(Frustum frustum,
                                                   List<SectionRenderDispatcher.RenderSection> sections, CallbackInfo ci) {
+        if (!VistaLevelRenderer.isRenderingLiveFeed()) return;
         if (this.viewArea == null) return;
         for (SectionRenderDispatcher.RenderSection section : this.viewArea.sections) {
             if (section instanceof IPinnableRenderSection ps && ps.vista$isPinned()) {

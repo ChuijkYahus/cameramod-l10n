@@ -7,7 +7,10 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.world.level.ChunkPos;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
@@ -66,6 +69,7 @@ public class ExtraChunkViewData {
             zones -> {
                 ExtraChunkViewData d = new ExtraChunkViewData();
                 d.zones.addAll(zones);
+                d.rebuildCache();
                 return d;
             },
             d -> List.copyOf(d.zones)
@@ -79,6 +83,7 @@ public class ExtraChunkViewData {
             for (int i = 0; i < size; i++) {
                 data.zones.add(Zone.STREAM_CODEC.decode(buf));
             }
+            data.rebuildCache();
             return data;
         }
 
@@ -95,7 +100,17 @@ public class ExtraChunkViewData {
 
     protected final List<Zone> zones = new CopyOnWriteArrayList<>();
 
-    public ExtraChunkViewData() {}
+    /**
+     * Cached flat set of all chunk longs across all zones. Rebuilt in {@link #rebuildCache()}.
+     */
+    private Set<Long> cachedChunkLongs = Set.of();
+    /**
+     * Cached set of ChunkPos objects derived from {@link #cachedChunkLongs}.
+     */
+    private Set<ChunkPos> cachedChunkSet = Set.of();
+
+    public ExtraChunkViewData() {
+    }
 
     // ── Zone management ────────────────────────────────────────────────────────
 
@@ -110,7 +125,9 @@ public class ExtraChunkViewData {
         onZonesChanged();
     }
 
-    /** Removes all zones whose centre matches the given chunk position. */
+    /**
+     * Removes all zones whose centre matches the given chunk position.
+     */
     public void removeZone(ChunkPos center) {
         zones.removeIf(z -> z.center().equals(center));
         onZonesChanged();
@@ -125,7 +142,27 @@ public class ExtraChunkViewData {
      * Called after any mutation of {@link #zones}.
      * Subclasses use this to clear derived caches (e.g. queued chunk sets).
      */
-    protected void onZonesChanged() {}
+    protected void onZonesChanged() {
+        rebuildCache();
+    }
+
+    private void rebuildCache() {
+        if (zones.isEmpty()) {
+            cachedChunkLongs = Set.of();
+            cachedChunkSet = Set.of();
+            return;
+        }
+        Set<Long> longs = new HashSet<>();
+        for (Zone zone : zones) {
+            for (ChunkPos cp : zone.chunks()) {
+                longs.add(cp.toLong());
+            }
+        }
+        cachedChunkLongs = longs;
+        Set<ChunkPos> chunkSet = new HashSet<>(longs.size());
+        longs.forEach(l -> chunkSet.add(new ChunkPos(l)));
+        cachedChunkSet = Collections.unmodifiableSet(chunkSet);
+    }
 
     // ── Queries ────────────────────────────────────────────────────────────────
 
@@ -133,21 +170,19 @@ public class ExtraChunkViewData {
         return Collections.unmodifiableList(zones);
     }
 
-    /** Returns true if the given chunk position falls inside any registered zone. */
+    /**
+     * Returns true if the given chunk position falls inside any registered zone. O(1) via cached set.
+     */
     public boolean containsChunk(int chunkX, int chunkZ) {
-        for (Zone zone : zones) {
-            if (zone.contains(chunkX, chunkZ)) return true;
-        }
-        return false;
+        if (cachedChunkLongs.isEmpty()) return false;
+        return cachedChunkLongs.contains(ChunkPos.asLong(chunkX, chunkZ));
     }
 
-    /** Returns all unique chunk positions across all zones. */
+    /**
+     * Returns all unique chunk positions across all zones. Backed by cached set; do not mutate.
+     */
     public Set<ChunkPos> getAllChunks() {
-        Set<ChunkPos> chunks = new HashSet<>();
-        for (Zone zone : zones) {
-            chunks.addAll(zone.chunks());
-        }
-        return chunks;
+        return cachedChunkSet;
     }
 
 }

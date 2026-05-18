@@ -69,7 +69,7 @@ public class ServerCameraChunkManager {
 
     /**
      * Live index of all server-side TVBlockEntities currently loaded, grouped by dimension.
-     * Populated via {@link #onTVLoaded}/{@link #onTVUnloaded} which are called from
+     * Populated via {@link #trackTv}/{@link #untrackTv} which are called from
      * platform-specific chunk load/unload events (NeoForge) or LevelChunk mixins (Fabric).
      * This replaces the per-player chunk scan in {@link #findViewFindersNeededForPlayer}.
      */
@@ -81,7 +81,7 @@ public class ServerCameraChunkManager {
      * Call when a {@link TVBlockEntity} becomes live on the server
      * (chunk loaded or block placed).
      */
-    public static void onTVLoaded(TVBlockEntity tv) {
+    public static void trackTv(TVBlockEntity tv) {
         if (tv.getLevel() instanceof ServerLevel sl) {
             loadedServerTVs.computeIfAbsent(sl.dimension(), k -> new HashSet<>()).add(tv);
         }
@@ -91,7 +91,7 @@ public class ServerCameraChunkManager {
      * Call when a {@link TVBlockEntity} is removed from the server
      * (chunk unloaded or block broken).
      */
-    public static void onTVUnloaded(TVBlockEntity tv) {
+    public static void untrackTv(TVBlockEntity tv) {
         if (tv.getLevel() instanceof ServerLevel sl) {
             Set<TVBlockEntity> set = loadedServerTVs.get(sl.dimension());
             if (set != null) set.remove(tv);

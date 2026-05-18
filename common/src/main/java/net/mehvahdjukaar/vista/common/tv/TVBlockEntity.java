@@ -2,13 +2,13 @@ package net.mehvahdjukaar.vista.common.tv;
 
 import net.mehvahdjukaar.candlelight.api.VirtualOverride;
 import net.mehvahdjukaar.moonlight.api.block.ItemDisplayTile;
+import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.util.Utils;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.client.video_source.IVideoSource;
-import net.mehvahdjukaar.vista.common.chunk_tracking.ServerCameraChunkManager;
-import net.minecraft.server.level.ServerLevel;
 import net.mehvahdjukaar.vista.common.cassette.IBroadcastSource;
 import net.mehvahdjukaar.vista.common.cassette.ITvCassette;
+import net.mehvahdjukaar.vista.common.chunk_tracking.ServerCameraChunkManager;
 import net.mehvahdjukaar.vista.common.tv.enderman.TVEndermanObservationController;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.minecraft.core.BlockPos;
@@ -31,6 +31,7 @@ import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.TestOnly;
 
 import java.util.UUID;
 
@@ -188,17 +189,29 @@ public class TVBlockEntity extends ItemDisplayTile {
     // LevelChunkTVTrackingMixin so we get the same coverage on both platforms.
     @VirtualOverride("neoforge")
     public void onLoad() {
-        if (level instanceof ServerLevel) {
-            ServerCameraChunkManager.onTVLoaded(this);
-        }
+        ServerCameraChunkManager.trackTv(this);
     }
 
     // Counterpart to onLoad(); on NeoForge called by LevelChunk.clearAllBlockEntities,
     // on Fabric also called from LevelChunkTVTrackingMixin.
     @VirtualOverride("neoforge")
     public void onChunkUnloaded() {
-        if (level instanceof ServerLevel) {
-            ServerCameraChunkManager.onTVUnloaded(this);
+        ServerCameraChunkManager.untrackTv(this);
+    }
+
+    @Override
+    public void setLevel(Level level) {
+        super.setLevel(level);
+        if (PlatHelper.getPlatform().isFabric()) {
+            ServerCameraChunkManager.trackTv(this);
+        }
+    }
+
+    @Override
+    public void setRemoved() {
+        super.setRemoved();
+        if (PlatHelper.getPlatform().isFabric()) {
+            ServerCameraChunkManager.untrackTv(this);
         }
     }
 

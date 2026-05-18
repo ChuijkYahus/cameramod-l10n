@@ -48,6 +48,7 @@ public class ClientChunkCacheMixin implements IClientChunkCacheExt {
             at = @At("HEAD"), cancellable = true)
     private void vista$getPinnedChunk(int x, int z, ChunkStatus status, boolean require,
             CallbackInfoReturnable<LevelChunk> cir) {
+        if (vista$pinnedChunks.isEmpty()) return;
         if (VistaModClient.CLIENT_EXTRA_CHUNK_VIEW_DATA.containsChunk(x, z)) {
             LevelChunk chunk = this.vista$pinnedChunks.get(ChunkPos.asLong(x, z));
             if (chunk != null) {
@@ -71,7 +72,7 @@ public class ClientChunkCacheMixin implements IClientChunkCacheExt {
     /** Prevent a server-initiated drop packet from clearing a pinned zone chunk. */
     @Inject(method = "drop", at = @At("HEAD"), cancellable = true)
     private void vista$preventDropPinnedChunk(ChunkPos chunkPos, CallbackInfo ci) {
-        if (VistaModClient.CLIENT_EXTRA_CHUNK_VIEW_DATA.containsChunk(chunkPos.x, chunkPos.z)) {
+        if (!vista$pinnedChunks.isEmpty() && VistaModClient.CLIENT_EXTRA_CHUNK_VIEW_DATA.containsChunk(chunkPos.x, chunkPos.z)) {
             ci.cancel();
         }
     }

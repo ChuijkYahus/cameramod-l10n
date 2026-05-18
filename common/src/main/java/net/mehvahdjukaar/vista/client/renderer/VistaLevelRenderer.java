@@ -292,18 +292,17 @@ public class VistaLevelRenderer {
         // Camera's block position (rounded to nearest block)
         BlockPos cameraBlockPos = camera.getBlockPosition();
 
-        Player player = minecraft.player;
-        // Compute camera position in 8-block "units" for occlusion checks
-        double cameraUnitX = Math.floor(player.getX() / 8.0);
-        double cameraUnitY = Math.floor(player.getY() / 8.0);
-        double cameraUnitZ = Math.floor(player.getZ() / 8.0);
+        // Compute camera position in 8-block "units" for occlusion checks.
+        // Use the actual render camera (ViewFinder position), not the player.
+        double cameraUnitX = Math.floor(cameraPosition.x / 8.0);
+        double cameraUnitY = Math.floor(cameraPosition.y / 8.0);
+        double cameraUnitZ = Math.floor(cameraPosition.z / 8.0);
 
         if (cameraUnitX != lr.prevCamX ||
                 cameraUnitY != lr.prevCamY ||
                 cameraUnitZ != lr.prevCamZ) {
-            //this should never triger for us since the camera never moves
-            graph.invalidate(); //needs full update
-            //update graph if player itself moved so we discard stale far away sections
+            // ViewFinder moved to a new 8-block cell — invalidate the feed graph.
+            graph.invalidate();
         }
 
         // Store current 8-block unit for future comparisons
