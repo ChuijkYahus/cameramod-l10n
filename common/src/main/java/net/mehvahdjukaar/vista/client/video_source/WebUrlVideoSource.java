@@ -82,7 +82,7 @@ public class WebUrlVideoSource implements IVideoSource {
         if (state == MediaStatus.FAILED) {
             return TvScreenVertexConsumers.getNoiseVC(buffer, pixelEffectRes, switchAnim);
         } else if (state == MediaStatus.LOADING) {
-            return TvScreenVertexConsumers.getWaitingVc(buffer, pixelEffectRes, videoAnimationTick, switchAnim);
+            return TvScreenVertexConsumers.getDownloadingVc(buffer, pixelEffectRes, videoAnimationTick, switchAnim);
         }
         if (state == MediaStatus.BUFFERING) {
             overlay = CrtOverlay.LOADING;

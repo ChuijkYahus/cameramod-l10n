@@ -52,13 +52,18 @@ public class TvScreenVertexConsumers {
     }
 
     public static VertexConsumer getNoiseVC(MultiBufferSource buffer, int scale, IntAnimationState switchAnim) {
-        return createVC(VistaModClient.DUMMY_TEXTURE, scale, 1, 1,
+        return createVC(DUMMY_TEXTURE, scale, 1, 1,
                 CrtOverlay.NONE, switchAnim, IntAnimationState.MAX_ANIM, buffer::getBuffer);
+    }
+
+    public static @NotNull VertexConsumer getDownloadingVc(MultiBufferSource buffer, int scale, int tickCount, IntAnimationState switchAnim) {
+        return createAnimatedStripVC(buffer, VistaModClient.DOWNLOADING_SCREEN, scale, tickCount, CrtOverlay.NONE, switchAnim);
     }
 
     public static @NotNull VertexConsumer getWaitingVc(MultiBufferSource buffer, int scale, int tickCount, IntAnimationState switchAnim) {
         return createAnimatedStripVC(buffer, VistaModClient.BLACK_LOADING_SCREEN, scale, tickCount, CrtOverlay.NONE, switchAnim);
     }
+
 
     public static VertexConsumer getBarsVC(MultiBufferSource buffer, int scale, IntAnimationState switchAnim) {
         return createAnimatedStripVC(buffer, VistaModClient.BARS_SCREEN, scale, 0, CrtOverlay.NONE, switchAnim);

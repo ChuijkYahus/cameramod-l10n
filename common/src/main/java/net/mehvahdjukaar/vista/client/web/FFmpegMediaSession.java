@@ -2,6 +2,7 @@ package net.mehvahdjukaar.vista.client.web;
 
 import com.mojang.blaze3d.platform.NativeImage;
 import net.mehvahdjukaar.vista.VistaMod;
+import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.client.textures.FFmpegWebTexture;
 import net.mehvahdjukaar.vista.client.textures.IWebTexture;
 import net.mehvahdjukaar.vista.client.textures.ImageRescaler;
@@ -42,13 +43,23 @@ public class FFmpegMediaSession implements IMediaSession {
 
     private void asyncThreadJob(URI uri, @Nullable FFmpeg ffmpeg, MediaCacheManager cacheManager) {
         try {
-            if (ffmpeg == null) {
+            Path videoPath = cacheManager.getOrDownload(uri);
+            if (closed) return;
+
+            FFmpeg effectiveFfmpeg = ffmpeg;
+            if (effectiveFfmpeg == null && VistaModClient.isFFmpegDownloading()) {
+                CompletableFuture<FFmpeg> ffmpegFuture = VistaModClient.getFFmpegFuture();
+                if (ffmpegFuture != null) {
+                    effectiveFfmpeg = ffmpegFuture.join();
+                }
+            }
+
+            if (effectiveFfmpeg == null) {
                 this.failed = true;
                 return;
             }
-            Path videoPath = cacheManager.getOrDownload(uri);
-            if (closed) return;
-            FFmpegMediaDecoder newDecoder = new FFmpegMediaDecoder(ffmpeg, this, videoPath);
+
+            FFmpegMediaDecoder newDecoder = new FFmpegMediaDecoder(effectiveFfmpeg, this, videoPath);
             this.decoder = newDecoder;
             newDecoder.run(); //blocking until done
         } catch (Exception e) {

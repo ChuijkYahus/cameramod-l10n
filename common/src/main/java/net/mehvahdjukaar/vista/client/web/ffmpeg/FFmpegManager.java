@@ -4,8 +4,8 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import net.mehvahdjukaar.vista.VistaMod;
-import net.mehvahdjukaar.vista.client.web.ArchiveUtils;
-import net.mehvahdjukaar.vista.client.web.FileDownloader;
+import net.mehvahdjukaar.vista.client.web.files.ArchiveUtils;
+import net.mehvahdjukaar.vista.client.web.files.FileDownloadUtils;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
@@ -46,7 +46,7 @@ public final class FFmpegManager {
 
                 if (!Files.exists(archive)) {
                     //await
-                    FileDownloader.download(downloadUrl, archive);
+                    FileDownloadUtils.download(downloadUrl, archive);
                 }
 
                 extractAndInstall(archive);

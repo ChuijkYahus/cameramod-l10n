@@ -1,6 +1,7 @@
 package net.mehvahdjukaar.vista.client.web;
 
 import net.mehvahdjukaar.vista.VistaMod;
+import net.mehvahdjukaar.vista.client.web.files.FileDownloadUtils;
 
 import java.io.IOException;
 import java.net.URI;
@@ -155,7 +156,7 @@ public class MediaCacheManager {
     // ---------- private helpers ----------
     private Path downloadAndCache(String urlStr, String key) throws Exception {
         Path cachedPath = cacheDir.resolve(key + ".video");
-        FileDownloader.download(urlStr, cachedPath, "Mozilla/5.0");
+        FileDownloadUtils.download(urlStr, cachedPath, "Mozilla/5.0");
         return cachedPath;
     }
 

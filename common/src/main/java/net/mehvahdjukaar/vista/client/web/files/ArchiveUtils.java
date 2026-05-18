@@ -1,4 +1,4 @@
-package net.mehvahdjukaar.vista.client.web;
+package net.mehvahdjukaar.vista.client.web.files;
 
 import net.mehvahdjukaar.vista.VistaMod;
 import java.io.IOException;

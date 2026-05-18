@@ -2,6 +2,7 @@ package net.mehvahdjukaar.vista.client.video_source;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.mehvahdjukaar.vista.VistaMod;
+import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.client.textures.TvScreenVertexConsumers;
 import net.mehvahdjukaar.vista.common.cassette.CassetteItem;
 import net.mehvahdjukaar.vista.common.tv.IntAnimationState;
@@ -51,6 +52,9 @@ public interface IVideoSource {
                 int videoAnimationTick, boolean paused,
                 IntAnimationState switchAnim, IntAnimationState staticAnim) {
 
+            if (VistaModClient.isFFmpegDownloading()) {
+                return TvScreenVertexConsumers.getDownloadingVc(buffer, pixelEffectRes, videoAnimationTick, switchAnim);
+            }
             return TvScreenVertexConsumers.getBarsVC(buffer, pixelEffectRes, switchAnim);
         }
     }

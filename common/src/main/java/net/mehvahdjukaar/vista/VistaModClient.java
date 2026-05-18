@@ -62,7 +62,7 @@ public class VistaModClient {
     public static final ResourceLocation SMILE_SCREEN = VistaMod.res("smile");
     public static final ResourceLocation NEUTRAL_SCREEN = VistaMod.res("neutral");
     public static final ResourceLocation SAD_SCREEN = VistaMod.res("sad");
-    public static final ResourceLocation LOADING_SCREEN = VistaMod.res("loading_bar");
+    public static final ResourceLocation DOWNLOADING_SCREEN = VistaMod.res("download_bar");
 
     public static final ResourceLocation REFRESH_ICON = VistaMod.res("icon/refresh");
 
@@ -103,6 +103,15 @@ public class VistaModClient {
         }
         // setup failed. we give up and have no ffmpeg for this game
         return null;
+    }
+
+    public static synchronized boolean isFFmpegDownloading() {
+        return ffmpegFuture != null && !ffmpegFuture.isDone();
+    }
+
+    @Nullable
+    public static synchronized CompletableFuture<FFmpeg> getFFmpegFuture() {
+        return ffmpegFuture;
     }
 
     private static void instantiateFFmpeg(@Nullable String url) {
