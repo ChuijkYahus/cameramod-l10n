@@ -83,12 +83,15 @@ public class WebUrlVideoSource implements IVideoSource {
         if (state == MediaStatus.FAILED) {
             return TvScreenVertexConsumers.getNoiseVC(buffer, pixelEffectRes, switchAnim);
         } else if (state == MediaStatus.LOADING) {
-            int progress = texture.getDownloadProgress();
-            if (progress < 0 && VistaModClient.isFFmpegDownloading()) {
-                progress = VistaModClient.getFFmpegDownloadProgress();
+            if (VistaModClient.isFFmpegDownloading()) {
+               int ffmpegProg = VistaModClient.getFFmpegDownloadProgress();
+                if (ffmpegProg >= 0) {
+                    return TvScreenVertexConsumers.getDownloadingVc(buffer, pixelEffectRes, ffmpegProg, switchAnim);
+                }
             }
+            int progress = texture.getDownloadProgress();
             if (progress >= 0) {
-                return TvScreenVertexConsumers.getDownloadingVc(buffer, pixelEffectRes, progress, switchAnim);
+                //return TvScreenVertexConsumers.getDownloadingVc(buffer, pixelEffectRes, progress, switchAnim);
             }
             return TvScreenVertexConsumers.getWaitingVc(buffer, pixelEffectRes, videoAnimationTick, switchAnim);
         }

@@ -1,4 +1,5 @@
-- wave gates can be powered
-- improved watrmedia version handling
-- improved watermedia media handling
-- added support for local files (natively, no need for watermedia)
+- tvs have the ability to make the server send over chunks from far away view finders that are linked to them
+- additionally server can also chunkload those positions (off by default)
+- new textures for creative wave gate
+- proper icon for wave gate ui
+- better loading animations

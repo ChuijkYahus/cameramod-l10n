@@ -45,6 +45,7 @@ import java.util.function.BiPredicate;
  */
 public class ServerCameraChunkManager {
 
+    //TODO: make these configurable
     public static final int REMOTE_CHUNK_LOAD_RADIUS = 4;
     public static final int RECURSIVE_SCAN_RADIUS = 4;
     private static final int TICK_INTERVAL = 40;

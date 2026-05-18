@@ -3,6 +3,7 @@ package net.mehvahdjukaar.vista.common.wave_gate;
 import com.mojang.serialization.MapCodec;
 import net.mehvahdjukaar.moonlight.api.block.WaterBlock;
 import net.mehvahdjukaar.moonlight.api.util.Utils;
+import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.common.broadcast.BroadcastManager;
 import net.mehvahdjukaar.vista.common.broadcast.LevelBEBroadcastLocation;
 import net.minecraft.core.BlockPos;
@@ -105,6 +106,9 @@ public class WaveGateBlock extends WaterBlock implements EntityBlock {
 
     @Override
     protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
+        ItemStack heldItem = player.getItemInHand(hand);
+        if (heldItem.is(VistaMod.HOLLOW_CASSETTE.get())) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+
         if (level.getBlockEntity(pos) instanceof WaveGateBlockEntity tile && tile.canBeEditedBy(player)) {
             if (player instanceof ServerPlayer serverPlayer) {
                 Utils.openGuiIfPossible(tile, serverPlayer, stack, hitResult.getDirection(), hitResult.getLocation());
