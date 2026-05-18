@@ -57,11 +57,20 @@ public class VistaLevelRenderer {
     }
 
     public static void clear() {
-
         dummyCamera = null;
         MC_OWN_GRAPH.set(null);
         MANAGED_GRAPHS.clear();
         currentRenderingViewFinder = null;
+    }
+
+    /**
+     * Invalidates all managed (feed) occlusion graphs so they redo their full BFS.
+     * Call whenever zone data changes so newly-created pinned sections are picked up.
+     */
+    public static void invalidateManagedGraphs() {
+        for (SectionOcclusionGraph graph : MANAGED_GRAPHS) {
+            graph.invalidate();
+        }
     }
 
     public static DummyCamera getDummyCamera() {

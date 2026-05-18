@@ -38,15 +38,15 @@ public class SectionOcclusionGraphMixin {
 
     /**
      * Seed every pinned section as an additional BFS root after the normal player-section
-     * seed. Only active during ViewFinder feed renders: the feed camera is positioned at
-     * the ViewFinder, so its BFS starts from the normal section torus (centred on the
-     * player) and might not naturally reach the pinned sections without explicit seeds.
-     * During the player's own render this is skipped — pinned chunks are irrelevant there.
+     * seed. This runs for both the player's graph and the feed's graph (the full BFS is
+     * async on a background thread, where {@code isRenderingLiveFeed()} is always false
+     * so we cannot gate on it here). It is safe to seed pinned sections in the player's
+     * BFS too: they are hundreds of chunks away, so the player's frustum culls them out
+     * of {@code visibleSections} before they reach {@link #vista$addPinnedSectionsToVisible}.
      */
     @SuppressWarnings("unchecked")
     @Inject(method = "initializeQueueForFullUpdate", at = @At("TAIL"))
     private void vista$seedPinnedSections(Camera camera, Queue nodeQueue, CallbackInfo ci) {
-        if (!VistaLevelRenderer.isRenderingLiveFeed()) return;
         if (this.viewArea == null) return;
         for (SectionRenderDispatcher.RenderSection section : this.viewArea.sections) {
             if (section instanceof IPinnableRenderSection ps && ps.vista$isPinned()) {

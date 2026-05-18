@@ -46,6 +46,9 @@ public class LevelRendererMixin implements ILevelRendererExt {
         if (sectionOcclusionGraph != null) {
             sectionOcclusionGraph.invalidate();
         }
+        // Also invalidate all feed graphs so they redo their BFS and pick up
+        // the newly created pinned sections on the next feed render.
+        VistaLevelRenderer.invalidateManagedGraphs();
     }
 
     @ModifyReturnValue(method = "shouldShowEntityOutlines", at = @At(value = "RETURN"))
