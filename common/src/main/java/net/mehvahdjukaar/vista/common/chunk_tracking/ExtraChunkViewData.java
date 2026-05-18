@@ -21,8 +21,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * runtime state (force-load tracking, send-queue bookkeeping) lives in the subclass
  * {@link ServerExtraChunkViewData}, which is what the per-player server attachment stores.
  *
- * <p>One plain instance of this class serves as the client-side singleton
- * ({@link #CLIENT_INSTANCE}), updated by incoming sync packets.
  */
 public class ExtraChunkViewData {
 

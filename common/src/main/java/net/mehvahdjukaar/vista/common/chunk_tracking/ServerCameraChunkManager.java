@@ -257,21 +257,16 @@ public class ServerCameraChunkManager {
     }
 
     private static @NotNull boolean isInRecursiveDistance(ChunkPos centerChunk, int cx, int cz) {
-        int dx = cx - centerChunk.x, dz = cz - centerChunk.z;
-        return dx * dx + dz * dz <= RECURSIVE_SCAN_RADIUS * RECURSIVE_SCAN_RADIUS;
+        return centerChunk.getChessboardDistance(cx, cz) <= RECURSIVE_SCAN_RADIUS;
     }
 
     // ── Force-loading ─────────────────────────────────────────────────────────
 
     private static void setChunksForceLoaded(ServerLevel level, BlockPos viewFinderPos, boolean force) {
         ChunkPos cp = new ChunkPos(viewFinderPos);
-        for (int dx = -REMOTE_CHUNK_LOAD_RADIUS; dx <= REMOTE_CHUNK_LOAD_RADIUS; dx++) {
-            for (int dz = -REMOTE_CHUNK_LOAD_RADIUS; dz <= REMOTE_CHUNK_LOAD_RADIUS; dz++) {
-                if (dx * dx + dz * dz <= REMOTE_CHUNK_LOAD_RADIUS * REMOTE_CHUNK_LOAD_RADIUS) {
-                    level.setChunkForced(cp.x + dx, cp.z + dz, force);
-                }
-            }
-        }
+        ChunkPos.rangeClosed(cp, REMOTE_CHUNK_LOAD_RADIUS)
+                .filter(p -> p.distanceSquared(cp) <= REMOTE_CHUNK_LOAD_RADIUS * REMOTE_CHUNK_LOAD_RADIUS)
+                .forEach(p -> level.setChunkForced(p.x, p.z, force));
     }
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
