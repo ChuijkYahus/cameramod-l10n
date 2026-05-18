@@ -15,6 +15,7 @@ accessible method net/minecraft/client/Camera move (FFF)V
 accessible field net/minecraft/client/Camera initialized Z
 accessible field net/minecraft/client/Camera level Lnet/minecraft/world/level/BlockGetter;
 
+accessible method net/minecraft/server/level/ChunkMap markChunkPendingToSend (Lnet/minecraft/server/level/ServerPlayer;Lnet/minecraft/world/level/ChunkPos;)V
 accessible class net/minecraft/client/renderer/SectionOcclusionGraph$Node
 
 accessible field net/minecraft/client/renderer/texture/DynamicTexture pixels Lcom/mojang/blaze3d/platform/NativeImage;

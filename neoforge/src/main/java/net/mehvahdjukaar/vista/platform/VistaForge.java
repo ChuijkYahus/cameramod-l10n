@@ -51,4 +51,5 @@ public class VistaForge {
         if (entity instanceof ServerPlayer sp) VistaMod.onServerPlayerTick(sp);
     }
 
+
 }

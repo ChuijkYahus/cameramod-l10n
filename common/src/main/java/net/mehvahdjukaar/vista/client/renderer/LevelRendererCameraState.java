@@ -1,12 +1,10 @@
 package net.mehvahdjukaar.vista.client.renderer;
 
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.SectionOcclusionGraph;
 import net.minecraft.client.renderer.ViewArea;
 import net.minecraft.client.renderer.chunk.SectionRenderDispatcher;
-import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
 
 public class LevelRendererCameraState {
@@ -20,25 +18,17 @@ public class LevelRendererCameraState {
     private double prevCamRotX = Double.MIN_VALUE;
     private double prevCamRotY = Double.MIN_VALUE;
     @Nullable
-    private ViewArea viewArea;
-    @Nullable
-    private ViewArea capturedViewArea;
+    private ViewArea viewArea; //same as the actual one as this doesnt change actualy. unless we want to add it in the fufture to make far away cameras load
     private int lastViewDistance;
 
     @Nullable
+    //lazy initialized
     private SectionOcclusionGraph sectionOcclusionGraph;
     private ObjectArrayList<SectionRenderDispatcher.RenderSection> visibleSections = new ObjectArrayList<>(10000);
     
-    private int cameraRenderDistance = 8;
-    private boolean isPersistentCameraState = false;
-
     public LevelRendererCameraState() {
     }
     
-    public LevelRendererCameraState(boolean isPersistent) {
-        this.isPersistentCameraState = isPersistent;
-    }
-
     public void copyFrom(LevelRenderer lr) {
         // this.viewArea = lr.viewArea;
         this.lastViewDistance = lr.lastViewDistance;
@@ -52,10 +42,6 @@ public class LevelRendererCameraState {
         this.prevCamRotX = lr.prevCamRotX;
         this.prevCamRotY = lr.prevCamRotY;
         this.visibleSections = lr.visibleSections;
-        
-        if (!isPersistentCameraState) {
-           // this.capturedViewArea = lr.viewArea;
-        }
     }
 
     public static LevelRendererCameraState capture(LevelRenderer lr) {
@@ -65,34 +51,10 @@ public class LevelRendererCameraState {
     }
 
     public void apply(LevelRenderer lr) {
+        //initialize graph
         if (this.sectionOcclusionGraph == null) {
             this.sectionOcclusionGraph = new SectionOcclusionGraph();
             this.sectionOcclusionGraph.waitAndReset(lr.viewArea);
-
-        }
-
-        boolean needsReset = false;
-        if (isPersistentCameraState && this.viewArea == null) {
-            Minecraft mc = Minecraft.getInstance();
-            Level level = mc.level;
-            if (level != null) {
-                this.viewArea = new ViewArea(
-                    lr.sectionRenderDispatcher,
-                    level,
-                    this.cameraRenderDistance,
-                    lr
-                );
-                needsReset = true;
-            }
-        }
-
-        ViewArea targetViewArea = isPersistentCameraState ? this.viewArea : this.capturedViewArea;
-
-        if (targetViewArea != null) {
-            if (needsReset) {
-               // this.sectionOcclusionGraph.waitAndReset(targetViewArea);
-            }
-         //   lr.viewArea = targetViewArea;
         }
 
         //  lr.viewArea = this.viewArea;
@@ -113,30 +75,5 @@ public class LevelRendererCameraState {
         return sectionOcclusionGraph;
     }
     
-    @Nullable
-    public ViewArea getViewArea() {
-        return viewArea;
-    }
-    
-    public void setCameraRenderDistance(int distance) {
-        this.cameraRenderDistance = distance;
-    }
-    
-    public int getCameraRenderDistance() {
-        return cameraRenderDistance;
-    }
-    
-    public void repositionCamera(double x, double z) {
-        if (this.viewArea != null) {
-            this.viewArea.repositionCamera(x, z);
-        }
-    }
-    
-    public void releaseResources() {
-        if (this.viewArea != null) {
-            this.viewArea.releaseAllBuffers();
-            this.viewArea = null;
-        }
-    }
 
 }

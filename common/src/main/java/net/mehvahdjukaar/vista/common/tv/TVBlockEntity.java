@@ -1,9 +1,12 @@
 package net.mehvahdjukaar.vista.common.tv;
 
+import net.mehvahdjukaar.candlelight.api.VirtualOverride;
 import net.mehvahdjukaar.moonlight.api.block.ItemDisplayTile;
 import net.mehvahdjukaar.moonlight.api.util.Utils;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.client.video_source.IVideoSource;
+import net.mehvahdjukaar.vista.common.chunk_tracking.ServerCameraChunkManager;
+import net.minecraft.server.level.ServerLevel;
 import net.mehvahdjukaar.vista.common.cassette.IBroadcastSource;
 import net.mehvahdjukaar.vista.common.cassette.ITvCassette;
 import net.mehvahdjukaar.vista.common.tv.enderman.TVEndermanObservationController;
@@ -178,6 +181,25 @@ public class TVBlockEntity extends ItemDisplayTile {
 
     public int getPlaybackTicks() {
         return videoPlaybackTicks;
+    }
+
+    // No @Override: on NeoForge this satisfies IBlockEntityExtension and is called automatically
+    // for both chunk loading and block placement. On Fabric it is called explicitly from
+    // LevelChunkTVTrackingMixin so we get the same coverage on both platforms.
+    @VirtualOverride("neoforge")
+    public void onLoad() {
+        if (level instanceof ServerLevel) {
+            ServerCameraChunkManager.onTVLoaded(this);
+        }
+    }
+
+    // Counterpart to onLoad(); on NeoForge called by LevelChunk.clearAllBlockEntities,
+    // on Fabric also called from LevelChunkTVTrackingMixin.
+    @VirtualOverride("neoforge")
+    public void onChunkUnloaded() {
+        if (level instanceof ServerLevel) {
+            ServerCameraChunkManager.onTVUnloaded(this);
+        }
     }
 
     public static void onTick(Level world, BlockPos pos, BlockState state, TVBlockEntity tv) {

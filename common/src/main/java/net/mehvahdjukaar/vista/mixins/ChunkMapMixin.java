@@ -4,18 +4,28 @@ import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.common.chunk_tracking.ExtraChunkViewData;
 import net.mehvahdjukaar.vista.common.chunk_tracking.IChunkViewWithZones;
 import net.mehvahdjukaar.vista.common.chunk_tracking.ServerExtraChunkViewData;
-import net.mehvahdjukaar.vista.mixins.accessor.ChunkMapAccessor;
 import net.minecraft.server.level.ChunkMap;
 import net.minecraft.server.level.ChunkTrackingView;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.chunk.LevelChunk;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import javax.annotation.Nullable;
+
 @Mixin(ChunkMap.class)
-public class ChunkMapMixin {
+public abstract class ChunkMapMixin {
+
+    @Shadow
+    public abstract void markChunkPendingToSend(ServerPlayer player, ChunkPos chunkPos);
+
+    @Shadow
+    @Nullable
+    public abstract LevelChunk getChunkToSend(long chunkPos);
 
     /**
      * Attach the player's zone data to the incoming view before {@code difference}
@@ -41,12 +51,11 @@ public class ChunkMapMixin {
     private void vista$flushPendingZoneChunks(ServerPlayer player, ChunkTrackingView view, CallbackInfo ci) {
         ServerExtraChunkViewData data = VistaMod.EXTRA_VIEW_AREAS.getOrCreate(player);
         if (data.getZones().isEmpty()) return;
-        ChunkMapAccessor self = (ChunkMapAccessor) (Object) this;
         int flushed = 0;
         for (ChunkPos pos : data.getAllChunks()) {
             if (!view.isInViewDistance(pos.x, pos.z) && !data.isZoneChunkQueued(pos)) {
-                if (self.vista$getChunkToSend(pos.toLong()) != null) {
-                    self.vista$markChunkPendingToSend(player, pos);
+                if (this.getChunkToSend(pos.toLong()) != null) {
+                    this.markChunkPendingToSend(player, pos);
                     data.markZoneChunkQueued(pos);
                     flushed++;
                 }

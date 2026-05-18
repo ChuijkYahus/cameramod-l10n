@@ -2,6 +2,7 @@ package net.mehvahdjukaar.vista.mixins;
 
 import com.mojang.logging.LogUtils;
 import net.mehvahdjukaar.vista.VistaModClient;
+import net.mehvahdjukaar.vista.client.ClientChunkStuffHelper;
 import net.mehvahdjukaar.vista.common.chunk_tracking.ExtraChunkViewData;
 import net.mehvahdjukaar.vista.common.chunk_tracking.ILevelRendererExt;
 import net.mehvahdjukaar.vista.common.chunk_tracking.IPinnableRenderSection;
@@ -11,6 +12,7 @@ import net.minecraft.client.renderer.chunk.SectionRenderDispatcher;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import org.slf4j.Logger;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
@@ -28,6 +30,7 @@ public class ViewAreaMixin implements IViewAreaExt {
     @Unique
     private static final Logger VISTA_LOGGER = LogUtils.getLogger();
 
+    @Final
     @Shadow protected Level level;
     @Shadow protected int sectionGridSizeY;
     @Shadow public SectionRenderDispatcher.RenderSection[] sections;
@@ -101,7 +104,7 @@ public class ViewAreaMixin implements IViewAreaExt {
             for (int yIndex = 0; yIndex < this.sectionGridSizeY; yIndex++) {
                 int newIndex = base + slotOffset;
                 int yOrigin = this.level.getMinBuildHeight() + yIndex * 16;
-                SectionRenderDispatcher.RenderSection section = vista$createRenderSection(dispatcher, newIndex, blockX, yOrigin, blockZ);
+                SectionRenderDispatcher.RenderSection section = ClientChunkStuffHelper.createRenderSection(dispatcher, newIndex, blockX, yOrigin, blockZ);
                 if (section == null) {
                     VISTA_LOGGER.error("Failed to create pinned RenderSection at ({}, {}, {})", blockX, yOrigin, blockZ);
                 } else {
@@ -117,18 +120,5 @@ public class ViewAreaMixin implements IViewAreaExt {
         this.sections = extended;
     }
 
-    @Unique
-    private static SectionRenderDispatcher.RenderSection vista$createRenderSection(
-            SectionRenderDispatcher dispatcher, int index, int x, int y, int z) {
-        try {
-            Class<?> clazz = Class.forName("net.minecraft.client.renderer.chunk.SectionRenderDispatcher$RenderSection");
-            Constructor<?> ctor = clazz.getDeclaredConstructor(
-                    SectionRenderDispatcher.class, int.class, int.class, int.class, int.class);
-            ctor.setAccessible(true);
-            return (SectionRenderDispatcher.RenderSection) ctor.newInstance(dispatcher, index, x, y, z);
-        } catch (ReflectiveOperationException e) {
-            VISTA_LOGGER.error("Could not instantiate pinned RenderSection", e);
-            return null;
-        }
-    }
+
 }

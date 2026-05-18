@@ -75,6 +75,7 @@ public class VistaLevelRenderer {
         Minecraft mc = Minecraft.getInstance();
 
         if (mc.level == null) return;
+        //debounce dimension changing for some reason idk yet
         if (mc.level.dimension() != lastLevel) {
             lastLevel = mc.level.dimension();
             return;
@@ -88,10 +89,12 @@ public class VistaLevelRenderer {
         Camera mainCamera = mc.gameRenderer.mainCamera;
         mc.gameRenderer.mainCamera = camera;
 
+        // save old state
         float oldRenderDistance = mc.gameRenderer.renderDistance;
         PostChain oldPostEffect = mc.gameRenderer.postEffect;
         boolean wasEffectActive = mc.gameRenderer.effectActive;
 
+        // switch to feed camera state
         LevelRendererCameraState oldCameraState = LevelRendererCameraState.capture(mc.levelRenderer);
         LevelRendererCameraState feedCameraState = text.getRendererState();
 
@@ -109,14 +112,8 @@ public class VistaLevelRenderer {
             text.applyPostChain();
 
             float fov = tile.getFOV();
-            int cameraRenderDist = calculateRenderDistance(fov);
 
-            feedCameraState.setCameraRenderDistance(cameraRenderDist);
-            
-            Vec3 cameraPos = camera.getPosition();
-            feedCameraState.repositionCamera(cameraPos.x, cameraPos.z);
-
-            mc.gameRenderer.renderDistance = Math.min(oldRenderDistance, cameraRenderDist);
+            mc.gameRenderer.renderDistance = Math.min(oldRenderDistance, calculateRenderDistance(fov));
             RenderSystem.clear(16640, ON_OSX);
             FogRenderer.setupNoFog();
             RenderSystem.enableCull();
@@ -126,8 +123,10 @@ public class VistaLevelRenderer {
             MANAGED_GRAPHS.add(feedCameraState.getOcclusionGraph());
             MC_OWN_GRAPH.set(oldCameraState.getOcclusionGraph());
 
+            // already wrapped outside; don't double-wrap this or it fucks everything over omg.
             renderLevel(mc, canvas, camera, fov);
 
+            // save updated feed camera state
             feedCameraState.copyFrom(mc.levelRenderer);
 
             if (mc.gameRenderer.postEffect != null && mc.gameRenderer.effectActive) {
@@ -140,16 +139,21 @@ public class VistaLevelRenderer {
         } finally {
             MC_OWN_GRAPH.set(null);
 
+            // restore old camera state
             oldCameraState.apply(mc.levelRenderer);
 
+            // restore old render state
             oldRenderState.apply();
+            // clear depth only; clearing color here causes visible world/water popping
             RenderSystem.clear(GL11C.GL_DEPTH_BUFFER_BIT, ON_OSX);
 
+            // swap back
             currentRenderingViewFinder = null;
 
             mc.mainRenderTarget = mainTarget;
             mc.gameRenderer.mainCamera = mainCamera;
 
+            // restore post process
             mc.gameRenderer.postEffect = oldPostEffect;
             mc.gameRenderer.effectActive = wasEffectActive;
             mc.gameRenderer.renderDistance = oldRenderDistance;
@@ -285,6 +289,7 @@ public class VistaLevelRenderer {
         clientLevel.getProfiler().popPush("cull");
         minecraft.getProfiler().popPush("culling");
 
+        // Camera's block position (rounded to nearest block)
         BlockPos cameraBlockPos = camera.getBlockPosition();
 
         Player player = minecraft.player;
@@ -296,35 +301,47 @@ public class VistaLevelRenderer {
         if (cameraUnitX != lr.prevCamX ||
                 cameraUnitY != lr.prevCamY ||
                 cameraUnitZ != lr.prevCamZ) {
-            graph.invalidate();
+            //this should never triger for us since the camera never moves
+            graph.invalidate(); //needs full update
+            //update graph if player itself moved so we discard stale far away sections
         }
 
+        // Store current 8-block unit for future comparisons
         lr.prevCamX = cameraUnitX;
         lr.prevCamY = cameraUnitY;
         lr.prevCamZ = cameraUnitZ;
 
         minecraft.getProfiler().popPush("update");
 
+        // If the frustum has not already been captured
         if (!hasCapturedFrustum) {
             boolean smartCulling = minecraft.smartCull;
 
+            // Disable smart culling for spectators inside solid blocks
             if (isSpectator && clientLevel.getBlockState(cameraBlockPos).isSolidRender(clientLevel, cameraBlockPos)) {
+                //    smartCulling = false;
             }
 
-            double entityViewScale = Mth.clamp(
+            // Adjust entity view scale based on render distance and scaling option
+            double entityViewScale = Mth.clamp( //TODO: change these
                     (double) minecraft.options.getEffectiveRenderDistance() / 8.0, 1.0, 2.5
             ) * minecraft.options.entityDistanceScaling().get();
             Entity.setViewScale(entityViewScale);
 
             minecraft.getProfiler().push("section_occlusion_graph");
 
+            // Update occlusion graph to determine which sections are visible
+            //needs full update should be performed when new chunks came into view (our camera moved too much compared to the vista cam)
             graph.update(smartCulling, camera, frustum, lr.visibleSections);
 
             minecraft.getProfiler().pop();
 
+
+            // Divide camera rotation by 2 to track significant rotation changes
             double cameraRotXHalf = Math.floor(camera.getXRot() / 2.0);
             double cameraRotYHalf = Math.floor(camera.getYRot() / 2.0);
 
+            // Apply frustum update if the graph changed or camera rotated significantly
             if (graph.consumeFrustumUpdate() ||
                     cameraRotXHalf != lr.prevCamRotX ||
                     cameraRotYHalf != lr.prevCamRotY) {

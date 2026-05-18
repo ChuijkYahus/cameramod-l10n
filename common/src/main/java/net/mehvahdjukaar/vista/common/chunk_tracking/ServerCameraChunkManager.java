@@ -7,19 +7,18 @@ import net.mehvahdjukaar.vista.common.broadcast.BroadcastManager;
 import net.mehvahdjukaar.vista.common.broadcast.IBroadcastLocation;
 import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
 import net.mehvahdjukaar.vista.configs.CommonConfigs;
-import net.mehvahdjukaar.vista.mixins.accessor.ChunkMapAccessor;
 import net.mehvahdjukaar.vista.network.ClientBoundSyncExtraChunksPacket;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.ChunkPos;
-import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.world.level.chunk.ChunkAccess;
-import net.minecraft.world.level.chunk.LevelChunk;
-import net.minecraft.world.level.chunk.status.ChunkStatus;
+import net.minecraft.world.level.Level;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
+import java.util.function.BiPredicate;
 
 /**
  * Server-authoritative camera chunk manager.
@@ -46,12 +45,20 @@ import java.util.*;
  */
 public class ServerCameraChunkManager {
 
-    public static final int CHUNK_RADIUS = 4;
+    public static final int REMOTE_CHUNK_LOAD_RADIUS = 4;
+    public static final int RECURSIVE_SCAN_RADIUS = 4;
     private static final int TICK_INTERVAL = 40;
     /**
      * How often (in ticks) we retry sending zone chunks that weren't loaded on the first attempt.
      */
     private static final int FLUSH_INTERVAL = 5;
+
+    /**
+     * Maximum depth for recursive ViewFinder-through-TV chains.
+     * Depth 0 = TVs in player's normal view → their ViewFinders.
+     * Depth 1 = TVs inside those ViewFinder zones → their ViewFinders, etc.
+     */
+    private static final int MAX_RECURSION_DEPTH = 2;
 
     /**
      * ViewFinder GlobalPos → number of players currently watching it.
@@ -60,6 +67,37 @@ public class ServerCameraChunkManager {
      */
     private static final Map<GlobalPos, Integer> linkedViewFindersTrackedByPlayers = new HashMap<>();
 
+    /**
+     * Live index of all server-side TVBlockEntities currently loaded, grouped by dimension.
+     * Populated via {@link #onTVLoaded}/{@link #onTVUnloaded} which are called from
+     * platform-specific chunk load/unload events (NeoForge) or LevelChunk mixins (Fabric).
+     * This replaces the per-player chunk scan in {@link #findViewFindersNeededForPlayer}.
+     */
+    private static final Map<ResourceKey<Level>, Set<TVBlockEntity>> loadedServerTVs = new HashMap<>();
+
+    // ── TV lifecycle events (called from platform code) ───────────────────────
+
+    /**
+     * Call when a {@link TVBlockEntity} becomes live on the server
+     * (chunk loaded or block placed).
+     */
+    public static void onTVLoaded(TVBlockEntity tv) {
+        if (tv.getLevel() instanceof ServerLevel sl) {
+            loadedServerTVs.computeIfAbsent(sl.dimension(), k -> new HashSet<>()).add(tv);
+        }
+    }
+
+    /**
+     * Call when a {@link TVBlockEntity} is removed from the server
+     * (chunk unloaded or block broken).
+     */
+    public static void onTVUnloaded(TVBlockEntity tv) {
+        if (tv.getLevel() instanceof ServerLevel sl) {
+            Set<TVBlockEntity> set = loadedServerTVs.get(sl.dimension());
+            if (set != null) set.remove(tv);
+        }
+    }
+
     // ── Per-player tick ───────────────────────────────────────────────────────
 
     /**
@@ -67,7 +105,6 @@ public class ServerCameraChunkManager {
      * Updates are staggered so not all players recalculate on the same tick.
      */
     public static void onServerPlayerTick(ServerPlayer player) {
-        if(true)return;
         boolean sends = CommonConfigs.SEND_CHUNKS_VIEWED_BY_VIEW_FINDER.get();
         boolean loads = CommonConfigs.LOAD_CHUNKS_VIEWED_BY_VIEW_FINDER.get() || PlatHelper.isDev();
         if (!sends && !loads) return;
@@ -92,7 +129,7 @@ public class ServerCameraChunkManager {
         Set<GlobalPos> removed = new HashSet<>(current);
         removed.removeAll(desired);
 
-        if(loads) {
+        if (loads) {
             for (GlobalPos vf : added) {
                 int refs = linkedViewFindersTrackedByPlayers.getOrDefault(vf, 0);
                 if (refs == 0) {
@@ -119,7 +156,7 @@ public class ServerCameraChunkManager {
         data.clearZones();
         for (GlobalPos vf : desired) {
             if (vf.dimension().equals(player.level().dimension())) {
-                data.addZone(new ChunkPos(vf.pos()), CHUNK_RADIUS);
+                data.addZone(new ChunkPos(vf.pos()), REMOTE_CHUNK_LOAD_RADIUS);
             }
         }
 
@@ -140,12 +177,12 @@ public class ServerCameraChunkManager {
         ServerExtraChunkViewData data = VistaMod.EXTRA_VIEW_AREAS.getOrCreate(player);
         if (data.getZones().isEmpty()) return;
 
-        ChunkMapAccessor chunkMap = (ChunkMapAccessor) player.serverLevel().getChunkSource().chunkMap;
+        var chunkMap = player.serverLevel().getChunkSource().chunkMap;
         int flushed = 0;
         for (ChunkPos pos : data.getAllChunks()) {
             if (!player.getChunkTrackingView().isInViewDistance(pos.x, pos.z) && !data.isZoneChunkQueued(pos)) {
-                if (chunkMap.vista$getChunkToSend(pos.toLong()) != null) {
-                    chunkMap.vista$markChunkPendingToSend(player, pos);
+                if (chunkMap.getChunkToSend(pos.toLong()) != null) {
+                    chunkMap.markChunkPendingToSend(player, pos);
                     data.markZoneChunkQueued(pos);
                     flushed++;
                 }
@@ -161,52 +198,77 @@ public class ServerCameraChunkManager {
     private static Set<GlobalPos> findViewFindersNeededForPlayer(ServerPlayer player) {
         Set<GlobalPos> result = new HashSet<>();
         ServerLevel level = player.serverLevel();
-        BroadcastManager bm = BroadcastManager.getInstance(level);
-        int pcx = player.chunkPosition().x;
-        int pcz = player.chunkPosition().z;
-        int trackingDist = CommonConfigs.distanceFromTvForServerToLoadViewFinders(level);
-
-        for (int dx = -trackingDist; dx <= trackingDist; dx++) {
-            for (int dz = -trackingDist; dz <= trackingDist; dz++) {
-                int chunkX = pcx + dx;
-                int chunkZ = pcz + dz;
-                if (!player.getChunkTrackingView().isInViewDistance(chunkX, chunkZ)) continue;
-                ChunkAccess access = level.getChunk(chunkX, chunkZ, ChunkStatus.FULL, false);
-                if (!(access instanceof LevelChunk chunk)) continue;
-                for (BlockEntity be : chunk.getBlockEntities().values()) {
-                    if (!(be instanceof TVBlockEntity tv)) continue;
-                    UUID feedId = tv.getViewingFeedId();
-                    if (feedId == null) continue;
-                    IBroadcastLocation broadCastLoc = bm.getFeedLocationById(feedId);
-                    if (broadCastLoc == null) continue;
-
-                    GlobalPos chunkPosToSend = broadCastLoc.getChunkSendPosition();
-                    if (chunkPosToSend == null) continue;
-
-                    //TODO: send chunks even if outside of current dim.
-                    if (chunkPosToSend.dimension().equals(level.dimension())) {
-                        // Skip ViewFinders already within the player's normal view (server sends them naturally)
-                        ChunkPos vfChunk = new ChunkPos(chunkPosToSend.pos());
-                        if (player.getChunkTrackingView().isInViewDistance(vfChunk.x, vfChunk.z)) {
-                            continue;
-                        }
-                    }
-                    result.add(chunkPosToSend);
-                }
-            }
-        }
+        Set<TVBlockEntity> candidates = loadedServerTVs.getOrDefault(level.dimension(), Set.of());
+        collectViewFinders(candidates, player.getChunkTrackingView()::isInViewDistance,
+                level, result, new HashSet<>(), 0);
         return result;
+    }
+
+    /**
+     * Recursively collects ViewFinder destinations reachable from TVs inside {@code inZone}.
+     *
+     * <p>At depth 0 the zone is the player's normal view distance. At each subsequent depth
+     * the zone is a CHUNK_RADIUS circle around a newly discovered ViewFinder, so that TVs
+     * already force-loaded inside a camera zone can chain to further ViewFinders.
+     */
+    private static void collectViewFinders(
+            Set<TVBlockEntity> candidates,
+            BiPredicate<Integer, Integer> inZone,
+            ServerLevel level,
+            Set<GlobalPos> result,
+            Set<TVBlockEntity> visited,
+            int depth) {
+
+        if (depth >= MAX_RECURSION_DEPTH) return;
+        BroadcastManager bm = BroadcastManager.getInstance(level);
+        List<GlobalPos> newlyAdded = new ArrayList<>();
+
+        for (TVBlockEntity tv : candidates) {
+            if (!visited.add(tv)) continue;
+            ChunkPos tvChunk = new ChunkPos(tv.getBlockPos());
+            if (!inZone.test(tvChunk.x, tvChunk.z)) continue;
+
+            UUID feedId = tv.getViewingFeedId();
+            if (feedId == null) continue;
+            IBroadcastLocation broadCastLoc = bm.getFeedLocationById(feedId);
+            if (broadCastLoc == null) continue;
+            GlobalPos dest = broadCastLoc.getChunkSendPosition();
+            if (dest == null) continue;
+
+            //TODO: send chunks even if outside of current dim.
+            if (dest.dimension().equals(level.dimension())) {
+                // Skip ViewFinders already within this zone (the caller already covers them)
+                ChunkPos vfChunk = new ChunkPos(dest.pos());
+                if (inZone.test(vfChunk.x, vfChunk.z)) continue;
+            }
+
+            if (result.add(dest)) newlyAdded.add(dest);
+        }
+
+        // Recurse into same-dimension camera zones that were just discovered.
+        // Only TVs already loaded (force-loaded on a prior tick) will be in
+        // loadedServerTVs, so this naturally stalls until the zone is live.
+        for (GlobalPos vfPos : newlyAdded) {
+            if (!vfPos.dimension().equals(level.dimension())) continue;
+            ChunkPos vfChunk = new ChunkPos(vfPos.pos());
+            collectViewFinders(candidates, (x,y)->isInRecursiveDistance(vfChunk, x, y)
+                    , level, result, visited, depth + 1);
+        }
+    }
+
+    private static @NotNull boolean isInRecursiveDistance(ChunkPos centerChunk, int cx, int cz) {
+        int dx = cx - centerChunk.x, dz = cz - centerChunk.z;
+        return dx * dx + dz * dz <= RECURSIVE_SCAN_RADIUS * RECURSIVE_SCAN_RADIUS;
     }
 
     // ── Force-loading ─────────────────────────────────────────────────────────
 
     private static void setChunksForceLoaded(ServerLevel level, BlockPos viewFinderPos, boolean force) {
-        int cx = viewFinderPos.getX() >> 4;
-        int cz = viewFinderPos.getZ() >> 4;
-        for (int dx = -CHUNK_RADIUS; dx <= CHUNK_RADIUS; dx++) {
-            for (int dz = -CHUNK_RADIUS; dz <= CHUNK_RADIUS; dz++) {
-                if (dx * dx + dz * dz <= CHUNK_RADIUS * CHUNK_RADIUS) {
-                    level.setChunkForced(cx + dx, cz + dz, force);
+        ChunkPos cp = new ChunkPos(viewFinderPos);
+        for (int dx = -REMOTE_CHUNK_LOAD_RADIUS; dx <= REMOTE_CHUNK_LOAD_RADIUS; dx++) {
+            for (int dz = -REMOTE_CHUNK_LOAD_RADIUS; dz <= REMOTE_CHUNK_LOAD_RADIUS; dz++) {
+                if (dx * dx + dz * dz <= REMOTE_CHUNK_LOAD_RADIUS * REMOTE_CHUNK_LOAD_RADIUS) {
+                    level.setChunkForced(cp.x + dx, cp.z + dz, force);
                 }
             }
         }
@@ -236,5 +298,6 @@ public class ServerCameraChunkManager {
      */
     public static void clearAll() {
         linkedViewFindersTrackedByPlayers.clear();
+        loadedServerTVs.clear();
     }
 }

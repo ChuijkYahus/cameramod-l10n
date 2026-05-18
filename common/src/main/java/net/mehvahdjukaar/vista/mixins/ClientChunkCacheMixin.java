@@ -25,7 +25,7 @@ import java.util.function.Consumer;
 
 /**
  * Prevents the client's circular-buffer chunk cache from evicting chunks that belong
- * to a camera zone registered in {@link ExtraChunkViewData#CLIENT_INSTANCE}.
+ * to a camera zone registered in {@link VistaModClient#CLIENT_EXTRA_CHUNK_VIEW_DATA}.
  *
  * The circular buffer is indexed by {@code floorMod(x/z, viewRange)}, so when the
  * player moves far from a zone origin, another chunk overwrites that slot and evicts
