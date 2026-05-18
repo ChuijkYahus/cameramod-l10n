@@ -2,6 +2,7 @@ package net.mehvahdjukaar.vista.client.textures;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.mehvahdjukaar.vista.VistaMod;
+import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.client.CrtOverlay;
 import net.mehvahdjukaar.vista.client.VistaRenderTypes;
 import net.mehvahdjukaar.vista.client.renderer.VistaLevelRenderer;
@@ -21,18 +22,12 @@ import java.util.Map;
 import java.util.function.Function;
 
 public class TvScreenVertexConsumers {
+    private static final ResourceLocation DUMMY_TEXTURE = VistaMod.res("textures/cassette_tape/color_bars.png");
 
-    private static final ResourceLocation DUMMY_LOCATION = VistaMod.res("textures/cassette_tape/color_bars.png");
-
-    private static final ResourceLocation BARS_LOCATION = VistaMod.res("color_bars");
-    private static final ResourceLocation BLACK_LOADING_LOCATION = VistaMod.res("loading_black");
-    private static final ResourceLocation SMILE_LOCATION = VistaMod.res("smile");
-    private static final ResourceLocation NEUTRAL_LOCATION = VistaMod.res("neutral");
-    private static final ResourceLocation SAD_LOCATION = VistaMod.res("sad");
     private static final Map<Smile, ResourceLocation> SMILES = Map.of(
-            Smile.HAPPY, SMILE_LOCATION,
-            Smile.NEUTRAL, NEUTRAL_LOCATION,
-            Smile.SAD, SAD_LOCATION
+            Smile.HAPPY, VistaModClient.SMILE_SCREEN,
+            Smile.NEUTRAL, VistaModClient.NEUTRAL_SCREEN,
+            Smile.SAD, VistaModClient.SAD_SCREEN
     );
 
     private enum Smile {
@@ -48,8 +43,8 @@ public class TvScreenVertexConsumers {
                 return SAD;
             }
         }
-
     }
+
     public static VertexConsumer getTapeVC(MultiBufferSource buffer, @NotNull Holder<CassetteTape> tapeHolder, int scale,
                                            int tickCount, CrtOverlay overlay, IntAnimationState switchAnim) {
         ResourceLocation tapeTexture = tapeHolder.value().assetId();
@@ -57,16 +52,16 @@ public class TvScreenVertexConsumers {
     }
 
     public static VertexConsumer getNoiseVC(MultiBufferSource buffer, int scale, IntAnimationState switchAnim) {
-        return createVC(DUMMY_LOCATION, scale, 1, 1,
+        return createVC(VistaModClient.DUMMY_TEXTURE, scale, 1, 1,
                 CrtOverlay.NONE, switchAnim, IntAnimationState.MAX_ANIM, buffer::getBuffer);
     }
 
-    public static @NotNull VertexConsumer getWaitingVc(MultiBufferSource buffer, int scale, int tickCount,IntAnimationState switchAnim) {
-        return createAnimatedStripVC(buffer, BLACK_LOADING_LOCATION, scale, tickCount, CrtOverlay.NONE, switchAnim);
+    public static @NotNull VertexConsumer getWaitingVc(MultiBufferSource buffer, int scale, int tickCount, IntAnimationState switchAnim) {
+        return createAnimatedStripVC(buffer, VistaModClient.BLACK_LOADING_SCREEN, scale, tickCount, CrtOverlay.NONE, switchAnim);
     }
 
     public static VertexConsumer getBarsVC(MultiBufferSource buffer, int scale, IntAnimationState switchAnim) {
-        return createAnimatedStripVC(buffer, BARS_LOCATION, scale, 0, CrtOverlay.NONE, switchAnim);
+        return createAnimatedStripVC(buffer, VistaModClient.BARS_SCREEN, scale, 0, CrtOverlay.NONE, switchAnim);
     }
 
     public static VertexConsumer getSmileTapeVC(MultiBufferSource buffer, LivingEntity player) {

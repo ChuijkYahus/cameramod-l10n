@@ -4,20 +4,18 @@ import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.client.ClientChunkStuffHelper;
-import net.mehvahdjukaar.vista.client.renderer.VistaLevelRenderer;
+import net.mehvahdjukaar.vista.client.renderer.FeedSectionOcclusionGraph;
 import net.mehvahdjukaar.vista.common.chunk_tracking.IPinnableRenderSection;
 import net.minecraft.client.Camera;
 import net.minecraft.client.renderer.SectionOcclusionGraph;
 import net.minecraft.client.renderer.ViewArea;
 import net.minecraft.client.renderer.chunk.SectionRenderDispatcher;
-import net.minecraft.client.renderer.culling.Frustum;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import java.util.List;
 import java.util.Queue;
 
 @Mixin(SectionOcclusionGraph.class)
@@ -37,46 +35,32 @@ public class SectionOcclusionGraphMixin {
     }
 
     /**
-     * Seed every pinned section as an additional BFS root after the normal player-section
-     * seed. This runs for both the player's graph and the feed's graph (the full BFS is
-     * async on a background thread, where {@code isRenderingLiveFeed()} is always false
-     * so we cannot gate on it here). It is safe to seed pinned sections in the player's
-     * BFS too: they are hundreds of chunks away, so the player's frustum culls them out
-     * of {@code visibleSections} before they reach {@link #vista$addPinnedSectionsToVisible}.
+     * Seed every pinned section as an additional BFS root — but only for feed graphs,
+     * never for the player's own graph.
+     *
+     * <p>The full BFS runs asynchronously on a background thread, so we cannot use
+     * {@code isRenderingLiveFeed()} here. Instead we compare {@code this} against the
+     * The check uses {@code instanceof} {@link FeedSectionOcclusionGraph} which is safe
+     * from any thread, requires no external registry, and is never ambiguous.
+     *
+     * <p>Excluding the player's graph prevents pinned sections (at the ViewFinder,
+     * potentially hundreds of chunks away) from entering the player's {@code renderSections}
+     * and leaking into the player's world view when the player looks toward the ViewFinder.
+     *
+     * <p>For feed graphs the camera IS at the ViewFinder, so seeding ensures pinned
+     * sections enter the BFS even though they lie outside the normal torus. Frustum
+     * culling in {@code addSectionsInFrustum} then correctly limits which ones actually
+     * appear in {@code visibleSections}.
      */
     @SuppressWarnings("unchecked")
     @Inject(method = "initializeQueueForFullUpdate", at = @At("TAIL"))
     private void vista$seedPinnedSections(Camera camera, Queue nodeQueue, CallbackInfo ci) {
+        if (!((Object) this instanceof FeedSectionOcclusionGraph)) return;
         if (this.viewArea == null) return;
         for (SectionRenderDispatcher.RenderSection section : this.viewArea.sections) {
             if (section instanceof IPinnableRenderSection ps && ps.vista$isPinned()) {
                 var node = ClientChunkStuffHelper.createNode(section);
                 if (node != null) nodeQueue.add(node);
-            }
-        }
-    }
-
-    /**
-     * Appends pinned sections to the visible list during ViewFinder feed renders only.
-     *
-     * <p>During the player's own render the feed camera is inactive; pinned sections are
-     * at the ViewFinder's location (potentially hundreds of chunks away) and must not be
-     * drawn to the player's view.
-     *
-     * <p>During feed renders the feed camera IS at the ViewFinder, so the normal BFS +
-     * {@link #vista$allowPinnedChunk} handles reachability. We still add them
-     * unconditionally here because the ViewArea torus is centred on the player, meaning
-     * pinned sections may sit outside the torus index range and never enter the BFS even
-     * with the view-distance patch.
-     */
-    @Inject(method = "addSectionsInFrustum", at = @At("TAIL"))
-    private void vista$addPinnedSectionsToVisible(Frustum frustum,
-                                                  List<SectionRenderDispatcher.RenderSection> sections, CallbackInfo ci) {
-        if (!VistaLevelRenderer.isRenderingLiveFeed()) return;
-        if (this.viewArea == null) return;
-        for (SectionRenderDispatcher.RenderSection section : this.viewArea.sections) {
-            if (section instanceof IPinnableRenderSection ps && ps.vista$isPinned()) {
-                sections.add(section);
             }
         }
     }

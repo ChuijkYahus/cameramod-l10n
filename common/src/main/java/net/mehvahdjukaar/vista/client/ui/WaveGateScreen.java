@@ -54,14 +54,14 @@ public class WaveGateScreen extends Screen {
         this.editBox.setFocused(true);
 
         // Square refresh button with a simple glyph icon, next to the text box
-        Button refreshButton = SpriteIconButton.builder(Component.literal("⟳"), (button) -> {
+        Button refreshButton = SpriteIconButton.builder(Component.translatable("gui.vista.refresh"), (button) -> {
                     String url = tile.getUrl();
                     if (url != null && !url.isBlank()) {
                         WebTexturesManager.invalidateUrl(url);
                     }
                 }, true)
                 .size(buttonSize, buttonSize)
-                .sprite(VistaModClient.REFRESH_ICON, 15, 15)
+                .sprite(VistaModClient.REFRESH_ICON, 16, 16)
                 .build();
         refreshButton.setX(left + boxWidth + spacing);
         refreshButton.setY(top);

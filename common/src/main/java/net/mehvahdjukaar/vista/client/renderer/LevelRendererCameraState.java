@@ -51,9 +51,8 @@ public class LevelRendererCameraState {
     }
 
     public void apply(LevelRenderer lr) {
-        //initialize graph
         if (this.sectionOcclusionGraph == null) {
-            this.sectionOcclusionGraph = new SectionOcclusionGraph();
+            this.sectionOcclusionGraph = new FeedSectionOcclusionGraph();
             this.sectionOcclusionGraph.waitAndReset(lr.viewArea);
         }
 

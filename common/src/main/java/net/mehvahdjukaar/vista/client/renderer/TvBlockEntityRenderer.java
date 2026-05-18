@@ -24,7 +24,6 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LightLayer;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec2;
 import org.joml.Vector3f;
@@ -85,7 +84,7 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
         if (connectedW == 1 && !lod.isMedium()) {
             return;
         }
-        if(connectedW == 2 && !lod.isFar()) {
+        if (connectedW == 2 && !lod.isFar()) {
             return;
         }
 

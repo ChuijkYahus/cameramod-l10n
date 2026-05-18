@@ -55,9 +55,16 @@ public class VistaModClient {
     public static final ResourceLocation PAUSE_OVERLAY = VistaMod.res("textures/cassette_tape/pause.png");
     public static final ResourceLocation PAUSE_PLAY_OVERLAY = VistaMod.res("textures/cassette_tape/pause_play.png");
     public static final ResourceLocation DISCONNECT_OVERLAY = VistaMod.res("textures/cassette_tape/disconnect.png");
-    public static final ResourceLocation LOADING_OVERLAY = VistaMod.res("textures/cassette_tape/loading.png");
+    public static final ResourceLocation LOADING_OVERLAY = VistaMod.res("textures/cassette_tape/loading_dots.png");
 
-    public static final ResourceLocation REFRESH_ICON = ResourceLocation.withDefaultNamespace("icon/search");
+    public static final ResourceLocation BARS_SCREEN = VistaMod.res("color_bars");
+    public static final ResourceLocation BLACK_LOADING_SCREEN = VistaMod.res("loading_dots_black");
+    public static final ResourceLocation SMILE_SCREEN = VistaMod.res("smile");
+    public static final ResourceLocation NEUTRAL_SCREEN = VistaMod.res("neutral");
+    public static final ResourceLocation SAD_SCREEN = VistaMod.res("sad");
+    public static final ResourceLocation LOADING_SCREEN = VistaMod.res("loading_bar");
+
+    public static final ResourceLocation REFRESH_ICON = VistaMod.res("icon/refresh");
 
     public static final Material VIEW_FINDER_MATERIAL = new Material(SHULKER_SHEET,
             VistaMod.res("entity/view_finder/viewfinder"));

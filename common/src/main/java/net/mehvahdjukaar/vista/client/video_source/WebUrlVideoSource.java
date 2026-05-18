@@ -13,6 +13,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.net.URI;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.UUID;
 
@@ -25,14 +26,35 @@ public class WebUrlVideoSource implements IVideoSource {
 
     public WebUrlVideoSource(String url, UUID projectorID) {
         this.projectorID = projectorID;
+        this.uri = createUri(url);
+    }
+
+    private static URI createUri(String url) {
         URI uri = null;
-        if (!url.isBlank()) {
+        if (url != null && !url.isBlank()) {
+            String s = url.trim();
+
+            Path path = Paths.get(s);
             try {
-                uri = Paths.get(url.trim()).toUri();
-            } catch (Exception ignored) {
+                URI parsed = URI.create(s);
+
+                // Has a scheme like http:, https:, file:, ftp:, etc.
+                if (parsed.getScheme() != null) {
+                    uri = parsed;
+                } else {
+                    // No scheme → treat as filesystem path
+                    uri = path.toUri();
+                }
+
+            } catch (Exception e) {
+                try {
+                    // Invalid URI syntax → fallback to filesystem path
+                    uri = path.toUri();
+                } catch (Exception ignored) {
+                }
             }
         }
-        this.uri = uri;
+        return uri;
     }
 
     @Override
@@ -41,7 +63,7 @@ public class WebUrlVideoSource implements IVideoSource {
                                                         int videoAnimationTick, boolean paused,
                                                         IntAnimationState switchAnim, IntAnimationState staticAnim) {
 
-        if(uri == null){
+        if (uri == null) {
             return TvScreenVertexConsumers.getNoiseVC(buffer, pixelEffectRes, switchAnim);
         }
 
