@@ -7,6 +7,7 @@ import net.mehvahdjukaar.moonlight.api.client.util.LOD;
 import net.mehvahdjukaar.moonlight.api.misc.ForgeOverride;
 import net.mehvahdjukaar.moonlight.api.misc.RollingBuffer;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
+import net.mehvahdjukaar.moonlight.api.util.math.Vec2i;
 import net.mehvahdjukaar.vista.client.textures.LiveFeedTexturesManager;
 import net.mehvahdjukaar.vista.client.video_source.BroadcastVideoSource;
 import net.mehvahdjukaar.vista.client.video_source.IVideoSource;
@@ -18,6 +19,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
@@ -28,6 +30,8 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec2;
 import org.joml.Vector3f;
 
+import java.awt.*;
+import java.awt.geom.Dimension2D;
 import java.util.UUID;
 
 public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity> {
@@ -49,8 +53,9 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
     public AABB getRenderBoundingBox(TVBlockEntity tile) {
         AABB aabb = new AABB(tile.getBlockPos());
         Direction dir = tile.getBlockState().getValue(TVBlock.FACING);
-        float width = tile.getConnectedCount();
-        float height = tile.getConnectedCount();
+        Vec2i connection = tile.getConnectedCount();
+        float width = connection.x();
+        float height = connection.y();
         if (dir == Direction.EAST) {
             return aabb.expandTowards(0, height - 1, -width + 1);
         } else if (dir == Direction.WEST) {
@@ -80,11 +85,11 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
         if
         (lod.isPlaneCulled(dir, 0.5f, screenSize / 16f * 1.5f, 0f)) return;
 
-        int connectedW = blockEntity.getConnectedCount();
-        if (connectedW == 1 && !lod.isMedium()) {
+        float length = blockEntity.getConnectedCount().lengthSquared();
+        if (length <= 1 && !lod.isMedium()) {
             return;
         }
-        if (connectedW == 2 && !lod.isFar()) {
+        if (length <= 4 && !lod.isFar()) {
             return;
         }
 

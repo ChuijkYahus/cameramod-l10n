@@ -307,7 +307,7 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
                 cassetteTransfer = tv.getDisplayedItem().copy();
 
                 tv.clearContent();
-                tv.setConnectionSize(1);
+                tv.setConnectionSize(Vec2i.ONE);
             }
         }
 
@@ -359,7 +359,7 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
                 if (level.getBlockEntity(target) instanceof TVBlockEntity tv) {
                     if (cassetteTransfer != null) tv.setDisplayedItem(cassetteTransfer);
                     tv.setChanged();
-                    tv.setConnectionSize(finalTileRect.width());
+                    tv.setConnectionSize(finalTileRect.getSize());
                 }
             }
         }

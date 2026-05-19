@@ -49,7 +49,7 @@ public class TVBlockEntity extends ItemDisplayTile {
     //client, I think
     private IVideoSource videoSource = IVideoSource.EMPTY;
 
-    private Vec2i connectedTvsAmount = new Vec2i(1, 1);
+    private Vec2i connectedTvsAmount = Vec2i.ONE;
 
     private int soundLoopTicks = 0;
     public final IntAnimationState fadeAnimation = new IntAnimationState(3, 9);
@@ -192,7 +192,7 @@ public class TVBlockEntity extends ItemDisplayTile {
 
         var result = super.interactWithPlayerItem(player, handIn, stack, slot);
         if (result.consumesAction() && isEmpty && powered &&
-                (connectedTvsAmount.x() * connectedTvsAmount.y()) >= 9 &&
+                connectedTvsAmount.lengthSquared() >= 9 &&
                 player instanceof ServerPlayer sp) {
             //advancement
             Utils.awardAdvancement(sp, VistaMod.CINEMA_ADVANCEMENT);
