@@ -36,7 +36,7 @@ public class CassetteTapeVideoSource implements IVideoSource {
     public @NotNull VertexConsumer getVideoFrameBuilder(
             float partialTick, MultiBufferSource buffer, boolean shouldUpdate, int screenSize, int pixelEffectRes,
             int animationTick, boolean paused,
-            IntAnimationState switchAnim, IntAnimationState staticAnim) {
+            IntAnimationState switchAnim, IntAnimationState staticAnim, boolean showsTime) {
         CrtOverlay overlay = paused ? CrtOverlay.PAUSE : CrtOverlay.NONE;
         return TvScreenVertexConsumers.getTapeVC(buffer, tape, pixelEffectRes, animationTick, overlay, switchAnim);
     }

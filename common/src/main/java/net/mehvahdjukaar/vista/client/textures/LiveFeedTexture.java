@@ -41,6 +41,15 @@ public class LiveFeedTexture extends RenderableDynamicTexture {
     private ResourceLocation extraPostChainID;
     private PostChain postChain;
     private boolean disconnected = false;
+    private boolean showsTime = false;
+
+    public boolean showsTime() {
+        return showsTime;
+    }
+
+    public void setShowsTime(boolean showsTime) {
+        this.showsTime = showsTime;
+    }
 
     private enum RefType {
         LIVE, PAUSED

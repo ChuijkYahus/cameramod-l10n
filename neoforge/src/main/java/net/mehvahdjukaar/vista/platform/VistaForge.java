@@ -1,7 +1,7 @@
 package net.mehvahdjukaar.vista.platform;
 
-import net.mehvahdjukaar.vista.common.chunk_tracking.ServerCameraChunkManager;
 import net.mehvahdjukaar.vista.VistaMod;
+import net.mehvahdjukaar.vista.common.chunk_tracking.ServerCameraChunkManager;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;

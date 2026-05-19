@@ -55,13 +55,14 @@ public class LiveFeedVideoSource implements IVideoSource {
             float partialTick, MultiBufferSource buffer, boolean shouldUpdate,
             int screenSize, int pixelEffectRes,
             int videoAnimationTick, boolean paused,
-            IntAnimationState switchAnim, IntAnimationState staticAnim) {
+            IntAnimationState switchAnim, IntAnimationState staticAnim,
+            boolean showsTime) {
 
         if (textureHandle == null || lastScreenSize != screenSize) {
             this.textureHandle = LiveFeedTexturesManager.createHandle(viewFinder.getBroadcastUUID(), screenSize);
             this.lastScreenSize = screenSize;
         }
-        LiveFeedTexture tex = textureHandle.getTexture(postShader, shouldUpdate);
+        LiveFeedTexture tex = textureHandle.getTexture(postShader, shouldUpdate, showsTime);
 
         VertexConsumer vc = null;
         if (tex != null) {

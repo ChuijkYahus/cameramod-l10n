@@ -1,23 +1,14 @@
 package net.mehvahdjukaar.vista.platform;
 
-import foundry.veil.Veil;
-import foundry.veil.api.client.render.VeilRenderSystem;
-import foundry.veil.api.client.render.VeilRenderer;
-import foundry.veil.api.client.render.light.data.PointLightData;
-import foundry.veil.api.client.render.light.renderer.LightRenderer;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.client.ViewFinderController;
-import net.mehvahdjukaar.vista.client.renderer.FeedConnectionDebugRenderer;
-import net.mehvahdjukaar.vista.client.renderer.VistaChunksDebugRenderer;
 import net.mehvahdjukaar.vista.client.textures.GifPathSpriteSource;
 import net.mehvahdjukaar.vista.client.ui.ViewFinderHud;
-import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -52,20 +43,9 @@ public class VistaForgeClient {
         }
     }
 
-    private static boolean firstRenderTick = true;
     @SubscribeEvent
     public static void onClientEndTick(ClientTickEvent.Post event) {
         VistaModClient.onClientTick(Minecraft.getInstance());
-        if(firstRenderTick && Minecraft.getInstance().level != null) {
-            firstRenderTick = false;
-            PointLightData lightData = new PointLightData();
-            lightData.setPosition(30, -60, -63);
-            lightData.setRadius(10);
-            VeilRenderSystem.renderer().getLightRenderer().addLight(lightData);
-        }
-        if(Minecraft.getInstance().level == null){
-            firstRenderTick = true;
-        }
     }
 
     @SubscribeEvent

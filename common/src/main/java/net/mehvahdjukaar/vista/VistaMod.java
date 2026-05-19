@@ -190,9 +190,6 @@ public class VistaMod {
         }
 
 
-        //TODO: improve watermedia
-        //TODO: fix channel 2 being blue
-        //TODO: fix pause not working
         //TODO: alex mobs shaders compat
         //TODO: check panes not working for some
         //night vision and ctr effects for view finders

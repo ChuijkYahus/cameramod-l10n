@@ -36,6 +36,8 @@ dependencies {
     modCompileOnly("maven.modrinth:flashback:0.32.0")
     modCompileOnly("curse.maven:geckolib-388172:7707138")
 
+    modCompileOnly("foundry.veil:veil-neoforge-1.21.1:4.0.0")
+
    // modRuntimeOnly("foundry.veil:veil-fabric-1.21.1:4.0.0")
    // modRuntimeOnly("curse.maven:fsable-1312371:8007004")
     //implementation("org.apache.maven:maven-artifact:3.9.9")

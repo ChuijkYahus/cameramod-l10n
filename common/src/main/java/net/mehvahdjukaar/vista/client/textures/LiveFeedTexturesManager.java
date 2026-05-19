@@ -70,7 +70,7 @@ public class LiveFeedTexturesManager {
         }
 
         @Nullable
-        public LiveFeedTexture getTexture(@Nullable ResourceLocation postShader, boolean requiresUpdate) {
+        public LiveFeedTexture getTexture(@Nullable ResourceLocation postShader, boolean requiresUpdate, boolean showsTime) {
 
             LiveFeedTexture texture = DynamicTextureRenderer.requestTexture(textureId, () ->
                     new LiveFeedTexture(textureId, screenSize * ClientConfigs.LIVE_FEED_RESOLUTION_SCALE.get(),
@@ -90,6 +90,7 @@ public class LiveFeedTexturesManager {
             if (VistaLevelRenderer.isRenderingLiveFeed()) {
                 requiresUpdate = false; //suppress recursive updates
             }
+            texture.setShowsTime(showsTime);
             texture.setUpdateNextTick(requiresUpdate);
             return texture;
         }
@@ -134,13 +135,12 @@ public class LiveFeedTexturesManager {
 
             VistaLevelRenderer.render(text, vf);
 
-            if (ClientConfigs.DRAW_DATE.get() || VistaMod.isFunny()) {
+            if (text.showsTime() || VistaMod.isFunny()) {
                 LocalDateTime now = LocalDateTime.now();
                 DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM/dd HH:mm:ss");
                 String cctvTimestamp = now.format(formatter);
                 drawText(text, cctvTimestamp, 2, 4, false, true);
             }
-
 
             if (VistaMod.isFunny()) {
                 drawOverlay(text, VistaModClient.LL_OVERLAY);

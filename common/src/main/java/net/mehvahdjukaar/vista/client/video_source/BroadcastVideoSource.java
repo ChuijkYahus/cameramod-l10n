@@ -18,7 +18,8 @@ public record BroadcastVideoSource(UUID uuid) implements IVideoSource {
     public @NotNull VertexConsumer getVideoFrameBuilder(float partialTick, MultiBufferSource buffer,
                                                         boolean shouldUpdate, int screenSize, int pixelEffectRes,
                                                         int videoAnimationTick, boolean paused,
-                                                        IntAnimationState switchAnim, IntAnimationState staticAnim) {
+                                                        IntAnimationState switchAnim, IntAnimationState staticAnim,
+                                                        boolean showsTime) {
         Level level = Minecraft.getInstance().level;
         BroadcastManager manager = BroadcastManager.getInstance(level);
         IBroadcastSource broadcast = manager.getBroadcast(uuid, true);
@@ -28,7 +29,7 @@ public record BroadcastVideoSource(UUID uuid) implements IVideoSource {
             IVideoSource vfContent = broadcast.getBroadcastVideo();
             if (vfContent != null) {
                 return vfContent.getVideoFrameBuilder(partialTick, buffer, shouldUpdate, screenSize, pixelEffectRes,
-                        videoAnimationTick, paused, switchAnim, staticAnim);
+                        videoAnimationTick, paused, switchAnim, staticAnim, showsTime);
             }
         }
         return TvScreenVertexConsumers.getNoiseVC(buffer, pixelEffectRes, switchAnim);

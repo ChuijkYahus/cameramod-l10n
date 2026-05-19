@@ -1,5 +1,6 @@
 package net.mehvahdjukaar.vista.integration.watermedia;
 
+import com.mojang.blaze3d.platform.TextureUtil;
 import net.mehvahdjukaar.vista.client.textures.IWebTexture;
 import net.mehvahdjukaar.vista.client.web.MediaStatus;
 import net.minecraft.client.Minecraft;

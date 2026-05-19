@@ -24,6 +24,7 @@ import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
@@ -31,7 +32,6 @@ import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.TestOnly;
 
 import java.util.UUID;
 
@@ -42,6 +42,7 @@ public class TVBlockEntity extends ItemDisplayTile {
 
     private boolean paused = false;
     private int videoPlaybackTicks = 0;
+    private boolean showsTime = false;
 
     //client, I think
     private IVideoSource videoSource = IVideoSource.EMPTY;
@@ -65,6 +66,7 @@ public class TVBlockEntity extends ItemDisplayTile {
         compound.putInt("ConnectionWidth", connectedTvsAmount);
         compound.putBoolean("Paused", paused);
         compound.putInt("VideoPlaybackTicks", videoPlaybackTicks);
+        compound.putBoolean("ShowsTime", showsTime);
     }
 
     @Override
@@ -73,7 +75,12 @@ public class TVBlockEntity extends ItemDisplayTile {
         this.connectedTvsAmount = Math.max(1, tag.getInt("ConnectionWidth"));
         this.paused = tag.getBoolean("Paused");
         this.videoPlaybackTicks = tag.getInt("VideoPlaybackTicks");
+        this.showsTime = tag.getBoolean("ShowsTime");
         updateObservationController();
+    }
+
+    public boolean showsTime() {
+        return showsTime;
     }
 
     @NotNull
@@ -148,6 +155,13 @@ public class TVBlockEntity extends ItemDisplayTile {
         boolean powered = this.getBlockState().getValue(TVBlock.POWER_STATE).isOn();
         ItemStack current = this.getDisplayedItem();
         boolean isEmpty = current.isEmpty();
+
+        if (stack.is(Items.CLOCK)) {
+            this.showsTime = !this.showsTime;
+            this.setChanged();
+            return ItemInteractionResult.sidedSuccess(this.level.isClientSide);
+        }
+
         //toggle pause
         if (!isEmpty && powered && player.isSecondaryUseActive()) {
             this.paused = !this.paused;

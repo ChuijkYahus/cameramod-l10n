@@ -1,6 +1,2 @@
-- tvs have the ability to make the server send over chunks from far away view finders that are linked to them
-- additionally server can also chunkload those positions (off by default)
-- chances are none of this will work with sodium or mods that entire replace vanilla chunk graph logic. 
-- new textures for creative wave gate
-- proper icon for wave gate ui
-- better loading animations
+- added sketchy compat with sable. it makes vista use the same sort of hacks sable use for its own prespective rendering by making it think that when vista renders its stuff it itsself its rendering its own prespective renderer
+- improved wave gate creative toggle

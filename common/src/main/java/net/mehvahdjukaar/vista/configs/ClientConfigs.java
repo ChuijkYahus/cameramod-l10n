@@ -30,7 +30,6 @@ public class ClientConfigs {
     public static final Supplier<Boolean> TURN_OFF_EFFECTS;
     public static final Supplier<Float> PIXEL_DENSITY;
     public static final Supplier<Float> VIGNETTE;
-    public static final Supplier<Boolean> DRAW_DATE;
     public static final Supplier<Boolean> SCREEN_EFFECTS;
     public static final Supplier<Boolean> ENABLE_FFMPEG;
     public static final Supplier<Integer> WEB_RESOLUTION_SCALE;
@@ -67,9 +66,6 @@ public class ClientConfigs {
         builder.pop();
         builder.push("live_feed");
 
-        DRAW_DATE = builder
-                .comment("Draws the date and time on the live feed texture")
-                .define("draw_date", false);
         UPDATE_FPS = builder
                 .gameRestart()
                 .comment("How many times per second the television updates its live feed texture. Lowering this will improve performance but make the video less smooth, fractions work too")

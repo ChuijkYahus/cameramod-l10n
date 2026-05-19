@@ -102,12 +102,13 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
         IntAnimationState switchAnim = blockEntity.fadeAnimation;
         IntAnimationState staticAnim = blockEntity.endermanAnimation;
         int videoTicks = blockEntity.getPlaybackTicks();
+        boolean showsTime = blockEntity.showsTime();
 
         IVideoSource videoSource = blockEntity.getVideoSource();
         VertexConsumer vc = videoSource
                 .getVideoFrameBuilder(paused ? 1 : partialTick, buffer,
                         shouldUpdate, screenSize, pixelEffectRes,
-                        videoTicks, paused, switchAnim, staticAnim);
+                        videoTicks, paused, switchAnim, staticAnim, showsTime);
 
         //technically not correct as tv could be multiple block. just matters for transition so it's probably ok
         Level level = blockEntity.getLevel();
@@ -192,7 +193,6 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
         float endermanAnim = tile.endermanAnimation.getValue(partialTick);
         if (endermanAnim != 0) {
             y -= 9;
-
             font.drawInBatch("p " + endermanAnim, 0, y, -1, false, poseStack.last().pose(), buffer, Font.DisplayMode.NORMAL,
                     OverlayTexture.NO_OVERLAY, LightTexture.FULL_BRIGHT);
 

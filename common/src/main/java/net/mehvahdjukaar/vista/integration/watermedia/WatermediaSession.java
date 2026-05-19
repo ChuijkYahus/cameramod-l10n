@@ -59,7 +59,7 @@ public class WatermediaSession implements IMediaSession {
 
     private boolean isVideo() {
         ImageCache.Status status = imageCache.getStatus();
-        return (status == ImageCache.Status.READY && imageCache.isVideo()) || status == ImageCache.Status.FAILED;
+        return (status == ImageCache.Status.READY && imageCache.isVideo());
     }
 
     @Override
