@@ -1,18 +1,33 @@
 {
   "variants": {
-    "facing=north": {
+    "creative=false,facing=north": {
       "model": "vista:block/wave_gate"
     },
-    "facing=east": {
+    "creative=false,facing=east": {
       "model": "vista:block/wave_gate",
       "y": 90
     },
-    "facing=south": {
+    "creative=false,facing=south": {
       "model": "vista:block/wave_gate",
       "y": 180
     },
-    "facing=west": {
+    "creative=false,facing=west": {
       "model": "vista:block/wave_gate",
+      "y": 270
+    },
+    "creative=true,facing=north": {
+      "model": "vista:block/wave_gate_creative"
+    },
+    "creative=true,facing=east": {
+      "model": "vista:block/wave_gate_creative",
+      "y": 90
+    },
+    "creative=true,facing=south": {
+      "model": "vista:block/wave_gate_creative",
+      "y": 180
+    },
+    "creative=true,facing=west": {
+      "model": "vista:block/wave_gate_creative",
       "y": 270
     }
   }

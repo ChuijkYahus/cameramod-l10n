@@ -40,6 +40,8 @@ public class CommonConfigs {
                 .define("chest_drop", true);
 
         WAVE_GATE_MODE = builder.comment("Where the wave gate is obtainable.")
+                .affectsDynamicPacks()
+                .worldReload()
                 .define("wave_gate_enabled", Mode.CREATIVE_ONLY);
         builder.pop();
 

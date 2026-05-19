@@ -6,6 +6,7 @@ import net.mehvahdjukaar.moonlight.api.util.Utils;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.common.broadcast.BroadcastManager;
 import net.mehvahdjukaar.vista.common.broadcast.LevelBEBroadcastLocation;
+import net.mehvahdjukaar.vista.configs.CommonConfigs;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -38,12 +39,14 @@ public class WaveGateBlock extends WaterBlock implements EntityBlock {
     public static final VoxelShape SHAPE = Block.box(0, 0, 0, 16, 7, 16);
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
     public static final BooleanProperty POWERED = BlockStateProperties.POWERED;
+    public static final BooleanProperty CREATIVE = BooleanProperty.create("creative");
 
     public WaveGateBlock(Properties properties) {
         super(properties);
         this.registerDefaultState(this.stateDefinition.any()
                 .setValue(FACING, Direction.NORTH)
                 .setValue(POWERED, false)
+                .setValue(CREATIVE, true)
                 .setValue(WATERLOGGED, false)
         );
     }
@@ -80,13 +83,14 @@ public class WaveGateBlock extends WaterBlock implements EntityBlock {
     @Override
     public @Nullable BlockState getStateForPlacement(BlockPlaceContext context) {
         return super.getStateForPlacement(context)
+                .setValue(CREATIVE, !CommonConfigs.isWaveGateCraftable())
                 .setValue(FACING, context.getHorizontalDirection());
     }
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         super.createBlockStateDefinition(builder);
-        builder.add(FACING, POWERED);
+        builder.add(FACING, POWERED, CREATIVE);
     }
 
     @Override

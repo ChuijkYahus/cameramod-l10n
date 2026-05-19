@@ -89,9 +89,9 @@ public class VistaDynamicResources extends DynamicClientResourceProvider {
                 float addB = sb * addScale * 0.9f + 0.001f;
 
                 // ensure add stays tiny and non-negative
-                addR = Math.max(0f, Math.min(0.12f, addR));
-                addG = Math.max(0f, Math.min(0.12f, addG));
-                addB = Math.max(0f, Math.min(0.12f, addB));
+                addR = Math.clamp(addR, 0f, 0.12f);
+                addG = Math.clamp(addG, 0f, 0.12f);
+                addB = Math.clamp(addB, 0f, 0.12f);
 
                 // Saturation: base slightly desaturated by default, increase modestly with dye saturation
                 // Sat range chosen to be visually subtle: [0.85 .. 1.05]
@@ -101,7 +101,7 @@ public class VistaDynamicResources extends DynamicClientResourceProvider {
                 // Darker dyes usually look better with slightly increased contrast; very light dyes slightly reduce contrast.
                 // range ~ [0.92 .. 1.18]
                 float contrast = 1.00f + 0.30f * (0.5f - lum); // dark lum -> >1.0, bright lum -> <1.0
-                contrast = Math.max(0.85f, Math.min(1.25f, contrast));
+                contrast = Math.clamp(contrast, 0.85f, 1.25f);
 
                 // Optionally nudge parameters for specific hue families (subtle)
                 // e.g., cyan/teal tends to look better with slightly more contrast and slightly muted saturation
@@ -188,20 +188,6 @@ public class VistaDynamicResources extends DynamicClientResourceProvider {
 
 
         });
-
-        //this is not correct for multiplayer! TODO: figure out a better solution
-        if(!CommonConfigs.isWaveGateCraftable()){
-            consumer.accept((resourceManager, resourceSink) -> {
-                resourceSink.copyResource(resourceManager,
-                        ResType.BLOCK_TEXTURES.getPath(VistaMod.res("wave_gate/side_creative")),
-                                ResType.BLOCK_TEXTURES.getPath(VistaMod.res("wave_gate/side")),
-                        false);
-                resourceSink.copyResource(resourceManager,
-                        ResType.BLOCK_TEXTURES.getPath(VistaMod.res("wave_gate/top_creative")),
-                        ResType.BLOCK_TEXTURES.getPath(VistaMod.res("wave_gate/top")),
-                        false);
-            });
-        }
     }
 
     /** helper: round to 4 decimal places for nicer JSON numbers */

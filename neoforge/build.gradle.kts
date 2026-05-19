@@ -32,7 +32,7 @@ dependencies {
     //  modImplementation("cc.tweaked:cc-tweaked-1.21.1-forge:1.117.0")
 
 
-     modRuntimeOnly("foundry.veil:veil-neoforge-1.21.1:4.0.0")
+    modImplementation("foundry.veil:veil-neoforge-1.21.1:4.0.0")
     //  modRuntimeOnly("curse.maven:fsable-1312371:8007005")
     // implementation("org.apache.maven:maven-artifact:3.9.9")
     //  modRuntimeOnly("dev.ryanhcode.sable-companion:sable-companion-common-1.21.1:1.6.0")

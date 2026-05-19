@@ -1,5 +1,10 @@
 package net.mehvahdjukaar.vista.platform;
 
+import foundry.veil.Veil;
+import foundry.veil.api.client.render.VeilRenderSystem;
+import foundry.veil.api.client.render.VeilRenderer;
+import foundry.veil.api.client.render.light.data.PointLightData;
+import foundry.veil.api.client.render.light.renderer.LightRenderer;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.client.ViewFinderController;
@@ -47,9 +52,20 @@ public class VistaForgeClient {
         }
     }
 
+    private static boolean firstRenderTick = true;
     @SubscribeEvent
     public static void onClientEndTick(ClientTickEvent.Post event) {
         VistaModClient.onClientTick(Minecraft.getInstance());
+        if(firstRenderTick && Minecraft.getInstance().level != null) {
+            firstRenderTick = false;
+            PointLightData lightData = new PointLightData();
+            lightData.setPosition(30, -60, -63);
+            lightData.setRadius(10);
+            VeilRenderSystem.renderer().getLightRenderer().addLight(lightData);
+        }
+        if(Minecraft.getInstance().level == null){
+            firstRenderTick = true;
+        }
     }
 
     @SubscribeEvent

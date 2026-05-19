@@ -18,6 +18,7 @@ import net.mehvahdjukaar.vista.client.web.ffmpeg.FFmpeg;
 import net.mehvahdjukaar.vista.client.web.ffmpeg.FFmpegManager;
 import net.mehvahdjukaar.vista.common.chunk_tracking.ExtraChunkViewData;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
+import net.mehvahdjukaar.vista.configs.CommonConfigs;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
@@ -26,6 +27,7 @@ import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.Input;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.renderer.item.ItemProperties;
 import net.minecraft.client.resources.model.Material;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
@@ -143,12 +145,22 @@ public class VistaModClient {
         ClientHelper.addClientReloadListener(() -> CassetteTexturesManager.INSTANCE, VistaMod.res("gif_manager"));
 
         RegHelper.registerDynamicResourceProvider(new VistaDynamicResources());
+
+
+        ClientHelper.addClientSetup(VistaModClient::onClientSetup);
+    }
+
+    private static void onClientSetup() {
+        ItemProperties.register(VistaMod.WAVE_GATE.get().asItem(),
+                VistaMod.res("creative"),
+                (stack, world, entity, s) -> CommonConfigs.isWaveGateCraftable() ? 0 : 1
+        );
     }
 
     @EventCalled
     public static void onFirstScreen(Screen screen) {
         Screen newScreen = screen;
-        if ( ClientConfigs.canUseFFmpeg() && ffmpegFuture == null ) {
+        if (ClientConfigs.canUseFFmpeg() && ffmpegFuture == null) {
             newScreen = new VistaWelcomeScreen(newScreen,
                     VistaModClient::instantiateFFmpeg,
                     () -> instantiateFFmpeg(null),
@@ -202,6 +214,8 @@ public class VistaModClient {
         if (p == null) return;
 
         ViewFinderController.onClientTick(minecraft);
+
+
     }
 
     public static void onRenderTickEnd(Minecraft minecraft) {
@@ -224,7 +238,7 @@ public class VistaModClient {
         }
     }
 
-    public static void onLevelUnloaded(ClientLevel cl){
+    public static void onLevelUnloaded(ClientLevel cl) {
         KNOWN_LEVELS_BY_DIMENSION.remove(cl.dimension());
         LiveFeedTexturesManager.clear();
 

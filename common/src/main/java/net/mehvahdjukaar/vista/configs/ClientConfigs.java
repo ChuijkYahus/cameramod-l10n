@@ -113,7 +113,7 @@ public class ClientConfigs {
         BILINEAR = builder.comment("Enable bilinear sampling for rescaled images. Enable for a less pixelated look")
                 .define("bilinear_sampling", false);
         SAFE_URLS = builder.comment("A list of regex which will filter out valid URLs. At least one of these must match for a URL video to work")
-                .define("save_urls", List.of());
+                .define("safe_urls", List.of());
         builder.pop();
 
         builder.pop();

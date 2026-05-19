@@ -38,4 +38,7 @@ dependencies {
 
     modCompileOnly("curse.maven:alexs-caves-924854:4806837")
     modImplementation("curse.maven:watermedia-869524:7072353")
+
+    modCompileOnly("foundry.veil:veil-neoforge-1.21.1:4.0.0")
+
 }

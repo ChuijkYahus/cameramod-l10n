@@ -9,6 +9,7 @@ import net.mehvahdjukaar.vista.integration.entity_culling.EntityCullingCompat;
 import net.mehvahdjukaar.vista.integration.exposure.ExposureCompat;
 import net.mehvahdjukaar.vista.integration.flashback.FlashbackCompat;
 import net.mehvahdjukaar.vista.integration.iris.IrisCompat;
+import net.mehvahdjukaar.vista.integration.veil.VeilCompat;
 import net.mehvahdjukaar.vista.integration.watermedia.WatermediaSession;
 import net.minecraft.world.item.CreativeModeTabs;
 
@@ -23,6 +24,7 @@ public class CompatHandler {
     public static final boolean ENTITYCULLING = PlatHelper.isModLoaded("entityculling");
     public static final boolean ALEX_CAVES = PlatHelper.isModLoaded("alexs-caves");
     public static final boolean FLASHBACK = PlatHelper.isModLoaded("flashback");
+    public static final boolean VEIL = PlatHelper.isModLoaded("veil");
     public static final boolean WATERMEDIA = PlatHelper.isModLoaded("watermedia");
 
     public static void init() {
@@ -56,6 +58,9 @@ public class CompatHandler {
         }
         if (FLASHBACK) {
             runTask = FlashbackCompat.decorateRenderRestoringMatrices(runTask);
+        }
+        if(VEIL) {
+            runTask = VeilCompat.decorateWithSameDarnHacksVeilUses(runTask);
         }
         return runTask;
     }

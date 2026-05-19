@@ -1,5 +1,6 @@
 - tvs have the ability to make the server send over chunks from far away view finders that are linked to them
 - additionally server can also chunkload those positions (off by default)
+- chances are none of this will work with sodium or mods that entire replace vanilla chunk graph logic. 
 - new textures for creative wave gate
 - proper icon for wave gate ui
 - better loading animations
