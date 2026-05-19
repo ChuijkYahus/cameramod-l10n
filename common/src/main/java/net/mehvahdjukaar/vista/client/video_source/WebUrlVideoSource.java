@@ -62,7 +62,8 @@ public class WebUrlVideoSource implements IVideoSource {
     public @NotNull VertexConsumer getVideoFrameBuilder(float partialTick, MultiBufferSource buffer,
                                                         boolean shouldUpdate, int screenSize, int pixelEffectRes,
                                                         int videoAnimationTick, boolean paused,
-                                                        IntAnimationState switchAnim, IntAnimationState staticAnim) {
+                                                        IntAnimationState switchAnim, IntAnimationState staticAnim,
+                                                        boolean showsTime) {
 
         if (uri == null) {
             return TvScreenVertexConsumers.getNoiseVC(buffer, pixelEffectRes, switchAnim);

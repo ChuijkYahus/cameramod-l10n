@@ -4,10 +4,14 @@ import mezz.jei.api.IModPlugin;
 import mezz.jei.api.JeiPlugin;
 import mezz.jei.api.ingredients.subtypes.ISubtypeInterpreter;
 import mezz.jei.api.ingredients.subtypes.UidContext;
+import mezz.jei.api.registration.IExtraIngredientRegistration;
 import mezz.jei.api.registration.ISubtypeRegistration;
 import net.mehvahdjukaar.vista.VistaMod;
+import net.mehvahdjukaar.vista.configs.CommonConfigs;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
+
+import java.util.List;
 
 @JeiPlugin
 public class JEICompat implements IModPlugin {
@@ -17,6 +21,13 @@ public class JEICompat implements IModPlugin {
     @Override
     public ResourceLocation getPluginUid() {
         return ID;
+    }
+
+    @Override
+    public void registerExtraIngredients(IExtraIngredientRegistration registration) {
+        if (!CommonConfigs.isWaveGateCraftable()) {
+            registration.addExtraItemStacks(List.of(VistaMod.WAVE_GATE.get().asItem().getDefaultInstance()));
+        }
     }
 
     @Override

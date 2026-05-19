@@ -238,9 +238,10 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
     private void enlargeConnection(BlockState tvState, Level level, BlockPos pos) {
         int maxSize = CommonConfigs.MAX_CONNECTED_TV_SIZE.get();
         if (maxSize <= 1) return;
+        boolean squareOnly = CommonConfigs.SQUARE_ASPECT_RATIO.get();
         TVGridAccess gridAccess = new TVGridAccess(level, pos, tvState);
-        Rect2D old = RectFinder.findMaxRect(gridAccess, Vec2i.ZERO, true);
-        RectSelection newRec = RectFinder.findMaxExpandedRect(gridAccess, Vec2i.ZERO, maxSize, true);
+        Rect2D old = RectFinder.findMaxRect(gridAccess, Vec2i.ZERO, squareOnly);
+        RectSelection newRec = RectFinder.findMaxExpandedRect(gridAccess, Vec2i.ZERO, maxSize, squareOnly);
         gridAccess.transform(old, newRec.selection(), newRec.touchedRect());
         gridAccess.applyChanges();
     }
@@ -249,14 +250,16 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
         if (tvState.getValue(CONNECTION) == TVType.SINGLE) return;
         int maxSize = CommonConfigs.MAX_CONNECTED_TV_SIZE.get();
         if (maxSize <= 1) return;
+        boolean squareOnly = CommonConfigs.SQUARE_ASPECT_RATIO.get();
+
         TVGridAccess gridAccess = new TVGridAccess(level, pos, tvState);
         gridAccess.setAt(Vec2i.ZERO, tvState.getValue(CONNECTION));
-        Rect2D old = RectFinder.findMaxRect(gridAccess, Vec2i.ZERO, true);
+        Rect2D old = RectFinder.findMaxRect(gridAccess, Vec2i.ZERO, squareOnly);
 
         gridAccess.setAt(Vec2i.ZERO, null);
         Direction2D closestDir = closestDirToCenter(old);
         Vec2i newCenter = Vec2i.ZERO.offset(closestDir);
-        Rect2D newRec = RectFinder.findMaxRect(gridAccess, newCenter, true);
+        Rect2D newRec = RectFinder.findMaxRect(gridAccess, newCenter, squareOnly);
         gridAccess.transform(old, newRec, old);
         gridAccess.applyChanges();
     }

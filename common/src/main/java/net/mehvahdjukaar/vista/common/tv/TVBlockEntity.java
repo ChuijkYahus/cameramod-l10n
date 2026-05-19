@@ -4,6 +4,7 @@ import net.mehvahdjukaar.candlelight.api.VirtualOverride;
 import net.mehvahdjukaar.moonlight.api.block.ItemDisplayTile;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.util.Utils;
+import net.mehvahdjukaar.moonlight.api.util.math.Vec2i;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.client.video_source.IVideoSource;
 import net.mehvahdjukaar.vista.common.cassette.IBroadcastSource;
@@ -32,6 +33,7 @@ import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Vector2ic;
 
 import java.util.UUID;
 
@@ -47,7 +49,7 @@ public class TVBlockEntity extends ItemDisplayTile {
     //client, I think
     private IVideoSource videoSource = IVideoSource.EMPTY;
 
-    private int connectedTvsAmount = 1;
+    private Vec2i connectedTvsAmount = new Vec2i(1, 1);
 
     private int soundLoopTicks = 0;
     public final IntAnimationState fadeAnimation = new IntAnimationState(3, 9);
@@ -63,7 +65,8 @@ public class TVBlockEntity extends ItemDisplayTile {
     @Override
     public void saveAdditional(CompoundTag compound, HolderLookup.Provider registries) {
         super.saveAdditional(compound, registries);
-        compound.putInt("ConnectionWidth", connectedTvsAmount);
+        compound.putInt("ConnectionWidth", connectedTvsAmount.x());
+        compound.putInt("ConnectionHeight", connectedTvsAmount.y());
         compound.putBoolean("Paused", paused);
         compound.putInt("VideoPlaybackTicks", videoPlaybackTicks);
         compound.putBoolean("ShowsTime", showsTime);
@@ -72,7 +75,8 @@ public class TVBlockEntity extends ItemDisplayTile {
     @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
-        this.connectedTvsAmount = Math.max(1, tag.getInt("ConnectionWidth"));
+        this.connectedTvsAmount = new Vec2i(Math.max(1, tag.getInt("ConnectionWidth")),
+                Math.max(1, tag.getInt("ConnectionHeight")));
         this.paused = tag.getBoolean("Paused");
         this.videoPlaybackTicks = tag.getInt("VideoPlaybackTicks");
         this.showsTime = tag.getBoolean("ShowsTime");
@@ -88,12 +92,12 @@ public class TVBlockEntity extends ItemDisplayTile {
         return videoSource;
     }
 
-    public int getConnectedCount() {
+    public Vec2i getConnectedCount() {
         return connectedTvsAmount;
     }
 
-    public void setConnectionSize(int width) {
-        this.connectedTvsAmount = width;
+    public void setConnectionSize(Vec2i size) {
+        this.connectedTvsAmount = size;
     }
 
     public boolean isPaused() {
@@ -185,8 +189,10 @@ public class TVBlockEntity extends ItemDisplayTile {
         }
 
         //add item
+
         var result = super.interactWithPlayerItem(player, handIn, stack, slot);
-        if (result.consumesAction() && isEmpty && powered && this.connectedTvsAmount >= 3 &&
+        if (result.consumesAction() && isEmpty && powered &&
+                (connectedTvsAmount.x() * connectedTvsAmount.y()) >= 9 &&
                 player instanceof ServerPlayer sp) {
             //advancement
             Utils.awardAdvancement(sp, VistaMod.CINEMA_ADVANCEMENT);
@@ -294,15 +300,15 @@ public class TVBlockEntity extends ItemDisplayTile {
     public static final int MIN_SCREEN_PIXEL_SIZE = 16 - EDGE_PIXEL_LEN;
 
     public Vec2 getScreenBlockCenter() {
-        return new Vec2(0.5f * (connectedTvsAmount - 1), 0.5f * (connectedTvsAmount - 1));
+        return new Vec2(0.5f * (connectedTvsAmount.x() - 1), 0.5f * (connectedTvsAmount.y() - 1));
     }
 
     public int getScreenPixelWidth() {
-        return Math.max(1, connectedTvsAmount) * 16 - EDGE_PIXEL_LEN;
+        return Math.max(1, connectedTvsAmount.x()) * 16 - EDGE_PIXEL_LEN;
     }
 
     public int getScreenPixelHeight() {
-        return Math.max(1, connectedTvsAmount) * 16 - EDGE_PIXEL_LEN;
+        return Math.max(1, connectedTvsAmount.y()) * 16 - EDGE_PIXEL_LEN;
     }
 
     public int getComparatorOutput() {
