@@ -24,7 +24,7 @@ public class WebUrlVideoSource implements IVideoSource {
     private final URI uri;
     private final UUID projectorID;
     private WebTexturesManager.Handle textureHandle;
-    private int lastScreenSize = -1;
+    private Vec2i lastScreenSize = Vec2i.ZERO;
 
     public WebUrlVideoSource(String url, UUID projectorID) {
         this.projectorID = projectorID;
@@ -70,7 +70,7 @@ public class WebUrlVideoSource implements IVideoSource {
             return TvScreenVertexConsumers.getNoiseVC(buffer, pixelEffectRes, switchAnim);
         }
 
-        if (textureHandle == null || lastScreenSize != screenSize) {
+        if (textureHandle == null || !lastScreenSize.equals(screenSize)) {
             this.textureHandle = WebTexturesManager.createHandle(uri, projectorID, screenSize);
             this.lastScreenSize = screenSize;
         }

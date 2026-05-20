@@ -9,7 +9,7 @@
     "ChunkTrackingViewMixin",
     "CompatGeckoLibMixin",
     "EndermanMixin",
-    "PlayerMixin",
+    "PlayerMixin"
   ],
   "client": [
     "CameraMixin",
@@ -19,6 +19,7 @@
     "CompatIrisDhCompat",
     "CompatIrisMixin",
     "CompatIrisRenderingMixin",
+    "CompatVeilMixin",
     "DebugRendererMixin",
     "FrustumMixin",
     "GameRendererMixin",
@@ -31,6 +32,7 @@
     "SectionOcclusionGraphMixin",
     "ViewAreaMixin"
   ],
+  "plugin": "net.mehvahdjukaar.vista.mixins.VistaMixinPlugin",
   "injectors": {
     "defaultRequire": 1
   },

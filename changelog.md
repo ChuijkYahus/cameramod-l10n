@@ -1,2 +1,2 @@
-- added sketchy compat with sable. it makes vista use the same sort of hacks sable use for its own prespective rendering by making it think that when vista renders its stuff it itsself its rendering its own prespective renderer
-- improved wave gate creative toggle
+- added more configs
+- improved veil compat with even more hacks

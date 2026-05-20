@@ -17,10 +17,16 @@ loom{
 
 val moonlight_version: String by extra
 val supplementaries_version: String by extra
+val mixin_squared_version: String by extra
 
 dependencies {
 
     modImplementation("net.mehvahdjukaar:moonlight-fabric:${moonlight_version}")
+
+    include("com.github.bawnorton.mixinsquared:mixinsquared-fabric:${mixin_squared_version}")
+    implementation("com.github.bawnorton.mixinsquared:mixinsquared-fabric:${mixin_squared_version}")
+    annotationProcessor("com.github.bawnorton.mixinsquared:mixinsquared-fabric:${mixin_squared_version}")
+
 
     modCompileOnly("curse.maven:supplementaries-412082:8044264")
             //modImplementation("net.mehvahdjukaar:supplementaries-fabric:${supplementaries_version}")

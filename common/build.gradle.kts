@@ -11,11 +11,16 @@ common {
 val moonlight_version: String by extra
 val supplementaries_version: String by extra
 val candlelight_version: String by extra
+val mixin_squared_version: String by extra
 
 dependencies {
 
     modCompileOnly("net.mehvahdjukaar:moonlight-neoforge:${moonlight_version}")
     accessTransformers("net.mehvahdjukaar:moonlight-neoforge:${moonlight_version}")
+
+
+    implementation("com.github.bawnorton.mixinsquared:mixinsquared-common:${mixin_squared_version}")
+    annotationProcessor("com.github.bawnorton.mixinsquared:mixinsquared-common:${mixin_squared_version}")
 
 
     //modImplementation("net.mehvahdjukaar:supplementaries-neoforge:${supplementaries_version}")

@@ -59,7 +59,7 @@ public class LiveFeedVideoSource implements IVideoSource {
             IntAnimationState switchAnim, IntAnimationState staticAnim,
             boolean showsTime) {
 
-        if (textureHandle == null || lastScreenSize.equals(screenSize)) {
+        if (textureHandle == null || !lastScreenSize.equals(screenSize)) {
             this.textureHandle = LiveFeedTexturesManager.createHandle(
                     viewFinder.getBroadcastUUID(), screenSize);
             this.lastScreenSize = screenSize;

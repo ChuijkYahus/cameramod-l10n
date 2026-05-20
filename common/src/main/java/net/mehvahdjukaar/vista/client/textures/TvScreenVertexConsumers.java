@@ -53,7 +53,7 @@ public class TvScreenVertexConsumers {
         return createAnimatedStripVC(buffer, tapeTexture, scale, tickCount, overlay, switchAnim);
     }
 
-    public static VertexConsumer getNoiseVC(MultiBufferSource buffer, int scale, IntAnimationState switchAnim) {
+    public static VertexConsumer getNoiseVC(MultiBufferSource buffer, Vec2i scale, IntAnimationState switchAnim) {
         return createVC(DUMMY_TEXTURE, scale, 1, 1,
                 CrtOverlay.NONE, switchAnim, IntAnimationState.MAX_ANIM, buffer::getBuffer);
     }

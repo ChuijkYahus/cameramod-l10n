@@ -50,7 +50,7 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
     public AABB getRenderBoundingBox(TVBlockEntity tile) {
         AABB aabb = new AABB(tile.getBlockPos());
         Direction dir = tile.getBlockState().getValue(TVBlock.FACING);
-        Vec2i connection = tile.getConnectedCount();
+        Vec2i connection = Vec2i.ONE;// tile.getConnectedCount();
         float width = connection.x();
         float height = connection.y();
         if (dir == Direction.EAST) {
@@ -79,8 +79,9 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
 
         Vec2 screenCenter = blockEntity.getScreenBlockCenter();
         int max = Math.max(screenSize.x(), screenSize.y());
+        int ss = blockEntity.getScreenPixelWidth();
 
-        if (lod.isPlaneCulled(dir, 0.5f, max / 16f * 1.5f, 0f)) return;
+        if (lod.isPlaneCulled(dir, 0.5f, ss / 16f * 1.5f, 0f)) return;
         float length = blockEntity.getConnectedCount().lengthSquared();
 
         if (length <= 1 && !lod.isMedium()) {

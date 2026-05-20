@@ -15,7 +15,7 @@ public class VeilCompat {
             //maybe becasue that code nukes the entire render target somehow
             boolean magicPerspectiveGlobalState = PERSPECTIVE_RENDERER_MAGIC_GLOBAL_STATE.get(null);
             try {
-                PERSPECTIVE_RENDERER_MAGIC_GLOBAL_STATE.set(null, true);
+             //   PERSPECTIVE_RENDERER_MAGIC_GLOBAL_STATE.set(null, true);
                 renderTask.run();
             } finally {
                 PERSPECTIVE_RENDERER_MAGIC_GLOBAL_STATE.set(null, magicPerspectiveGlobalState);

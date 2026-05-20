@@ -21,7 +21,7 @@ uniform vec2 SpriteDimensions;
 
 /* ===================== KNOBS ===================== */
 // 1.0 ≈ one triad per texel; >1 = denser triads; <1 = larger triads
-uniform float TriadsPerPixel;
+uniform vec2 TriadsPerPixel;
 // Beam/spot width in TRIAD units; >1 = softer/smeared, <1 = sharper
 uniform float Smear;
 // 1.0 keeps average brightness stable across settings

@@ -2,6 +2,7 @@ package net.mehvahdjukaar.vista.client;
 
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
+import foundry.veil.forge.impl.PerspectiveChunkCollector;
 import net.mehvahdjukaar.moonlight.api.util.math.Vec2i;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.VistaModClient;
@@ -15,6 +16,7 @@ import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.DyeColor;
+import org.joml.Vector2f;
 
 import java.util.function.Function;
 
@@ -69,13 +71,12 @@ public class VistaRenderTypes extends RenderType {
         shader.safeGetUniform("SpriteDimensions").set(key.frameW, key.frameH);
         shader.safeGetUniform("OverlayIndex").set(key.overlay.ordinal());
         float pt = Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false);
-
         //float max = 24000;
         //float myTime = ((Minecraft.getInstance().level.getGameTime() % max) + pt)/max;
         //shader.safeGetUniform("Time").set(myTime);
-        float scale = key.scale / 12f;
-        setFloat(shader, "TriadsPerPixel",
-                ClientConfigs.PIXEL_DENSITY.get() * scale);
+        float pixelDensity = ClientConfigs.PIXEL_DENSITY.get() / 12f;
+        setFloat2(shader, "TriadsPerPixel",
+                pixelDensity * key.scale.x(), pixelDensity * key.scale.y());
         setFloat(shader, "Smear", 1f);
         setFloat(shader, "EnableEnergyNormalize", 0.0f);
 
@@ -102,6 +103,10 @@ public class VistaRenderTypes extends RenderType {
 
     private static void setFloat(ShaderInstance shader, String name, float value) {
         shader.safeGetUniform(name).set(value);
+    }
+
+    private static void setFloat2(ShaderInstance shader, String name, float v1, float v2) {
+        shader.safeGetUniform(name).set(v1, v2);
     }
 
     public static ResourceLocation getColoredShader(DyeColor c) {

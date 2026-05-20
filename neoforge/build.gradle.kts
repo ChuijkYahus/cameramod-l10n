@@ -9,11 +9,18 @@ neoforge {
 
 val moonlight_version: String by extra
 val supplementaries_version: String by extra
+val mixin_squared_version: String by extra
 
 dependencies {
 
     modImplementation("net.mehvahdjukaar:moonlight-neoforge:${moonlight_version}")
     accessTransformers("net.mehvahdjukaar:moonlight-neoforge:${moonlight_version}")
+
+    annotationProcessor("com.github.bawnorton.mixinsquared:mixinsquared-common:${mixin_squared_version}")
+    implementation("com.github.bawnorton.mixinsquared:mixinsquared-common:${mixin_squared_version}")
+    apiInclude("com.github.bawnorton.mixinsquared:mixinsquared-forge:${mixin_squared_version}")
+    implementation("com.github.bawnorton.mixinsquared:mixinsquared-forge:${mixin_squared_version}")
+
 
     modCompileOnly("curse.maven:supplementaries-412082:8051628")
 
@@ -32,7 +39,7 @@ dependencies {
     //  modImplementation("cc.tweaked:cc-tweaked-1.21.1-forge:1.117.0")
 
 
-    modImplementation("foundry.veil:veil-neoforge-1.21.1:4.0.0")
+    modCompileOnly("foundry.veil:veil-neoforge-1.21.1:4.0.0")
     //  modRuntimeOnly("curse.maven:fsable-1312371:8007005")
     // implementation("org.apache.maven:maven-artifact:3.9.9")
     //  modRuntimeOnly("dev.ryanhcode.sable-companion:sable-companion-common-1.21.1:1.6.0")
