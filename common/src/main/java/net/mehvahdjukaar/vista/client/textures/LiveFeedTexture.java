@@ -58,10 +58,10 @@ public class LiveFeedTexture extends RenderableDynamicTexture {
     private final SlidingWindowCounter<RefType> references =
             new SlidingWindowCounter<>(Duration.ofSeconds(3), Duration.ofSeconds(1));
 
-    public LiveFeedTexture(ResourceLocation resourceLocation, int size,
+    public LiveFeedTexture(ResourceLocation resourceLocation, int width, int height,
                            @NotNull Consumer<LiveFeedTexture> textureDrawingFunction,
                            UUID id) {
-        super(resourceLocation, size, textureDrawingFunction);
+        super(resourceLocation, width, height, textureDrawingFunction);
         this.associatedUUID = id;
         this.extraPostChainID = null;
         //can cause flicker?

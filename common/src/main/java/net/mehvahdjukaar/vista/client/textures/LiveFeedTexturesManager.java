@@ -8,6 +8,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
 import net.mehvahdjukaar.moonlight.api.client.texture_renderer.DynamicTextureRenderer;
 import net.mehvahdjukaar.moonlight.api.misc.RollingBuffer;
+import net.mehvahdjukaar.moonlight.api.util.math.Vec2i;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.client.AdaptiveUpdateScheduler;
@@ -61,19 +62,21 @@ public class LiveFeedTexturesManager {
 
         private final ResourceLocation textureId;
         private final UUID uuid;
-        private final int screenSize;
+        private final Vec2i screenSize;
 
-        public Handle(UUID uuid, int size) {
-            this.textureId = VistaMod.res("live_feed/" + uuid + "_" + size);
+        public Handle(UUID uuid, Vec2i screenSize) {
+            this.textureId = VistaMod.res("live_feed/" + uuid + "_" + screenSize.x() + "x" + screenSize.y());
             this.uuid = uuid;
-            this.screenSize = size;
+            this.screenSize = screenSize;
         }
 
         @Nullable
         public LiveFeedTexture getTexture(@Nullable ResourceLocation postShader, boolean requiresUpdate, boolean showsTime) {
 
             LiveFeedTexture texture = DynamicTextureRenderer.requestTexture(textureId, () ->
-                    new LiveFeedTexture(textureId, screenSize * ClientConfigs.LIVE_FEED_RESOLUTION_SCALE.get(),
+                    new LiveFeedTexture(textureId,
+                            screenSize.x() * ClientConfigs.LIVE_FEED_RESOLUTION_SCALE.get(),
+                            screenSize.y() * ClientConfigs.LIVE_FEED_RESOLUTION_SCALE.get(),
                             LiveFeedTexturesManager::refreshTexture, uuid));
 
 
@@ -96,7 +99,7 @@ public class LiveFeedTexturesManager {
         }
     }
 
-    public static Handle createHandle(UUID uuid, int screenSize) {
+    public static Handle createHandle(UUID uuid, Vec2i screenSize) {
         return new Handle(uuid, screenSize);
     }
 

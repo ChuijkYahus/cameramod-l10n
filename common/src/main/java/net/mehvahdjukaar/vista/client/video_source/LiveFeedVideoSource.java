@@ -2,6 +2,7 @@ package net.mehvahdjukaar.vista.client.video_source;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.mehvahdjukaar.moonlight.api.set.BlocksColorAPI;
+import net.mehvahdjukaar.moonlight.api.util.math.Vec2i;
 import net.mehvahdjukaar.vista.client.CrtOverlay;
 import net.mehvahdjukaar.vista.client.VistaRenderTypes;
 import net.mehvahdjukaar.vista.client.textures.LiveFeedTexture;
@@ -23,7 +24,7 @@ public class LiveFeedVideoSource implements IVideoSource {
 
     private final ViewFinderBlockEntity viewFinder;
     private LiveFeedTexturesManager.Handle textureHandle;
-    private int lastScreenSize = -1;
+    private Vec2i lastScreenSize = Vec2i.ZERO;
     private ResourceLocation postShader = null;
 
     public LiveFeedVideoSource(ViewFinderBlockEntity viewFinder) {
@@ -53,13 +54,14 @@ public class LiveFeedVideoSource implements IVideoSource {
     @Override
     public @NotNull VertexConsumer getVideoFrameBuilder(
             float partialTick, MultiBufferSource buffer, boolean shouldUpdate,
-            int screenSize, int pixelEffectRes,
+            Vec2i screenSize, Vec2i pixelEffectRes,
             int videoAnimationTick, boolean paused,
             IntAnimationState switchAnim, IntAnimationState staticAnim,
             boolean showsTime) {
 
-        if (textureHandle == null || lastScreenSize != screenSize) {
-            this.textureHandle = LiveFeedTexturesManager.createHandle(viewFinder.getBroadcastUUID(), screenSize);
+        if (textureHandle == null || lastScreenSize.equals(screenSize)) {
+            this.textureHandle = LiveFeedTexturesManager.createHandle(
+                    viewFinder.getBroadcastUUID(), screenSize);
             this.lastScreenSize = screenSize;
         }
         LiveFeedTexture tex = textureHandle.getTexture(postShader, shouldUpdate, showsTime);

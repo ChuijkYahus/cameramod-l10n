@@ -1,6 +1,7 @@
 package net.mehvahdjukaar.vista.client.textures;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import net.mehvahdjukaar.moonlight.api.util.math.Vec2i;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.client.CrtOverlay;
@@ -46,7 +47,7 @@ public class TvScreenVertexConsumers {
         }
     }
 
-    public static VertexConsumer getTapeVC(MultiBufferSource buffer, @NotNull Holder<CassetteTape> tapeHolder, int scale,
+    public static VertexConsumer getTapeVC(MultiBufferSource buffer, @NotNull Holder<CassetteTape> tapeHolder, Vec2i scale,
                                            int tickCount, CrtOverlay overlay, IntAnimationState switchAnim) {
         ResourceLocation tapeTexture = tapeHolder.value().assetId();
         return createAnimatedStripVC(buffer, tapeTexture, scale, tickCount, overlay, switchAnim);
@@ -57,29 +58,29 @@ public class TvScreenVertexConsumers {
                 CrtOverlay.NONE, switchAnim, IntAnimationState.MAX_ANIM, buffer::getBuffer);
     }
 
-    public static @NotNull VertexConsumer getDownloadingVc(MultiBufferSource buffer, int scale, int progressPercent, IntAnimationState switchAnim) {
+    public static @NotNull VertexConsumer getDownloadingVc(MultiBufferSource buffer, Vec2i scale, int progressPercent, IntAnimationState switchAnim) {
         return createProgressStripVC(buffer, VistaModClient.DOWNLOADING_SCREEN, scale, progressPercent, CrtOverlay.NONE, switchAnim);
     }
 
-    public static @NotNull VertexConsumer getWaitingVc(MultiBufferSource buffer, int scale, int tickCount, IntAnimationState switchAnim) {
+    public static @NotNull VertexConsumer getWaitingVc(MultiBufferSource buffer, Vec2i scale, int tickCount, IntAnimationState switchAnim) {
         return createAnimatedStripVC(buffer, VistaModClient.BLACK_LOADING_SCREEN, scale, tickCount, CrtOverlay.NONE, switchAnim);
     }
 
 
-    public static VertexConsumer getBarsVC(MultiBufferSource buffer, int scale, IntAnimationState switchAnim) {
+    public static VertexConsumer getBarsVC(MultiBufferSource buffer, Vec2i scale, IntAnimationState switchAnim) {
         return createAnimatedStripVC(buffer, VistaModClient.BARS_SCREEN, scale, 0, CrtOverlay.NONE, switchAnim);
     }
 
     public static VertexConsumer getSmileTapeVC(MultiBufferSource buffer, LivingEntity player) {
         Smile smile = Smile.fromHealth(player);
         ResourceLocation id = SMILES.get(smile);
-        int scale = 12;//always on a 1x1 tv
+        Vec2i scale = new Vec2i(12, 12);//always on a 1x1 tv
         return createAnimatedStripVC(buffer, id, scale, player.tickCount, CrtOverlay.NONE, IntAnimationState.NO_ANIM);
     }
 
     private static VertexConsumer createAnimatedStripVC(MultiBufferSource buffer,
                                                         ResourceLocation id,
-                                                        int scale, int tickCount,
+                                                        Vec2i scale, int tickCount,
                                                         CrtOverlay overlay,
                                                         IntAnimationState switchAnim) {
         return createStripVC(buffer, id, scale, tickCount, overlay, switchAnim, false);
@@ -87,7 +88,7 @@ public class TvScreenVertexConsumers {
 
     private static VertexConsumer createProgressStripVC(MultiBufferSource buffer,
                                                         ResourceLocation id,
-                                                        int scale, int progressPercent,
+                                                        Vec2i scale, int progressPercent,
                                                         CrtOverlay overlay,
                                                         IntAnimationState switchAnim) {
         return createStripVC(buffer, id, scale, progressPercent, overlay, switchAnim, true);
@@ -95,7 +96,7 @@ public class TvScreenVertexConsumers {
 
     private static VertexConsumer createStripVC(MultiBufferSource buffer,
                                                 ResourceLocation id,
-                                                int scale, int value,
+                                                Vec2i scale, int value,
                                                 CrtOverlay overlay,
                                                 IntAnimationState switchAnim,
                                                 boolean directFrameIndex) {
@@ -122,7 +123,7 @@ public class TvScreenVertexConsumers {
     public static VertexConsumer getSingleTextureVC(MultiBufferSource buffer,
                                                     ResourceLocation textureId,
                                                     CrtOverlay overlay,
-                                                    int scale,
+                                                    Vec2i scale,
                                                     IntAnimationState switchAnim,
                                                     IntAnimationState noiseAnim) {
         return createVC(textureId, scale, 1, 1,
@@ -130,7 +131,7 @@ public class TvScreenVertexConsumers {
     }
 
     public static VertexConsumer createVC(ResourceLocation texture,
-                                          int scale, float frameW, float frameH,
+                                          Vec2i scale, float frameW, float frameH,
                                           CrtOverlay overlay,
                                           IntAnimationState switchAnim,
                                           IntAnimationState noiseAnim,

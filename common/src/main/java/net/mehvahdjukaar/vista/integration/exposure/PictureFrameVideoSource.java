@@ -14,6 +14,7 @@ import io.github.mortuusars.exposure.world.item.component.album.AlbumPage;
 import io.github.mortuusars.exposure.world.item.util.ItemAndStack;
 import net.mehvahdjukaar.moonlight.api.misc.TField;
 import net.mehvahdjukaar.moonlight.api.misc.TMethod;
+import net.mehvahdjukaar.moonlight.api.util.math.Vec2i;
 import net.mehvahdjukaar.vista.client.textures.TvScreenVertexConsumers;
 import net.mehvahdjukaar.vista.client.video_source.IVideoSource;
 import net.mehvahdjukaar.vista.common.tv.IntAnimationState;
@@ -49,7 +50,7 @@ public class PictureFrameVideoSource implements IVideoSource {
 
     @Override
     public @NotNull VertexConsumer getVideoFrameBuilder(float partialTick, MultiBufferSource buffer,
-                                                        boolean shouldUpdate, int screenSize, int pixelEffectRes,
+                                                        boolean shouldUpdate, Vec2i screenSize, Vec2i pixelEffectRes,
                                                         int videoAnimationTick, boolean paused,
                                                         IntAnimationState switchAnim, IntAnimationState staticAnim,
                                                         boolean showsTime) {

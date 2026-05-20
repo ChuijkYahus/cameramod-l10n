@@ -19,7 +19,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
@@ -30,8 +29,6 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec2;
 import org.joml.Vector3f;
 
-import java.awt.*;
-import java.awt.geom.Dimension2D;
 import java.util.UUID;
 
 public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity> {
@@ -78,14 +75,14 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
         Direction dir = blockEntity.getBlockState().getValue(TVBlock.FACING);
 
         LOD lod = LOD.at(blockEntity);
-        int screenSize = blockEntity.getScreenPixelWidth();
+        Vec2i screenSize = blockEntity.getScreenPixelSize();
 
         Vec2 screenCenter = blockEntity.getScreenBlockCenter();
+        int max = Math.max(screenSize.x(), screenSize.y());
 
-        if
-        (lod.isPlaneCulled(dir, 0.5f, screenSize / 16f * 1.5f, 0f)) return;
-
+        if (lod.isPlaneCulled(dir, 0.5f, max / 16f * 1.5f, 0f)) return;
         float length = blockEntity.getConnectedCount().lengthSquared();
+
         if (length <= 1 && !lod.isMedium()) {
             return;
         }
@@ -99,8 +96,8 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
         poseStack.mulPose(Axis.YP.rotationDegrees(180 - yaw));
         poseStack.translate(-screenCenter.x, screenCenter.y, -0.505);
 
-        float s = screenSize / 32f;
-        int pixelEffectRes = ClientConfigs.SCALE_PIXELS.get() ? screenSize : TVBlockEntity.MIN_SCREEN_PIXEL_SIZE;
+
+        Vec2i pixelEffectRes = ClientConfigs.SCALE_PIXELS.get() ? screenSize : TVBlockEntity.MIN_SCREEN_PIXEL_SIZE_VEC;
 
         boolean paused = blockEntity.isPaused();
         boolean shouldUpdate = !paused && lod.within(ClientConfigs.UPDATE_DISTANCE.get());
@@ -120,7 +117,10 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
         int skyBrightness = level.getBrightness(LightLayer.SKY, blockEntity.getBlockPos().relative(dir));
         light = LightTexture.pack(15, skyBrightness);
 
-        addQuad(vc, poseStack, -s, -s, s, s, light);
+        float quadW = screenSize.x() / 32f;
+        float quadH = screenSize.y() / 32f;
+
+        addQuad(vc, poseStack, -quadW, -quadH, quadW, quadH, light);
 
 
         if (ClientConfigs.rendersDebug()) {

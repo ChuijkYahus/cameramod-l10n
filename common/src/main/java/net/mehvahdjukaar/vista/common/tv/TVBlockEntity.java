@@ -298,6 +298,7 @@ public class TVBlockEntity extends ItemDisplayTile {
 
     private static final int EDGE_PIXEL_LEN = 4;
     public static final int MIN_SCREEN_PIXEL_SIZE = 16 - EDGE_PIXEL_LEN;
+    public static final Vec2i MIN_SCREEN_PIXEL_SIZE_VEC = new Vec2i(MIN_SCREEN_PIXEL_SIZE, MIN_SCREEN_PIXEL_SIZE);
 
     public Vec2 getScreenBlockCenter() {
         return new Vec2(0.5f * (connectedTvsAmount.x() - 1), 0.5f * (connectedTvsAmount.y() - 1));
@@ -309,6 +310,10 @@ public class TVBlockEntity extends ItemDisplayTile {
 
     public int getScreenPixelHeight() {
         return Math.max(1, connectedTvsAmount.y()) * 16 - EDGE_PIXEL_LEN;
+    }
+
+    public Vec2i getScreenPixelSize() {
+        return new Vec2i(getScreenPixelWidth(), getScreenPixelHeight());
     }
 
     public int getComparatorOutput() {

@@ -2,6 +2,7 @@ package net.mehvahdjukaar.vista.client;
 
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
+import net.mehvahdjukaar.moonlight.api.util.math.Vec2i;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.common.tv.IntAnimationState;
@@ -27,14 +28,14 @@ public class VistaRenderTypes extends RenderType {
     private static final ShaderStateShard CAMERA_SHADER_STATE = new ShaderStateShard(VistaModClient.CAMERA_VIEW_SHADER);
     private static final ShaderStateShard STATIC_SHADER_STATE = new ShaderStateShard(VistaModClient.STATIC_SHADER);
 
-    private record CrtKey(ResourceLocation texture, float frameW, float frameH, int scale,
+    private record CrtKey(ResourceLocation texture, float frameW, float frameH, Vec2i scale,
                           IntAnimationState turnOnAnim, IntAnimationState staticAnim,
                           CrtOverlay overlay) {
     }
 
 
     public static RenderType crtRenderType(
-            ResourceLocation id, int scale, float frameW, float frameH,
+            ResourceLocation id, Vec2i scale, float frameW, float frameH,
             IntAnimationState turnOnAnim, IntAnimationState staticAnim, CrtOverlay overlay) {
         CrtKey key = new CrtKey(id, frameW, frameH, scale, turnOnAnim, staticAnim, overlay);
         return CRT_RENDER_TYPE.apply(key);

@@ -1,6 +1,7 @@
 package net.mehvahdjukaar.vista.client.video_source;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import net.mehvahdjukaar.moonlight.api.util.math.Vec2i;
 import net.mehvahdjukaar.vista.client.textures.TvScreenVertexConsumers;
 import net.mehvahdjukaar.vista.common.broadcast.BroadcastManager;
 import net.mehvahdjukaar.vista.common.cassette.IBroadcastSource;
@@ -16,7 +17,7 @@ public record BroadcastVideoSource(UUID uuid) implements IVideoSource {
 
     @Override
     public @NotNull VertexConsumer getVideoFrameBuilder(float partialTick, MultiBufferSource buffer,
-                                                        boolean shouldUpdate, int screenSize, int pixelEffectRes,
+                                                        boolean shouldUpdate, Vec2i screenSize, Vec2i pixelEffectRes,
                                                         int videoAnimationTick, boolean paused,
                                                         IntAnimationState switchAnim, IntAnimationState staticAnim,
                                                         boolean showsTime) {
