@@ -51,11 +51,12 @@ subprojects {
         }
         curseforge {
             dependencies {
+                required("selene")
             }
         }
         modrinth {
             dependencies {
-
+                required("moonlight")
             }
         }
 

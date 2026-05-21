@@ -6,6 +6,7 @@ import com.google.gson.JsonParser;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.client.web.files.ArchiveUtils;
 import net.mehvahdjukaar.vista.client.web.files.FileDownloadUtils;
+import net.minecraft.client.Minecraft;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
@@ -155,6 +156,7 @@ public final class FFmpegManager {
 
     private enum OsType {
         LINUX("linux", "ffmpeg", "ffprobe", true),
+        MACOS("macos", "ffmpeg", "ffprobe", true),
         WINDOWS("windows", "ffmpeg.exe", "ffprobe.exe", false);
 
         private final String jsonKey;
@@ -170,6 +172,7 @@ public final class FFmpegManager {
         }
 
         private static OsType detect() {
+            if (Minecraft.ON_OSX) return MACOS;
             String os = System.getProperty("os.name").toLowerCase(Locale.ROOT);
             return os.contains("win") ? OsType.WINDOWS : OsType.LINUX;
         }
