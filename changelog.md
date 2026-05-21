@@ -1,2 +1,1 @@
-- added more configs
-- improved veil compat with even more hacks
+- minor fixes
