@@ -33,7 +33,6 @@ import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.joml.Vector2ic;
 
 import java.util.UUID;
 
@@ -75,8 +74,13 @@ public class TVBlockEntity extends ItemDisplayTile {
     @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
-        this.connectedTvsAmount = new Vec2i(Math.max(1, tag.getInt("ConnectionWidth")),
-                Math.max(1, tag.getInt("ConnectionHeight")));
+        if (!tag.contains("ConnectionHeight")) {
+            int w = tag.getInt("ConnectionWidth");
+            this.connectedTvsAmount = new Vec2i(w, w);
+        } else {
+            this.connectedTvsAmount = new Vec2i(Math.max(1, tag.getInt("ConnectionWidth")),
+                    Math.max(1, tag.getInt("ConnectionHeight")));
+        }
         this.paused = tag.getBoolean("Paused");
         this.videoPlaybackTicks = tag.getInt("VideoPlaybackTicks");
         this.showsTime = tag.getBoolean("ShowsTime");

@@ -239,8 +239,8 @@ public class VistaMod {
             "c", "music_discs"));
 
     private static void addItemsToTabs(RegHelper.ItemToTabEvent event) {
-        event.add(CreativeModeTabs.REDSTONE_BLOCKS, TV.get());
         event.add(CreativeModeTabs.REDSTONE_BLOCKS, VIEWFINDER.get());
+        event.add(CreativeModeTabs.REDSTONE_BLOCKS, TV.get());
         CreativeModeTab.ItemDisplayParameters parameters = event.getParameters();
         for (var v : parameters.holders().lookupOrThrow(CASSETTE_TAPE_REGISTRY_KEY).listElements().toList()) {
             if (v.is(SUPPORTER_TAPES_TAG)) continue;
@@ -252,7 +252,7 @@ public class VistaMod {
         event.addAfter(CreativeModeTabs.TOOLS_AND_UTILITIES, i -> i.is(C_MUSIC_DISCS), SOJOURN_MUSIC_DISC.get());
 
         if (CommonConfigs.isWaveGateCraftable()) {
-            event.add(CreativeModeTabs.FUNCTIONAL_BLOCKS, WAVE_GATE.get());
+            event.add(CreativeModeTabs.REDSTONE_BLOCKS, WAVE_GATE.get());
         } else {
             if (event.getTab().hasAnyItems()) {
                 event.add(CreativeModeTabs.OP_BLOCKS, WAVE_GATE.get());
