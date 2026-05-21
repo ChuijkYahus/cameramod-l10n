@@ -62,7 +62,7 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
 
     private final LiveFeedVideoSource videoSource;
     private UUID myUUID;
-    private int powerLevelWantedZoom = 1;
+    private int powerLevelWantedZoom = 0; //0 means HOLD, ignore wanted level
     private int zoom = 1; //from 1 to 44
     private boolean locked = false;
     private boolean invisible = false;
@@ -78,7 +78,7 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
 
     public static void tick(Level level, BlockPos pos, BlockState state, ViewFinderBlockEntity tile) {
         tile.orientation.tick();
-        if (tile.zoom != tile.powerLevelWantedZoom && tile.getCurrentUser() == null) {
+        if (tile.powerLevelWantedZoom > 0 && tile.zoom != tile.powerLevelWantedZoom && tile.getCurrentUser() == null) {
             int zoomDiff = tile.powerLevelWantedZoom - tile.zoom;
             int zoomStep = Mth.clamp(zoomDiff, -1, 1);
             tile.setZoomLevel(tile.zoom + zoomStep);
@@ -99,7 +99,7 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
         this.myUUID = tag.getUUID("UUID");
         this.locked = tag.getBoolean("locked");
         this.setZoomLevel(tag.getInt("zoom"));
-        this.powerLevelWantedZoom = tag.getInt("wanted_zoom");
+        this.powerLevelWantedZoom = tag.getInt("power_level_zoom");
         if (tag.contains("invisible")) this.invisible = tag.getBoolean("invisible");
         if (tag.contains("adventure_mode")) {
             this.adventureModeOperation = AdventureModeOperation.fromName(tag.getString("adventure_mode"));
@@ -128,7 +128,7 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
         tag.putUUID("UUID", this.myUUID);
         tag.putBoolean("locked", this.locked);
         tag.putInt("zoom", this.zoom);
-        tag.putInt("wanted_zoom", this.powerLevelWantedZoom);
+        tag.putInt("power_level_zoom", this.powerLevelWantedZoom);
         if (this.invisible) tag.putBoolean("invisible", true);
         tag.putString("adventure_mode", this.adventureModeOperation.name());
     }
@@ -183,7 +183,7 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
 
     public void updateRedstonePower(int directPower) {
         int prevWantedZoom = this.powerLevelWantedZoom;
-        this.powerLevelWantedZoom = (int) Mth.map(directPower, 0, 15, 1, MAX_ZOOM);
+        this.powerLevelWantedZoom = (int) Mth.map(directPower, 0, 15, 0, MAX_ZOOM);
         if (powerLevelWantedZoom != prevWantedZoom) {
             this.setChanged(); //update clients
         }

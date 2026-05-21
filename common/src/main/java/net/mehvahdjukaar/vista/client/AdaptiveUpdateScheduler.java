@@ -78,18 +78,19 @@ public final class AdaptiveUpdateScheduler<ID> {
     }
 
     /**
+     * Returns the smoothed average time spent in these updates per frame (in milliseconds).
+     */
+    public double getAverageUpdateTimeMs() {
+        return this.smoothedAverageUpdateTimeMs;
+    }
+
+    /**
      * Attempts to update an object, tracking budgets globally.
      *
      * @param id        The unique identifier of the object.
-     * @param isVisible True if the object is actively in the player's view frustum.
      * @param update    The expensive logic to run.
      */
-    public void runIfShouldUpdate(ID id, boolean isVisible, Runnable update) {
-        // Enforce fairness: completely skip phase accumulation if the object is hidden
-        if (!isVisible) {
-            return;
-        }
-
+    public void runIfShouldUpdate(ID id, Runnable update) {
         // Fetch or create entry without allocating a lambda capture on every call
         Entry e = entries.get(id);
         if (e == null) {
