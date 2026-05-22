@@ -40,7 +40,7 @@ import static net.minecraft.client.Minecraft.ON_OSX;
 
 public class VistaLevelRenderer {
 
-    private static final Set<SectionOcclusionGraph> MANAGED_GRAPHS = new WeakHashSet<>();
+    private static final Set<LevelRendererCameraState> MANAGED_STATES = new WeakHashSet<>();
     private static final AtomicReference<SectionOcclusionGraph> MC_OWN_GRAPH = new AtomicReference<>(null);
     private static DummyCamera dummyCamera = new DummyCamera();
 
@@ -59,7 +59,7 @@ public class VistaLevelRenderer {
     public static void clear() {
         dummyCamera = null;
         MC_OWN_GRAPH.set(null);
-        MANAGED_GRAPHS.clear();
+        MANAGED_STATES.clear();
         currentRenderingViewFinder = null;
     }
 
@@ -68,9 +68,28 @@ public class VistaLevelRenderer {
      * Call whenever zone data changes so newly-created pinned sections are picked up.
      */
     public static void invalidateManagedGraphs() {
-        for (SectionOcclusionGraph graph : MANAGED_GRAPHS) {
-            graph.invalidate();
+        for (LevelRendererCameraState state : MANAGED_STATES) {
+            SectionOcclusionGraph graph = state.getOcclusionGraph();
+            if (graph != null) graph.invalidate();
         }
+    }
+
+    public static void registerManagedState(LevelRendererCameraState state) {
+        MANAGED_STATES.add(state);
+    }
+
+    /**
+     * Called at the tail of {@link LevelRenderer#allChanged()}. That method releases
+     * every section's VertexBuffer (setting their mode to null and deleting their VAO)
+     * and swaps in a fresh ViewArea. Every cached feed state still references the now
+     * dead RenderSections, so we wipe them — the next feed render will rebuild a fresh
+     * occlusion graph against the new ViewArea.
+     */
+    public static void onLevelRendererAllChanged() {
+        for (LevelRendererCameraState state : MANAGED_STATES) {
+            state.resetForLevelRendererReload();
+        }
+        MC_OWN_GRAPH.set(null);
     }
 
     public static DummyCamera getDummyCamera() {
@@ -129,7 +148,6 @@ public class VistaLevelRenderer {
 
             feedCameraState.apply(mc.levelRenderer);
 
-            MANAGED_GRAPHS.add(feedCameraState.getOcclusionGraph());
             MC_OWN_GRAPH.set(oldCameraState.getOcclusionGraph());
 
             // already wrapped outside; don't double-wrap this or it fucks everything over omg.
@@ -390,8 +408,9 @@ public class VistaLevelRenderer {
 
     public static void onChunkLoaded(ChunkPos chunkPos, SectionOcclusionGraph sectionOcclusionGraph) {
         if (CompatHandler.SODIUM) return;
-        for (SectionOcclusionGraph graph : MANAGED_GRAPHS) {
-            if (graph != sectionOcclusionGraph) {
+        for (LevelRendererCameraState state : MANAGED_STATES) {
+            SectionOcclusionGraph graph = state.getOcclusionGraph();
+            if (graph != null && graph != sectionOcclusionGraph) {
                 graph.onChunkLoaded(chunkPos);
             }
         }
@@ -403,8 +422,9 @@ public class VistaLevelRenderer {
 
     public static void onRecentlyCompiledSection(SectionRenderDispatcher.RenderSection renderSection, SectionOcclusionGraph sectionOcclusionGraph) {
         if (CompatHandler.SODIUM) return;
-        for (SectionOcclusionGraph graph : MANAGED_GRAPHS) {
-            if (graph != sectionOcclusionGraph) {
+        for (LevelRendererCameraState state : MANAGED_STATES) {
+            SectionOcclusionGraph graph = state.getOcclusionGraph();
+            if (graph != null && graph != sectionOcclusionGraph) {
                 graph.onSectionCompiled(renderSection);
             }
         }

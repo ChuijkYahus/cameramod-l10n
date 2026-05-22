@@ -27,8 +27,31 @@ public class LevelRendererCameraState {
     private ObjectArrayList<SectionRenderDispatcher.RenderSection> visibleSections = new ObjectArrayList<>(10000);
     
     public LevelRendererCameraState() {
+        VistaLevelRenderer.registerManagedState(this);
     }
-    
+
+    /**
+     * Drops references that go stale when {@link LevelRenderer#allChanged()}
+     * releases every section buffer and swaps in a new {@link ViewArea}.
+     * Without this, the cached visibleSections list and feed
+     * {@link SectionOcclusionGraph} keep pointing at closed VertexBuffers,
+     * crashing in {@code LevelRenderer.renderSectionLayer} with a NPE on
+     * {@code mode == null}.
+     */
+    public void resetForLevelRendererReload() {
+        this.sectionOcclusionGraph = null;
+        this.visibleSections.clear();
+        this.lastViewDistance = 0;
+        this.lastCameraSectionX = Integer.MIN_VALUE;
+        this.lastCameraSectionY = Integer.MIN_VALUE;
+        this.lastCameraSectionZ = Integer.MIN_VALUE;
+        this.prevCamX = Double.MIN_VALUE;
+        this.prevCamY = Double.MIN_VALUE;
+        this.prevCamZ = Double.MIN_VALUE;
+        this.prevCamRotX = Double.MIN_VALUE;
+        this.prevCamRotY = Double.MIN_VALUE;
+    }
+
     public void copyFrom(LevelRenderer lr) {
         // this.viewArea = lr.viewArea;
         this.lastViewDistance = lr.lastViewDistance;

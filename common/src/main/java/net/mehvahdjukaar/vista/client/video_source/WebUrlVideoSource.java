@@ -30,33 +30,30 @@ public class WebUrlVideoSource implements IVideoSource {
         this.projectorID = projectorID;
         this.uri = createUri(url);
     }
-
     private static URI createUri(String url) {
-        URI uri = null;
-        if (url != null && !url.isBlank()) {
-            String s = url.trim();
-
-            Path path = Paths.get(s);
-            try {
-                URI parsed = URI.create(s);
-
-                // Has a scheme like http:, https:, file:, ftp:, etc.
-                if (parsed.getScheme() != null) {
-                    uri = parsed;
-                } else {
-                    // No scheme → treat as filesystem path
-                    uri = path.toUri();
-                }
-
-            } catch (Exception e) {
-                try {
-                    // Invalid URI syntax → fallback to filesystem path
-                    uri = path.toUri();
-                } catch (Exception ignored) {
-                }
-            }
+        if (url == null || url.isBlank()) {
+            return null;
         }
-        return uri;
+
+        String s = url.trim();
+
+        try {
+            URI parsed = URI.create(s);
+
+            // Has a scheme like http:, https:, file:, ftp:, etc.
+            if (parsed.getScheme() != null) {
+                return parsed;
+            }
+
+        } catch (Exception ignored) {
+        }
+
+        // No valid URI scheme -> treat as filesystem path
+        try {
+            return Paths.get(s).toUri();
+        } catch (Exception ignored) {
+            return null;
+        }
     }
 
     @Override

@@ -93,4 +93,12 @@ public class LevelRendererMixin implements ILevelRendererExt {
     public void vista$onRecentlyCompiledSection(SectionRenderDispatcher.RenderSection renderSection, CallbackInfo ci) {
         VistaLevelRenderer.onRecentlyCompiledSection(renderSection, this.sectionOcclusionGraph);
     }
+
+    // F3+A (and any other reload path that funnels through allChanged) releases
+    // every section VertexBuffer. Reset all cached feed states so they don't try
+    // to draw closed buffers.
+    @Inject(method = "allChanged", at = @At("TAIL"))
+    public void vista$onAllChanged(CallbackInfo ci) {
+        VistaLevelRenderer.onLevelRendererAllChanged();
+    }
 }
