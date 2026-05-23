@@ -40,8 +40,8 @@ public final class AdaptiveUpdateScheduler<ID> {
     private final int evictAfterFrames;
 
     // Runtime State
-    public volatile double smoothedAverageUpdateTimeMs = 0.0;
-    private volatile double smoothedAverageFrameTimeMs;
+    public double smoothedAverageUpdateTimeMs = 0.0;
+    private double smoothedAverageFrameTimeMs;
     private long thisFrameAccumulatedUpdateTimeNano = 0L;
     private double smoothedBudgetScale = 1.0;
 

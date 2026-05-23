@@ -1,1 +1,1 @@
-- minor fixes
+- fixed a concurrency issue that could have caused a crash

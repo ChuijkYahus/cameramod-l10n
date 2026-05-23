@@ -67,9 +67,7 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
 
 
     @Override
-    public void render(TVBlockEntity blockEntity, float partialTick, PoseStack poseStack, MultiBufferSource buffer,
-                       int light, int overlay) {
-
+    public void render(TVBlockEntity blockEntity, float partialTick, PoseStack poseStack, MultiBufferSource buffer, int light, int overlay) {
         if (!blockEntity.isScreenOn(partialTick)) return;
 
         Direction dir = blockEntity.getBlockState().getValue(TVBlock.FACING);
@@ -79,9 +77,8 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
 
         Vec2 screenCenter = blockEntity.getScreenBlockCenter();
         int max = Math.max(screenSize.x(), screenSize.y());
-        int ss = blockEntity.getScreenPixelWidth();
 
-        if (lod.isPlaneCulled(dir, 0.5f, ss / 16f * 1.5f, 0f)) return;
+        if (lod.isPlaneCulled(dir, 0.5f, max / 16f * 1.5f, 0f)) return;
         float length = blockEntity.getConnectedCount().lengthSquared();
 
         if (length <= 1 && !lod.isMedium()) {
@@ -96,7 +93,6 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
         poseStack.translate(0.5, 0.5, 0.5);
         poseStack.mulPose(Axis.YP.rotationDegrees(180 - yaw));
         poseStack.translate(-screenCenter.x, screenCenter.y, -0.505);
-
 
         Vec2i pixelEffectRes = ClientConfigs.SCALE_PIXELS.get() ? screenSize : TVBlockEntity.MIN_SCREEN_PIXEL_SIZE_VEC;
 

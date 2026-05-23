@@ -41,6 +41,7 @@ import static net.minecraft.client.Minecraft.ON_OSX;
 public class VistaLevelRenderer {
 
     private static final Set<LevelRendererCameraState> MANAGED_STATES = new WeakHashSet<>();
+    private static final Object STATES_LOCK = new Object();
     private static final AtomicReference<SectionOcclusionGraph> MC_OWN_GRAPH = new AtomicReference<>(null);
     private static DummyCamera dummyCamera = new DummyCamera();
 
@@ -59,7 +60,9 @@ public class VistaLevelRenderer {
     public static void clear() {
         dummyCamera = null;
         MC_OWN_GRAPH.set(null);
-        MANAGED_STATES.clear();
+        synchronized (STATES_LOCK) {
+            MANAGED_STATES.clear();
+        }
         currentRenderingViewFinder = null;
     }
 
@@ -68,14 +71,18 @@ public class VistaLevelRenderer {
      * Call whenever zone data changes so newly-created pinned sections are picked up.
      */
     public static void invalidateManagedGraphs() {
-        for (LevelRendererCameraState state : MANAGED_STATES) {
-            SectionOcclusionGraph graph = state.getOcclusionGraph();
-            if (graph != null) graph.invalidate();
+        synchronized (STATES_LOCK) {
+            for (LevelRendererCameraState state : MANAGED_STATES) {
+                SectionOcclusionGraph graph = state.getOcclusionGraph();
+                if (graph != null) graph.invalidate();
+            }
         }
     }
 
     public static void registerManagedState(LevelRendererCameraState state) {
-        MANAGED_STATES.add(state);
+        synchronized (STATES_LOCK) {
+            MANAGED_STATES.add(state);
+        }
     }
 
     /**
@@ -86,8 +93,10 @@ public class VistaLevelRenderer {
      * occlusion graph against the new ViewArea.
      */
     public static void onLevelRendererAllChanged() {
-        for (LevelRendererCameraState state : MANAGED_STATES) {
-            state.resetForLevelRendererReload();
+        synchronized (STATES_LOCK) {
+            for (LevelRendererCameraState state : MANAGED_STATES) {
+                state.resetForLevelRendererReload();
+            }
         }
         MC_OWN_GRAPH.set(null);
     }
@@ -408,7 +417,11 @@ public class VistaLevelRenderer {
 
     public static void onChunkLoaded(ChunkPos chunkPos, SectionOcclusionGraph sectionOcclusionGraph) {
         if (CompatHandler.SODIUM) return;
-        for (LevelRendererCameraState state : MANAGED_STATES) {
+        LevelRendererCameraState[] snapshot;
+        synchronized (STATES_LOCK) {
+            snapshot = MANAGED_STATES.toArray(new LevelRendererCameraState[0]);
+        }
+        for (LevelRendererCameraState state : snapshot) {
             SectionOcclusionGraph graph = state.getOcclusionGraph();
             if (graph != null && graph != sectionOcclusionGraph) {
                 graph.onChunkLoaded(chunkPos);
@@ -422,7 +435,11 @@ public class VistaLevelRenderer {
 
     public static void onRecentlyCompiledSection(SectionRenderDispatcher.RenderSection renderSection, SectionOcclusionGraph sectionOcclusionGraph) {
         if (CompatHandler.SODIUM) return;
-        for (LevelRendererCameraState state : MANAGED_STATES) {
+        LevelRendererCameraState[] snapshot;
+        synchronized (STATES_LOCK) {
+            snapshot = MANAGED_STATES.toArray(new LevelRendererCameraState[0]);
+        }
+        for (LevelRendererCameraState state : snapshot) {
             SectionOcclusionGraph graph = state.getOcclusionGraph();
             if (graph != null && graph != sectionOcclusionGraph) {
                 graph.onSectionCompiled(renderSection);
