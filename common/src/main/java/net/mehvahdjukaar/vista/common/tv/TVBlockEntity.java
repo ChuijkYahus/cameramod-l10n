@@ -6,12 +6,14 @@ import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.util.Utils;
 import net.mehvahdjukaar.moonlight.api.util.math.Vec2i;
 import net.mehvahdjukaar.vista.VistaMod;
+import net.mehvahdjukaar.vista.VistaPlatStuff;
 import net.mehvahdjukaar.vista.client.video_source.IVideoSource;
 import net.mehvahdjukaar.vista.common.cassette.IBroadcastSource;
 import net.mehvahdjukaar.vista.common.cassette.ITvCassette;
 import net.mehvahdjukaar.vista.common.chunk_tracking.ServerCameraChunkManager;
 import net.mehvahdjukaar.vista.common.tv.enderman.TVEndermanObservationController;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
+import net.mehvahdjukaar.vista.configs.CommonConfigs;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
@@ -56,6 +58,7 @@ public class TVBlockEntity extends ItemDisplayTile {
     private boolean isLookingAtEnderman = false;
     private boolean wasScreenOn = false;
 
+    public Object energyCap = null;
 
     public TVBlockEntity(BlockPos pos, BlockState state) {
         super(VistaMod.TV_TILE.get(), pos, state);
@@ -93,6 +96,7 @@ public class TVBlockEntity extends ItemDisplayTile {
 
     @NotNull
     public IVideoSource getVideoSource() {
+        if (!this.hasEnergy()) return IVideoSource.NO_ENERGY;
         return videoSource;
     }
 
@@ -243,14 +247,18 @@ public class TVBlockEntity extends ItemDisplayTile {
         boolean powered = state.getValue(TVBlock.POWER_STATE).isOn();
         //both sides
 
+        boolean consumeEnergy = CommonConfigs.TV_CONSUME_ENERGY.get();
         if (powered) {
             if (!tv.paused) tv.videoPlaybackTicks++;
+            if (consumeEnergy) VistaPlatStuff.tickEnergy(tv);
         } else {
             tv.fadeAnimation.decrement();
             tv.videoPlaybackTicks = 0;
         }
+
+        tv.wasScreenOn = powered;
+        if (consumeEnergy && !tv.hasEnergy()) return;
         if (world.isClientSide) {
-            tv.wasScreenOn = powered;
 
             if (powered) {
                 if (ClientConfigs.TURN_OFF_EFFECTS.get()) tv.fadeAnimation.increment();
@@ -273,6 +281,7 @@ public class TVBlockEntity extends ItemDisplayTile {
 
 
         } else {
+            //enderman stuff
             //stagger updates since this is expensive
             if ((world.getGameTime() + pos.asLong()) % 27 == 0) {
                 return;
@@ -334,7 +343,13 @@ public class TVBlockEntity extends ItemDisplayTile {
         if (level != null && level.isClientSide) {
             return this.videoSource instanceof IBroadcastSource bc ? bc.getBroadcastUUID() : null;
         } else {
+            if (!hasEnergy()) return null;
             return getDisplayedItem().get(VistaMod.LINKED_FEED_COMPONENT.get());
         }
+    }
+
+    private boolean hasEnergy() {
+        if (!CommonConfigs.TV_CONSUME_ENERGY.get()) return true;
+        return VistaPlatStuff.tvHasEnergy(this);
     }
 }

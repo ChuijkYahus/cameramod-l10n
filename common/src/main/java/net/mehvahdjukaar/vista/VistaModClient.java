@@ -60,6 +60,7 @@ public class VistaModClient {
     public static final ResourceLocation LOADING_OVERLAY = VistaMod.res("textures/cassette_tape/loading_dots.png");
 
     public static final ResourceLocation BARS_SCREEN = VistaMod.res("color_bars");
+    public static final ResourceLocation NO_ENERGY_SCREEN = VistaMod.res("no_power");
     public static final ResourceLocation BLACK_LOADING_SCREEN = VistaMod.res("loading_dots_black");
     public static final ResourceLocation SMILE_SCREEN = VistaMod.res("smile");
     public static final ResourceLocation NEUTRAL_SCREEN = VistaMod.res("neutral");

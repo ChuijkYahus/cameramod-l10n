@@ -83,6 +83,7 @@ public class WaveGateBlock extends WaterBlock implements EntityBlock {
     @Override
     public @Nullable BlockState getStateForPlacement(BlockPlaceContext context) {
         return super.getStateForPlacement(context)
+                .setValue(POWERED, context.getLevel().hasNeighborSignal(context.getClickedPos()))
                 .setValue(CREATIVE, !CommonConfigs.isWaveGateCraftable())
                 .setValue(FACING, context.getHorizontalDirection());
     }

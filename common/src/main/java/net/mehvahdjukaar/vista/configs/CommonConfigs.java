@@ -1,5 +1,6 @@
 package net.mehvahdjukaar.vista.configs;
 
+import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.platform.configs.ConfigBuilder;
 import net.mehvahdjukaar.moonlight.api.platform.configs.ConfigType;
 import net.mehvahdjukaar.moonlight.api.platform.configs.ModConfigHolder;
@@ -21,6 +22,8 @@ public class CommonConfigs {
     public static final Supplier<Mode> WAVE_GATE_MODE;
     public static final Supplier<Boolean> SEND_CHUNKS_VIEWED_BY_VIEW_FINDER;
     public static final Supplier<Boolean> LOAD_CHUNKS_VIEWED_BY_VIEW_FINDER;
+    public static final Supplier<Boolean> TV_CONSUME_ENERGY;
+    public static final Supplier<Integer> TV_ENERGY_CONSUMPTION_RATE;
 
     static {
         ConfigBuilder builder = ConfigBuilder.create(VistaMod.MOD_ID, ConfigType.COMMON_SYNCED);
@@ -47,6 +50,15 @@ public class CommonConfigs {
                 .affectsDynamicPacks()
                 .worldReload()
                 .define("wave_gate_enabled", Mode.CREATIVE_ONLY);
+
+        TV_CONSUME_ENERGY =
+                PlatHelper.getPlatform().isFabric() ? ()-> false :
+                builder.comment("Whether TVs should consume Forge energy (NeoForge only).")
+                .define("tv_consume_energy", false);
+        TV_ENERGY_CONSUMPTION_RATE =
+                PlatHelper.getPlatform().isFabric() ? ()-> 0 :
+                builder.comment("Energy consumption rate per tick when TV is powered and has a cassette.")
+                .define("tv_energy_consumption_rate", 20, 1, 10000);
 
         builder.pop();
 

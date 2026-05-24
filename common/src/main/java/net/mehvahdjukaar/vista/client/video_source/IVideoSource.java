@@ -16,6 +16,7 @@ import org.jetbrains.annotations.Nullable;
 public interface IVideoSource {
 
     IVideoSource EMPTY = new Empty();
+    IVideoSource NO_ENERGY = new NoEnergy();
 
     @NotNull
     VertexConsumer getVideoFrameBuilder(
@@ -60,6 +61,19 @@ public interface IVideoSource {
                 }
             }
             return TvScreenVertexConsumers.getBarsVC(buffer, pixelEffectRes, switchAnim);
+        }
+    }
+
+    class NoEnergy implements IVideoSource {
+
+        @Override
+        public @NotNull VertexConsumer getVideoFrameBuilder(
+                float partialTick, MultiBufferSource buffer,
+                boolean shouldUpdate, Vec2i screenSize, Vec2i pixelEffectRes,
+                int videoAnimationTick, boolean paused,
+                IntAnimationState switchAnim, IntAnimationState staticAnim, boolean showsTime) {
+
+            return TvScreenVertexConsumers.getNoEnergyVC(buffer, pixelEffectRes, switchAnim);
         }
     }
 }
