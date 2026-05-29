@@ -190,15 +190,14 @@ public class VistaMod {
         }
 
 
+        //turn on animation independent of texture size
         //TODO: alex mobs shaders compat
         //TODO: check panes not working for some
         //night vision and ctr effects for view finders
-        //better way to get a clock overlay on tvs
         //check update rate when multiple view finders are queried
         //change view distance based off fov
         //change update rate based off tv size
         //wrech and cannon for when facing same axis
-        // view finder rotation bug wirh wrench?
         //pause not working with multiple tvs
         //change update range to be higher!!!
         //aurora with snow and sleeping fox cabin
@@ -213,7 +212,6 @@ public class VistaMod {
         //cannon maoeuvering sound
         //view finder maneuvering sound
         //exposure compat
-
         CommonConfigs.init();
 
         ModNetwork.init();

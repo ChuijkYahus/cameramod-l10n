@@ -5,6 +5,7 @@ import net.mehvahdjukaar.candlelight.api.PlatformImpl;
 import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
+import org.jetbrains.annotations.Contract;
 import org.joml.Matrix4f;
 
 public class VistaPlatStuff {
@@ -14,6 +15,7 @@ public class VistaPlatStuff {
         throw new AssertionError();
     }
 
+    @Contract
     @PlatformImpl
     public static boolean tvHasEnergy(TVBlockEntity tv) {
         throw new AssertionError();

@@ -257,11 +257,11 @@ public class TVBlockEntity extends ItemDisplayTile {
         }
 
         tv.wasScreenOn = powered;
-        if (consumeEnergy && !tv.hasEnergy()) return;
         if (world.isClientSide) {
 
             if (powered) {
                 if (ClientConfigs.TURN_OFF_EFFECTS.get()) tv.fadeAnimation.increment();
+                if (consumeEnergy && !tv.hasEnergy()) return;
                 float duration = tv.videoSource.getVideoDuration();
                 if (++tv.soundLoopTicks >= (duration)) {
                     tv.soundLoopTicks = 0;
@@ -281,6 +281,8 @@ public class TVBlockEntity extends ItemDisplayTile {
 
 
         } else {
+            if (consumeEnergy && !tv.hasEnergy()) return;
+
             //enderman stuff
             //stagger updates since this is expensive
             if ((world.getGameTime() + pos.asLong()) % 27 == 0) {
