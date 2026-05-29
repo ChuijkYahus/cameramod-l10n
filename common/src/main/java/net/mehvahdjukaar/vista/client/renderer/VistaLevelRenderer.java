@@ -11,6 +11,7 @@ import net.mehvahdjukaar.vista.client.textures.LiveFeedTexture;
 import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.mehvahdjukaar.vista.integration.CompatHandler;
+import net.mehvahdjukaar.vista.integration.iris.IrisCompat;
 import net.minecraft.client.Camera;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
@@ -121,6 +122,15 @@ public class VistaLevelRenderer {
         RenderTarget mainTarget = mc.getMainRenderTarget();
         RenderTarget canvas = text.getRenderTarget();
         mc.mainRenderTarget = canvas;
+
+        // Tell Iris-side compat that the main render target may have changed identity
+        // (TV resize swaps in a fresh LiveFeedTexture → fresh RenderTarget). Iris's
+        // own change detection relies on a version counter that doesn't increment on
+        // a brand-new RenderTarget, so without this nudge the iris pipeline keeps
+        // its gbuffers attached to the old (smaller / freed) canvas.
+        if (CompatHandler.IRIS) {
+            IrisCompat.onFeedCanvasBound(canvas);
+        }
 
         Camera camera = getDummyCamera();
         Camera mainCamera = mc.gameRenderer.mainCamera;

@@ -32,7 +32,7 @@ dependencies {
             //modImplementation("net.mehvahdjukaar:supplementaries-fabric:${supplementaries_version}")
     modCompileOnly("curse.maven:watermedia-869524:7072353")
 
-    modCompileOnly("curse.maven:irisshaders-455508:6213635")
+    modImplementation("curse.maven:irisshaders-455508:6213635")
     modCompileOnly("curse.maven:exposure-871755:7862665")
     modCompileOnly("curse.maven:distant-horizons-508933:7977110")
     modImplementation("curse.maven:sodium-394468:6382649")
@@ -48,6 +48,9 @@ dependencies {
    // modRuntimeOnly("curse.maven:fsable-1312371:8007004")
     //implementation("org.apache.maven:maven-artifact:3.9.9")
     //modRuntimeOnly("dev.ryanhcode.sable-companion:sable-companion-fabric-1.21.1:1.6.0")
+
+    runtimeOnly("org.anarres:jcpp:1.4.14")
+    modImplementation("io.github.douira:glsl-transformer:2.0.1")
 
     // modImplementation("cc.tweaked-cobalt:cobalt:0.93")
 

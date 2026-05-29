@@ -11,6 +11,7 @@ import net.mehvahdjukaar.vista.common.wave_gate.WaveGateBlock;
 import net.mehvahdjukaar.vista.common.wave_gate.WaveGateBlockEntity;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
@@ -83,7 +84,7 @@ public class WaveGateBlockEntityRenderer implements BlockEntityRenderer<WaveGate
                 14 / 16f, 15 / 16f,
                 255, 255, 255, 255,
                 255,
-                lv);
+                LightTexture.FULL_BRIGHT);
 
         poseStack.popPose();
     }
