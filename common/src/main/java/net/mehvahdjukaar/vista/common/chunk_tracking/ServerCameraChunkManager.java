@@ -45,8 +45,6 @@ import java.util.function.BiPredicate;
  */
 public class ServerCameraChunkManager {
 
-    //TODO: make these configurable
-    public static final int REMOTE_CHUNK_LOAD_RADIUS = 4;
     public static final int RECURSIVE_SCAN_RADIUS = 4;
     private static final int TICK_INTERVAL = 40;
     /**
@@ -106,7 +104,8 @@ public class ServerCameraChunkManager {
      * Updates are staggered so not all players recalculate on the same tick.
      */
     public static void onServerPlayerTick(ServerPlayer player) {
-        boolean sends = CommonConfigs.SEND_CHUNKS_VIEWED_BY_VIEW_FINDER.get();
+        int chunkRadius = CommonConfigs.SEND_CHUNKS_VIEWED_BY_VIEW_FINDER.get();
+        boolean sends = chunkRadius > 0;
         boolean loads = CommonConfigs.LOAD_CHUNKS_VIEWED_BY_VIEW_FINDER.get() || PlatHelper.isDev();
         if (!sends && !loads) return;
         long gameTime = player.serverLevel().getGameTime();
@@ -135,7 +134,7 @@ public class ServerCameraChunkManager {
                 int refs = linkedViewFindersTrackedByPlayers.getOrDefault(vf, 0);
                 if (refs == 0) {
                     ServerLevel vfLevel = player.getServer().getLevel(vf.dimension());
-                    if (vfLevel != null) setChunksForceLoaded(vfLevel, vf.pos(), true);
+                    if (vfLevel != null) setChunksForceLoaded(vfLevel, vf.pos(), chunkRadius, true);
                 }
                 linkedViewFindersTrackedByPlayers.put(vf, refs + 1);
             }
@@ -144,7 +143,7 @@ public class ServerCameraChunkManager {
                 if (refs <= 0) {
                     linkedViewFindersTrackedByPlayers.remove(vf);
                     ServerLevel vfLevel = player.getServer().getLevel(vf.dimension());
-                    if (vfLevel != null) setChunksForceLoaded(vfLevel, vf.pos(), false);
+                    if (vfLevel != null) setChunksForceLoaded(vfLevel, vf.pos(), chunkRadius, false);
                 } else {
                     linkedViewFindersTrackedByPlayers.put(vf, refs);
                 }
@@ -155,9 +154,11 @@ public class ServerCameraChunkManager {
 
         // Rebuild zones (same-dimension ViewFinders only; cross-dim only force-loads).
         data.clearZones();
-        for (GlobalPos vf : desired) {
-            if (vf.dimension().equals(player.level().dimension())) {
-                data.addZone(new ChunkPos(vf.pos()), REMOTE_CHUNK_LOAD_RADIUS);
+        if (sends) {
+            for (GlobalPos vf : desired) {
+                if (vf.dimension().equals(player.level().dimension())) {
+                    data.addZone(new ChunkPos(vf.pos()), chunkRadius);
+                }
             }
         }
 
@@ -263,10 +264,10 @@ public class ServerCameraChunkManager {
 
     // ── Force-loading ─────────────────────────────────────────────────────────
 
-    private static void setChunksForceLoaded(ServerLevel level, BlockPos viewFinderPos, boolean force) {
+    private static void setChunksForceLoaded(ServerLevel level, BlockPos viewFinderPos, int radius, boolean force) {
         ChunkPos cp = new ChunkPos(viewFinderPos);
-        ChunkPos.rangeClosed(cp, REMOTE_CHUNK_LOAD_RADIUS)
-                .filter(p -> p.distanceSquared(cp) <= REMOTE_CHUNK_LOAD_RADIUS * REMOTE_CHUNK_LOAD_RADIUS)
+        ChunkPos.rangeClosed(cp, radius)
+                .filter(p -> p.distanceSquared(cp) <= radius * radius)
                 .forEach(p -> level.setChunkForced(p.x, p.z, force));
     }
 
@@ -276,13 +277,14 @@ public class ServerCameraChunkManager {
      * Call when a player disconnects to release their force-loading references.
      */
     public static void onPlayerLeave(ServerPlayer player) {
+        int chunkRadius = CommonConfigs.SEND_CHUNKS_VIEWED_BY_VIEW_FINDER.get();
         Set<GlobalPos> watching = VistaMod.EXTRA_VIEW_AREAS.getOrCreate(player).getTrackedWantedZoneCenters();
         for (GlobalPos vf : watching) {
             int refs = linkedViewFindersTrackedByPlayers.getOrDefault(vf, 0) - 1;
             if (refs <= 0) {
                 linkedViewFindersTrackedByPlayers.remove(vf);
                 ServerLevel vfLevel = player.getServer().getLevel(vf.dimension());
-                if (vfLevel != null) setChunksForceLoaded(vfLevel, vf.pos(), false);
+                if (vfLevel != null) setChunksForceLoaded(vfLevel, vf.pos(), chunkRadius, false);
             } else {
                 linkedViewFindersTrackedByPlayers.put(vf, refs);
             }

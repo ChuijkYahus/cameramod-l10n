@@ -20,7 +20,7 @@ public class CommonConfigs {
     public static final Supplier<Boolean> CREEPER_DROP;
     public static final Supplier<Boolean> CHEST_DROP;
     public static final Supplier<Mode> WAVE_GATE_MODE;
-    public static final Supplier<Boolean> SEND_CHUNKS_VIEWED_BY_VIEW_FINDER;
+    public static final Supplier<Integer> SEND_CHUNKS_VIEWED_BY_VIEW_FINDER;
     public static final Supplier<Boolean> LOAD_CHUNKS_VIEWED_BY_VIEW_FINDER;
     public static final Supplier<Boolean> TV_CONSUME_ENERGY;
     public static final Supplier<Integer> TV_ENERGY_CONSUMPTION_RATE;
@@ -29,13 +29,13 @@ public class CommonConfigs {
         ConfigBuilder builder = ConfigBuilder.create(VistaMod.MOD_ID, ConfigType.COMMON_SYNCED);
 
         builder.push("general");
-        SEND_CHUNKS_VIEWED_BY_VIEW_FINDER = builder.comment("Allows the server to send chunks that a player could be able to see from one of the tvs nearby that is linked to a view finder far away.")
-                .define("send_chunks_viewed_by_view_finders", true);
+        SEND_CHUNKS_VIEWED_BY_VIEW_FINDER = builder.comment("Radius (in chunks) of the extra chunk zone sent to clients for each far-away view finder linked to a nearby TV. Set to 0 to disable client chunk sending.")
+                .define("send_chunks_viewed_by_view_finders", 4, 0, 16);
         LOAD_CHUNKS_VIEWED_BY_VIEW_FINDER = builder.comment("Server loads chunks that are near a far away view finder linked to a tv that's close to at least 1 player. Will increase server strain")
                 .define("chunkload_chunks_viewed_by_view_finders", false);
         MAX_CONNECTED_TV_SIZE = builder
                 .comment("Maximum size of connected TVs (in blocks). Set to 1 to disable multi-block TVs.")
-                .define("max_connected_tv_size", 8, 1, 32);
+                .define("max_connected_tv_size", 8, 1, 24);
         SQUARE_ASPECT_RATIO = builder
                 .comment("Makes connected tvs just have a square aspect ratio. If you set to false cassettes will be stretched and will look worse as a result")
                 .define("square_aspect_ratio", true);

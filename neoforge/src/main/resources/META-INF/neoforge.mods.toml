@@ -48,4 +48,11 @@ modUrl = "${mod_homepage}"
     ordering = "NONE"
     side = "CLIENT"
 
+[[dependencies.${ mod_id }]]
+    modId = "vista-aeronautics-fix"
+    type = "incompatible"
+    versionRange = "(,1.0.1]"
+    ordering = "NONE"
+    side = "BOTH"
+
 

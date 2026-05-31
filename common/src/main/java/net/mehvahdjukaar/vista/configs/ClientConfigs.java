@@ -47,7 +47,7 @@ public class ClientConfigs {
         builder.push("visuals");
         RENDER_DISTANCE = builder
                 .comment("Render distance that television will use when rendering the live feed. Decreasing this will improve the performance of TVs, possibly by a lot")
-                .define("render_distance", 64, 1, 256);
+                .define("render_distance", 64, 1, 2048);
 
         SCREEN_EFFECTS = builder
                 .comment("Turns off all the tv screen effects and draws it as a simple texture. Disabling can make the render slightly faster. All below options will be ignored if this is disabled")
@@ -73,7 +73,7 @@ public class ClientConfigs {
         MIN_UPDATE_FPS = builder
                 .gameRestart()
                 .comment("The minimum update fps for live feed. The mod will throttle update rate when fps are low so this serves at a lower limit")
-                .define("min_update_fps", 4.0, 0, 60); //once every 5 ticks
+                .define("min_update_fps", 4.0, 1, 60); //once every 5 ticks
         THROTTLING_UPDATE_MS = builder
                 .gameRestart()
                 .comment("The maximum number of milliseconds all the logic for updating live feeds can take before fps throttling begins. Lowering this will improve performance but make the video less smooth. 16.66ms equals to 5fps")
@@ -81,10 +81,10 @@ public class ClientConfigs {
 
         UPDATE_DISTANCE = builder
                 .comment("Distance from a TV after which the feed will update in real time")
-                .define("update_distance", 20, 1, 512d);
+                .define("update_distance", 24, 1, 512d);
 
         LIVE_FEED_RESOLUTION_SCALE = builder
-                .comment("Scale factor for live feed resolution")
+                .comment("Scale factor for live feed resolution. A tv screen is 12x12 pixels, this number multiplies that area")
                 .define("resolution_scale", 8, 1, 32);
 
         RENDER_DEBUG = builder

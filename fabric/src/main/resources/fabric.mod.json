@@ -40,8 +40,6 @@
   },
   "breaks": {
     "watermedia": ">3.0.0",
-    "carpeted": "*",
-    "betterlily": "*",
-    "betterjukebox": "*"
+    "vista-aeronautics-fix": "<=1.0.1"
   }
 }
