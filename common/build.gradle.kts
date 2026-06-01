@@ -12,10 +12,12 @@ val moonlight_version: String by extra
 val supplementaries_version: String by extra
 val candlelight_version: String by extra
 val mixin_squared_version: String by extra
+val sable_companion_version: String by extra
 
 dependencies {
 
     modCompileOnly("net.mehvahdjukaar:moonlight-neoforge:${moonlight_version}")
+    modApi("dev.ryanhcode.sable-companion:sable-companion-common-1.21.1:[${sable_companion_version},)")
     accessTransformers("net.mehvahdjukaar:moonlight-neoforge:${moonlight_version}")
 
 

@@ -18,6 +18,7 @@ loom{
 val moonlight_version: String by extra
 val supplementaries_version: String by extra
 val mixin_squared_version: String by extra
+val sable_companion_version: String by extra
 
 dependencies {
 
@@ -46,8 +47,8 @@ dependencies {
 
    // modRuntimeOnly("foundry.veil:veil-fabric-1.21.1:4.0.0")
    // modRuntimeOnly("curse.maven:fsable-1312371:8007004")
-    //implementation("org.apache.maven:maven-artifact:3.9.9")
-    //modRuntimeOnly("dev.ryanhcode.sable-companion:sable-companion-fabric-1.21.1:1.6.0")
+    modApi("dev.ryanhcode.sable-companion:sable-companion-fabric-1.21.1:${sable_companion_version}")
+    include("dev.ryanhcode.sable-companion:sable-companion-fabric-1.21.1:${sable_companion_version}")
 
     runtimeOnly("org.anarres:jcpp:1.4.14")
     modImplementation("io.github.douira:glsl-transformer:2.0.1")

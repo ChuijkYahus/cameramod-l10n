@@ -7,7 +7,7 @@ plugins {
     id("com.possible-triangle.common") apply false
     id("com.possible-triangle.fabric") apply false
     id("com.possible-triangle.neoforge") apply false
-    id("net.mehvahdjukaar.candlelight") version "1.1.6" apply false
+    id("net.mehvahdjukaar.candlelight") version "1.2.1" apply false
     id("dev.mixinmcp.decompile") version "0.9.0" apply false
 }
 
@@ -109,41 +109,3 @@ subprojects {
     }
 }
 
-
-
-tasks.register("buildAndPublishAll") {
-    group = "build"
-    description = "Runs clean, build, publish for all projects"
-
-    dependsOn(subprojects.map { it.tasks.named("clean") })
-    dependsOn(subprojects.map { it.tasks.named("build") })
-    dependsOn("upload")
-
-    finalizedBy("gitTag")
-}
-val mod_version: String by extra
-
-tasks.register("gitTag") {
-    group = "build"
-    doLast {
-        val execOps = serviceOf<ExecOperations>() // Fetches the service
-        val tag = mod_version
-        val stdout = ByteArrayOutputStream()
-
-        execOps.exec {
-            commandLine("git", "tag", "-l", tag)
-            standardOutput = stdout
-        }
-
-        if (!stdout.toString(Charset.defaultCharset()).trim().isEmpty()) {
-            logger.warn("Git tag '${tag}' already exists")
-        } else {
-            execOps.exec {
-                commandLine("git", "tag", "-a", tag, "-m", "Release $tag")
-            }
-            execOps.exec {
-                commandLine("git", "push", "origin", tag)
-            }
-        }
-    }
-}

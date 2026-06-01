@@ -1,5 +1,6 @@
 package net.mehvahdjukaar.vista.common.chunk_tracking;
 
+import dev.ryanhcode.sable.companion.SableCompanion;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.platform.network.NetworkHelper;
 import net.mehvahdjukaar.vista.VistaMod;
@@ -15,6 +16,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -227,7 +229,8 @@ public class ServerCameraChunkManager {
 
         for (TVBlockEntity tv : candidates) {
             if (!visited.add(tv)) continue;
-            ChunkPos tvChunk = new ChunkPos(tv.getBlockPos());
+            BlockPos tvRealPos = BlockPos.containing(SableCompanion.INSTANCE.projectOutOfSubLevel(level, Vec3.atLowerCornerOf(tv.getBlockPos())));
+            ChunkPos tvChunk = new ChunkPos(tvRealPos);
             if (!inZone.test(tvChunk.x, tvChunk.z)) continue;
 
             UUID feedId = tv.getViewingFeedId();

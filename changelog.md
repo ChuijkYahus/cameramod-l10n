@@ -1,1 +1,2 @@
-- more ugly ass hacks into iris to get its mess to behave better with vista...
+- aded sable companion to add sable compat for some logic
+- added more configs
