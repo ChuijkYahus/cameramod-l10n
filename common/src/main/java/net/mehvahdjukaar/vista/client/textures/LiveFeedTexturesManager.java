@@ -94,7 +94,12 @@ public class LiveFeedTexturesManager {
                 requiresUpdate = false; //suppress recursive updates
             }
             texture.setShowsTime(showsTime);
-            texture.setUpdateNextTick(requiresUpdate);
+            // OR-set: never clear a tick already scheduled by another render pass this frame.
+            // setUpdateNextTick(false) would clobber a prior true and starve TVs touched
+            // by both a main-view render and a recursive live-feed render in the same frame.
+            if (requiresUpdate) {
+                texture.setUpdateNextTick(true);
+            }
             return texture;
         }
     }
