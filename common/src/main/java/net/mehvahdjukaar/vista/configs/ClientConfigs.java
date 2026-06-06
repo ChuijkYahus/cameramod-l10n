@@ -54,8 +54,8 @@ public class ClientConfigs {
                 .comment("Scale factor for mirror reflection resolution. Each mirror block is 16 virtual pixels wide; this multiplies that area. Higher values are sharper but more expensive.")
                 .define("resolution_scale", 8, 1, 32);
         MIRROR_UPDATE_MODE = builder
-                .comment("How mirror reflections are scheduled. TEXTURE_REFRESH: piggybacks on the live-feed texture refresh dispatch (one render per visible mirror, end-of-frame). RENDER_TICK_END: the BE renderer queues mirrors into a pending list which is flushed from the onRenderTickEnd hook (the old behavior). Switch if you suspect a timing-related rendering glitch.")
-                .define("update_mode", MirrorUpdateMode.TEXTURE_REFRESH);
+                .comment("How mirror reflections are dispatched. RENDER_TICK_END (default, recommended): the BE renderer queues mirrors into a pending list; the queue is flushed from a top-level frame hook (Fabric mixin after GameRenderer.render; NeoForge RenderFrameEvent.Post) that's guaranteed to run outside any level render — safe under recursive renderLevel calls from other mods. TEXTURE_REFRESH: piggybacks on the live-feed texture refresh dispatch (one render per visible mirror, end-of-frame). Switch to TEXTURE_REFRESH if you suspect a timing-related rendering glitch.")
+                .define("update_mode", MirrorUpdateMode.RENDER_TICK_END);
         builder.pop();
 
         builder.push("television");

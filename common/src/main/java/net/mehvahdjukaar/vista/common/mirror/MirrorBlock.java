@@ -30,7 +30,7 @@ import org.jetbrains.annotations.Nullable;
 public class MirrorBlock extends HorizontalDirectionalBlock implements EntityBlock, IOptionalEntityBlock, IConnectedBlock {
 
     public static final MapCodec<MirrorBlock> CODEC = simpleCodec(MirrorBlock::new);
-    public static final EnumProperty<ConnectionType> CONNECTION = EnumProperty.create("connection", ConnectionType.class);
+    public static final EnumProperty<ConnectionType> CONNECTION = ConnectionType.STATE_PROPERTY;
 
     public MirrorBlock(Properties properties) {
         super(properties);

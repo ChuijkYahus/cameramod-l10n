@@ -1,18 +1,39 @@
 package net.mehvahdjukaar.vista.client.textures;
 
+import com.google.common.base.Suppliers;
 import net.mehvahdjukaar.moonlight.api.client.texture_renderer.DynamicTextureRenderer;
+import net.mehvahdjukaar.moonlight.api.misc.RollingBuffer;
 import net.mehvahdjukaar.moonlight.api.util.math.Vec2i;
 import net.mehvahdjukaar.vista.VistaMod;
+import net.mehvahdjukaar.vista.client.AdaptiveUpdateScheduler;
 import net.mehvahdjukaar.vista.client.renderer.VistaLevelRenderer;
-import net.mehvahdjukaar.vista.common.mirror.MirrorBlockEntity;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.phys.Vec3;
+import net.minecraft.util.VisibleForDebug;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
+import java.util.function.Supplier;
 
 public class LiveFeedTexturesManager {
+
+    @VisibleForDebug
+    public static final Map<UUID, RollingBuffer<Long>> UPDATE_TIMES = new HashMap<>();
+
+    @VisibleForDebug
+    public static final Supplier<AdaptiveUpdateScheduler<ResourceLocation>> SCHEDULER =
+            Suppliers.memoize(() ->
+                    AdaptiveUpdateScheduler.builder()
+                            .baseFps(ClientConfigs.UPDATE_FPS.get())
+                            .minFps(ClientConfigs.MIN_UPDATE_FPS.get())
+                            .targetBudgetMs(ClientConfigs.THROTTLING_UPDATE_MS.get()) //10% of a frame which at 60fps = 16.6ms is ~1.66ms which should lower fps from 60 to 54. in other words at most a 6fps drop
+                            .evictAfterTicks(20 * 5) //5 seconds
+
+                            .guardTargetFps(60) //if we go under 60 fps, be more aggressive
+                            .build()
+            );
 
     public static class Handle {
 
@@ -21,7 +42,7 @@ public class LiveFeedTexturesManager {
         private final Vec2i screenSize;
 
         public Handle(UUID uuid, Vec2i screenSize) {
-            this.textureId = VistaMod.res("live_feed/" + uuid + "_" + screenSize.x() + "x" + screenSize.y());
+            this.textureId = VistaMod.res("live_feed_" + uuid + "_" + screenSize.x() + "x" + screenSize.y());
             this.uuid = uuid;
             this.screenSize = screenSize;
         }
@@ -37,7 +58,7 @@ public class LiveFeedTexturesManager {
 
 
             if (texture == null) {
-                LiveFeedTexture.SCHEDULER.get().forceUpdateNextTick(textureId);
+                SCHEDULER.get().forceUpdateNextTick(textureId);
                 return null;
             }
 
@@ -64,45 +85,14 @@ public class LiveFeedTexturesManager {
         return new Handle(uuid, screenSize);
     }
 
-    /**
-     * Fetches (or allocates) the {@link MirrorReflectionTexture} for the given mirror UUID and
-     * screen size, with no side effects on its pending state. Mirrors bypass
-     * {@link LiveFeedTexture#SCHEDULER} — they refresh every frame they're in view (cheap
-     * off-axis frustum, gated by render distance).
-     */
-    @Nullable
-    public static MirrorReflectionTexture getMirrorTexture(UUID uuid, Vec2i screenSize) {
-        ResourceLocation textureId = VistaMod.res(
-                "live_feed/mirror_" + uuid + "_" + screenSize.x() + "x" + screenSize.y());
-        return DynamicTextureRenderer.requestTexture(textureId, () ->
-                new MirrorReflectionTexture(textureId,
-                        screenSize.x() * ClientConfigs.MIRROR_RESOLUTION_SCALE.get(),
-                        screenSize.y() * ClientConfigs.MIRROR_RESOLUTION_SCALE.get(),
-                        uuid));
-    }
-
-    /**
-     * TEXTURE_REFRESH-mode entry point: fetches the mirror's texture and stashes the BE + camera
-     * eye on it so the next end-of-frame refresh tick redraws the reflection from the captured
-     * vantage point.
-     */
-    @Nullable
-    public static MirrorReflectionTexture getMirrorTexture(MirrorBlockEntity mirror, Vec2i screenSize, Vec3 eye) {
-        MirrorReflectionTexture texture = getMirrorTexture(mirror.getId(), screenSize);
-        if (texture == null) return null;
-        texture.setPending(mirror, eye);
-        texture.setUpdateNextTick(true);
-        return texture;
-    }
-
     @SuppressWarnings("ConstantConditions")
     public static void clear() {
-        LiveFeedTexture.UPDATE_TIMES.clear();
+        UPDATE_TIMES.clear();
         //TODO: change just invalidate our own
         DynamicTextureRenderer.clearCache();
     }
 
     public static void onRenderTickEnd() {
-        LiveFeedTexture.onRenderTickEnd();
+        SCHEDULER.get().onEndOfFrame();
     }
 }

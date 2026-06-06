@@ -40,7 +40,7 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
 
     public static final MapCodec<TVBlock> CODEC = simpleCodec(TVBlock::new);
     public static final EnumProperty<PowerState> POWER_STATE = EnumProperty.create("powered", PowerState.class);
-    public static final EnumProperty<ConnectionType> CONNECTION = EnumProperty.create("connection", ConnectionType.class);
+    public static final EnumProperty<ConnectionType> CONNECTION = ConnectionType.STATE_PROPERTY;
 
     public TVBlock(Properties properties) {
         super(properties.lightLevel(state -> state.getValue(POWER_STATE).isOn() ? 3 : 0));

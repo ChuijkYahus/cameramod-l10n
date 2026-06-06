@@ -4,6 +4,7 @@ import net.mehvahdjukaar.moonlight.api.util.math.Direction2D;
 import net.minecraft.core.Direction;
 import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.level.block.Rotation;
+import net.minecraft.world.level.block.state.properties.EnumProperty;
 
 import java.util.Locale;
 
@@ -73,4 +74,6 @@ public enum ConnectionType implements StringRepresentable {
             default -> Rotation.NONE;
         };
     }
+
+    public static final EnumProperty<ConnectionType> STATE_PROPERTY = EnumProperty .create("connection", ConnectionType.class);
 }

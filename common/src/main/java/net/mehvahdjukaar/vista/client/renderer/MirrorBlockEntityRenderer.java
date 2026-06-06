@@ -4,11 +4,13 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import net.mehvahdjukaar.moonlight.api.client.util.LOD;
+import net.mehvahdjukaar.moonlight.api.client.util.VertexUtil;
 import net.mehvahdjukaar.moonlight.api.misc.ForgeOverride;
+import net.minecraft.world.level.LightLayer;
 import net.mehvahdjukaar.moonlight.api.util.math.Vec2i;
 import net.mehvahdjukaar.vista.client.MirrorReflection;
 import net.mehvahdjukaar.vista.client.textures.MirrorReflectionTexture;
-import net.mehvahdjukaar.vista.client.textures.LiveFeedTexturesManager;
+import net.mehvahdjukaar.vista.client.textures.MirrorTextureManager;
 import net.mehvahdjukaar.vista.common.mirror.MirrorBlock;
 import net.mehvahdjukaar.vista.common.mirror.MirrorBlockEntity;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
@@ -19,7 +21,6 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
-import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.Direction;
 import net.minecraft.world.entity.Display;
 import net.minecraft.world.entity.Entity;
@@ -27,7 +28,6 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import org.joml.Vector3f;
 
 public class MirrorBlockEntityRenderer implements BlockEntityRenderer<MirrorBlockEntity> {
 
@@ -84,23 +84,17 @@ public class MirrorBlockEntityRenderer implements BlockEntityRenderer<MirrorBloc
         if (!reflection.viewerInFront()) return;
 
         Vec2i screenSize = blockEntity.getScreenPixelSize();
-        // Capture the eye (post head-bob compensation) NOW, while we still have the camera that
-        // was used to render the BE. The actual reflection render fires later in the frame; if we
-        // resampled the camera at refresh time it could drift from the source view.
-        Vec3 eye = MirrorTextureRenderer.captureEye(mc, mainCamera);
+        // Capture the eye NOW, while we still have the camera that was used to render the BE.
+        // The actual reflection render fires later in the frame; if we resampled the camera at
+        // refresh time it could drift from the source view. Use the raw camera position (the
+        // pre-bob state vanilla exposes) — duplicating GameRenderer.bobView math here would
+        // silently break under any mod that alters bob behavior, and the visual mismatch between
+        // a bobbed BE quad and an un-bobbed reflection is sub-pixel for typical walk speeds.
+        Vec3 eye = mainCamera.getPosition();
 
-        MirrorReflectionTexture text;
-        if (ClientConfigs.MIRROR_UPDATE_MODE.get() == ClientConfigs.MirrorUpdateMode.TEXTURE_REFRESH) {
-            // Stashes the BE+eye on the texture and marks it for refresh — the actual reflection
-            // render runs from the end-of-frame texture refresh callback, after the outer BE
-            // batch is flushed.
-            text = LiveFeedTexturesManager.getMirrorTexture(blockEntity, screenSize, eye);
-        } else {
-            // Queue into MirrorTextureRenderer's PENDING list; processPending flushes it from the
-            // onRenderTickEnd hook.
-            text = LiveFeedTexturesManager.getMirrorTexture(blockEntity.getId(), screenSize);
-            if (text != null) MirrorTextureRenderer.requestUpdate(blockEntity, screenSize, eye);
-        }
+        MirrorReflectionTexture text = MirrorTextureManager.getMirrorTexture(blockEntity, screenSize, eye);
+
+
         if (text == null) return;
 
         drawMirrorFace(blockEntity, dir, poseStack, buffer, text);
@@ -109,7 +103,7 @@ public class MirrorBlockEntityRenderer implements BlockEntityRenderer<MirrorBloc
     /**
      * Sets the dummy camera at the reflected eye position, oriented to look perpendicularly
      * into the mirror plane (yaw drives the orientation; pitch is always 0 because horizontal
-     * mirrors don't tilt the eye axis). The off-axis projection in {@link MirrorTextureRenderer}
+     * mirrors don't tilt the eye axis). The off-axis projection in {@link MirrorReflectionTexture}
      * does the rest — it bends the frustum to fit the mirror's frame from that vantage point.
      */
     static void setupMirrorCamera(Camera camera, Level level, Vec3 reflectedEye, float yaw) {
@@ -138,35 +132,20 @@ public class MirrorBlockEntityRenderer implements BlockEntityRenderer<MirrorBloc
         poseStack.translate(0, 0, -0.5 - SURFACE_OFFSET);
 
         Level level = blockEntity.getLevel();
-        int skyBrightness = level.getBrightness(net.minecraft.world.level.LightLayer.SKY,
-                blockEntity.getBlockPos().relative(dir));
+        int skyBrightness = level.getBrightness(LightLayer.SKY, blockEntity.getBlockPos().relative(dir));
         int light = LightTexture.pack(15, skyBrightness);
 
-        VertexConsumer vc = buffer.getBuffer(RenderType.entitySolid(text.getTextureLocation()));
-
-        Vector3f normal = new Vector3f(0, 1, 0);
-        int lu = light & 0xFFFF;
-        int lv = (light >> 16) & 0xFFFF;
-
-        // Master is at bottom-left; quad extends right by (w-1) and up by (h-1) blocks.
-        // V is flipped: framebuffer textures are Y-up in GL, so top maps to V=1, bottom to V=0.
-        float right = w - 0.5f;
-        float top   = h - 0.5f;
-        vert(vc, poseStack, -0.5f, top,   0f, 1f, lu, lv, normal);
-        vert(vc, poseStack,  right, top,   1f, 1f, lu, lv, normal);
-        vert(vc, poseStack,  right, -0.5f, 1f, 0f, lu, lv, normal);
-        vert(vc, poseStack, -0.5f, -0.5f,  0f, 0f, lu, lv, normal);
-
+        VertexConsumer vc = buffer.getBuffer(RenderType.text(text.getTextureLocation()));
+//TODO: use diff render type so no normal
+        // Master is at bottom-right in local-rotated space (grid extends along facing.CCW
+        // = local -X), so the quad spans from local x=0.5-w to x=0.5.
+        // UVs rotated 180° (u0,v0=1,1; u1,v1=0,0) — framebuffer texture is upside-down
+        // and mirrored relative to the local quad orientation.
+        VertexUtil.addQuad(vc, poseStack,
+                0.5f - w, -0.5f, 0.5f, h - 0.5f,
+                1f, 1f, 0f, 0f,
+                255, 255, 255, 255,
+                VertexUtil.lightU(light), VertexUtil.lightV(light));
         poseStack.popPose();
-    }
-
-    private static void vert(VertexConsumer builder, PoseStack poseStack,
-                             float x, float y, float u, float v, int lu, int lv, Vector3f normal) {
-        builder.addVertex(poseStack.last().pose(), x, y, 0);
-        builder.setColor(1.0f, 1.0f, 1.0f, 1.0f);
-        builder.setUv(u, v);
-        builder.setOverlay(OverlayTexture.NO_OVERLAY);
-        builder.setUv2(lu, lv);
-        builder.setNormal(normal.x, normal.y, normal.z);
     }
 }

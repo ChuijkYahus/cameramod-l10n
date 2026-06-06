@@ -12,6 +12,7 @@ import net.mehvahdjukaar.vista.client.VistaDynamicResources;
 import net.mehvahdjukaar.vista.client.renderer.*;
 import net.mehvahdjukaar.vista.client.textures.CassetteTexturesManager;
 import net.mehvahdjukaar.vista.client.textures.LiveFeedTexturesManager;
+import net.mehvahdjukaar.vista.client.textures.MirrorTextureManager;
 import net.mehvahdjukaar.vista.client.textures.WebTexturesManager;
 import net.mehvahdjukaar.vista.client.ui.VistaWelcomeScreen;
 import net.mehvahdjukaar.vista.client.web.ffmpeg.FFmpeg;
@@ -207,7 +208,7 @@ public class VistaModClient {
         LiveFeedTexturesManager.clear();
         WebTexturesManager.clear();
         VistaLevelRenderer.clear();
-        MirrorTextureRenderer.clear();
+        MirrorTextureManager.clear();
     }
 
     public static void onClientTick(Minecraft minecraft) {
@@ -224,7 +225,7 @@ public class VistaModClient {
     public static void onRenderTickEnd(Minecraft minecraft) {
         LiveFeedTexturesManager.onRenderTickEnd();
         // No-op when MIRROR_UPDATE_MODE = TEXTURE_REFRESH (queue stays empty).
-        MirrorTextureRenderer.processPending();
+        MirrorTextureManager.processPending();
     }
 
 

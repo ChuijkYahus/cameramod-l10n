@@ -1,6 +1,5 @@
 package net.mehvahdjukaar.vista.client.textures;
 
-import com.google.common.base.Suppliers;
 import com.google.gson.JsonSyntaxException;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.platform.GlStateManager;
@@ -15,7 +14,6 @@ import net.mehvahdjukaar.moonlight.api.client.PostShadersHelper;
 import net.mehvahdjukaar.moonlight.api.misc.RollingBuffer;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.VistaModClient;
-import net.mehvahdjukaar.vista.client.AdaptiveUpdateScheduler;
 import net.mehvahdjukaar.vista.client.CrtOverlay;
 import net.mehvahdjukaar.vista.client.SlidingWindowCounter;
 import net.mehvahdjukaar.vista.client.renderer.VistaLevelRenderer;
@@ -35,7 +33,6 @@ import net.minecraft.client.renderer.PostChain;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.VisibleForDebug;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 
@@ -43,11 +40,8 @@ import java.io.IOException;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
-import java.util.function.Supplier;
 
 /**
  * Texture backing a camera feed displayed on a TV or view-finder. Owns its post-process shader
@@ -55,22 +49,6 @@ import java.util.function.Supplier;
  * {@link AdaptiveUpdateScheduler} that throttles per-frame refreshes across all feeds.
  */
 public class LiveFeedTexture extends PerspectiveTexture {
-
-    @VisibleForDebug
-    public static final Map<UUID, RollingBuffer<Long>> UPDATE_TIMES = new HashMap<>();
-
-    @VisibleForDebug
-    public static final Supplier<AdaptiveUpdateScheduler<ResourceLocation>> SCHEDULER =
-            Suppliers.memoize(() ->
-                    AdaptiveUpdateScheduler.builder()
-                            .baseFps(ClientConfigs.UPDATE_FPS.get())
-                            .minFps(ClientConfigs.MIN_UPDATE_FPS.get())
-                            .targetBudgetMs(ClientConfigs.THROTTLING_UPDATE_MS.get()) //10% of a frame which at 60fps = 16.6ms is ~1.66ms which should lower fps from 60 to 54. in other words at most a 6fps drop
-                            .evictAfterTicks(20 * 5) //5 seconds
-
-                            .guardTargetFps(60) //if we go under 60 fps, be more aggressive
-                            .build()
-            );
 
     private static final PostShadersHelper.Group POSTERIZE_GROUP = new PostShadersHelper.Group(
             VistaMod.res("1"), 0
@@ -101,10 +79,6 @@ public class LiveFeedTexture extends PerspectiveTexture {
         //can cause flicker?
         //this too?
         this.recomputePostChain();
-    }
-
-    public static void onRenderTickEnd() {
-        SCHEDULER.get().onEndOfFrame();
     }
 
     @Override
@@ -141,7 +115,7 @@ public class LiveFeedTexture extends PerspectiveTexture {
         };
 
         runTask = CompatHandler.decorateRenderer(runTask);
-        SCHEDULER.get().runIfShouldUpdate(getTextureLocation(), runTask);
+        LiveFeedTexturesManager.SCHEDULER.get().runIfShouldUpdate(getTextureLocation(), runTask);
     }
 
     public void markReferenced(boolean paused) {
@@ -245,7 +219,7 @@ public class LiveFeedTexture extends PerspectiveTexture {
 
     private void setLastUpdatedTime(ClientLevel level) {
         if (ClientConfigs.rendersDebug()) {
-            UPDATE_TIMES.computeIfAbsent(getAssociatedUUID(), k -> new RollingBuffer<>(20))
+            LiveFeedTexturesManager.UPDATE_TIMES.computeIfAbsent(getAssociatedUUID(), k -> new RollingBuffer<>(20))
                     .push(level.getGameTime());
         }
     }

@@ -121,8 +121,6 @@ public final class RectFinder {
             Direction2D d
     ) {
         Rect2D nextRect = state.selection().expandToward(d);
-        List<RectSelection> results = new ArrayList<>();
-
         Rect2D touched = state.touchedRect();
 
         var edge = nextRect.iterateEdge(d);
@@ -133,26 +131,24 @@ public final class RectFinder {
             ConnectionType t = at.type();
 
             if (t == null) {
-                return List.of(); // no expansion possible
+                return List.of(); // cell is empty/foreign — cannot expand into it
             }
 
             if (!t.isSingle() || at.hasBe()) {
-
-                // If we already chose a selection, it must match
-                if (touched != null) {
-                    if (!touched.contains(p)) {
-                        return List.of(); // cannot expand this way
-                    }
-                } else {
-                    //bug here, wont work if it has multiple owners
-                    touched = findMaxRect(grid, p, false);
-                }
+                // Cell belongs to an existing connected group (non-SINGLE) or is a 1x1
+                // group of its own (SINGLE+BE). Accumulate every absorbed owner into
+                // `touched` — the final `selection.contains(touched)` check at the
+                // validation step decides whether the selection has grown large enough
+                // to fully cover all absorbed groups. The old code bailed here on the
+                // second distinct owner, which blocked the 4-mirror 2x2 case (three
+                // separate SINGLE+BE neighbors collapsing into one group) while keeping
+                // the existing single-owner cases working.
+                Rect2D owner = findMaxRect(grid, p, false);
+                touched = touched == null ? owner : touched.containing(owner);
             }
         }
 
-        // No new selection touched OR it matches existing
-        results.add(new RectSelection(nextRect, touched));
-        return results;
+        return List.of(new RectSelection(nextRect, touched));
     }
 
 }
