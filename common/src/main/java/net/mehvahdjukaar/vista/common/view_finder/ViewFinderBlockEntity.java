@@ -183,7 +183,7 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
 
     public void updateRedstonePower(int directPower) {
         int prevWantedZoom = this.powerLevelWantedZoom;
-        this.powerLevelWantedZoom = (int) Mth.map(directPower, 0, 15, 0, MAX_ZOOM);
+        this.powerLevelWantedZoom = (int) Mth.map(directPower, 0, 15, 1, MAX_ZOOM);
         if (powerLevelWantedZoom != prevWantedZoom) {
             this.setChanged(); //update clients
         }
