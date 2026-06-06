@@ -1,2 +1,1 @@
-- aded sable companion to add sable compat for some logic
-- added more configs
+updated dh compat

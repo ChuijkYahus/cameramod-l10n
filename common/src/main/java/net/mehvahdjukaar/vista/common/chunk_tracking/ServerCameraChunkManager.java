@@ -11,6 +11,7 @@ import net.mehvahdjukaar.vista.configs.CommonConfigs;
 import net.mehvahdjukaar.vista.network.ClientBoundSyncExtraChunksPacket;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
+import net.minecraft.core.Position;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -140,16 +141,7 @@ public class ServerCameraChunkManager {
                 }
                 linkedViewFindersTrackedByPlayers.put(vf, refs + 1);
             }
-            for (GlobalPos vf : removed) {
-                int refs = linkedViewFindersTrackedByPlayers.getOrDefault(vf, 0) - 1;
-                if (refs <= 0) {
-                    linkedViewFindersTrackedByPlayers.remove(vf);
-                    ServerLevel vfLevel = player.getServer().getLevel(vf.dimension());
-                    if (vfLevel != null) setChunksForceLoaded(vfLevel, vf.pos(), chunkRadius, false);
-                } else {
-                    linkedViewFindersTrackedByPlayers.put(vf, refs);
-                }
-            }
+            updateVfReferences(player, chunkRadius, removed);
         }
         // Persist the new tracked set inside the per-player attachment.
         data.setTrackedWantedZoneCenters(desired);
@@ -229,7 +221,7 @@ public class ServerCameraChunkManager {
 
         for (TVBlockEntity tv : candidates) {
             if (!visited.add(tv)) continue;
-            BlockPos tvRealPos = BlockPos.containing(SableCompanion.INSTANCE.projectOutOfSubLevel(level, Vec3.atLowerCornerOf(tv.getBlockPos())));
+            BlockPos tvRealPos = BlockPos.containing(SableCompanion.INSTANCE.projectOutOfSubLevel(level,(Position) Vec3.atLowerCornerOf(tv.getBlockPos())));
             ChunkPos tvChunk = new ChunkPos(tvRealPos);
             if (!inZone.test(tvChunk.x, tvChunk.z)) continue;
 
@@ -282,6 +274,10 @@ public class ServerCameraChunkManager {
     public static void onPlayerLeave(ServerPlayer player) {
         int chunkRadius = CommonConfigs.SEND_CHUNKS_VIEWED_BY_VIEW_FINDER.get();
         Set<GlobalPos> watching = VistaMod.EXTRA_VIEW_AREAS.getOrCreate(player).getTrackedWantedZoneCenters();
+        updateVfReferences(player, chunkRadius, watching);
+    }
+
+    private static void updateVfReferences(ServerPlayer player, int chunkRadius, Set<GlobalPos> watching) {
         for (GlobalPos vf : watching) {
             int refs = linkedViewFindersTrackedByPlayers.getOrDefault(vf, 0) - 1;
             if (refs <= 0) {

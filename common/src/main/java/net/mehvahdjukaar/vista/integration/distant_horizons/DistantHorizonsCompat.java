@@ -2,38 +2,63 @@ package net.mehvahdjukaar.vista.integration.distant_horizons;
 
 import com.seibel.distanthorizons.api.DhApi;
 import com.seibel.distanthorizons.api.enums.config.EDhApiHorizontalQuality;
+import com.seibel.distanthorizons.api.interfaces.config.IDhApiConfigValue;
+import com.seibel.distanthorizons.api.interfaces.config.client.IDhApiGraphicsConfig;
 import net.mehvahdjukaar.moonlight.api.platform.configs.ConfigBuilder;
 
+import java.lang.reflect.Method;
 import java.util.function.Supplier;
 
 public class DistantHorizonsCompat {
 
-
     private static Supplier<DHMode> dhMode = () -> DHMode.OFF;
 
-    public static Runnable decorateRenderWithoutLOD(Runnable task) {
+    // Only present on DH nightly builds; resolve reflectively so we stay compatible with released DH.
+    private static final Method USE_CAMERA_POSITION_METHOD;
 
+    static {
+        Method m = null;
+        try {
+            m = IDhApiGraphicsConfig.class.getMethod("useCameraPositionForQualityDropOff");
+        } catch (NoSuchMethodException ignored) {
+        }
+        USE_CAMERA_POSITION_METHOD = m;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static IDhApiConfigValue<Boolean> getCameraPositionConfig() {
+        if (USE_CAMERA_POSITION_METHOD == null) return null;
+        try {
+            return (IDhApiConfigValue<Boolean>) USE_CAMERA_POSITION_METHOD.invoke(DhApi.Delayed.configs.graphics());
+        } catch (ReflectiveOperationException e) {
+            return null;
+        }
+    }
+
+    public static Runnable decorateRenderWithoutLOD(Runnable task) {
         return () -> {
-            var config = DhApi.Delayed.configs.graphics().renderingEnabled();
+            IDhApiConfigValue<Boolean> cameraPositionConfig = getCameraPositionConfig();
+            Boolean cameraPositionBefore = cameraPositionConfig != null ? cameraPositionConfig.getValue() : null;
+
             DHMode mode = dhMode.get();
-            if (mode == DHMode.OFF) {
-                boolean valueBefore = config.getValue();
-                try {
-                    config.setValue(false);
+
+            try {
+                if (cameraPositionConfig != null) cameraPositionConfig.setValue(false);
+
+                if (mode != DHMode.OFF) {
+                    var qualityConfig = DhApi.Delayed.configs.graphics().horizontalQuality();
+                    var qualityBefore = qualityConfig.getValue();
+                    try {
+                        qualityConfig.setValue(mode.horizontal());
+                        task.run();
+                    } finally {
+                        qualityConfig.setValue(qualityBefore);
+                    }
+                } else {
                     task.run();
-                } finally {
-                    config.setValue(valueBefore);
                 }
-            } else {
-                var newDHConfig = mode.horizontal();
-                var config1 = DhApi.Delayed.configs.graphics().horizontalQuality();
-                var valueBefore = config1.getValue();
-                try {
-                    config1.setValue(newDHConfig);
-                    task.run();
-                } finally {
-                    config1.setValue(valueBefore);
-                }
+            } finally {
+                if (cameraPositionConfig != null) cameraPositionConfig.setValue(cameraPositionBefore);
             }
         };
     }
@@ -50,7 +75,6 @@ public class DistantHorizonsCompat {
         MED,
         HIGH;
 
-        //low lod on camera!
         public EDhApiHorizontalQuality horizontal() {
             return switch (this) {
                 case OFF -> EDhApiHorizontalQuality.LOWEST;
@@ -59,7 +83,5 @@ public class DistantHorizonsCompat {
                 case HIGH -> EDhApiHorizontalQuality.MEDIUM;
             };
         }
-
     }
-
 }
