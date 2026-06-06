@@ -24,6 +24,7 @@
     "CompatVeilMixin",
     "DebugRendererMixin",
     "FrustumMixin",
+    "GameRendererAccessor",
     "GameRendererMixin",
     "ItemRendererMixin",
     "KeyboardHandlerMixin",

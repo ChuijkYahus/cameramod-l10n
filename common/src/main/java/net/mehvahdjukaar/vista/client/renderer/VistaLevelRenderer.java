@@ -47,6 +47,7 @@ public class VistaLevelRenderer {
     private static DummyCamera dummyCamera = new DummyCamera();
 
     private static Object currentRenderingToken = null;
+    private static boolean currentRenderHasOffAxisFrustum = false;
 
     private static ResourceKey<Level> lastLevel = null;
 
@@ -163,6 +164,7 @@ public class VistaLevelRenderer {
 
         try {
             currentRenderingToken = renderingToken;
+            currentRenderHasOffAxisFrustum = customProjection != null;
 
             float partialTicks = mc.getTimer().getGameTimeDeltaTicks();
             cameraSetup.setup(camera, partialTicks);
@@ -201,6 +203,7 @@ public class VistaLevelRenderer {
             }
         } finally {
             MC_OWN_GRAPH.set(null);
+            currentRenderHasOffAxisFrustum = false;
 
             // restore old camera state
             oldCameraState.apply(mc.levelRenderer);
@@ -243,6 +246,14 @@ public class VistaLevelRenderer {
 
         PoseStack poseStack = new PoseStack();
 
+        // NOTE: don't bake bobView/bobHurt into the reflection modelview here. Doing so
+        // double-bobs the mirror: the main view already bobs the displayed mirror surface (via
+        // its own modelview), and if the framebuffer content is *also* rendered with bob, the
+        // two stack visibly. A correct fix would offset the *reflected eye position* by the
+        // bob's geometric translation so parallax tracks the bobbed POV — but bobView is a
+        // non-linear modelview transform, not a simple position offset, so extracting that is
+        // not a one-liner. Left as a TODO; the current behavior is "reflection appears slightly
+        // stable while the surface bobs with the view", which reads better than double-bob.
         Quaternionf cameraRotation = camera.rotation().conjugate(new Quaternionf());
         Matrix4f cameraMatrix = (new Matrix4f()).rotation(cameraRotation);
         Vec3 cameraPos = camera.getPosition();
@@ -379,7 +390,12 @@ public class VistaLevelRenderer {
 
         // If the frustum has not already been captured
         if (!hasCapturedFrustum) {
-            boolean smartCulling = minecraft.smartCull;
+            // Smart culling walks chunk-to-chunk through visible face transitions. That works for
+            // a symmetric perspective starting from a position with normal visibility flow, but
+            // for a mirror's off-axis frustum the reflected eye often sits inside the wall the
+            // mirror is mounted on — smart culling there propagates "blocked everywhere" and
+            // starves the visible-section list. Off-axis renders disable it; viewfinders keep it.
+            boolean smartCulling = minecraft.smartCull && !currentRenderHasOffAxisFrustum;
 
             // Disable smart culling for spectators inside solid blocks
             if (isSpectator && clientLevel.getBlockState(cameraBlockPos).isSolidRender(clientLevel, cameraBlockPos)) {
@@ -405,10 +421,13 @@ public class VistaLevelRenderer {
             double cameraRotXHalf = Math.floor(camera.getXRot() / 2.0);
             double cameraRotYHalf = Math.floor(camera.getYRot() / 2.0);
 
-            // Apply frustum update if the graph changed or camera rotated significantly
+            // Apply frustum update if the graph changed, the camera rotated significantly, or
+            // we're rendering with an off-axis frustum (where the bounds change every frame as
+            // the viewer moves even though the camera rotation stays pinned to the mirror normal).
             if (graph.consumeFrustumUpdate() ||
                     cameraRotXHalf != lr.prevCamRotX ||
-                    cameraRotYHalf != lr.prevCamRotY) {
+                    cameraRotYHalf != lr.prevCamRotY ||
+                    currentRenderHasOffAxisFrustum) {
 
                 lr.applyFrustum(LevelRenderer.offsetFrustum(frustum));
                 lr.prevCamRotX = cameraRotXHalf;

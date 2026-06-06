@@ -111,6 +111,7 @@ public class MirrorBlockEntityRenderer implements BlockEntityRenderer<MirrorBloc
 
         PoseStack.Pose last = poseStack.last();
         Vector3f normal = last.normal().transform(new Vector3f(0, 0, -1));
+        normal = new Vector3f(0,1,0);
         int lu = light & 0xFFFF;
         int lv = (light >> 16) & 0xFFFF;
         // V is flipped: framebuffer textures are Y-up in GL coords, so to display
