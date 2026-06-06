@@ -16,6 +16,8 @@ import net.mehvahdjukaar.vista.common.cassette.CassetteItem;
 import net.mehvahdjukaar.vista.common.cassette.CassetteTape;
 import net.mehvahdjukaar.vista.common.cassette.CassetteTapeLootFunction;
 import net.mehvahdjukaar.vista.common.cassette.HollowCassetteItem;
+import net.mehvahdjukaar.vista.common.mirror.MirrorBlock;
+import net.mehvahdjukaar.vista.common.mirror.MirrorBlockEntity;
 import net.mehvahdjukaar.vista.common.tv.TVBlock;
 import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
 import net.mehvahdjukaar.vista.common.tv.TVItem;
@@ -117,6 +119,16 @@ public class VistaMod {
 
     public static final Supplier<BlockEntityType<ViewFinderBlockEntity>> VIEWFINDER_TILE = RegHelper.registerBlockEntityType(
             res("viewfinder"), ViewFinderBlockEntity::new, VIEWFINDER);
+
+    public static final Supplier<Block> MIRROR = RegHelper.registerBlockWithItem(res("mirror"),
+            () -> new MirrorBlock(Block.Properties.of()
+                    .sound(SoundType.GLASS)
+                    .mapColor(MapColor.METAL)
+                    .strength(0.3f)
+                    .noOcclusion()));
+
+    public static final Supplier<BlockEntityType<MirrorBlockEntity>> MIRROR_TILE = RegHelper.registerBlockEntityType(
+            res("mirror"), MirrorBlockEntity::new, MIRROR);
 
     public static final RegSupplier<WaveGateBlock> WAVE_GATE =
             RegHelper.registerBlockWithItem(VistaMod.res("wave_gate"), //wideband reciver, wideband listener, signal harvester
@@ -239,6 +251,7 @@ public class VistaMod {
     private static void addItemsToTabs(RegHelper.ItemToTabEvent event) {
         event.add(CreativeModeTabs.REDSTONE_BLOCKS, VIEWFINDER.get());
         event.add(CreativeModeTabs.REDSTONE_BLOCKS, TV.get());
+        event.add(CreativeModeTabs.FUNCTIONAL_BLOCKS, MIRROR.get());
         CreativeModeTab.ItemDisplayParameters parameters = event.getParameters();
         for (var v : parameters.holders().lookupOrThrow(CASSETTE_TAPE_REGISTRY_KEY).listElements().toList()) {
             if (v.is(SUPPORTER_TAPES_TAG)) continue;

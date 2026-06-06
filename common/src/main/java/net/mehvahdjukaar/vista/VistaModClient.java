@@ -191,6 +191,7 @@ public class VistaModClient {
         event.register(VistaMod.TV_TILE.get(), TvBlockEntityRenderer::new);
         event.register(VistaMod.VIEWFINDER_TILE.get(), ViewFinderBlockEntityRenderer::new);
         event.register(VistaMod.WAVE_GATE_TILE.get(), WaveGateBlockEntityRenderer::new);
+        event.register(VistaMod.MIRROR_TILE.get(), MirrorBlockEntityRenderer::new);
     }
 
     private static void registerShaders(ClientHelper.ShaderEvent event) {
@@ -206,6 +207,7 @@ public class VistaModClient {
         LiveFeedTexturesManager.clear();
         WebTexturesManager.clear();
         VistaLevelRenderer.clear();
+        MirrorRenderManager.clear();
     }
 
     public static void onClientTick(Minecraft minecraft) {
@@ -221,6 +223,7 @@ public class VistaModClient {
 
     public static void onRenderTickEnd(Minecraft minecraft) {
         LiveFeedTexturesManager.onRenderTickEnd();
+        MirrorRenderManager.processPending();
     }
 
 

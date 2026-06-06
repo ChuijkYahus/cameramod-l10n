@@ -26,10 +26,10 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Display;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.lwjgl.opengl.GL11C;
@@ -46,16 +46,16 @@ public class VistaLevelRenderer {
     private static final AtomicReference<SectionOcclusionGraph> MC_OWN_GRAPH = new AtomicReference<>(null);
     private static DummyCamera dummyCamera = new DummyCamera();
 
-    private static ViewFinderBlockEntity currentRenderingViewFinder = null;
+    private static Object currentRenderingToken = null;
 
     private static ResourceKey<Level> lastLevel = null;
 
     public static boolean isRenderingLiveFeed() {
-        return currentRenderingViewFinder != null;
+        return currentRenderingToken != null;
     }
 
     public static boolean isViewFinderRenderingLiveFeed(ViewFinderBlockEntity vf) {
-        return currentRenderingViewFinder == vf;
+        return currentRenderingToken == vf;
     }
 
     public static void clear() {
@@ -64,7 +64,7 @@ public class VistaLevelRenderer {
         synchronized (STATES_LOCK) {
             MANAGED_STATES.clear();
         }
-        currentRenderingViewFinder = null;
+        currentRenderingToken = null;
     }
 
     /**
@@ -110,6 +110,20 @@ public class VistaLevelRenderer {
     }
 
     public static void render(LiveFeedTexture text, ViewFinderBlockEntity tile) {
+        render(text, tile, (camera, partialTicks) -> setupSceneCamera(tile, camera, partialTicks),
+                tile.getFOV(), true, null);
+    }
+
+    /**
+     * @param fov              ignored when {@code customProjection} is non-null.
+     * @param customProjection if non-null, used as-is instead of building a symmetric perspective
+     *                         from {@code fov}. Mirrors use this to bake an off-axis frustum
+     *                         shaped to the mirror's frame, so the near plane *is* the mirror.
+     */
+    public static void render(LiveFeedTexture text, Object renderingToken,
+                              SceneCameraSetup cameraSetup, float fov,
+                              boolean applyPostChain,
+                              @Nullable Matrix4f customProjection) {
         Minecraft mc = Minecraft.getInstance();
 
         if (mc.level == null) return;
@@ -148,17 +162,20 @@ public class VistaLevelRenderer {
         RenderSystemState oldRenderState = RenderSystemState.capture();
 
         try {
-            currentRenderingViewFinder = tile;
+            currentRenderingToken = renderingToken;
 
             float partialTicks = mc.getTimer().getGameTimeDeltaTicks();
-            setupSceneCamera(tile, camera, partialTicks);
+            cameraSetup.setup(camera, partialTicks);
 
             canvas.bindWrite(true);
             RenderSystem.viewport(0, 0, canvas.width, canvas.height);
 
-            text.applyPostChain();
-
-            float fov = tile.getFOV();
+            if (applyPostChain) {
+                text.applyPostChain();
+            } else {
+                mc.gameRenderer.postEffect = null;
+                mc.gameRenderer.effectActive = false;
+            }
 
             mc.gameRenderer.renderDistance = Math.min(oldRenderDistance, calculateRenderDistance(fov));
             RenderSystem.clear(16640, ON_OSX);
@@ -170,7 +187,7 @@ public class VistaLevelRenderer {
             MC_OWN_GRAPH.set(oldCameraState.getOcclusionGraph());
 
             // already wrapped outside; don't double-wrap this or it fucks everything over omg.
-            renderLevel(mc, canvas, camera, fov);
+            renderLevel(mc, canvas, camera, fov, customProjection);
 
             // save updated feed camera state
             feedCameraState.copyFrom(mc.levelRenderer);
@@ -194,7 +211,7 @@ public class VistaLevelRenderer {
             RenderSystem.clear(GL11C.GL_DEPTH_BUFFER_BIT, ON_OSX);
 
             // swap back
-            currentRenderingViewFinder = null;
+            currentRenderingToken = null;
 
             mc.mainRenderTarget = mainTarget;
             mc.gameRenderer.mainCamera = mainCamera;
@@ -213,22 +230,24 @@ public class VistaLevelRenderer {
 
 
     //same as game renderer render level but simplified
-    private static void renderLevel(Minecraft mc, RenderTarget target, Camera camera, float fov) {
+    private static void renderLevel(Minecraft mc, RenderTarget target, Camera camera, float fov,
+                                    @Nullable Matrix4f customProjection) {
         DeltaTracker deltaTracker = mc.getTimer();
         GameRenderer gr = mc.gameRenderer;
         LevelRenderer lr = mc.levelRenderer;
         Matrix4f oldProjectionMatrix = new Matrix4f(RenderSystem.getProjectionMatrix());
 
-        Matrix4f projMatrix = createProjectionMatrixForCamera(gr, target, fov);
-        //fix Y inversion
-        gr.resetProjectionMatrix(projMatrix);
+        Matrix4f projMatrix = customProjection != null
+                ? new Matrix4f(customProjection)
+                : createProjectionMatrixForCamera(gr, target, fov);
 
         PoseStack poseStack = new PoseStack();
 
         Quaternionf cameraRotation = camera.rotation().conjugate(new Quaternionf());
         Matrix4f cameraMatrix = (new Matrix4f()).rotation(cameraRotation);
-        //this below is what actually renders everything
         Vec3 cameraPos = camera.getPosition();
+
+        gr.resetProjectionMatrix(projMatrix);
         lr.prepareCullFrustum(cameraPos, cameraMatrix, projMatrix);
 
         lr.renderLevel(deltaTracker, false, camera, gr,

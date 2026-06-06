@@ -108,6 +108,25 @@ public class LiveFeedTexturesManager {
         return new Handle(uuid, screenSize);
     }
 
+    /**
+     * Allocates a LiveFeedTexture for a mirror block. Unlike the viewfinder feed pipeline, mirrors
+     * don't go through {@link #refreshTexture}; the {@code MirrorBlockEntityRenderer} drives
+     * {@link net.mehvahdjukaar.vista.client.renderer.VistaLevelRenderer#render} directly each frame.
+     */
+    @Nullable
+    public static LiveFeedTexture getMirrorTexture(UUID uuid, Vec2i screenSize) {
+        ResourceLocation textureId = VistaMod.res(
+                "live_feed/mirror_" + uuid + "_" + screenSize.x() + "x" + screenSize.y());
+        LiveFeedTexture texture = DynamicTextureRenderer.requestTexture(textureId, () ->
+                new LiveFeedTexture(textureId,
+                        screenSize.x() * ClientConfigs.LIVE_FEED_RESOLUTION_SCALE.get(),
+                        screenSize.y() * ClientConfigs.LIVE_FEED_RESOLUTION_SCALE.get(),
+                        t -> {}, // refresh is driven externally by the mirror renderer
+                        uuid));
+        if (texture != null) texture.markReferenced(false);
+        return texture;
+    }
+
     @SuppressWarnings("ConstantConditions")
     public static void clear() {
         UPDATE_TIMES.clear();
