@@ -6,6 +6,7 @@ import com.mojang.math.Axis;
 import net.mehvahdjukaar.moonlight.api.client.util.LOD;
 import net.mehvahdjukaar.moonlight.api.client.util.VertexUtil;
 import net.mehvahdjukaar.moonlight.api.misc.ForgeOverride;
+import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.world.level.LightLayer;
 import net.mehvahdjukaar.moonlight.api.util.math.Vec2i;
 import net.mehvahdjukaar.vista.client.MirrorReflection;
@@ -28,6 +29,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import org.joml.Vector3f;
 
 public class MirrorBlockEntityRenderer implements BlockEntityRenderer<MirrorBlockEntity> {
 
@@ -100,27 +102,7 @@ public class MirrorBlockEntityRenderer implements BlockEntityRenderer<MirrorBloc
         drawMirrorFace(blockEntity, dir, poseStack, buffer, text);
     }
 
-    /**
-     * Sets the dummy camera at the reflected eye position, oriented to look perpendicularly
-     * into the mirror plane (yaw drives the orientation; pitch is always 0 because horizontal
-     * mirrors don't tilt the eye axis). The off-axis projection in {@link MirrorReflectionTexture}
-     * does the rest — it bends the frustum to fit the mirror's frame from that vantage point.
-     */
-    static void setupMirrorCamera(Camera camera, Level level, Vec3 reflectedEye, float yaw) {
-        camera.initialized = true;
-        camera.level = level;
-        if (camera.entity == null) {
-            camera.entity = new Display.BlockDisplay(EntityType.BLOCK_DISPLAY, level);
-        }
-        Entity dummy = camera.getEntity();
-        dummy.setPos(reflectedEye);
-        dummy.setXRot(0f);
-        dummy.setYRot(yaw);
-        camera.setPosition(reflectedEye);
-        camera.setRotation(yaw, 0f);
-    }
-
-    private static void drawMirrorFace(MirrorBlockEntity blockEntity, Direction dir, PoseStack poseStack,
+    private void drawMirrorFace(MirrorBlockEntity blockEntity, Direction dir, PoseStack poseStack,
                                        MultiBufferSource buffer, MirrorReflectionTexture text) {
         Vec2i connection = blockEntity.getConnectedCount();
         float w = connection.x();
@@ -135,7 +117,7 @@ public class MirrorBlockEntityRenderer implements BlockEntityRenderer<MirrorBloc
         int skyBrightness = level.getBrightness(LightLayer.SKY, blockEntity.getBlockPos().relative(dir));
         int light = LightTexture.pack(15, skyBrightness);
 
-        VertexConsumer vc = buffer.getBuffer(RenderType.text(text.getTextureLocation()));
+        VertexConsumer vc = buffer.getBuffer(RenderType.entitySolid(text.getTextureLocation()));
 //TODO: use diff render type so no normal
         // Master is at bottom-right in local-rotated space (grid extends along facing.CCW
         // = local -X), so the quad spans from local x=0.5-w to x=0.5.
@@ -146,6 +128,17 @@ public class MirrorBlockEntityRenderer implements BlockEntityRenderer<MirrorBloc
                 1f, 1f, 0f, 0f,
                 255, 255, 255, 255,
                 VertexUtil.lightU(light), VertexUtil.lightV(light));
+
         poseStack.popPose();
+    }
+
+    private static void vert(VertexConsumer builder, PoseStack poseStack,
+                             float x, float y, float u, float v, int lu, int lv, Vector3f normal) {
+        builder.addVertex(poseStack.last().pose(), x, y, 0);
+        builder.setColor(1.0f, 1.0f, 1.0f, 1.0f);
+        builder.setUv(u, v);
+        builder.setOverlay(OverlayTexture.NO_OVERLAY);
+        builder.setUv2(lu, lv);
+        builder.setNormal(normal.x, normal.y, normal.z);
     }
 }

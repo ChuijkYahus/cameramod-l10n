@@ -7,10 +7,14 @@ import net.mehvahdjukaar.vista.client.renderer.SceneCameraSetup;
 import net.mehvahdjukaar.vista.client.renderer.VistaLevelRenderer;
 import net.mehvahdjukaar.vista.common.mirror.MirrorBlock;
 import net.mehvahdjukaar.vista.common.mirror.MirrorBlockEntity;
+import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.Display;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
@@ -75,8 +79,14 @@ public class MirrorReflectionTexture extends PerspectiveTexture {
         BlockPos pos = mirror.getBlockPos();
         Vec3 normal = Vec3.atLowerCornerOf(dir.getNormal());
 
-        // Build the mirror's local right axis in world space.
-        // right = normal × worldUp  (points screen-right from the viewer's perspective)
+        // Build the mirror's local right axis in world space, FROM THE VIEWER'S POV (viewer
+        // stands in front of the mirror, looking back along -normal). worldUp × normal gives
+        // viewer-right for every facing direction. The other cross-product order (normal ×
+        // worldUp) yields viewer-LEFT instead — visually equivalent for a 1x1 mirror (the
+        // group centre coincides with the master centre), but for w>1 it walks `groupCenter`
+        // away from the rest of the group instead of toward it. That offset propagates into
+        // the frustum corners and the user sees the reflected scene shifted by one block per
+        // unit of (w-1)/2 in the wrong direction.
         Vec3 worldUp = new Vec3(0, 1, 0);
         Vec3 camRight = normal.cross(worldUp).normalize();
 
@@ -88,7 +98,7 @@ public class MirrorReflectionTexture extends PerspectiveTexture {
 
         Vec3 masterCenter = Vec3.atCenterOf(pos).add(normal.scale(0.5));
         Vec3 groupCenter = masterCenter
-                .add(camRight.scale((connection.x() - 1) * 0.5))
+                .add(camRight.scale((1-connection.x() ) * 0.5))
                 .add(worldUp.scale((connection.y() - 1) * 0.5));
 
         // Use groupCenter as the plane-point for the reflection so the reflected-eye
@@ -127,7 +137,7 @@ public class MirrorReflectionTexture extends PerspectiveTexture {
 
         final float camYaw = dir.toYRot();
         SceneCameraSetup setup = (camera, pt) ->
-                MirrorBlockEntityRenderer.setupMirrorCamera(camera, level, reflection.reflectedEye(), camYaw);
+                setupMirrorCamera(camera, level, reflection.reflectedEye(), camYaw);
 
         // BFS start override: a point one block in front of the mirror's center. That chunk is
         // guaranteed visible (the player can see the mirror's front face, so the chunk between
@@ -142,5 +152,25 @@ public class MirrorReflectionTexture extends PerspectiveTexture {
         // Blit the freshly-rendered write target onto the read target so the next frame's quad
         // samples the new image (matches RenderableDynamicTexture.redraw()'s tail).
         swapBackToFront();
+    }
+
+    /**
+     * Sets the dummy camera at the reflected eye position, oriented to look perpendicularly
+     * into the mirror plane (yaw drives the orientation; pitch is always 0 because horizontal
+     * mirrors don't tilt the eye axis). The off-axis projection in {@link MirrorReflectionTexture}
+     * does the rest — it bends the frustum to fit the mirror's frame from that vantage point.
+     */
+    private static void setupMirrorCamera(Camera camera, Level level, Vec3 reflectedEye, float yaw) {
+        camera.initialized = true;
+        camera.level = level;
+        if (camera.entity == null) {
+            camera.entity = new Display.BlockDisplay(EntityType.BLOCK_DISPLAY, level);
+        }
+        Entity dummy = camera.getEntity();
+        dummy.setPos(reflectedEye);
+        dummy.setXRot(0f);
+        dummy.setYRot(yaw);
+        camera.setPosition(reflectedEye);
+        camera.setRotation(yaw, 0f);
     }
 }
