@@ -15,8 +15,10 @@ public class CommonConfigs {
 
     public static final ModConfigHolder SPEC;
 
-    public static final Supplier<Integer> MAX_CONNECTED_TV_SIZE;
-    public static final Supplier<Boolean> SQUARE_ASPECT_RATIO;
+    public static final Supplier<Integer> TV_MAX_CONNECTED_TV_SIZE;
+    public static final Supplier<Boolean> TV_SQUARE_ASPECT_RATIO;
+    public static final Supplier<Integer> MAX_CONNECTED_MIRROR_SIZE;
+    public static final Supplier<Boolean> MIRROR_SQUARE_ASPECT_RATIO;
     public static final Supplier<Boolean> CREEPER_DROP;
     public static final Supplier<Boolean> CHEST_DROP;
     public static final Supplier<Mode> WAVE_GATE_MODE;
@@ -33,12 +35,18 @@ public class CommonConfigs {
                 .define("send_chunks_viewed_by_view_finders", 4, 0, 16);
         LOAD_CHUNKS_VIEWED_BY_VIEW_FINDER = builder.comment("Server loads chunks that are near a far away view finder linked to a tv that's close to at least 1 player. Will increase server strain")
                 .define("chunkload_chunks_viewed_by_view_finders", false);
-        MAX_CONNECTED_TV_SIZE = builder
+        TV_MAX_CONNECTED_TV_SIZE = builder
                 .comment("Maximum size of connected TVs (in blocks). Set to 1 to disable multi-block TVs.")
                 .define("max_connected_tv_size", 8, 1, 24);
-        SQUARE_ASPECT_RATIO = builder
+        TV_SQUARE_ASPECT_RATIO = builder
                 .comment("Makes connected tvs just have a square aspect ratio. If you set to false cassettes will be stretched and will look worse as a result")
                 .define("square_aspect_ratio", true);
+        MAX_CONNECTED_MIRROR_SIZE = builder
+                .comment("Maximum size of connected mirrors (in blocks). Set to 1 to disable multi-block mirrors.")
+                .define("max_connected_mirror_size", 8, 1, 24);
+        MIRROR_SQUARE_ASPECT_RATIO = builder
+                .comment("Forces connected mirrors to have a square aspect ratio.")
+                .define("mirror_square_aspect_ratio", true);
         CREEPER_DROP = builder
                 .comment("Whether creepers should drop tapes when killed by the pillagers.")
                 .define("creeper_drop", true);

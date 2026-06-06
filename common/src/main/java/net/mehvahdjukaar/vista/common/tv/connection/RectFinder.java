@@ -3,7 +3,6 @@ package net.mehvahdjukaar.vista.common.tv.connection;
 import net.mehvahdjukaar.moonlight.api.util.math.Direction2D;
 import net.mehvahdjukaar.moonlight.api.util.math.Rect2D;
 import net.mehvahdjukaar.moonlight.api.util.math.Vec2i;
-import net.mehvahdjukaar.vista.common.tv.TVType;
 
 import java.util.*;
 
@@ -63,7 +62,7 @@ public final class RectFinder {
 
         while (edgeLocs.hasNext()) {
             Vec2i p = edgeLocs.next();
-            TVType t = grid.getAt(p).type();
+            ConnectionType t = grid.getAt(p).type();
             if (t == null) return false;
 
             if (t.hasEdge(d2)) {
@@ -131,13 +130,13 @@ public final class RectFinder {
         while (edge.hasNext()) {
             Vec2i p = edge.next();
             GridTile at = grid.getAt(p);
-            TVType t = at.type();
+            ConnectionType t = at.type();
 
             if (t == null) {
                 return List.of(); // no expansion possible
             }
 
-            if (t != TVType.SINGLE || at.hasBe()) {
+            if (!t.isSingle() || at.hasBe()) {
 
                 // If we already chose a selection, it must match
                 if (touched != null) {

@@ -1,28 +1,76 @@
 package net.mehvahdjukaar.vista.client.textures;
 
+import com.google.common.base.Suppliers;
 import com.google.gson.JsonSyntaxException;
 import com.mojang.blaze3d.pipeline.RenderTarget;
+import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.BufferUploader;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.blaze3d.vertex.VertexSorting;
 import net.mehvahdjukaar.moonlight.api.client.PostShadersHelper;
-import net.mehvahdjukaar.moonlight.api.client.texture_renderer.RenderableDynamicTexture;
+import net.mehvahdjukaar.moonlight.api.misc.RollingBuffer;
 import net.mehvahdjukaar.vista.VistaMod;
+import net.mehvahdjukaar.vista.VistaModClient;
+import net.mehvahdjukaar.vista.client.AdaptiveUpdateScheduler;
 import net.mehvahdjukaar.vista.client.CrtOverlay;
 import net.mehvahdjukaar.vista.client.SlidingWindowCounter;
-import net.mehvahdjukaar.vista.client.renderer.LevelRendererCameraState;
+import net.mehvahdjukaar.vista.client.renderer.VistaLevelRenderer;
+import net.mehvahdjukaar.vista.common.broadcast.BroadcastManager;
+import net.mehvahdjukaar.vista.common.cassette.IBroadcastSource;
+import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
+import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
+import net.mehvahdjukaar.vista.configs.ClientConfigs;
+import net.mehvahdjukaar.vista.integration.CompatHandler;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.renderer.LightTexture;
+import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.PostChain;
+import net.minecraft.client.renderer.ShaderInstance;
+import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.resources.ResourceLocation;
-import org.jetbrains.annotations.NotNull;
+import net.minecraft.util.VisibleForDebug;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Matrix4f;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
-import java.util.function.Consumer;
+import java.util.function.Supplier;
 
-public class LiveFeedTexture extends RenderableDynamicTexture {
+/**
+ * Texture backing a camera feed displayed on a TV or view-finder. Owns its post-process shader
+ * chain, disconnect / paused overlay state, optional timestamp overlay, and the shared
+ * {@link AdaptiveUpdateScheduler} that throttles per-frame refreshes across all feeds.
+ */
+public class LiveFeedTexture extends PerspectiveTexture {
+
+    @VisibleForDebug
+    public static final Map<UUID, RollingBuffer<Long>> UPDATE_TIMES = new HashMap<>();
+
+    @VisibleForDebug
+    public static final Supplier<AdaptiveUpdateScheduler<ResourceLocation>> SCHEDULER =
+            Suppliers.memoize(() ->
+                    AdaptiveUpdateScheduler.builder()
+                            .baseFps(ClientConfigs.UPDATE_FPS.get())
+                            .minFps(ClientConfigs.MIN_UPDATE_FPS.get())
+                            .targetBudgetMs(ClientConfigs.THROTTLING_UPDATE_MS.get()) //10% of a frame which at 60fps = 16.6ms is ~1.66ms which should lower fps from 60 to 54. in other words at most a 6fps drop
+                            .evictAfterTicks(20 * 5) //5 seconds
+
+                            .guardTargetFps(60) //if we go under 60 fps, be more aggressive
+                            .build()
+            );
 
     private static final PostShadersHelper.Group POSTERIZE_GROUP = new PostShadersHelper.Group(
             VistaMod.res("1"), 0
@@ -34,22 +82,11 @@ public class LiveFeedTexture extends RenderableDynamicTexture {
 
     private static final ResourceLocation CAMERA_POST_PIPELINE = VistaMod.res("shaders/post/posterize_camera.json");
 
-    private final UUID associatedUUID;
-
-    private final LevelRendererCameraState rendererState = new LevelRendererCameraState();
     @Nullable
     private ResourceLocation extraPostChainID;
     private PostChain postChain;
     private boolean disconnected = false;
     private boolean showsTime = false;
-
-    public boolean showsTime() {
-        return showsTime;
-    }
-
-    public void setShowsTime(boolean showsTime) {
-        this.showsTime = showsTime;
-    }
 
     private enum RefType {
         LIVE, PAUSED
@@ -58,15 +95,53 @@ public class LiveFeedTexture extends RenderableDynamicTexture {
     private final SlidingWindowCounter<RefType> references =
             new SlidingWindowCounter<>(Duration.ofSeconds(3), Duration.ofSeconds(1));
 
-    public LiveFeedTexture(ResourceLocation resourceLocation, int width, int height,
-                           @NotNull Consumer<LiveFeedTexture> textureDrawingFunction,
-                           UUID id) {
-        super(resourceLocation, width, height, textureDrawingFunction);
-        this.associatedUUID = id;
+    public LiveFeedTexture(ResourceLocation resourceLocation, int width, int height, UUID id) {
+        super(resourceLocation, width, height, id);
         this.extraPostChainID = null;
         //can cause flicker?
         //this too?
         this.recomputePostChain();
+    }
+
+    public static void onRenderTickEnd() {
+        SCHEDULER.get().onEndOfFrame();
+    }
+
+    @Override
+    protected void refresh() {
+        Minecraft mc = Minecraft.getInstance();
+        ClientLevel level = mc.level;
+        if (!mc.isGameLoadFinished() || level == null) return;
+        if (mc.isPaused()) return;
+
+        Runnable runTask = () -> {
+            setLastUpdatedTime(level);
+            BroadcastManager manager = BroadcastManager.getInstance(level);
+            IBroadcastSource provider = manager.getBroadcast(getAssociatedUUID(), true); //touch the feed to make sure it's still valid and linked
+            if (!(provider instanceof ViewFinderBlockEntity vf)) {
+                if (!disconnected) {
+                    setDisconnected(true);
+                }
+                return;
+            }
+            setDisconnected(false);
+
+            VistaLevelRenderer.render(this, vf);
+
+            if (showsTime() || VistaMod.isFunny()) {
+                LocalDateTime now = LocalDateTime.now();
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM/dd HH:mm:ss");
+                String cctvTimestamp = now.format(formatter);
+                drawText(this, cctvTimestamp, 2, 4, false, true);
+            }
+
+            if (VistaMod.isFunny()) {
+                drawOverlay(this, VistaModClient.LL_OVERLAY);
+            }
+        };
+
+        runTask = CompatHandler.decorateRenderer(runTask);
+        SCHEDULER.get().runIfShouldUpdate(getTextureLocation(), runTask);
     }
 
     public void markReferenced(boolean paused) {
@@ -86,14 +161,23 @@ public class LiveFeedTexture extends RenderableDynamicTexture {
         return CrtOverlay.PAUSE_PLAY;
     }
 
-    public LevelRendererCameraState getRendererState() {
-        return rendererState;
+    public boolean showsTime() {
+        return showsTime;
     }
 
-    public UUID getAssociatedUUID() {
-        return associatedUUID;
+    public void setShowsTime(boolean showsTime) {
+        this.showsTime = showsTime;
     }
 
+    public boolean isDisconnected() {
+        return disconnected;
+    }
+
+    public void setDisconnected(boolean inactive) {
+        this.disconnected = inactive;
+    }
+
+    @Override
     public void applyPostChain() {
         if (isClosed()) {
             VistaMod.LOGGER.error("apply post on closed");
@@ -108,7 +192,6 @@ public class LiveFeedTexture extends RenderableDynamicTexture {
             gameRenderer.effectActive = false;
         }
     }
-
 
     private void recomputePostChain() {
         if (isClosed()) {
@@ -160,11 +243,68 @@ public class LiveFeedTexture extends RenderableDynamicTexture {
         }
     }
 
-    public boolean isDisconnected() {
-        return disconnected;
+    private void setLastUpdatedTime(ClientLevel level) {
+        if (ClientConfigs.rendersDebug()) {
+            UPDATE_TIMES.computeIfAbsent(getAssociatedUUID(), k -> new RollingBuffer<>(20))
+                    .push(level.getGameTime());
+        }
     }
 
-    public void setDisconnected(boolean inactive) {
-        this.disconnected = inactive;
+    private static void drawText(LiveFeedTexture target, String text,
+                                 int x, int y, boolean shadow, boolean background) {
+        Minecraft mc = Minecraft.getInstance();
+        RenderTarget oldTarget = mc.getMainRenderTarget();
+        target.getRenderTarget().bindWrite(true);
+
+        Font font = mc.font;
+        MultiBufferSource.BufferSource bf = mc.renderBuffers().bufferSource();
+
+        RenderSystem.backupProjectionMatrix();
+        float baseScale = TVBlockEntity.MIN_SCREEN_PIXEL_SIZE * ClientConfigs.LIVE_FEED_RESOLUTION_SCALE.get();
+        float size = baseScale * (target.getWidth() / baseScale);
+        Matrix4f matrix4f = new Matrix4f().setOrtho(
+                0.0F, size, 0.0F, size, -1, 1);
+        RenderSystem.setProjectionMatrix(matrix4f, VertexSorting.ORTHOGRAPHIC_Z);
+        GlStateManager._disableCull(); //since we render backwards or something
+
+        Lighting.setupFor3DItems();
+        int backColor = !background ? 0 : (int) (0.25F * 255.0F) << 24;
+
+        font.drawInBatch(text, x, y, -1, shadow, new Matrix4f(),
+                bf, Font.DisplayMode.NORMAL, backColor, LightTexture.FULL_BRIGHT);
+
+        bf.endBatch();
+
+        RenderSystem.restoreProjectionMatrix();
+        oldTarget.bindWrite(true);
+    }
+
+    private static void drawOverlay(LiveFeedTexture target, ResourceLocation overlayTexture) {
+        Minecraft mc = Minecraft.getInstance();
+        RenderTarget oldTarget = mc.getMainRenderTarget();
+        target.getRenderTarget().bindWrite(true);
+
+        AbstractTexture texture = mc.getTextureManager().getTexture(overlayTexture);
+
+        RenderSystem.assertOnRenderThread();
+        GlStateManager._colorMask(true, true, true, true);
+        GlStateManager._disableDepthTest();
+        GlStateManager._depthMask(false);
+        GlStateManager._enableBlend();
+
+
+        ShaderInstance shaderInstance = Objects.requireNonNull(mc.gameRenderer.blitShader, "Blit shader not loaded");
+        shaderInstance.setSampler("DiffuseSampler", texture.getId());
+        shaderInstance.apply();
+        BufferBuilder bufferBuilder = RenderSystem.renderThreadTesselator().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.BLIT_SCREEN);
+        bufferBuilder.addVertex(0.0F, 0.0F, 0.0F);
+        bufferBuilder.addVertex(1.0F, 0.0F, 0.0F);
+        bufferBuilder.addVertex(1.0F, 1.0F, 0.0F);
+        bufferBuilder.addVertex(0.0F, 1.0F, 0.0F);
+        BufferUploader.draw(bufferBuilder.buildOrThrow());
+        shaderInstance.clear();
+        GlStateManager._depthMask(true);
+        GlStateManager._colorMask(true, true, true, true);
+        oldTarget.bindWrite(true);
     }
 }

@@ -1,62 +1,18 @@
 package net.mehvahdjukaar.vista.client.textures;
 
-import com.google.common.base.Suppliers;
-import com.mojang.blaze3d.pipeline.RenderTarget;
-import com.mojang.blaze3d.platform.GlStateManager;
-import com.mojang.blaze3d.platform.Lighting;
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.*;
 import net.mehvahdjukaar.moonlight.api.client.texture_renderer.DynamicTextureRenderer;
-import net.mehvahdjukaar.moonlight.api.misc.RollingBuffer;
 import net.mehvahdjukaar.moonlight.api.util.math.Vec2i;
 import net.mehvahdjukaar.vista.VistaMod;
-import net.mehvahdjukaar.vista.VistaModClient;
-import net.mehvahdjukaar.vista.client.AdaptiveUpdateScheduler;
 import net.mehvahdjukaar.vista.client.renderer.VistaLevelRenderer;
-import net.mehvahdjukaar.vista.common.broadcast.BroadcastManager;
-import net.mehvahdjukaar.vista.common.cassette.IBroadcastSource;
-import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
-import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
+import net.mehvahdjukaar.vista.common.mirror.MirrorBlockEntity;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
-import net.mehvahdjukaar.vista.integration.CompatHandler;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Font;
-import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.client.renderer.LightTexture;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.ShaderInstance;
-import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.VisibleForDebug;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
-import org.joml.Matrix4f;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
 import java.util.UUID;
-import java.util.function.Supplier;
 
 public class LiveFeedTexturesManager {
-
-    @VisibleForDebug
-    public static final Map<UUID, RollingBuffer<Long>> UPDATE_TIMES = new HashMap<>();
-
-    @VisibleForDebug
-    public static final Supplier<AdaptiveUpdateScheduler<ResourceLocation>> SCHEDULER =
-            Suppliers.memoize(() ->
-                    AdaptiveUpdateScheduler.builder()
-                            .baseFps(ClientConfigs.UPDATE_FPS.get())
-                            .minFps(ClientConfigs.MIN_UPDATE_FPS.get())
-                            .targetBudgetMs(ClientConfigs.THROTTLING_UPDATE_MS.get()) //10% of a frame which at 60fps = 16.6ms is ~1.66ms which should lower fps from 60 to 54. in other words at most a 6fps drop
-                            .evictAfterTicks(20 * 5) //5 seconds
-
-                            .guardTargetFps(60) //if we go under 60 fps, be more aggressive
-                            .build()
-            );
-
 
     public static class Handle {
 
@@ -77,11 +33,11 @@ public class LiveFeedTexturesManager {
                     new LiveFeedTexture(textureId,
                             screenSize.x() * ClientConfigs.LIVE_FEED_RESOLUTION_SCALE.get(),
                             screenSize.y() * ClientConfigs.LIVE_FEED_RESOLUTION_SCALE.get(),
-                            LiveFeedTexturesManager::refreshTexture, uuid));
+                            uuid));
 
 
             if (texture == null) {
-                SCHEDULER.get().forceUpdateNextTick(textureId);
+                LiveFeedTexture.SCHEDULER.get().forceUpdateNextTick(textureId);
                 return null;
             }
 
@@ -109,146 +65,44 @@ public class LiveFeedTexturesManager {
     }
 
     /**
-     * Allocates a LiveFeedTexture for a mirror block. Unlike the viewfinder feed pipeline, mirrors
-     * don't go through {@link #refreshTexture}; the {@code MirrorBlockEntityRenderer} drives
-     * {@link net.mehvahdjukaar.vista.client.renderer.VistaLevelRenderer#render} directly each frame.
+     * Fetches (or allocates) the {@link MirrorReflectionTexture} for the given mirror UUID and
+     * screen size, with no side effects on its pending state. Mirrors bypass
+     * {@link LiveFeedTexture#SCHEDULER} — they refresh every frame they're in view (cheap
+     * off-axis frustum, gated by render distance).
      */
     @Nullable
-    public static LiveFeedTexture getMirrorTexture(UUID uuid, Vec2i screenSize) {
+    public static MirrorReflectionTexture getMirrorTexture(UUID uuid, Vec2i screenSize) {
         ResourceLocation textureId = VistaMod.res(
                 "live_feed/mirror_" + uuid + "_" + screenSize.x() + "x" + screenSize.y());
-        LiveFeedTexture texture = DynamicTextureRenderer.requestTexture(textureId, () ->
-                new LiveFeedTexture(textureId,
-                        screenSize.x() * ClientConfigs.LIVE_FEED_RESOLUTION_SCALE.get(),
-                        screenSize.y() * ClientConfigs.LIVE_FEED_RESOLUTION_SCALE.get(),
-                        t -> {}, // refresh is driven externally by the mirror renderer
+        return DynamicTextureRenderer.requestTexture(textureId, () ->
+                new MirrorReflectionTexture(textureId,
+                        screenSize.x() * ClientConfigs.MIRROR_RESOLUTION_SCALE.get(),
+                        screenSize.y() * ClientConfigs.MIRROR_RESOLUTION_SCALE.get(),
                         uuid));
-        if (texture != null) texture.markReferenced(false);
+    }
+
+    /**
+     * TEXTURE_REFRESH-mode entry point: fetches the mirror's texture and stashes the BE + camera
+     * eye on it so the next end-of-frame refresh tick redraws the reflection from the captured
+     * vantage point.
+     */
+    @Nullable
+    public static MirrorReflectionTexture getMirrorTexture(MirrorBlockEntity mirror, Vec2i screenSize, Vec3 eye) {
+        MirrorReflectionTexture texture = getMirrorTexture(mirror.getId(), screenSize);
+        if (texture == null) return null;
+        texture.setPending(mirror, eye);
+        texture.setUpdateNextTick(true);
         return texture;
     }
 
     @SuppressWarnings("ConstantConditions")
     public static void clear() {
-        UPDATE_TIMES.clear();
+        LiveFeedTexture.UPDATE_TIMES.clear();
         //TODO: change just invalidate our own
         DynamicTextureRenderer.clearCache();
     }
 
     public static void onRenderTickEnd() {
-        SCHEDULER.get().onEndOfFrame();
+        LiveFeedTexture.onRenderTickEnd();
     }
-
-    private static void refreshTexture(LiveFeedTexture text) {
-        Minecraft mc = Minecraft.getInstance();
-
-        ClientLevel level = mc.level;
-        if (!mc.isGameLoadFinished() || level == null) return;
-        if (mc.isPaused()) return;
-
-        Runnable runTask = () -> {
-
-            setLastUpdatedTime(text.getAssociatedUUID(), level);
-
-            UUID uuid = text.getAssociatedUUID();
-            BroadcastManager manager = BroadcastManager.getInstance(level);
-            IBroadcastSource provider = manager.getBroadcast(uuid, true); //touch the feed to make sure it's still valid and linked
-            if (!(provider instanceof ViewFinderBlockEntity vf)) {
-                if (!text.isDisconnected()) {
-                    text.setDisconnected(true);
-                }
-                return;
-            }
-            text.setDisconnected(false);
-
-            VistaLevelRenderer.render(text, vf);
-
-            if (text.showsTime() || VistaMod.isFunny()) {
-                LocalDateTime now = LocalDateTime.now();
-                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM/dd HH:mm:ss");
-                String cctvTimestamp = now.format(formatter);
-                drawText(text, cctvTimestamp, 2, 4, false, true);
-            }
-
-            if (VistaMod.isFunny()) {
-                drawOverlay(text, VistaModClient.LL_OVERLAY);
-            }
-        };
-
-        runTask = CompatHandler.decorateRenderer(runTask);
-
-        ResourceLocation textureId = text.getTextureLocation();
-
-        SCHEDULER.get().runIfShouldUpdate(textureId, runTask);
-
-    }
-
-
-    private static void setLastUpdatedTime(UUID textureId, ClientLevel level) {
-        if (ClientConfigs.rendersDebug()) {
-            UPDATE_TIMES.computeIfAbsent(textureId, k -> new RollingBuffer<>(20))
-                    .push(level.getGameTime());
-        }
-    }
-
-
-    private static void drawText(LiveFeedTexture target, String text,
-                                 int x, int y, boolean shadow, boolean background) {
-        Minecraft mc = Minecraft.getInstance();
-        RenderTarget oldTarget = mc.getMainRenderTarget();
-        target.getRenderTarget().bindWrite(true);
-
-        Font font = mc.font;
-        MultiBufferSource.BufferSource bf = mc.renderBuffers().bufferSource();
-
-        RenderSystem.backupProjectionMatrix();
-        float baseScale = TVBlockEntity.MIN_SCREEN_PIXEL_SIZE * ClientConfigs.LIVE_FEED_RESOLUTION_SCALE.get();
-        float size = baseScale * (target.getWidth() / baseScale);
-        Matrix4f matrix4f = new Matrix4f().setOrtho(
-                0.0F, size, 0.0F, size, -1, 1);
-        RenderSystem.setProjectionMatrix(matrix4f, VertexSorting.ORTHOGRAPHIC_Z);
-        GlStateManager._disableCull(); //since we render backwards or something
-
-        Lighting.setupFor3DItems();
-        int backColor = !background ? 0 : (int) (0.25F * 255.0F) << 24;
-
-        font.drawInBatch(text, x, y, -1, shadow, new Matrix4f(),
-                bf, Font.DisplayMode.NORMAL, backColor, LightTexture.FULL_BRIGHT);
-
-        bf.endBatch();
-
-        RenderSystem.restoreProjectionMatrix();
-        oldTarget.bindWrite(true);
-    }
-
-
-    private static void drawOverlay(LiveFeedTexture target, ResourceLocation overlayTexture) {
-        Minecraft mc = Minecraft.getInstance();
-        RenderTarget oldTarget = mc.getMainRenderTarget();
-        target.getRenderTarget().bindWrite(true);
-
-        AbstractTexture texture = mc.getTextureManager().getTexture(overlayTexture);
-
-        RenderSystem.assertOnRenderThread();
-        GlStateManager._colorMask(true, true, true, true);
-        GlStateManager._disableDepthTest();
-        GlStateManager._depthMask(false);
-        GlStateManager._enableBlend();
-
-
-        ShaderInstance shaderInstance = Objects.requireNonNull(mc.gameRenderer.blitShader, "Blit shader not loaded");
-        shaderInstance.setSampler("DiffuseSampler", texture.getId());
-        shaderInstance.apply();
-        BufferBuilder bufferBuilder = RenderSystem.renderThreadTesselator().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.BLIT_SCREEN);
-        bufferBuilder.addVertex(0.0F, 0.0F, 0.0F);
-        bufferBuilder.addVertex(1.0F, 0.0F, 0.0F);
-        bufferBuilder.addVertex(1.0F, 1.0F, 0.0F);
-        bufferBuilder.addVertex(0.0F, 1.0F, 0.0F);
-        BufferUploader.draw(bufferBuilder.buildOrThrow());
-        shaderInstance.clear();
-        GlStateManager._depthMask(true);
-        GlStateManager._colorMask(true, true, true, true);
-        oldTarget.bindWrite(true);
-    }
-
-
 }

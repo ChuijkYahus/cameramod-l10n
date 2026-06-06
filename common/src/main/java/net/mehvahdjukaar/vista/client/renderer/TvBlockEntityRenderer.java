@@ -8,6 +8,7 @@ import net.mehvahdjukaar.moonlight.api.misc.ForgeOverride;
 import net.mehvahdjukaar.moonlight.api.misc.RollingBuffer;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.util.math.Vec2i;
+import net.mehvahdjukaar.vista.client.textures.LiveFeedTexture;
 import net.mehvahdjukaar.vista.client.textures.LiveFeedTexturesManager;
 import net.mehvahdjukaar.vista.client.video_source.BroadcastVideoSource;
 import net.mehvahdjukaar.vista.client.video_source.IVideoSource;
@@ -163,7 +164,7 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
 
     private void renderDebug(UUID tex, PoseStack poseStack, MultiBufferSource buffer, float partialTick,
                              TVBlockEntity tile) {
-        RollingBuffer<Long> lastUpdateTimes = LiveFeedTexturesManager.UPDATE_TIMES.get(tex);
+        RollingBuffer<Long> lastUpdateTimes = LiveFeedTexture.UPDATE_TIMES.get(tex);
         if (lastUpdateTimes == null) {
             return;
         }
@@ -186,7 +187,7 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
                 OverlayTexture.NO_OVERLAY,
                 LightTexture.FULL_BRIGHT);
 
-        double updateMs = LiveFeedTexturesManager.SCHEDULER.get().getAverageUpdateTimeMs();
+        double updateMs = LiveFeedTexture.SCHEDULER.get().getAverageUpdateTimeMs();
 
         y -= 9;
         font.drawInBatch(String.format("up ms %.2f", updateMs), 0, y, -1, false, poseStack.last().pose(), buffer, Font.DisplayMode.NORMAL,

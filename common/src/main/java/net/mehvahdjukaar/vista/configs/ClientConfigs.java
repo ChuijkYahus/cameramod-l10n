@@ -20,6 +20,9 @@ public class ClientConfigs {
     public static final ModConfigHolder SPEC;
 
     public static final Supplier<Integer> RENDER_DISTANCE;
+    public static final Supplier<Integer> MIRROR_RENDER_DISTANCE;
+    public static final Supplier<Integer> MIRROR_RESOLUTION_SCALE;
+    public static final Supplier<MirrorUpdateMode> MIRROR_UPDATE_MODE;
     public static final Supplier<Double> UPDATE_FPS;
     public static final Supplier<Double> MIN_UPDATE_FPS;
     public static final Supplier<Double> THROTTLING_UPDATE_MS;
@@ -42,6 +45,18 @@ public class ClientConfigs {
 
     static {
         ConfigBuilder builder = ConfigBuilder.create(VistaMod.MOD_ID, ConfigType.CLIENT);
+
+        builder.push("mirror");
+        MIRROR_RENDER_DISTANCE = builder
+                .comment("Block entity render distance for mirrors. Mirrors beyond this distance will not render their reflection.")
+                .define("render_distance", 64, 1, 2048);
+        MIRROR_RESOLUTION_SCALE = builder
+                .comment("Scale factor for mirror reflection resolution. Each mirror block is 16 virtual pixels wide; this multiplies that area. Higher values are sharper but more expensive.")
+                .define("resolution_scale", 8, 1, 32);
+        MIRROR_UPDATE_MODE = builder
+                .comment("How mirror reflections are scheduled. TEXTURE_REFRESH: piggybacks on the live-feed texture refresh dispatch (one render per visible mirror, end-of-frame). RENDER_TICK_END: the BE renderer queues mirrors into a pending list which is flushed from the onRenderTickEnd hook (the old behavior). Switch if you suspect a timing-related rendering glitch.")
+                .define("update_mode", MirrorUpdateMode.TEXTURE_REFRESH);
+        builder.pop();
 
         builder.push("television");
         builder.push("visuals");
@@ -153,5 +168,10 @@ public class ClientConfigs {
         TRY_FFMPEG_FIRST_THEN_VLC,
         USE_FFMPEG,
         USE_VLC
+    }
+
+    public enum MirrorUpdateMode {
+        TEXTURE_REFRESH,
+        RENDER_TICK_END
     }
 }

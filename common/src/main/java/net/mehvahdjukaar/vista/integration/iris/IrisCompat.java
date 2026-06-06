@@ -76,7 +76,7 @@ public class IrisCompat {
     // Iris's RenderTargets.resizeIfNeeded uses iris$depthBufferVersion / iris$colorBufferVersion
     // to detect whether the main render target has been recreated, but those versions only
     // increment in destroyBuffers — a freshly-constructed RenderTarget starts at 0. When a TV
-    // is resized, Vista swaps to a *new* LiveFeedTexture instance whose RenderTarget has version
+    // is resized, Vista swaps to a *new* PerspectiveTexture instance whose RenderTarget has version
     // 0 — same as the previous canvas's initial version — so Iris's check misses the swap and
     // keeps its gbuffers attached to the old canvas's depth texture (which may also have been
     // freed). Force a bump whenever the canvas instance changes so Iris's next beginLevelRendering

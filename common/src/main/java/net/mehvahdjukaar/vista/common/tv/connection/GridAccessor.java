@@ -3,8 +3,6 @@ package net.mehvahdjukaar.vista.common.tv.connection;
 
 import net.mehvahdjukaar.moonlight.api.util.math.Rect2D;
 import net.mehvahdjukaar.moonlight.api.util.math.Vec2i;
-import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
-import net.mehvahdjukaar.vista.common.tv.TVType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -12,15 +10,13 @@ public interface GridAccessor {
     @NotNull
     GridTile getAt(Vec2i pos);
 
-    void setAt(Vec2i pos, @Nullable TVType type, boolean setPower);
+    void setAt(Vec2i pos, @Nullable ConnectionType type, boolean setPower);
 
-    default void setAt(Vec2i pos, @Nullable TVType type) {
+    default void setAt(Vec2i pos, @Nullable ConnectionType type) {
         this.setAt(pos, type, false);
     }
 
     default void transform(Rect2D from, Rect2D to, @Nullable Rect2D originBe) {
-      //  if (from.equals(to)) return;
-
         int left = to.left();
         int bottom = to.y();
         int top = to.y() + to.height() - 1;
@@ -45,18 +41,16 @@ public interface GridAccessor {
                 boolean edgeLeft = (x == left);
                 boolean edgeRight = (x == right);
 
-                TVType conn = TVType.fromConnections(!edgeUp, !edgeDown, !edgeLeft, !edgeRight);
-                // GridAccess is (left, top) → pass (col, row)
+                ConnectionType conn = ConnectionType.fromConnections(!edgeUp, !edgeDown, !edgeLeft, !edgeRight);
                 this.setAt(new Vec2i(x, y), conn, hasStrongPowerAnywhere);
             }
         }
 
         for (var p : from.subtract(to)) {
-            this.setAt(p, TVType.SINGLE, false);
+            this.setAt(p, ConnectionType.SINGLE, false);
         }
     }
 
     void planBeMove(@Nullable Rect2D from, Rect2D to);
 
 }
-

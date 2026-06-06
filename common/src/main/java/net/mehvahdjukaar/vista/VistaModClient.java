@@ -207,7 +207,7 @@ public class VistaModClient {
         LiveFeedTexturesManager.clear();
         WebTexturesManager.clear();
         VistaLevelRenderer.clear();
-        MirrorRenderManager.clear();
+        MirrorTextureRenderer.clear();
     }
 
     public static void onClientTick(Minecraft minecraft) {
@@ -223,7 +223,8 @@ public class VistaModClient {
 
     public static void onRenderTickEnd(Minecraft minecraft) {
         LiveFeedTexturesManager.onRenderTickEnd();
-        MirrorRenderManager.processPending();
+        // No-op when MIRROR_UPDATE_MODE = TEXTURE_REFRESH (queue stays empty).
+        MirrorTextureRenderer.processPending();
     }
 
 

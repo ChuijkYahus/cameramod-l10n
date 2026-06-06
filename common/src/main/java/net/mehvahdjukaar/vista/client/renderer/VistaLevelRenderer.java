@@ -7,7 +7,7 @@ import net.mehvahdjukaar.moonlight.api.misc.WeakHashSet;
 import net.mehvahdjukaar.moonlight.api.util.math.EntityAngles;
 import net.mehvahdjukaar.moonlight.core.client.DummyCamera;
 import net.mehvahdjukaar.vista.VistaPlatStuff;
-import net.mehvahdjukaar.vista.client.textures.LiveFeedTexture;
+import net.mehvahdjukaar.vista.client.textures.PerspectiveTexture;
 import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.mehvahdjukaar.vista.integration.CompatHandler;
@@ -48,6 +48,8 @@ public class VistaLevelRenderer {
 
     private static Object currentRenderingToken = null;
     private static boolean currentRenderHasOffAxisFrustum = false;
+    @Nullable
+    private static Vec3 currentBfsStartOverride = null;
 
     private static ResourceKey<Level> lastLevel = null;
 
@@ -110,9 +112,9 @@ public class VistaLevelRenderer {
         return dummyCamera;
     }
 
-    public static void render(LiveFeedTexture text, ViewFinderBlockEntity tile) {
+    public static void render(PerspectiveTexture text, ViewFinderBlockEntity tile) {
         render(text, tile, (camera, partialTicks) -> setupSceneCamera(tile, camera, partialTicks),
-                tile.getFOV(), true, null);
+                tile.getFOV(), true, null, null);
     }
 
     /**
@@ -120,11 +122,17 @@ public class VistaLevelRenderer {
      * @param customProjection if non-null, used as-is instead of building a symmetric perspective
      *                         from {@code fov}. Mirrors use this to bake an off-axis frustum
      *                         shaped to the mirror's frame, so the near plane *is* the mirror.
+     * @param bfsStartOverride if non-null, temporarily moves the camera to this world position
+     *                         around the section-occlusion-graph BFS so the walk starts from a
+     *                         chunk that's actually visible. Mirrors against walls pass a point
+     *                         in front of the mirror — otherwise smart culling stalls because the
+     *                         reflected eye lands inside the wall block, blocking BFS propagation.
      */
-    public static void render(LiveFeedTexture text, Object renderingToken,
+    public static void render(PerspectiveTexture text, Object renderingToken,
                               SceneCameraSetup cameraSetup, float fov,
                               boolean applyPostChain,
-                              @Nullable Matrix4f customProjection) {
+                              @Nullable Matrix4f customProjection,
+                              @Nullable Vec3 bfsStartOverride) {
         Minecraft mc = Minecraft.getInstance();
 
         if (mc.level == null) return;
@@ -139,7 +147,7 @@ public class VistaLevelRenderer {
         mc.mainRenderTarget = canvas;
 
         // Tell Iris-side compat that the main render target may have changed identity
-        // (TV resize swaps in a fresh LiveFeedTexture → fresh RenderTarget). Iris's
+        // (TV resize swaps in a fresh PerspectiveTexture → fresh RenderTarget). Iris's
         // own change detection relies on a version counter that doesn't increment on
         // a brand-new RenderTarget, so without this nudge the iris pipeline keeps
         // its gbuffers attached to the old (smaller / freed) canvas.
@@ -165,6 +173,7 @@ public class VistaLevelRenderer {
         try {
             currentRenderingToken = renderingToken;
             currentRenderHasOffAxisFrustum = customProjection != null;
+            currentBfsStartOverride = bfsStartOverride;
 
             float partialTicks = mc.getTimer().getGameTimeDeltaTicks();
             cameraSetup.setup(camera, partialTicks);
@@ -204,6 +213,7 @@ public class VistaLevelRenderer {
         } finally {
             MC_OWN_GRAPH.set(null);
             currentRenderHasOffAxisFrustum = false;
+            currentBfsStartOverride = null;
 
             // restore old camera state
             oldCameraState.apply(mc.levelRenderer);
@@ -390,12 +400,7 @@ public class VistaLevelRenderer {
 
         // If the frustum has not already been captured
         if (!hasCapturedFrustum) {
-            // Smart culling walks chunk-to-chunk through visible face transitions. That works for
-            // a symmetric perspective starting from a position with normal visibility flow, but
-            // for a mirror's off-axis frustum the reflected eye often sits inside the wall the
-            // mirror is mounted on — smart culling there propagates "blocked everywhere" and
-            // starves the visible-section list. Off-axis renders disable it; viewfinders keep it.
-            boolean smartCulling = minecraft.smartCull && !currentRenderHasOffAxisFrustum;
+            boolean smartCulling = minecraft.smartCull;
 
             // Disable smart culling for spectators inside solid blocks
             if (isSpectator && clientLevel.getBlockState(cameraBlockPos).isSolidRender(clientLevel, cameraBlockPos)) {
@@ -410,9 +415,24 @@ public class VistaLevelRenderer {
 
             minecraft.getProfiler().push("section_occlusion_graph");
 
-            // Update occlusion graph to determine which sections are visible
-            //needs full update should be performed when new chunks came into view (our camera moved too much compared to the vista cam)
-            graph.update(smartCulling, camera, frustum, lr.visibleSections);
+            // BFS start-position hack: if a render requested a BFS start override, temporarily
+            // teleport the camera to that point JUST around graph.update so the walk begins
+            // from a chunk that's actually visible. Mirrors against walls need this because
+            // the reflected eye lands inside the wall block — without the override, smart
+            // culling propagates "blocked everywhere" and starves the visible-section list.
+            // The frustum (already off-axis, computed from the real reflected eye) still does
+            // the actual culling; we only relocate the BFS seed.
+            Vec3 bfsOverride = currentBfsStartOverride;
+            Vec3 actualCamPos = null;
+            if (bfsOverride != null) {
+                actualCamPos = camera.getPosition();
+                camera.setPosition(bfsOverride);
+            }
+            try {
+                graph.update(smartCulling, camera, frustum, lr.visibleSections);
+            } finally {
+                if (actualCamPos != null) camera.setPosition(actualCamPos);
+            }
 
             minecraft.getProfiler().pop();
 

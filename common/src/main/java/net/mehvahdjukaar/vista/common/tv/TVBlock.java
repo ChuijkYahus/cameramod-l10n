@@ -1,17 +1,17 @@
 package net.mehvahdjukaar.vista.common.tv;
 
+
 import com.mojang.serialization.MapCodec;
 import net.mehvahdjukaar.moonlight.api.block.IOptionalEntityBlock;
 import net.mehvahdjukaar.moonlight.api.util.Utils;
-import net.mehvahdjukaar.moonlight.api.util.math.Direction2D;
-import net.mehvahdjukaar.moonlight.api.util.math.MthUtils;
 import net.mehvahdjukaar.moonlight.api.util.math.Rect2D;
 import net.mehvahdjukaar.moonlight.api.util.math.Vec2i;
 import net.mehvahdjukaar.vista.VistaMod;
-import net.mehvahdjukaar.vista.common.tv.connection.GridAccessor;
+import net.mehvahdjukaar.vista.common.tv.connection.AbstractGridAccess;
+import net.mehvahdjukaar.vista.common.tv.connection.ConnectionType;
 import net.mehvahdjukaar.vista.common.tv.connection.GridTile;
+import net.mehvahdjukaar.vista.common.tv.connection.IConnectedBlock;
 import net.mehvahdjukaar.vista.common.tv.connection.RectFinder;
-import net.mehvahdjukaar.vista.common.tv.connection.RectSelection;
 import net.mehvahdjukaar.vista.configs.CommonConfigs;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -34,24 +34,19 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.world.phys.Vec2;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.HashMap;
-import java.util.Map;
-
-public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, Equipable, IOptionalEntityBlock, WorldlyContainerHolder {
+public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, Equipable, IOptionalEntityBlock, WorldlyContainerHolder, IConnectedBlock {
 
     public static final MapCodec<TVBlock> CODEC = simpleCodec(TVBlock::new);
     public static final EnumProperty<PowerState> POWER_STATE = EnumProperty.create("powered", PowerState.class);
-    public static final EnumProperty<TVType> CONNECTION = EnumProperty.create("connection", TVType.class);
+    public static final EnumProperty<ConnectionType> CONNECTION = EnumProperty.create("connection", ConnectionType.class);
 
     public TVBlock(Properties properties) {
         super(properties.lightLevel(state -> state.getValue(POWER_STATE).isOn() ? 3 : 0));
         this.registerDefaultState(this.stateDefinition.any()
                 .setValue(POWER_STATE, PowerState.OFF)
-                .setValue(CONNECTION, TVType.SINGLE)
+                .setValue(CONNECTION, ConnectionType.SINGLE)
                 .setValue(FACING, Direction.NORTH));
     }
 
@@ -64,12 +59,31 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
     }
 
     @Override
+    public EnumProperty<ConnectionType> connectionProperty() {
+        return CONNECTION;
+    }
+
+    @Override
+    public int maxConnectedSize() {
+        return CommonConfigs.TV_MAX_CONNECTED_TV_SIZE.get();
+    }
+
+    @Override
+    public boolean squareAspectRatio() {
+        return CommonConfigs.TV_SQUARE_ASPECT_RATIO.get();
+    }
+
+    @Override
+    public AbstractGridAccess createGridAccess(Level level, BlockPos pos, BlockState state) {
+        return new TVGridAccess(level, pos, state, this);
+    }
+
+    @Override
     public WorldlyContainer getContainer(BlockState state, LevelAccessor level, BlockPos pos) {
-        BlockEntity master = getMasterBlockEntity(level, pos, state);
+        BlockEntity master = findMasterBlockEntity(level, pos, state);
         if (master instanceof WorldlyContainer wc) return wc;
         return EmptyWorldlyContainer.INSTANCE;
     }
-
 
     @Override
     public EquipmentSlot getEquipmentSlot() {
@@ -81,44 +95,6 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
         return Utils.getTicker(blockEntityType, VistaMod.TV_TILE.get(), TVBlockEntity::onTick);
     }
 
-    @Nullable
-    private TVBlockEntity getMasterBlockEntity(LevelAccessor level, BlockPos pos, BlockState state) {
-        //find bottom left
-        //for block that cant have tile entity first iterate down (depending on the connection state), then left until you either dont reach no more tv blocks or you reach one that has a tile entity
-        TVType type = state.getValue(CONNECTION);
-        Direction facing = state.getValue(FACING);
-        BlockPos currentPos = pos;
-
-        BlockEntity be = level.getBlockEntity(currentPos);
-        if (be instanceof TVBlockEntity tv) {
-            return tv;
-        }
-
-        while (type.isConnected(Direction.DOWN, facing)) {
-            currentPos = currentPos.below();
-            BlockState belowState = level.getBlockState(currentPos);
-            if (!belowState.is(this) || belowState.getValue(FACING) != facing) {
-                return null;
-            }
-            type = belowState.getValue(CONNECTION);
-        }
-        Direction myLeft = facing.getClockWise();
-        while (type.isConnected(myLeft, facing)) {
-            currentPos = currentPos.relative(myLeft);
-            BlockState sideState = level.getBlockState(currentPos);
-            if (!sideState.is(this) || sideState.getValue(FACING) != facing) {
-                return null;
-            }
-            type = sideState.getValue(CONNECTION);
-        }
-        be = level.getBlockEntity(currentPos);
-        if (be instanceof TVBlockEntity tv) {
-            return tv;
-        }
-        return null;
-    }
-
-
     @Override
     protected MapCodec<? extends HorizontalDirectionalBlock> codec() {
         return CODEC;
@@ -128,30 +104,13 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
     public @Nullable BlockState getStateForPlacement(BlockPlaceContext context) {
         boolean powered = context.getLevel().hasNeighborSignal(context.getClickedPos());
         Direction facing = context.getHorizontalDirection().getOpposite();
-        TVType type = getTypeFromNeighbors(context.getLevel(), context.getClickedPos(), facing);
+        ConnectionType type = getTypeFromNeighbors(context.getLevel(), context.getClickedPos(), facing);
 
         return this.defaultBlockState()
                 .setValue(POWER_STATE, PowerState.direct(powered))
                 .setValue(FACING, facing)
                 .setValue(CONNECTION, type);
     }
-
-    private TVType getTypeFromNeighbors(Level level, BlockPos clickedPos, Direction facing) {
-        if (CommonConfigs.MAX_CONNECTED_TV_SIZE.get() <= 1) return TVType.SINGLE;
-        boolean up = isNeighborConnected(level, clickedPos, facing, Direction.UP);
-        boolean down = isNeighborConnected(level, clickedPos, facing, Direction.DOWN);
-        boolean left = isNeighborConnected(level, clickedPos, facing, facing.getClockWise());
-        boolean right = isNeighborConnected(level, clickedPos, facing, facing.getCounterClockWise());
-        return TVType.fromConnections(up, down, left, right);
-    }
-
-    private boolean isNeighborConnected(Level level, BlockPos myPos, Direction myFacing, Direction toDir) {
-        BlockState neighborState = level.getBlockState(myPos.relative(toDir));
-        if (!neighborState.is(this)) return false;
-        return neighborState.getValue(FACING) == myFacing &&
-                neighborState.getValue(CONNECTION).isConnected(toDir.getOpposite(), myFacing);
-    }
-
 
     @Override
     protected boolean triggerEvent(BlockState state, Level level, BlockPos pos, int id, int param) {
@@ -184,8 +143,8 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
     @Override
     protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player,
                                               InteractionHand hand, BlockHitResult hitResult) {
-        TVBlockEntity masterTile = getMasterBlockEntity(level, pos, state);
-        if (masterTile != null) {
+        BlockEntity master = findMasterBlockEntity(level, pos, state);
+        if (master instanceof TVBlockEntity masterTile) {
             return masterTile.interactWithPlayerItem(player, hand, stack, 0, hitResult);
         }
         return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
@@ -193,8 +152,7 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
 
     @Override
     public boolean shouldHaveBlockEntity(BlockStateBase state) {
-        TVType conn = state.getValue(CONNECTION);
-        return conn == TVType.SINGLE || conn == TVType.BOTTOM_LEFT;
+        return IConnectedBlock.super.shouldHaveBlockEntity((BlockState) state);
     }
 
     @Override
@@ -213,8 +171,7 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
             level.setBlock(pos, state.setValue(POWER_STATE, newPower),
                     Block.UPDATE_KNOWN_SHAPE | Block.UPDATE_CLIENTS | Block.UPDATE_NONE);
         if (oldPower.isOn() != newPower.isOn()) {
-            //update neighbors
-            TVGridAccess gridAccess = new TVGridAccess(level, pos, state);
+            TVGridAccess gridAccess = new TVGridAccess(level, pos, state, this);
             Rect2D old = RectFinder.findMaxRect(gridAccess, Vec2i.ZERO, false);
             gridAccess.transform(old, old, null);
             gridAccess.applyChanges();
@@ -223,7 +180,7 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
 
     @Override
     protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
-        if (!state.is(newState.getBlock())) this.shrinkConnection(state, level, pos);
+        if (!state.is(newState.getBlock())) shrinkConnection(state, level, pos);
         Containers.dropContentsOnDestroy(state, newState, level, pos);
         super.onRemove(state, level, pos, newState, movedByPiston);
     }
@@ -231,43 +188,7 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
     @Override
     public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) {
         super.setPlacedBy(level, pos, state, placer, stack);
-        if (!(placer instanceof Player p) || !p.isSecondaryUseActive()) this.enlargeConnection(state, level, pos);
-    }
-
-    private void enlargeConnection(BlockState tvState, Level level, BlockPos pos) {
-        int maxSize = CommonConfigs.MAX_CONNECTED_TV_SIZE.get();
-        if (maxSize <= 1) return;
-        boolean squareOnly = CommonConfigs.SQUARE_ASPECT_RATIO.get();
-        TVGridAccess gridAccess = new TVGridAccess(level, pos, tvState);
-        Rect2D old = RectFinder.findMaxRect(gridAccess, Vec2i.ZERO, squareOnly);
-        RectSelection newRec = RectFinder.findMaxExpandedRect(gridAccess, Vec2i.ZERO, maxSize, squareOnly);
-        gridAccess.transform(old, newRec.selection(), newRec.touchedRect());
-        gridAccess.applyChanges();
-    }
-
-    private void shrinkConnection(BlockState tvState, Level level, BlockPos pos) {
-        if (tvState.getValue(CONNECTION) == TVType.SINGLE) return;
-        int maxSize = CommonConfigs.MAX_CONNECTED_TV_SIZE.get();
-        if (maxSize <= 1) return;
-        boolean squareOnly = CommonConfigs.SQUARE_ASPECT_RATIO.get();
-
-        TVGridAccess gridAccess = new TVGridAccess(level, pos, tvState);
-        gridAccess.setAt(Vec2i.ZERO, tvState.getValue(CONNECTION));
-        Rect2D old = RectFinder.findMaxRect(gridAccess, Vec2i.ZERO, squareOnly);
-
-        gridAccess.setAt(Vec2i.ZERO, null);
-        Direction2D closestDir = closestDirToCenter(old);
-        Vec2i newCenter = Vec2i.ZERO.offset(closestDir);
-        Rect2D newRec = RectFinder.findMaxRect(gridAccess, newCenter, squareOnly);
-        gridAccess.transform(old, newRec, old);
-        gridAccess.applyChanges();
-    }
-
-    private static Direction2D closestDirToCenter(Rect2D rect) {
-        Vec2 center = rect.getCenter();
-        Vec2 myPos = new Vec2(0.5f, 0.5f);
-        Vec2 diff = center.add(myPos.scale(-1));
-        return Direction2D.closest(diff);
+        if (!(placer instanceof Player p) || !p.isSecondaryUseActive()) enlargeConnection(state, level, pos);
     }
 
     //TODO: make blockstate?
@@ -279,93 +200,57 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
         return false;
     }
 
-    public static class TVGridAccess implements GridAccessor {
+    public static class TVGridAccess extends AbstractGridAccess {
 
-        private final BlockPos pos;
-        private final Direction facing;
-        private final Level level;
-
-        private final Map<Vec2i, GridTile> statesCache = new HashMap<>();
-        private final Map<Vec2i, GridTile> statesChanged = new HashMap<>();
         private ItemStack cassetteTransfer = null;
-        private Rect2D finalTileRect = null;
 
-        public TVGridAccess(Level level, BlockPos pos, BlockState state) {
-            this.pos = pos;
-            this.facing = state.getValue(FACING);
-            this.level = level;
+        public TVGridAccess(Level level, BlockPos pos, BlockState state, Block owner) {
+            super(level, pos, state, owner);
+        }
+
+        @Override
+        protected EnumProperty<ConnectionType> connectionProperty() {
+            return CONNECTION;
+        }
+
+        @Override
+        protected GridTile readTile(BlockPos target, BlockState bs) {
+            ConnectionType t = bs.getValue(CONNECTION);
+            PowerState hasPower = bs.getValue(POWER_STATE);
+            boolean hasBe = hasCassette(target, level);
+            return new GridTile(t, hasBe, hasPower);
+        }
+
+        @Override
+        protected GridTile buildTile(Vec2i key, @Nullable ConnectionType type, boolean setPower) {
+            GridTile old = getAt(key);
+            return GridTile.of(type, PowerState.indirect(old.powerState(), setPower));
+        }
+
+        @Override
+        protected BlockState writeState(BlockState state, GridTile tile) {
+            return state.setValue(POWER_STATE, tile.powerState());
         }
 
         @Override
         public void planBeMove(@Nullable Rect2D fromRec, Rect2D toRec) {
-            finalTileRect = toRec;
+            super.planBeMove(fromRec, toRec);
             if (fromRec == null) return;
-            Vec2i from = fromRec.bottomLeft();
-            BlockPos target = MthUtils.relativePos(pos, facing, from.x(), from.y(), 0);
+            BlockPos target = targetPos(fromRec.bottomLeft());
             if (level.getBlockEntity(target) instanceof TVBlockEntity tv) {
                 cassetteTransfer = tv.getDisplayedItem().copy();
-
                 tv.clearContent();
                 tv.setConnectionSize(Vec2i.ONE);
             }
         }
 
         @Override
-        public @NotNull GridTile getAt(Vec2i key) {
-            int x = key.x();
-            int y = key.y();
-            GridTile cached = statesCache.get(key);
-            if (cached != null) return cached;
-            BlockPos target = MthUtils.relativePos(pos, facing, x, y, 0);
-            BlockState bs = level.getBlockState(target);
-            GridTile value = GridTile.EMPTY;
-            if (bs.getBlock() instanceof TVBlock && bs.getValue(FACING) == facing) {
-                TVType t = bs.getValue(CONNECTION);
-                PowerState hasPower = bs.getValue(POWER_STATE);
-                boolean hasBe = hasCassette(target, level);
-                value = new GridTile(t, hasBe, hasPower);
-            }
-            statesCache.put(key, value);
-            return value;
-        }
-
-        @Override
-        public void setAt(Vec2i key, @Nullable TVType type, boolean setPower) {
-            GridTile old = getAt(key);
-            // if (old.type() != type) {
-            GridTile tile = GridTile.of(type, PowerState.indirect(old.powerState(), setPower));
-            statesChanged.put(key, tile);
-            statesCache.put(key, tile);
-            //  }
-        }
-
-        public void applyChanges() {
-            for (var e : statesChanged.entrySet()) {
-                Vec2i key = e.getKey();
-                GridTile tile = e.getValue();
-                TVType conn = tile.type();
-                PowerState power = tile.powerState();
-                BlockPos target = MthUtils.relativePos(pos, facing, key.x(), key.y(), 0);
-                BlockState bs = level.getBlockState(target);
-                if (bs.getBlock() instanceof TVBlock && conn != null) {
-                    level.setBlockAndUpdate(target, bs.setValue(CONNECTION, conn)
-                            .setValue(POWER_STATE, power));
-                }
-            }
-            if (finalTileRect != null) {
-                Vec2i to = finalTileRect.bottomLeft();
-                BlockPos target = MthUtils.relativePos(pos, facing, to.x(), to.y(), 0);
-                if (level.getBlockEntity(target) instanceof TVBlockEntity tv) {
-                    if (cassetteTransfer != null) tv.setDisplayedItem(cassetteTransfer);
-                    tv.setChanged();
-                    tv.setConnectionSize(finalTileRect.getSize());
-                }
+        protected void onMasterApplied(BlockPos target, Rect2D rect) {
+            if (level.getBlockEntity(target) instanceof TVBlockEntity tv) {
+                if (cassetteTransfer != null) tv.setDisplayedItem(cassetteTransfer);
+                tv.setChanged();
+                tv.setConnectionSize(rect.getSize());
             }
         }
-
     }
-
-
 }
-
-
