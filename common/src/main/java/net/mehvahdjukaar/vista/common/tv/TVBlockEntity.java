@@ -161,8 +161,7 @@ public class TVBlockEntity extends ItemDisplayTile {
         this.videoPlaybackTicks = 0;
     }
 
-    public ItemInteractionResult interactWithPlayerItem(
-            Player player, InteractionHand handIn, ItemStack stack, int slot, BlockHitResult hit) {
+    public ItemInteractionResult interactWithPlayerItem(Player player, InteractionHand handIn, ItemStack stack, int slot, BlockHitResult hit) {
 
         boolean powered = this.getBlockState().getValue(TVBlock.POWER_STATE).isOn();
         ItemStack current = this.getDisplayedItem();

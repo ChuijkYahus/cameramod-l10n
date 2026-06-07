@@ -49,12 +49,13 @@ public class VistaModClient {
 
     public static final CoreShaderContainer POSTERIZE_SHADER = new CoreShaderContainer(GameRenderer::getPositionTexColorShader);
     public static final CoreShaderContainer CAMERA_VIEW_SHADER = new CoreShaderContainer(GameRenderer::getRendertypeEntitySolidShader);
+    public static final CoreShaderContainer MIRROR_MATERIAL_SHADER = new CoreShaderContainer(GameRenderer::getRendertypeEntitySolidShader);
     public static final CoreShaderContainer STATIC_SHADER = new CoreShaderContainer(GameRenderer::getPositionColorShader);
 
     public static final ModelLayerLocation VIEWFINDER_MODEL = loc("viewfinder");
     public static final Material WAVE_EFFECT = new Material(LOCATION_BLOCKS, VistaMod.res("block/wave_gate/wave"));
-    public static final Material MIRROR_OVERLAY_MATERIAL = new Material(LOCATION_BLOCKS, VistaMod.res("block/mirror/overlay"));
 
+    public static final ResourceLocation MIRROR_FRONT = VistaMod.res("textures/block/mirror/front.png");
     public static final ResourceLocation MIRROR_OVERLAY = VistaMod.res("textures/block/mirror/overlay.png");
     public static final ResourceLocation LL_OVERLAY = VistaMod.res("textures/cassette_tape/liveleak.png");
     public static final ResourceLocation PAUSE_OVERLAY = VistaMod.res("textures/cassette_tape/pause.png");
@@ -200,6 +201,7 @@ public class VistaModClient {
     private static void registerShaders(ClientHelper.ShaderEvent event) {
         event.register(VistaMod.res("static_noise"), DefaultVertexFormat.NEW_ENTITY, STATIC_SHADER::assign);
         event.register(VistaMod.res("camera_view"), DefaultVertexFormat.NEW_ENTITY, CAMERA_VIEW_SHADER::assign);
+        event.register(VistaMod.res("mirror_material"), DefaultVertexFormat.NEW_ENTITY, MIRROR_MATERIAL_SHADER::assign);
     }
 
     private static void registerModelLayers(ClientHelper.ModelLayerEvent event) {

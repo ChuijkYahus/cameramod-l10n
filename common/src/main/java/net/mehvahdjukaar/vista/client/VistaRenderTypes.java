@@ -1,5 +1,6 @@
 package net.mehvahdjukaar.vista.client;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import net.mehvahdjukaar.moonlight.api.util.math.Vec2i;
@@ -27,6 +28,7 @@ public class VistaRenderTypes extends RenderType {
 
     private static final ShaderStateShard CAMERA_SHADER_STATE = new ShaderStateShard(VistaModClient.CAMERA_VIEW_SHADER);
     private static final ShaderStateShard STATIC_SHADER_STATE = new ShaderStateShard(VistaModClient.STATIC_SHADER);
+    private static final ShaderStateShard MIRROR_MATERIAL_SHADER_STATE = new ShaderStateShard(VistaModClient.MIRROR_MATERIAL_SHADER);
 
     private record CrtKey(ResourceLocation texture, float frameW, float frameH, Vec2i scale,
                           IntAnimationState turnOnAnim, IntAnimationState staticAnim,
@@ -82,6 +84,38 @@ public class VistaRenderTypes extends RenderType {
         setFloat(shader, "NoiseIntensity", key.staticAnim.getValue(pt));
         setFloat(shader, "FadeAnimation", key.turnOnAnim.getValue(pt));
     }
+
+    private record MirrorKey(ResourceLocation reflectionTexture, int wTiles, int hTiles) {}
+
+    public static RenderType mirrorMaterial(ResourceLocation reflectionTexture, int wTiles, int hTiles) {
+        return MIRROR_MATERIAL_RENDER_TYPE.apply(new MirrorKey(reflectionTexture, wTiles, hTiles));
+    }
+
+    private static final Function<MirrorKey, RenderType> MIRROR_MATERIAL_RENDER_TYPE = Util.memoize(k -> {
+        var textureState = MultiTextureStateShard.builder()
+                .add(k.reflectionTexture, true, false)
+                .add(VistaModClient.MIRROR_FRONT, false, false)
+                .build();
+        CompositeState compositeState = CompositeState.builder()
+                .setShaderState(MIRROR_MATERIAL_SHADER_STATE)
+                .setTransparencyState(NO_TRANSPARENCY)
+                .setLightmapState(LIGHTMAP)
+                .setOverlayState(NO_OVERLAY)
+                .setTextureState(textureState)
+                // Sampler0/1 are bound by the texture-state shard (reflection, front),
+                // Sampler2 by LIGHTMAP. Bind the overlay directly to unit 3 here — putting it
+                // into MultiTextureStateShard would collide with LIGHTMAP at unit 2.
+                .setTexturingState(new TexturingStateShard("set_mirror_uniforms",
+                        () -> {
+                            RenderSystem.setShaderTexture(3, VistaModClient.MIRROR_OVERLAY);
+                            ShaderInstance shader = VistaModClient.MIRROR_MATERIAL_SHADER.get();
+                            setFloat2(shader, "Tiles", k.wTiles, k.hTiles);
+                        },
+                        () -> {}))
+                .createCompositeState(false);
+        return create("vista_mirror_material", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS,
+                1536, true, false, compositeState);
+    });
 
     public static final RenderType NOISE =
             create("vista_noise", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS,

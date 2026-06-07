@@ -9,6 +9,7 @@ import net.mehvahdjukaar.moonlight.api.misc.ForgeOverride;
 import net.minecraft.world.level.LightLayer;
 import net.mehvahdjukaar.moonlight.api.util.math.Vec2i;
 import net.mehvahdjukaar.vista.client.MirrorReflection;
+import net.mehvahdjukaar.vista.client.VistaRenderTypes;
 import net.mehvahdjukaar.vista.client.textures.MirrorReflectionTexture;
 import net.mehvahdjukaar.vista.client.textures.MirrorTextureManager;
 import net.mehvahdjukaar.vista.common.mirror.MirrorBlock;
@@ -18,7 +19,6 @@ import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.core.Direction;
@@ -115,8 +115,8 @@ public class MirrorBlockEntityRenderer implements BlockEntityRenderer<MirrorBloc
         int skyBrightness = level.getBrightness(LightLayer.SKY, blockEntity.getBlockPos().relative(dir));
         int light = LightTexture.pack(15, skyBrightness);
 
-        VertexConsumer vc = buffer.getBuffer(RenderType.entitySolid(text.getTextureLocation()));
-//TODO: use diff render type so no normal
+        VertexConsumer vc = buffer.getBuffer(VistaRenderTypes.mirrorMaterial(
+                text.getTextureLocation(), (int) w, (int) h));
         // Master is at bottom-right in local-rotated space (grid extends along facing.CCW
         // = local -X), so the quad spans from local x=0.5-w to x=0.5.
         // UVs rotated 180° (u0,v0=1,1; u1,v1=0,0) — framebuffer texture is upside-down
