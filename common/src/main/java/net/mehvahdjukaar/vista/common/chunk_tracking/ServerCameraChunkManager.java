@@ -235,7 +235,9 @@ public class ServerCameraChunkManager {
             //TODO: send chunks even if outside of current dim.
             if (dest.dimension().equals(level.dimension())) {
                 // Skip ViewFinders already within this zone (the caller already covers them)
-                ChunkPos vfChunk = new ChunkPos(dest.pos());
+                BlockPos pos = dest.pos();
+                pos = BlockPos.containing(SableCompanion.INSTANCE.projectOutOfSubLevel(level,(Position) Vec3.atLowerCornerOf(pos)));
+                ChunkPos vfChunk = new ChunkPos(pos);
                 if (inZone.test(vfChunk.x, vfChunk.z)) continue;
             }
 
