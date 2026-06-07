@@ -1,14 +1,23 @@
 package net.mehvahdjukaar.vista.client.textures;
 
+import com.mojang.blaze3d.pipeline.RenderTarget;
+import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.BufferUploader;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.VertexFormat;
 import net.mehvahdjukaar.moonlight.api.util.math.Vec2i;
+import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.client.MirrorReflection;
-import net.mehvahdjukaar.vista.client.renderer.MirrorBlockEntityRenderer;
 import net.mehvahdjukaar.vista.client.renderer.SceneCameraSetup;
 import net.mehvahdjukaar.vista.client.renderer.VistaLevelRenderer;
 import net.mehvahdjukaar.vista.common.mirror.MirrorBlock;
 import net.mehvahdjukaar.vista.common.mirror.MirrorBlockEntity;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.ShaderInstance;
+import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
@@ -20,6 +29,7 @@ import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 
+import java.util.Objects;
 import java.util.UUID;
 
 /**
@@ -149,9 +159,61 @@ public class MirrorReflectionTexture extends PerspectiveTexture {
         // camera preserves winding so we leave back-face culling alone.
         VistaLevelRenderer.render(this, mirror, setup, 0f, false, projection, bfsStart);
 
+        // Stamp the MIRROR_OVERLAY onto the just-rendered back buffer, one full copy per block,
+        // so the overlay is baked into the sampled image — no separate translucent quad in the
+        // BE renderer, no z-fighting at distance.
+        blitTiledOverlay(VistaModClient.MIRROR_OVERLAY, connection.x(), connection.y());
+
         // Blit the freshly-rendered write target onto the read target so the next frame's quad
         // samples the new image (matches RenderableDynamicTexture.redraw()'s tail).
         swapBackToFront();
+    }
+
+    /**
+     * Draws {@code overlayTex} over our current write target, one full copy per cell of a
+     * {@code wTiles}×{@code hTiles} grid. Mirrors {@code LiveFeedTexture.drawOverlay}'s blit
+     * pattern but loops with a per-tile viewport so each iteration stamps the full overlay into
+     * a sub-rect of the framebuffer (the blit shader's vertex format is position-only, so we
+     * can't pass UV>1 to lean on GL_REPEAT — the viewport split is the equivalent trick).
+     */
+    private void blitTiledOverlay(ResourceLocation overlayTex, int wTiles, int hTiles) {
+        Minecraft mc = Minecraft.getInstance();
+        RenderTarget oldTarget = mc.getMainRenderTarget();
+        RenderTarget rt = getRenderTarget();
+        rt.bindWrite(true);
+
+        AbstractTexture texture = mc.getTextureManager().getTexture(overlayTex);
+
+        RenderSystem.assertOnRenderThread();
+        GlStateManager._colorMask(true, true, true, true);
+        GlStateManager._disableDepthTest();
+        GlStateManager._depthMask(false);
+        GlStateManager._enableBlend();
+
+        ShaderInstance blit = Objects.requireNonNull(mc.gameRenderer.blitShader, "Blit shader not loaded");
+        blit.setSampler("DiffuseSampler", texture.getId());
+        blit.apply();
+
+        int tileW = rt.width / wTiles;
+        int tileH = rt.height / hTiles;
+        for (int i = 0; i < wTiles; i++) {
+            for (int j = 0; j < hTiles; j++) {
+                RenderSystem.viewport(i * tileW, j * tileH, tileW, tileH);
+                BufferBuilder bb = RenderSystem.renderThreadTesselator().begin(
+                        VertexFormat.Mode.QUADS, DefaultVertexFormat.BLIT_SCREEN);
+                bb.addVertex(0f, 0f, 0f);
+                bb.addVertex(1f, 0f, 0f);
+                bb.addVertex(1f, 1f, 0f);
+                bb.addVertex(0f, 1f, 0f);
+                BufferUploader.draw(bb.buildOrThrow());
+            }
+        }
+        blit.clear();
+
+        RenderSystem.viewport(0, 0, rt.width, rt.height);
+        GlStateManager._depthMask(true);
+        GlStateManager._colorMask(true, true, true, true);
+        oldTarget.bindWrite(true);
     }
 
     /**
@@ -160,7 +222,7 @@ public class MirrorReflectionTexture extends PerspectiveTexture {
      * mirrors don't tilt the eye axis). The off-axis projection in {@link MirrorReflectionTexture}
      * does the rest — it bends the frustum to fit the mirror's frame from that vantage point.
      */
-    private static void setupMirrorCamera(Camera camera, Level level, Vec3 reflectedEye, float yaw) {
+    private void setupMirrorCamera(Camera camera, Level level, Vec3 reflectedEye, float yaw) {
         camera.initialized = true;
         camera.level = level;
         if (camera.entity == null) {

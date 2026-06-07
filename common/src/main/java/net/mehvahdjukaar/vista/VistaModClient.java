@@ -53,16 +53,18 @@ public class VistaModClient {
 
     public static final ModelLayerLocation VIEWFINDER_MODEL = loc("viewfinder");
     public static final Material WAVE_EFFECT = new Material(LOCATION_BLOCKS, VistaMod.res("block/wave_gate/wave"));
+    public static final Material MIRROR_OVERLAY_MATERIAL = new Material(LOCATION_BLOCKS, VistaMod.res("block/mirror/overlay"));
 
+    public static final ResourceLocation MIRROR_OVERLAY = VistaMod.res("textures/block/mirror/overlay.png");
     public static final ResourceLocation LL_OVERLAY = VistaMod.res("textures/cassette_tape/liveleak.png");
     public static final ResourceLocation PAUSE_OVERLAY = VistaMod.res("textures/cassette_tape/pause.png");
     public static final ResourceLocation PAUSE_PLAY_OVERLAY = VistaMod.res("textures/cassette_tape/pause_play.png");
     public static final ResourceLocation DISCONNECT_OVERLAY = VistaMod.res("textures/cassette_tape/disconnect.png");
     public static final ResourceLocation LOADING_OVERLAY = VistaMod.res("textures/cassette_tape/loading_dots.png");
+    public static final ResourceLocation BLACK_LOADING_SCREEN = VistaMod.res("loading_dots_black");
 
     public static final ResourceLocation BARS_SCREEN = VistaMod.res("color_bars");
     public static final ResourceLocation NO_ENERGY_SCREEN = VistaMod.res("no_power");
-    public static final ResourceLocation BLACK_LOADING_SCREEN = VistaMod.res("loading_dots_black");
     public static final ResourceLocation SMILE_SCREEN = VistaMod.res("smile");
     public static final ResourceLocation NEUTRAL_SCREEN = VistaMod.res("neutral");
     public static final ResourceLocation SAD_SCREEN = VistaMod.res("sad");
