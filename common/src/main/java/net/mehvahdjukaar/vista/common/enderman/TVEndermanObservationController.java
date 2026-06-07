@@ -8,7 +8,6 @@ import net.mehvahdjukaar.vista.client.renderer.ViewFinderBlockEntityRenderer;
 import net.mehvahdjukaar.vista.common.broadcast.BroadcastManager;
 import net.mehvahdjukaar.vista.common.tv.TVBlock;
 import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
-import net.mehvahdjukaar.vista.common.tv.TVSpectatorView;
 import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.minecraft.core.Direction;
@@ -78,7 +77,7 @@ public class TVEndermanObservationController extends AbstractEndermanObservation
                 (fp, hit) -> orientAtViewFinder(vf, fp, hit));
     }
 
-    private ScreenBasis computeScreenBasis() {
+    private ScreenInfo computeScreenBasis() {
         Direction facing = myTv.getBlockState().getValue(TVBlock.FACING);
         float screenW = myTv.getScreenPixelWidth() / 16f;
         float screenH = myTv.getScreenPixelHeight() / 16f;
@@ -88,10 +87,10 @@ public class TVEndermanObservationController extends AbstractEndermanObservation
         Vec3 normal = new Vec3(facing.step()).normalize();
         Vec3 up = new Vec3(0, 1, 0);
         Vec3 right = normal.cross(up);
-        return new ScreenBasis(center, normal, right, up, screenW, screenH);
+        return new ScreenInfo(center, normal, right, up, screenW, screenH);
     }
 
-    private static boolean orientAtViewFinder(ViewFinderBlockEntity vf, Player fakePlayer, TVSpectatorView hit) {
+    private static boolean orientAtViewFinder(ViewFinderBlockEntity vf, Player fakePlayer, ScreenSpectatorView hit) {
         Vec3 lensFacing = new Vec3(vf.getGlobalFacing(1));
         Vec3 lensCenter = Vec3.atCenterOf(vf.getBlockPos());
         float eyeH = fakePlayer.getEyeHeight();

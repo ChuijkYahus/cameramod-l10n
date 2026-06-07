@@ -13,7 +13,6 @@ public class AngeredFromTvCondition implements LootItemCondition {
 
     public static final MapCodec<AngeredFromTvCondition> CODEC = MapCodec.unit(AngeredFromTvCondition::new);
 
-
     @Override
     public LootItemConditionType getType() {
         return VistaMod.TV_ENDERMAN_CONDITION.get();

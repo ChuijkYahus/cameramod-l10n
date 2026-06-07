@@ -69,11 +69,6 @@ public class MirrorBlockEntityRenderer implements BlockEntityRenderer<MirrorBloc
         LOD lod = LOD.at(blockEntity);
         if (lod.isPlaneCulled(dir, 0.5f, 1.5f, 0f)) return;
 
-        // Recursion guard: a mirror inside another mirror's reflection draws only its block
-        // model (frame). The cached texture is the previous frame's reflection from THIS
-        // mirror's POV — meaningless content for a different reflection.
-        if (VistaLevelRenderer.isRenderingLiveFeed()) return;
-
         Vec3 normal = Vec3.atLowerCornerOf(dir.getNormal());
         Vec3 planePoint = Vec3.atCenterOf(blockEntity.getBlockPos()).add(normal.scale(0.5));
 

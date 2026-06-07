@@ -2,14 +2,15 @@
   "parent": "block/block",
   "textures": {
     "particle": "minecraft:block/iron_block",
-    "frame": "minecraft:block/iron_block"
+    "frame": "minecraft:block/iron_block",
+    "front": "vista:block/mirror/front"
   },
   "elements": [
     {
       "from": [0, 0, 0],
       "to": [16, 16, 1],
       "faces": {
-        "south": {"texture": "#frame"},
+        "south": {"texture": "#front", "uv": [0, 0, 16, 16]},
         "east":  {"texture": "#frame", "uv": [15, 0, 16, 16]},
         "west":  {"texture": "#frame", "uv": [0, 0, 1, 16]},
         "up":    {"texture": "#frame", "uv": [0, 0, 16, 1]},

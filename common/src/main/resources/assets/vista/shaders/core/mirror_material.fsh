@@ -21,6 +21,11 @@ uniform vec4 FogColor;
 // copy per block (matches what the previous overlay-blit pass did).
 uniform vec2 Tiles;
 
+// Silvering fade-in factor in [0,1]. 0 = no reflection (just the base material), 1 =
+// full reflection. Driven by MirrorReflectionTexture#getFadeProgress so the surface
+// fades in over a few hundred ms after the first valid frame.
+uniform float Fade;
+
 in float vertexDistance;
 in vec4 vertexColor;
 in vec4 lightMapColor;
@@ -122,6 +127,9 @@ void main() {
     float reflectivity = REFLECTIVITY;
     reflectivity *= (1.0 - edge * EDGE_WEAR);
     reflectivity *= (1.0 - scratch * 0.6);
+    // Fade the silvering in from 0 → full. Multiplying here means the wear/scratch
+    // masking still attenuates the partial reflection correctly during the ramp.
+    reflectivity *= Fade;
 
     // ---------- COMPOSITION ----------
     vec3 color = mix(base, refl, reflectivity);

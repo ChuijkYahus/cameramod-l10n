@@ -150,6 +150,22 @@ public class MirrorBlock extends HorizontalDirectionalBlock implements EntityBlo
         }
 
         @Override
+        public void planBeMove(@Nullable Rect2D fromRec, Rect2D toRec) {
+            super.planBeMove(fromRec, toRec);
+            if (fromRec == null) return;
+            // Reset the OLD master's cached connection size before any cells in (from - to)
+            // get re-stated to SINGLE. Without this, when a grid shrinks and the old master
+            // ends up outside the new rect, its BE persists but keeps reporting the old
+            // multi-block dimensions — the BE renderer then asks the texture manager for
+            // the wrong screen-pixel size and never lands on a fresh 1x1 texture.
+            BlockPos target = targetPos(fromRec.bottomLeft());
+            if (level.getBlockEntity(target) instanceof MirrorBlockEntity mirror) {
+                mirror.setConnectionSize(Vec2i.ONE);
+                mirror.setChanged();
+            }
+        }
+
+        @Override
         protected void onMasterApplied(BlockPos target, Rect2D rect) {
             if (level.getBlockEntity(target) instanceof MirrorBlockEntity mirror) {
                 mirror.setConnectionSize(rect.getSize());

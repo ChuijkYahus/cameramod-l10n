@@ -4,7 +4,6 @@ import com.mojang.authlib.GameProfile;
 import net.mehvahdjukaar.moonlight.api.util.math.Vec2i;
 import net.mehvahdjukaar.vista.common.mirror.MirrorBlock;
 import net.mehvahdjukaar.vista.common.mirror.MirrorBlockEntity;
-import net.mehvahdjukaar.vista.common.tv.TVSpectatorView;
 import net.minecraft.core.Direction;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
@@ -53,11 +52,11 @@ public class MirrorEndermanObservationController extends AbstractEndermanObserva
 
     @Override
     protected TickContext openTick() {
-        ScreenBasis sb = computeScreenBasis();
+        ScreenInfo sb = computeScreenBasis();
         return new TickContext(sb, myMirror.getBlockPos(), (fp, hit) -> orientAtReflection(sb, fp, hit));
     }
 
-    private ScreenBasis computeScreenBasis() {
+    private ScreenInfo computeScreenBasis() {
         Direction facing = myMirror.getBlockState().getValue(MirrorBlock.FACING);
         Vec2i connected = myMirror.getConnectedCount();
         // Master tile sits at the bottom-right corner of the grid (see MirrorBlockEntityRenderer);
@@ -71,10 +70,10 @@ public class MirrorEndermanObservationController extends AbstractEndermanObserva
                 .add(normal.scale(0.5))
                 .add(right.scale((w - 1) * 0.5))
                 .add(up.scale((h - 1) * 0.5));
-        return new ScreenBasis(center, normal, right, up, w, h);
+        return new ScreenInfo(center, normal, right, up, w, h);
     }
 
-    private static boolean orientAtReflection(ScreenBasis sb, Player fakePlayer, TVSpectatorView hit) {
+    private static boolean orientAtReflection(ScreenInfo sb, Player fakePlayer, ScreenSpectatorView hit) {
         // 1) reconstruct world-space hit point on the mirror surface
         double localX = hit.localHit().x * sb.width();
         double localY = hit.localHit().y * sb.height();

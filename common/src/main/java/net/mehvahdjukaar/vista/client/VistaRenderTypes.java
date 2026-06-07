@@ -3,9 +3,11 @@ package net.mehvahdjukaar.vista.client;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
+import net.mehvahdjukaar.moonlight.api.client.texture_renderer.DynamicTextureRenderer;
 import net.mehvahdjukaar.moonlight.api.util.math.Vec2i;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.VistaModClient;
+import net.mehvahdjukaar.vista.client.textures.MirrorReflectionTexture;
 import net.mehvahdjukaar.vista.common.tv.IntAnimationState;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.minecraft.Util;
@@ -110,6 +112,14 @@ public class VistaRenderTypes extends RenderType {
                             RenderSystem.setShaderTexture(3, VistaModClient.MIRROR_OVERLAY);
                             ShaderInstance shader = VistaModClient.MIRROR_MATERIAL_SHADER.get();
                             setFloat2(shader, "Tiles", k.wTiles, k.hTiles);
+                            // Look up the live reflection texture (cache hit; ResourceLocation
+                            // is unique per mirror) and pull its fade progress. If it's gone
+                            // for any reason, default to fully faded in so we never draw an
+                            // un-silvered mirror in the steady state.
+                            float fade = 1f;
+                            var t = DynamicTextureRenderer.getTextureIfPresent(k.reflectionTexture);
+                            if (t instanceof MirrorReflectionTexture mrt) fade = mrt.getFadeProgress();
+                            setFloat(shader, "Fade", fade);
                         },
                         () -> {}))
                 .createCompositeState(false);

@@ -44,13 +44,41 @@ public class MirrorReflectionTexture extends PerspectiveTexture {
     private static final float MIN_NEAR = 0.05f;
     private static final float FAR = 1000f;
 
+    // Wall-clock duration of the silvering fade-in (reflectivity 0 → full). Decoupled from
+    // tick rate so it stays snappy regardless of TPS / config update mode.
+    private static final long FADE_DURATION_NANOS = 300_000_000L;
+
     @Nullable
     private MirrorBlockEntity pendingMirror;
     @Nullable
     private Vec3 pendingEye;
 
+    // Until the first successful reflection draw, the underlying framebuffer is uninitialised
+    // (samples as white). Callers use this to skip drawing the mirror surface on the first
+    // frame after the texture is allocated, so the white flash never reaches the screen.
+    private boolean hasRendered = false;
+    // Timestamp of the first successful draw; drives the shader fade-in. -1 means "not yet".
+    private long firstRenderNanos = -1L;
+
     public MirrorReflectionTexture(ResourceLocation resourceLocation, int width, int height, UUID id) {
         super(resourceLocation, width, height, id);
+    }
+
+    public boolean hasRendered() {
+        return hasRendered;
+    }
+
+    /**
+     * Reflection fade-in factor in [0, 1] — 0 right after the first draw, 1 once
+     * {@link #FADE_DURATION_NANOS} has elapsed. Read once per batch flush by the mirror
+     * render-type uniform setup; cheap (two longs + a divide).
+     */
+    public float getFadeProgress() {
+        if (firstRenderNanos < 0) return 0f;
+        long elapsed = System.nanoTime() - firstRenderNanos;
+        if (elapsed >= FADE_DURATION_NANOS) return 1f;
+        if (elapsed <= 0) return 0f;
+        return (float) ((double) elapsed / (double) FADE_DURATION_NANOS);
     }
 
     public void setPending(MirrorBlockEntity mirror, Vec3 eye) {
@@ -154,6 +182,10 @@ public class MirrorReflectionTexture extends PerspectiveTexture {
         // Sampler0, MIRROR_FRONT as Sampler1 (base material), and MIRROR_OVERLAY as Sampler3
         // (per-tile decal applied last).
         swapBackToFront();
+        if (!hasRendered) {
+            hasRendered = true;
+            firstRenderNanos = System.nanoTime();
+        }
     }
 
     /**

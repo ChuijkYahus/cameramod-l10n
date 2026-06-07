@@ -2,7 +2,6 @@ package net.mehvahdjukaar.vista.common.enderman;
 
 import com.mojang.authlib.GameProfile;
 import net.mehvahdjukaar.moonlight.api.util.FakePlayerManager;
-import net.mehvahdjukaar.vista.common.tv.TVSpectatorView;
 import net.mehvahdjukaar.vista.common.view_finder.EndermanLookResult;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.monster.EnderMan;
@@ -31,20 +30,23 @@ import java.util.List;
  */
 public abstract class AbstractEndermanObservationController {
 
-    public record ScreenBasis(Vec3 center, Vec3 normal, Vec3 right, Vec3 up, float width, float height) {
+    protected record ScreenInfo(Vec3 center, Vec3 normal, Vec3 right, Vec3 up, float width, float height) {
+    }
+
+    protected record ScreenSpectatorView(Player player, Vec2 localHit, double distance) {
     }
 
     @FunctionalInterface
-    public interface FakePlayerOrient {
+    protected interface FakePlayerOrienter {
         /**
          * Position + orient the fake player so that {@link EnderMan#isLookingAtMe(Player)}
          * answers "is this enderman in the path of the world ray emerging from the given hit".
          * Return false to skip this hit.
          */
-        boolean orient(Player fakePlayer, TVSpectatorView hit);
+        boolean orient(Player fakePlayer, ScreenSpectatorView hit);
     }
 
-    protected record TickContext(ScreenBasis screenBasis, BlockPos endermenAnchor, FakePlayerOrient orient) {
+    protected record TickContext(ScreenInfo screenBasis, BlockPos endermenAnchor, FakePlayerOrienter orient) {
     }
 
     protected abstract Level level();
@@ -65,7 +67,7 @@ public abstract class AbstractEndermanObservationController {
     public boolean isPlayerLookingAtEnderman(EnderMan enderMan, Player player) {
         TickContext ctx = openTick();
         if (ctx == null) return false;
-        TVSpectatorView view = getPlayerHit(player, ctx.screenBasis(), playersScreenDist());
+        ScreenSpectatorView view = getPlayerHit(player, ctx.screenBasis(), playersScreenDist());
         if (view == null) return false;
         Player fakePlayer = FakePlayerManager.get(fakePlayerProfile(), level());
         return !checkEndermenLookedAt(List.of(view), List.of(enderMan), fakePlayer, ctx.orient()).isEmpty();
@@ -76,7 +78,7 @@ public abstract class AbstractEndermanObservationController {
         if (ctx == null) return false;
         Level level = level();
 
-        List<TVSpectatorView> views = findPlayersLookingAtScreen(level.players(), ctx.screenBasis(), playersScreenDist());
+        List<ScreenSpectatorView> views = findPlayersLookingAtScreen(level.players(), ctx.screenBasis(), playersScreenDist());
         if (views.isEmpty()) return false;
 
         List<EnderMan> enderMen = findEndermenNear(level, ctx.endermenAnchor(), endermenSearchDist());
@@ -94,13 +96,13 @@ public abstract class AbstractEndermanObservationController {
 
     // --- shared math helpers ---
 
-    protected static List<TVSpectatorView> findPlayersLookingAtScreen(Collection<? extends Player> players,
-                                                                      ScreenBasis sb, float maxDist) {
+    protected static List<ScreenSpectatorView> findPlayersLookingAtScreen(Collection<? extends Player> players,
+                                                                          ScreenInfo sb, float maxDist) {
         if (players.isEmpty()) return List.of();
-        List<TVSpectatorView> result = new ArrayList<>();
+        List<ScreenSpectatorView> result = new ArrayList<>();
         for (Player p : players) {
             if (p.isCreative()) continue;
-            TVSpectatorView vr = getPlayerHit(p, sb, maxDist);
+            ScreenSpectatorView vr = getPlayerHit(p, sb, maxDist);
             if (vr != null) result.add(vr);
         }
         return result;
@@ -114,12 +116,12 @@ public abstract class AbstractEndermanObservationController {
                 em -> em.distanceToSqr(center.x, center.y, center.z) < rangeSq);
     }
 
-    protected static List<EndermanLookResult> checkEndermenLookedAt(List<TVSpectatorView> views,
+    protected static List<EndermanLookResult> checkEndermenLookedAt(List<ScreenSpectatorView> views,
                                                                     List<EnderMan> endermen,
                                                                     Player fakePlayer,
-                                                                    FakePlayerOrient orient) {
+                                                                    FakePlayerOrienter orient) {
         List<EndermanLookResult> results = new ArrayList<>();
-        for (TVSpectatorView vr : views) {
+        for (ScreenSpectatorView vr : views) {
             if (!orient.orient(fakePlayer, vr)) continue;
             for (EnderMan man : endermen) {
                 if (man.isLookingAtMe(fakePlayer)) {
@@ -132,7 +134,7 @@ public abstract class AbstractEndermanObservationController {
 
     /** Ray-cast the player's view onto a screen rect. Returns local UV in [-0.5, 0.5], or null. */
     @Nullable
-    protected static TVSpectatorView getPlayerHit(Player player, ScreenBasis sb, float maxDist) {
+    protected static ScreenSpectatorView getPlayerHit(Player player, ScreenInfo sb, float maxDist) {
         final double EPS = 1e-6;
         Vec3 eyePos = player.getEyePosition(1.0F);
 
@@ -155,7 +157,7 @@ public abstract class AbstractEndermanObservationController {
         double y = local.dot(sb.up);
 
         if (Math.abs(x) <= (sb.width / 2f) && Math.abs(y) <= (sb.height / 2f)) {
-            return new TVSpectatorView(player, new Vec2((float) x / sb.width, (float) y / sb.height), t);
+            return new ScreenSpectatorView(player, new Vec2((float) x / sb.width, (float) y / sb.height), t);
         }
         return null;
     }

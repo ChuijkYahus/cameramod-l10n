@@ -21,14 +21,12 @@ public class EndermanFreezeWhenLookedAtThroughTVGoal extends Goal {
         this.setFlags(EnumSet.of(Flag.JUMP, Flag.MOVE, Flag.LOOK));
     }
 
-
     private void prime(Player player, AbstractEndermanObservationController observer) {
         this.target = player;
         this.observer = observer;
         this.enderman.setBeingStaredAt();
         this.enderman.setTarget(player);
     }
-
 
     @Override
     public boolean canUse() {
@@ -81,7 +79,6 @@ public class EndermanFreezeWhenLookedAtThroughTVGoal extends Goal {
         }
         return false;
     }
-
 
     @Nullable
     private static EndermanFreezeWhenLookedAtThroughTVGoal findGoal(EnderMan man) {

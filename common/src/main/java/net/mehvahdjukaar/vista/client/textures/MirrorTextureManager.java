@@ -3,6 +3,7 @@ package net.mehvahdjukaar.vista.client.textures;
 import net.mehvahdjukaar.moonlight.api.client.texture_renderer.DynamicTextureRenderer;
 import net.mehvahdjukaar.moonlight.api.util.math.Vec2i;
 import net.mehvahdjukaar.vista.VistaMod;
+import net.mehvahdjukaar.vista.client.renderer.VistaLevelRenderer;
 import net.mehvahdjukaar.vista.common.mirror.MirrorBlockEntity;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.minecraft.client.Minecraft;
@@ -52,7 +53,15 @@ public class MirrorTextureManager {
     public static MirrorReflectionTexture getMirrorTexture(MirrorBlockEntity mirror, Vec2i screenSize, Vec3 eye) {
         MirrorReflectionTexture texture = getMirrorTexture(mirror.getId(), screenSize);
         if (texture == null) return null;
-        if (ClientConfigs.MIRROR_UPDATE_MODE.get() != ClientConfigs.MirrorUpdateMode.TEXTURE_REFRESH){
+        // Inside a nested reflection render (mirror seen inside another mirror), always defer
+        // through PENDING. VistaLevelRenderer.render isn't re-entrant — its single-slot statics
+        // for camera/target/state would get clobbered by a nested synchronous refresh. The
+        // re-queued entries land in next frame's PENDING (processPending snapshot-and-clears
+        // before iterating), so each nesting level updates one frame deeper. Two mirrors facing
+        // each other produce a wave of updates, bounded to one off-axis render per mirror per
+        // frame.
+        if (VistaLevelRenderer.isRenderingLiveFeed() ||
+                ClientConfigs.MIRROR_UPDATE_MODE.get() != ClientConfigs.MirrorUpdateMode.TEXTURE_REFRESH){
             // Queue into MirrorTextureManager's PENDING list; processPending flushes it from the
             // onRenderTickEnd hook.
             requestUpdate(mirror, screenSize, eye);
@@ -63,7 +72,11 @@ public class MirrorTextureManager {
             texture.setPending(mirror, eye);
             texture.setUpdateNextTick(true);
         }
-        return texture;
+        // First frame after allocation the framebuffer is uninitialised (samples as white).
+        // The queued render above will fill it before next frame; until then, signal "not
+        // ready" so the BE renderer skips drawing the mirror face instead of stamping a
+        // white quad.
+        return texture.hasRendered() ? texture : null;
     }
 
     /**
