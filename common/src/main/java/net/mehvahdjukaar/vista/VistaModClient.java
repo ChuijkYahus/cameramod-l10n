@@ -211,8 +211,8 @@ public class VistaModClient {
     public static void onClientDisconnect() {
         LiveFeedTexturesManager.clear();
         WebTexturesManager.clear();
-        VistaLevelRenderer.clear();
         MirrorTextureManager.clear();
+        VistaLevelRenderer.clear();
     }
 
     public static void onClientTick(Minecraft minecraft) {
@@ -222,8 +222,6 @@ public class VistaModClient {
         if (p == null) return;
 
         ViewFinderController.onClientTick(minecraft);
-
-
     }
 
     public static void onRenderTickEnd(Minecraft minecraft) {

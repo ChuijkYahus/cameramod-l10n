@@ -1,4 +1,4 @@
-package net.mehvahdjukaar.vista.common.tv.enderman;
+package net.mehvahdjukaar.vista.common.enderman;
 
 import net.mehvahdjukaar.vista.VistaMod;
 import net.minecraft.world.entity.LivingEntity;
@@ -14,7 +14,7 @@ public class EndermanFreezeWhenLookedAtThroughTVGoal extends Goal {
     @Nullable
     private Player target;
 
-    private TVEndermanObservationController tvAccess;
+    private AbstractEndermanObservationController observer;
 
     public EndermanFreezeWhenLookedAtThroughTVGoal(EnderMan enderman) {
         this.enderman = enderman;
@@ -22,9 +22,9 @@ public class EndermanFreezeWhenLookedAtThroughTVGoal extends Goal {
     }
 
 
-    private void prime(Player player, TVEndermanObservationController tv) {
+    private void prime(Player player, AbstractEndermanObservationController observer) {
         this.target = player;
-        this.tvAccess = tv;
+        this.observer = observer;
         this.enderman.setBeingStaredAt();
         this.enderman.setTarget(player);
     }
@@ -32,10 +32,10 @@ public class EndermanFreezeWhenLookedAtThroughTVGoal extends Goal {
 
     @Override
     public boolean canUse() {
-        if (tvAccess == null) {
+        if (observer == null) {
             return false;
         }
-        if (tvAccess.isInvalid()) {
+        if (observer.isInvalid()) {
             return false;
         }
         LivingEntity t = this.enderman.getTarget();
@@ -47,7 +47,7 @@ public class EndermanFreezeWhenLookedAtThroughTVGoal extends Goal {
     }
 
     private boolean isCameraViewValid() {
-        return tvAccess.isPlayerLookingAtEnderman(enderman, target);
+        return observer.isPlayerLookingAtEnderman(enderman, target);
 
     }
 
@@ -70,13 +70,13 @@ public class EndermanFreezeWhenLookedAtThroughTVGoal extends Goal {
     @Override
     public void stop() {
         super.stop();
-        this.tvAccess = null;
+        this.observer = null;
     }
 
-    public static boolean anger(EnderMan man, Player player, TVEndermanObservationController television) {
+    public static boolean anger(EnderMan man, Player player, AbstractEndermanObservationController observer) {
         EndermanFreezeWhenLookedAtThroughTVGoal goal = findGoal(man);
         if (goal != null) {
-            goal.prime(player, television);
+            goal.prime(player, observer);
             return true;
         }
         return false;

@@ -11,7 +11,7 @@ import net.mehvahdjukaar.vista.client.video_source.IVideoSource;
 import net.mehvahdjukaar.vista.common.cassette.IBroadcastSource;
 import net.mehvahdjukaar.vista.common.cassette.ITvCassette;
 import net.mehvahdjukaar.vista.common.chunk_tracking.ServerCameraChunkManager;
-import net.mehvahdjukaar.vista.common.tv.enderman.TVEndermanObservationController;
+import net.mehvahdjukaar.vista.common.enderman.TVEndermanObservationController;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.mehvahdjukaar.vista.configs.CommonConfigs;
 import net.minecraft.core.BlockPos;
@@ -283,8 +283,10 @@ public class TVBlockEntity extends ItemDisplayTile {
             if (consumeEnergy && !tv.hasEnergy()) return;
 
             //enderman stuff
-            //stagger updates since this is expensive
-            if ((world.getGameTime() + pos.asLong()) % 27 == 0) {
+            // Run once every TV_OBSERVATION_INTERVAL ticks, offset by pos so different TVs
+            // don't all fire on the same tick. Previous `% 27 == 0` skipped only 1/27 ticks
+            // (no real staggering).
+            if ((world.getGameTime() + pos.asLong()) % TV_OBSERVATION_INTERVAL != 0) {
                 return;
             }
             boolean hasAngeredEntity = false;
@@ -309,6 +311,8 @@ public class TVBlockEntity extends ItemDisplayTile {
     public boolean isScreenOn(float partialTicks) {
         return this.wasScreenOn || this.fadeAnimation.getValue(partialTicks) != 0;
     }
+
+    private static final int TV_OBSERVATION_INTERVAL = 10;
 
     private static final int EDGE_PIXEL_LEN = 4;
     public static final int MIN_SCREEN_PIXEL_SIZE = 16 - EDGE_PIXEL_LEN;

@@ -1,4 +1,4 @@
-package net.mehvahdjukaar.vista.common.tv.enderman;
+package net.mehvahdjukaar.vista.common.enderman;
 
 import com.mojang.serialization.MapCodec;
 import net.mehvahdjukaar.vista.VistaMod;

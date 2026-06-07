@@ -2,8 +2,10 @@ package net.mehvahdjukaar.vista.common.mirror;
 
 import com.mojang.serialization.MapCodec;
 import net.mehvahdjukaar.moonlight.api.block.IOptionalEntityBlock;
+import net.mehvahdjukaar.moonlight.api.util.Utils;
 import net.mehvahdjukaar.moonlight.api.util.math.Rect2D;
 import net.mehvahdjukaar.moonlight.api.util.math.Vec2i;
+import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.common.tv.PowerState;
 import net.mehvahdjukaar.vista.common.tv.connection.AbstractGridAccess;
 import net.mehvahdjukaar.vista.common.tv.connection.ConnectionType;
@@ -22,6 +24,8 @@ import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityTicker;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
@@ -96,6 +100,11 @@ public class MirrorBlock extends HorizontalDirectionalBlock implements EntityBlo
     @Override
     public @Nullable BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return shouldHaveBlockEntity(state) ? new MirrorBlockEntity(pos, state) : null;
+    }
+
+    @Override
+    public @Nullable <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> blockEntityType) {
+        return Utils.getTicker(blockEntityType, VistaMod.MIRROR_TILE.get(), MirrorBlockEntity::onTick);
     }
 
     @Override
