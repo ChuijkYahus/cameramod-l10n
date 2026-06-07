@@ -30,10 +30,10 @@ out vec4 fragColor;
 
 // ---------- PARAMETERS ----------
 const float DISTORTION   = 0.3;
-const float EDGE_WEAR    = 0.3;
+const float EDGE_WEAR    = 0.2;
 const float SCRATCH      = 0.02;
 const float ROUGHNESS    = 0.5;
-const float REFLECTIVITY = 1.0;
+const float REFLECTIVITY = 0.9;
 
 // ---------- HASH / NOISE ----------
 float hash(vec2 p) {
@@ -113,7 +113,7 @@ void main() {
 
     // ---------- BASE ----------
     // Tile the base material one full copy per block — same pattern as the old overlay blit.
-    vec3 base = texture(Sampler1, fract(uv * Tiles)).rgb;
+    vec3 base = (texture(Sampler1, fract(uv * Tiles)) * vertexColor).rgb;
 
     // ---------- EFFECTS ----------
     float edge = edgeMask(uv);
@@ -127,7 +127,7 @@ void main() {
     vec3 color = mix(base, refl, reflectivity);
     color = mix(color, base, edge * EDGE_WEAR);
 
-    vec4 outColor = vec4(color, 1.0) * vertexColor * lightMapColor * ColorModulator;
+    vec4 outColor = vec4(color, 1.0) * lightMapColor * ColorModulator;
 
     // ---------- OVERLAY ----------
     // One full overlay copy per block, alpha-composited on top — matches the old per-tile blit.
