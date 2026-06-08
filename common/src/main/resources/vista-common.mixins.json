@@ -9,6 +9,8 @@
     "ChunkTrackingViewMixin",
     "CompatGeckoLibMixin",
     "EndermanMixin",
+    "EndermanSkullBlockTileMixin",
+    "EnderWatcherBlockEntityMixin",
     "PlayerMixin"
   ],
   "client": [
