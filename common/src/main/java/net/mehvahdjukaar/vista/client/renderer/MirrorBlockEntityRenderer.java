@@ -28,6 +28,10 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.List;
+import java.util.UUID;
 
 public class MirrorBlockEntityRenderer implements BlockEntityRenderer<MirrorBlockEntity> {
 
@@ -78,21 +82,62 @@ public class MirrorBlockEntityRenderer implements BlockEntityRenderer<MirrorBloc
                 planePoint, normal, mainCamera.getPosition());
         if (!reflection.viewerInFront()) return;
 
-        Vec2i screenSize = blockEntity.getScreenPixelSize();
-        // Capture the eye NOW, while we still have the camera that was used to render the BE.
-        // The actual reflection render fires later in the frame; if we resampled the camera at
-        // refresh time it could drift from the source view. Use the raw camera position (the
-        // pre-bob state vanilla exposes) — duplicating GameRenderer.bobView math here would
-        // silently break under any mod that alters bob behavior, and the visual mismatch between
-        // a bobbed BE quad and an un-bobbed reflection is sub-pixel for typical walk speeds.
-        Vec3 eye = mainCamera.getPosition();
-
-        MirrorReflectionTexture text = MirrorTextureManager.getMirrorTexture(blockEntity, screenSize, eye);
-
+        int depth = VistaLevelRenderer.getCurrentDepth();
+        // depth > 0 means: we're inside another mirror's reflection render. The texture lookup
+        // path depends on MIRROR_RECURSION_MODE.
+        MirrorReflectionTexture text;
+        if (depth == 0) {
+            Vec2i screenSize = blockEntity.getScreenPixelSize();
+            // Capture the eye NOW, while we still have the camera that was used to render the BE.
+            // The actual reflection render fires later in the frame; if we resampled the camera at
+            // refresh time it could drift from the source view. Use the raw camera position (the
+            // pre-bob state vanilla exposes) — duplicating GameRenderer.bobView math here would
+            // silently break under any mod that alters bob behavior, and the visual mismatch between
+            // a bobbed BE quad and an un-bobbed reflection is sub-pixel for typical walk speeds.
+            Vec3 eye = mainCamera.getPosition();
+            text = MirrorTextureManager.getMirrorTexture(blockEntity, screenSize, eye);
+        } else {
+            text = resolveNestedTexture(blockEntity, mainCamera.getPosition(), depth);
+        }
 
         if (text == null) return;
 
         drawMirrorFace(blockEntity, dir, poseStack, buffer, text);
+    }
+
+    /**
+     * Texture lookup when this mirror is being drawn inside another mirror's reflection render
+     * (depth > 0). Dispatches by recursion mode:
+     * <ul>
+     *   <li>{@code OFF}: skip drawing entirely.</li>
+     *   <li>{@code SHARED}: cheap path — reuse the mirror's own direct-view texture. Parallax
+     *       is wrong at depth >= 1 but cost stays flat (one texture per mirror).</li>
+     *   <li>{@code RECURSIVE}: allocate a chain-keyed texture so each (mirror, parent-chain) gets
+     *       its own off-axis render with correct parallax. Beyond {@code MIRROR_MAX_RECURSION_DEPTH}
+     *       we render nothing — better to omit the surface than to stamp a wrong-parallax fallback
+     *       that gives the lie away.</li>
+     * </ul>
+     */
+    @Nullable
+    private MirrorReflectionTexture resolveNestedTexture(MirrorBlockEntity blockEntity,
+                                                          Vec3 eye, int depth) {
+        ClientConfigs.MirrorRecursionMode mode = ClientConfigs.MIRROR_RECURSION_MODE.get();
+        Vec2i screenSize = blockEntity.getScreenPixelSize();
+        switch (mode) {
+            case OFF:
+                return null;
+            case SHARED:
+                return MirrorTextureManager.getMirrorTexture(blockEntity, screenSize, eye);
+            case RECURSIVE: {
+                int maxDepth = ClientConfigs.MIRROR_MAX_RECURSION_DEPTH.get();
+                if (depth > maxDepth) return null;
+                List<UUID> chain = VistaLevelRenderer.getCurrentMirrorChain();
+                return MirrorTextureManager.getMirrorTextureForChain(
+                        blockEntity, screenSize, eye, depth, chain);
+            }
+            default:
+                return null;
+        }
     }
 
     private void drawMirrorFace(MirrorBlockEntity blockEntity, Direction dir, PoseStack poseStack,

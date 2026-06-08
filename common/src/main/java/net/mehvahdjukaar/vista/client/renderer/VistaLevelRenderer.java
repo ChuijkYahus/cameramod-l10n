@@ -7,7 +7,9 @@ import net.mehvahdjukaar.moonlight.api.misc.WeakHashSet;
 import net.mehvahdjukaar.moonlight.api.util.math.EntityAngles;
 import net.mehvahdjukaar.moonlight.core.client.DummyCamera;
 import net.mehvahdjukaar.vista.VistaPlatStuff;
+import net.mehvahdjukaar.vista.client.textures.MirrorReflectionTexture;
 import net.mehvahdjukaar.vista.client.textures.PerspectiveTexture;
+import net.mehvahdjukaar.vista.common.mirror.MirrorBlockEntity;
 import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.mehvahdjukaar.vista.integration.CompatHandler;
@@ -34,7 +36,12 @@ import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.lwjgl.opengl.GL11C;
 
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Deque;
+import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static net.minecraft.client.Minecraft.ON_OSX;
@@ -43,31 +50,86 @@ public class VistaLevelRenderer {
 
     private static final Set<LevelRendererCameraState> MANAGED_STATES = new WeakHashSet<>();
     private static final Object STATES_LOCK = new Object();
+    // Tracks MC's main occlusion graph so async chunk/section callbacks can forward into it
+    // alongside the feed graphs. Only the outermost render writes this — nested renders see
+    // a feed graph as the "current" graph, not MC's, so writing it on every entry would lose
+    // the real reference.
     private static final AtomicReference<SectionOcclusionGraph> MC_OWN_GRAPH = new AtomicReference<>(null);
-    private static DummyCamera dummyCamera = new DummyCamera();
 
-    private static Object currentRenderingToken = null;
-    private static boolean currentRenderHasOffAxisFrustum = false;
-    @Nullable
-    private static Vec3 currentBfsStartOverride = null;
+    // Re-entrancy stack: each entry to render() pushes a frame; finally pops. Single-thread
+    // (main render thread), no locking. Per-depth dummy cameras live in a parallel pool so
+    // nested renders don't trash the outer camera's state when both share the same instance.
+    private static final Deque<RenderFrame> RENDER_STACK = new ArrayDeque<>();
+    private static final List<DummyCamera> DUMMY_CAMERA_POOL = new ArrayList<>();
+
+    /**
+     * @param textureRecursionDepth the recursion depth of the texture this frame is rendering
+     *                              into (read from {@link MirrorReflectionTexture#getRecursionDepth()}).
+     *                              Nested BE-renderer calls inside this frame use
+     *                              {@code textureRecursionDepth + 1} as their own depth.
+     * @param textureParentChain    the parent chain of the texture this frame is rendering into.
+     *                              Nested BE-renderer calls extend it with {@code mirrorUuid} to
+     *                              form their own chain. Must be propagated through PENDING flushes —
+     *                              otherwise nested chain contexts alias to the same texture and
+     *                              the depth cap stops firing.
+     */
+    private record RenderFrame(
+            Object token,
+            boolean hasOffAxisFrustum,
+            @Nullable Vec3 bfsStartOverride,
+            @Nullable UUID mirrorUuid,
+            int textureRecursionDepth,
+            List<UUID> textureParentChain
+    ) {}
 
     private static ResourceKey<Level> lastLevel = null;
 
     public static boolean isRenderingLiveFeed() {
-        return currentRenderingToken != null;
+        return !RENDER_STACK.isEmpty();
     }
 
     public static boolean isViewFinderRenderingLiveFeed(ViewFinderBlockEntity vf) {
-        return currentRenderingToken == vf;
+        for (RenderFrame f : RENDER_STACK) {
+            if (f.token == vf) return true;
+        }
+        return false;
+    }
+
+    /**
+     * Recursion depth that a child mirror encountered inside the current render should use.
+     * Reads the innermost frame's {@code textureRecursionDepth} and adds 1 — using the raw
+     * stack size would collapse to 1 for every PENDING-flushed nested render (each flush
+     * pushes a single frame regardless of the texture's true depth), breaking the depth cap.
+     * Returns 0 if no render is in progress.
+     */
+    public static int getCurrentDepth() {
+        RenderFrame top = RENDER_STACK.peek();
+        if (top == null) return 0;
+        if (top.mirrorUuid == null) return 1;
+        return top.textureRecursionDepth + 1;
+    }
+
+    /**
+     * Chain of mirror UUIDs for a child mirror encountered inside the current render —
+     * {@code parentChain + mirrorUuid} of the innermost mirror frame. Empty when no mirror is
+     * currently being rendered (main pass, view finder, etc.).
+     */
+    public static List<UUID> getCurrentMirrorChain() {
+        RenderFrame top = RENDER_STACK.peek();
+        if (top == null || top.mirrorUuid == null) return List.of();
+        List<UUID> chain = new ArrayList<>(top.textureParentChain.size() + 1);
+        chain.addAll(top.textureParentChain);
+        chain.add(top.mirrorUuid);
+        return chain;
     }
 
     public static void clear() {
-        dummyCamera = null;
+        DUMMY_CAMERA_POOL.clear();
         MC_OWN_GRAPH.set(null);
         synchronized (STATES_LOCK) {
             MANAGED_STATES.clear();
         }
-        currentRenderingToken = null;
+        RENDER_STACK.clear();
     }
 
     /**
@@ -106,33 +168,49 @@ public class VistaLevelRenderer {
     }
 
     public static DummyCamera getDummyCamera() {
-        if (dummyCamera == null) {
-            dummyCamera = new DummyCamera();
+        return acquireDummyCamera(0);
+    }
+
+    /**
+     * Returns the dummy camera reserved for the given recursion depth. Each nesting level needs
+     * its own camera instance — vanilla code aliases {@code mc.gameRenderer.mainCamera} into
+     * many caches, so a nested render reusing the outer dummy would mutate state the outer call
+     * still needs on resume.
+     */
+    private static DummyCamera acquireDummyCamera(int depth) {
+        while (DUMMY_CAMERA_POOL.size() <= depth) {
+            DUMMY_CAMERA_POOL.add(new DummyCamera());
         }
-        return dummyCamera;
+        return DUMMY_CAMERA_POOL.get(depth);
     }
 
     public static void render(PerspectiveTexture text, ViewFinderBlockEntity tile) {
         render(text, tile, (camera, partialTicks) -> setupSceneCamera(tile, camera, partialTicks),
-                tile.getFOV(), true, null, null);
+                tile.getFOV(), true, null, null, null);
     }
 
     /**
-     * @param fov              ignored when {@code customProjection} is non-null.
-     * @param customProjection if non-null, used as-is instead of building a symmetric perspective
-     *                         from {@code fov}. Mirrors use this to bake an off-axis frustum
-     *                         shaped to the mirror's frame, so the near plane *is* the mirror.
-     * @param bfsStartOverride if non-null, temporarily moves the camera to this world position
-     *                         around the section-occlusion-graph BFS so the walk starts from a
-     *                         chunk that's actually visible. Mirrors against walls pass a point
-     *                         in front of the mirror — otherwise smart culling stalls because the
-     *                         reflected eye lands inside the wall block, blocking BFS propagation.
+     * @param fov                     ignored when {@code customProjection} is non-null.
+     * @param customProjection        if non-null, used as-is instead of building a symmetric
+     *                                perspective from {@code fov}. Mirrors use this to bake an
+     *                                off-axis frustum shaped to the mirror's frame, so the near
+     *                                plane *is* the mirror.
+     * @param bfsStartOverride        if non-null, temporarily moves the camera to this world
+     *                                position around the section-occlusion-graph BFS so the walk
+     *                                starts from a chunk that's actually visible. Mirrors against
+     *                                walls pass a point in front of the mirror — otherwise smart
+     *                                culling stalls because the reflected eye lands inside the
+     *                                wall block, blocking BFS propagation.
+     * @param renderDistanceOverride  if non-null, overrides the chunk render distance for this
+     *                                pass (used by recursive mirror nesting to attenuate per
+     *                                depth). Otherwise falls back to {@link #calculateRenderDistance}.
      */
     public static void render(PerspectiveTexture text, Object renderingToken,
                               SceneCameraSetup cameraSetup, float fov,
                               boolean applyPostChain,
                               @Nullable Matrix4f customProjection,
-                              @Nullable Vec3 bfsStartOverride) {
+                              @Nullable Vec3 bfsStartOverride,
+                              @Nullable Integer renderDistanceOverride) {
         Minecraft mc = Minecraft.getInstance();
 
         if (mc.level == null) return;
@@ -141,6 +219,9 @@ public class VistaLevelRenderer {
             lastLevel = mc.level.dimension();
             return;
         }
+
+        int depth = RENDER_STACK.size();
+        boolean isOutermost = depth == 0;
 
         RenderTarget mainTarget = mc.getMainRenderTarget();
         RenderTarget canvas = text.getRenderTarget();
@@ -155,7 +236,7 @@ public class VistaLevelRenderer {
             IrisCompat.onFeedCanvasBound(canvas);
         }
 
-        Camera camera = getDummyCamera();
+        Camera camera = acquireDummyCamera(depth);
         Camera mainCamera = mc.gameRenderer.mainCamera;
         mc.gameRenderer.mainCamera = camera;
 
@@ -170,11 +251,22 @@ public class VistaLevelRenderer {
 
         RenderSystemState oldRenderState = RenderSystemState.capture();
 
-        try {
-            currentRenderingToken = renderingToken;
-            currentRenderHasOffAxisFrustum = customProjection != null;
-            currentBfsStartOverride = bfsStartOverride;
+        UUID mirrorUuid = renderingToken instanceof MirrorBlockEntity m ? m.getId() : null;
+        // Pull the texture's logical recursion depth + parent chain so nested BE-renderer calls
+        // can correctly derive THEIR depth/chain from this frame. The PENDING flush only knows
+        // about textures, not the call site that scheduled them, so without this propagation a
+        // depth-1 PENDING entry would look identical to a depth-0 one to its children.
+        int textureRecursionDepth = 0;
+        List<UUID> textureParentChain = List.of();
+        if (text instanceof MirrorReflectionTexture mrt) {
+            textureRecursionDepth = mrt.getRecursionDepth();
+            textureParentChain = mrt.getParentChain();
+        }
+        RENDER_STACK.push(new RenderFrame(
+                renderingToken, customProjection != null, bfsStartOverride,
+                mirrorUuid, textureRecursionDepth, textureParentChain));
 
+        try {
             float partialTicks = mc.getTimer().getGameTimeDeltaTicks();
             cameraSetup.setup(camera, partialTicks);
 
@@ -188,14 +280,21 @@ public class VistaLevelRenderer {
                 mc.gameRenderer.effectActive = false;
             }
 
-            mc.gameRenderer.renderDistance = Math.min(oldRenderDistance, calculateRenderDistance(fov));
+            int requestedDist = renderDistanceOverride != null
+                    ? renderDistanceOverride
+                    : calculateRenderDistance(fov);
+            mc.gameRenderer.renderDistance = Math.min(oldRenderDistance, requestedDist);
             RenderSystem.clear(16640, ON_OSX);
             FogRenderer.setupNoFog();
             RenderSystem.enableCull();
 
             feedCameraState.apply(mc.levelRenderer);
 
-            MC_OWN_GRAPH.set(oldCameraState.getOcclusionGraph());
+            // Only the outermost render captures MC's real main graph. Nested renders see a
+            // feed graph as "current", which isn't useful for the async section callbacks.
+            if (isOutermost) {
+                MC_OWN_GRAPH.set(oldCameraState.getOcclusionGraph());
+            }
 
             // already wrapped outside; don't double-wrap this or it fucks everything over omg.
             renderLevel(mc, canvas, camera, fov, customProjection);
@@ -211,9 +310,9 @@ public class VistaLevelRenderer {
                 mc.gameRenderer.postEffect.process(deltaTracker.getGameTimeDeltaTicks());
             }
         } finally {
-            MC_OWN_GRAPH.set(null);
-            currentRenderHasOffAxisFrustum = false;
-            currentBfsStartOverride = null;
+            if (isOutermost) {
+                MC_OWN_GRAPH.set(null);
+            }
 
             // restore old camera state
             oldCameraState.apply(mc.levelRenderer);
@@ -223,11 +322,17 @@ public class VistaLevelRenderer {
             // clear depth only; clearing color here causes visible world/water popping
             RenderSystem.clear(GL11C.GL_DEPTH_BUFFER_BIT, ON_OSX);
 
-            // swap back
-            currentRenderingToken = null;
+            RENDER_STACK.pop();
 
             mc.mainRenderTarget = mainTarget;
             mc.gameRenderer.mainCamera = mainCamera;
+
+            // Nested renders must re-bind the outer canvas they were drawing into — otherwise
+            // subsequent draw calls in the outer pass would still be hitting the inner canvas.
+            if (!isOutermost) {
+                mainTarget.bindWrite(true);
+                RenderSystem.viewport(0, 0, mainTarget.width, mainTarget.height);
+            }
 
             // restore post process
             mc.gameRenderer.postEffect = oldPostEffect;
@@ -422,7 +527,8 @@ public class VistaLevelRenderer {
             // culling propagates "blocked everywhere" and starves the visible-section list.
             // The frustum (already off-axis, computed from the real reflected eye) still does
             // the actual culling; we only relocate the BFS seed.
-            Vec3 bfsOverride = currentBfsStartOverride;
+            RenderFrame currentFrame = RENDER_STACK.peek();
+            Vec3 bfsOverride = currentFrame != null ? currentFrame.bfsStartOverride : null;
             Vec3 actualCamPos = null;
             if (bfsOverride != null) {
                 actualCamPos = camera.getPosition();
@@ -444,10 +550,11 @@ public class VistaLevelRenderer {
             // Apply frustum update if the graph changed, the camera rotated significantly, or
             // we're rendering with an off-axis frustum (where the bounds change every frame as
             // the viewer moves even though the camera rotation stays pinned to the mirror normal).
+            boolean hasOffAxis = currentFrame != null && currentFrame.hasOffAxisFrustum;
             if (graph.consumeFrustumUpdate() ||
                     cameraRotXHalf != lr.prevCamRotX ||
                     cameraRotYHalf != lr.prevCamRotY ||
-                    currentRenderHasOffAxisFrustum) {
+                    hasOffAxis) {
 
                 lr.applyFrustum(LevelRenderer.offsetFrustum(frustum));
                 lr.prevCamRotX = cameraRotXHalf;

@@ -23,6 +23,10 @@ public class ClientConfigs {
     public static final Supplier<Integer> MIRROR_RENDER_DISTANCE;
     public static final Supplier<Integer> MIRROR_RESOLUTION_SCALE;
     public static final Supplier<MirrorUpdateMode> MIRROR_UPDATE_MODE;
+    public static final Supplier<MirrorRecursionMode> MIRROR_RECURSION_MODE;
+    public static final Supplier<Integer> MIRROR_MAX_RECURSION_DEPTH;
+    public static final Supplier<Double> MIRROR_RECURSION_RES_DIVIDER;
+    public static final Supplier<Double> MIRROR_RECURSION_DIST_DIVIDER;
     public static final Supplier<Double> UPDATE_FPS;
     public static final Supplier<Double> MIN_UPDATE_FPS;
     public static final Supplier<Double> THROTTLING_UPDATE_MS;
@@ -56,6 +60,18 @@ public class ClientConfigs {
         MIRROR_UPDATE_MODE = builder
                 .comment("How mirror reflections are dispatched. RENDER_TICK_END (default, recommended): the BE renderer queues mirrors into a pending list; the queue is flushed from a top-level frame hook (Fabric mixin after GameRenderer.render; NeoForge RenderFrameEvent.Post) that's guaranteed to run outside any level render — safe under recursive renderLevel calls from other mods. TEXTURE_REFRESH: piggybacks on the live-feed texture refresh dispatch (one render per visible mirror, end-of-frame). Switch to TEXTURE_REFRESH if you suspect a timing-related rendering glitch.")
                 .define("update_mode", MirrorUpdateMode.RENDER_TICK_END);
+        MIRROR_RECURSION_MODE = builder
+                .comment("How mirrors-inside-mirrors are handled. OFF: nested mirrors don't render at all (you see the frame, no reflection). SHARED (cheap): each mirror reuses its own self-reflection texture when seen inside another mirror — looks fine at a glance but parallax is wrong at depth >=1 (the deeper reflections won't slide correctly as you move). RECURSIVE (expensive): each chain gets its own off-axis render with correct parallax, up to max_recursion_depth. Beyond the depth cap the nested mirror is not drawn at all.")
+                .define("recursion_mode", MirrorRecursionMode.SHARED);
+        MIRROR_MAX_RECURSION_DEPTH = builder
+                .comment("Max nesting depth in RECURSIVE recursion_mode. 0 = no recursion (equivalent to OFF). 1 = one level of correct nested reflection. Each extra level multiplies cost, but resolution_divider and distance_divider attenuate per-level cost.")
+                .define("max_recursion_depth", 1, 0, 8);
+        MIRROR_RECURSION_RES_DIVIDER = builder
+                .comment("Per-level resolution divider for RECURSIVE recursion_mode. Texture resolution at depth D = base * (1 / divider^D). 2.0 means each nesting halves resolution.")
+                .define("recursion_resolution_divider", 2.0, 1.0, 16.0);
+        MIRROR_RECURSION_DIST_DIVIDER = builder
+                .comment("Per-level render-distance divider for RECURSIVE recursion_mode. Render distance at depth D = base / divider^D. 2.0 means each nesting halves render distance.")
+                .define("recursion_distance_divider", 2.0, 1.0, 16.0);
         builder.pop();
 
         builder.push("television");
@@ -173,5 +189,11 @@ public class ClientConfigs {
     public enum MirrorUpdateMode {
         TEXTURE_REFRESH,
         RENDER_TICK_END
+    }
+
+    public enum MirrorRecursionMode {
+        OFF,
+        SHARED,
+        RECURSIVE
     }
 }

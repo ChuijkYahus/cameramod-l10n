@@ -1,4 +1,4 @@
-package net.mehvahdjukaar.vista.common.tv.connection;
+package net.mehvahdjukaar.vista.common.connection;
 
 
 import net.mehvahdjukaar.moonlight.api.util.math.Rect2D;

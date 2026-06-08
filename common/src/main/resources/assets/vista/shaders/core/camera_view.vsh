@@ -12,7 +12,7 @@ in vec3 Normal;
 
 uniform sampler2D Sampler2;
 uniform sampler2D Sampler0;
-uniform sampler2D Sampler1;   // <-- ADD (needed for textureSize)
+uniform sampler2D Sampler1;
 
 uniform mat4 ModelViewMat;
 uniform mat4 ProjMat;

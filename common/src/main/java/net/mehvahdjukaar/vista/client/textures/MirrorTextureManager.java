@@ -20,71 +20,113 @@ import java.util.UUID;
 /**
  * Owns the static state for mirror reflections: the texture cache lookups and the RENDER_TICK_END
  * pending queue. The reflection rendering itself lives on {@link MirrorReflectionTexture}.
+ *
+ * <p>Each pending entry is keyed by chain-string (parent UUIDs joined + this mirror's UUID), so
+ * the same physical mirror visible through different parent chains queues independently and gets
+ * its own off-axis render in RECURSIVE mode.
  */
 public class MirrorTextureManager {
 
-    private static final Map<UUID, Pending> PENDING = new HashMap<>();
+    private static final Map<String, Pending> PENDING = new HashMap<>();
 
-    private record Pending(MirrorBlockEntity mirror, Vec2i screenSize, Vec3 eye) {}
+    private record Pending(MirrorBlockEntity mirror, Vec2i screenSize, Vec3 eye,
+                           int depth, List<UUID> parentChain) {}
 
-    /**
-     * Fetches (or allocates) the {@link MirrorReflectionTexture} for the given mirror UUID and
-     * screen size, with no side effects on its pending state. Mirrors bypass
-     * {@link LiveFeedTexturesManager#SCHEDULER} — they refresh every frame they're in view (cheap
-     * off-axis frustum, gated by render distance).
-     */
-    @Nullable
-    public static MirrorReflectionTexture getMirrorTexture(UUID uuid, Vec2i screenSize) {
-        ResourceLocation textureId = VistaMod.res(
-                "mirror_" + uuid + "_" + screenSize.x() + "x" + screenSize.y());
-        return DynamicTextureRenderer.requestTexture(textureId, () ->
-                new MirrorReflectionTexture(textureId,
-                        screenSize.x() * ClientConfigs.MIRROR_RESOLUTION_SCALE.get(),
-                        screenSize.y() * ClientConfigs.MIRROR_RESOLUTION_SCALE.get(),
-                        uuid));
+    private static int scaledResolution(int baseSize, int depth) {
+        if (depth <= 0) return baseSize * ClientConfigs.MIRROR_RESOLUTION_SCALE.get();
+        double divider = Math.pow(ClientConfigs.MIRROR_RECURSION_RES_DIVIDER.get(), depth);
+        int scaled = (int) (baseSize * ClientConfigs.MIRROR_RESOLUTION_SCALE.get() / divider);
+        return Math.max(1, scaled);
+    }
+
+    private static String chainKey(UUID self, List<UUID> parentChain) {
+        if (parentChain.isEmpty()) return self.toString();
+        StringBuilder sb = new StringBuilder(parentChain.size() * 37 + 36);
+        for (UUID u : parentChain) sb.append(u).append('_');
+        sb.append(self);
+        return sb.toString();
     }
 
     /**
-     * TEXTURE_REFRESH-mode entry point: fetches the mirror's texture and stashes the BE + camera
-     * eye on it so the next end-of-frame refresh tick redraws the reflection from the captured
-     * vantage point.
+     * Direct-view (depth 0) texture, keyed by mirror UUID + size. Returns the same instance for
+     * a given (UUID, screenSize) regardless of recursion mode — depth 0 is always the "real"
+     * view the player sees.
+     */
+    @Nullable
+    public static MirrorReflectionTexture getMirrorTexture(UUID uuid, Vec2i screenSize) {
+        int w = scaledResolution(screenSize.x(), 0);
+        int h = scaledResolution(screenSize.y(), 0);
+        ResourceLocation textureId = VistaMod.res(
+                "mirror_" + uuid + "_" + w + "x" + h);
+        return DynamicTextureRenderer.requestTexture(textureId, () ->
+                new MirrorReflectionTexture(textureId, w, h, uuid, 0, List.of()));
+    }
+
+    /**
+     * Chain-keyed texture used by RECURSIVE mode. Each (mirror, parent-chain) combination gets
+     * its own off-axis render with attenuated resolution. Resolution at depth D = base /
+     * res_divider^D, capped at 1.
+     */
+    @Nullable
+    public static MirrorReflectionTexture getMirrorTextureForChain(UUID uuid, Vec2i screenSize,
+                                                                    int depth, List<UUID> parentChain) {
+        int w = scaledResolution(screenSize.x(), depth);
+        int h = scaledResolution(screenSize.y(), depth);
+        String name = "mirror_chain_" + chainKey(uuid, parentChain) + "_" + w + "x" + h + "_d" + depth;
+        ResourceLocation textureId = VistaMod.res(name);
+        // List.copyOf inside the constructor freezes the chain identity at construction —
+        // important because DynamicTextureRenderer caches by id, so subsequent lookups for
+        // this same chain must return a texture whose parentChain matches what
+        // VistaLevelRenderer expects to push onto the stack.
+        final List<UUID> capturedChain = List.copyOf(parentChain);
+        return DynamicTextureRenderer.requestTexture(textureId, () ->
+                new MirrorReflectionTexture(textureId, w, h, uuid, depth, capturedChain));
+    }
+
+    /**
+     * Direct-view scheduling entry point (depth 0). Picks between TEXTURE_REFRESH (per-texture
+     * end-of-frame refresh callback) and RENDER_TICK_END (PENDING queue flushed from a top-level
+     * frame hook). Returns the texture only after its first successful draw — the first frame
+     * after allocation is uninitialised, so the BE renderer skips drawing to avoid a white flash.
      */
     @Nullable
     public static MirrorReflectionTexture getMirrorTexture(MirrorBlockEntity mirror, Vec2i screenSize, Vec3 eye) {
         MirrorReflectionTexture texture = getMirrorTexture(mirror.getId(), screenSize);
         if (texture == null) return null;
-        // Inside a nested reflection render (mirror seen inside another mirror), always defer
-        // through PENDING. VistaLevelRenderer.render isn't re-entrant — its single-slot statics
-        // for camera/target/state would get clobbered by a nested synchronous refresh. The
-        // re-queued entries land in next frame's PENDING (processPending snapshot-and-clears
-        // before iterating), so each nesting level updates one frame deeper. Two mirrors facing
-        // each other produce a wave of updates, bounded to one off-axis render per mirror per
-        // frame.
-        if (VistaLevelRenderer.isRenderingLiveFeed() ||
-                ClientConfigs.MIRROR_UPDATE_MODE.get() != ClientConfigs.MirrorUpdateMode.TEXTURE_REFRESH){
-            // Queue into MirrorTextureManager's PENDING list; processPending flushes it from the
-            // onRenderTickEnd hook.
-            requestUpdate(mirror, screenSize, eye);
-        }else {
-            // Stashes the BE+eye on the texture and marks it for refresh — the actual reflection
-            // render runs from the end-of-frame texture refresh callback, after the outer BE
-            // batch is flushed.
+        if (ClientConfigs.MIRROR_UPDATE_MODE.get() != ClientConfigs.MirrorUpdateMode.TEXTURE_REFRESH) {
+            requestUpdate(mirror, screenSize, eye, 0, List.of());
+        } else {
             texture.setPending(mirror, eye);
             texture.setUpdateNextTick(true);
         }
-        // First frame after allocation the framebuffer is uninitialised (samples as white).
-        // The queued render above will fill it before next frame; until then, signal "not
-        // ready" so the BE renderer skips drawing the mirror face instead of stamping a
-        // white quad.
         return texture.hasRendered() ? texture : null;
     }
 
     /**
-     * Queue a render for the RENDER_TICK_END mode. The BE renderer calls this from
-     * {@code render(...)}; {@link #processPending} flushes the queue at the end of the frame.
+     * RECURSIVE-mode scheduling entry point. Called from the BE renderer when it's running inside
+     * another mirror's reflection. Allocates / fetches the chain-keyed texture and queues a
+     * render against it for next frame. Skips the TEXTURE_REFRESH fast path on purpose —
+     * VistaLevelRenderer is now re-entrant but synchronous nested rendering from inside the BE
+     * pass would corrupt vanilla's in-flight bufferSource, so we defer.
      */
-    public static void requestUpdate(MirrorBlockEntity mirror, Vec2i screenSize, Vec3 eye) {
-        PENDING.put(mirror.getId(), new Pending(mirror, screenSize, eye));
+    @Nullable
+    public static MirrorReflectionTexture getMirrorTextureForChain(MirrorBlockEntity mirror, Vec2i screenSize,
+                                                                    Vec3 eye, int depth, List<UUID> parentChain) {
+        MirrorReflectionTexture texture = getMirrorTextureForChain(mirror.getId(), screenSize, depth, parentChain);
+        if (texture == null) return null;
+        requestUpdate(mirror, screenSize, eye, depth, parentChain);
+        return texture.hasRendered() ? texture : null;
+    }
+
+    /**
+     * Internal: enqueue a render for next-frame flush. {@link #processPending} snapshots and
+     * clears before iterating, so re-queues that happen during iteration (from nested mirrors
+     * the iteration triggers) land in next frame's PENDING.
+     */
+    private static void requestUpdate(MirrorBlockEntity mirror, Vec2i screenSize, Vec3 eye,
+                                       int depth, List<UUID> parentChain) {
+        String key = "d" + depth + "/" + chainKey(mirror.getId(), parentChain);
+        PENDING.put(key, new Pending(mirror, screenSize, eye, depth, parentChain));
     }
 
     public static void processPending() {
@@ -101,7 +143,9 @@ public class MirrorTextureManager {
         List<Pending> snapshot = new ArrayList<>(PENDING.values());
         PENDING.clear();
         for (Pending p : snapshot) {
-            MirrorReflectionTexture text = getMirrorTexture(p.mirror.getId(), p.screenSize);
+            MirrorReflectionTexture text = p.depth == 0
+                    ? getMirrorTexture(p.mirror.getId(), p.screenSize)
+                    : getMirrorTextureForChain(p.mirror.getId(), p.screenSize, p.depth, p.parentChain);
             if (text != null) text.renderReflection(p.mirror, p.eye);
         }
     }

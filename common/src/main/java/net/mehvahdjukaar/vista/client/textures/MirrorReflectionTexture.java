@@ -6,6 +6,7 @@ import net.mehvahdjukaar.vista.client.renderer.SceneCameraSetup;
 import net.mehvahdjukaar.vista.client.renderer.VistaLevelRenderer;
 import net.mehvahdjukaar.vista.common.mirror.MirrorBlock;
 import net.mehvahdjukaar.vista.common.mirror.MirrorBlockEntity;
+import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
@@ -19,6 +20,7 @@ import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -60,8 +62,33 @@ public class MirrorReflectionTexture extends PerspectiveTexture {
     // Timestamp of the first successful draw; drives the shader fade-in. -1 means "not yet".
     private long firstRenderNanos = -1L;
 
+    // Recursion depth this texture represents: 0 = direct view (mirror seen by player),
+    // 1 = mirror seen inside one parent mirror, etc. Used in RECURSIVE mode to attenuate
+    // render distance per level.
+    private final int recursionDepth;
+    // Ordered list of parent-mirror UUIDs that led to this texture's chain. Empty for
+    // depth-0 textures. VistaLevelRenderer reads this when pushing a render frame so nested
+    // BE-renderer calls inside this texture's render see the right chain context (their own
+    // chain = parentChain + this texture's mirror UUID).
+    private final List<UUID> parentChain;
+
     public MirrorReflectionTexture(ResourceLocation resourceLocation, int width, int height, UUID id) {
+        this(resourceLocation, width, height, id, 0, List.of());
+    }
+
+    public MirrorReflectionTexture(ResourceLocation resourceLocation, int width, int height,
+                                   UUID id, int recursionDepth, List<UUID> parentChain) {
         super(resourceLocation, width, height, id);
+        this.recursionDepth = recursionDepth;
+        this.parentChain = List.copyOf(parentChain);
+    }
+
+    public int getRecursionDepth() {
+        return recursionDepth;
+    }
+
+    public List<UUID> getParentChain() {
+        return parentChain;
     }
 
     public boolean hasRendered() {
@@ -172,9 +199,19 @@ public class MirrorReflectionTexture extends PerspectiveTexture {
         // would have BFS seeded inside the wall block, stalling smart culling.
         Vec3 bfsStart = groupCenter.add(normal.scale(1.0));
 
+        // Attenuate chunk render distance per nesting level so depth-N reflections cost
+        // exponentially less. Falls back to base config at depth 0.
+        Integer renderDistanceOverride = null;
+        if (recursionDepth > 0) {
+            double divider = Math.pow(ClientConfigs.MIRROR_RECURSION_DIST_DIVIDER.get(), recursionDepth);
+            renderDistanceOverride = (int) Math.max(1,
+                    ClientConfigs.RENDER_DISTANCE.get() / divider);
+        }
+
         // fov is ignored because we pass a custom projection; planar reflection via a moved
         // camera preserves winding so we leave back-face culling alone.
-        VistaLevelRenderer.render(this, mirror, setup, 0f, false, projection, bfsStart);
+        VistaLevelRenderer.render(this, mirror, setup, 0f, false, projection, bfsStart,
+                renderDistanceOverride);
 
         // Blit the freshly-rendered write target onto the read target so the next frame's quad
         // samples the new image (matches RenderableDynamicTexture.redraw()'s tail).

@@ -34,7 +34,7 @@ in vec2 texCoord0;
 out vec4 fragColor;
 
 // ---------- PARAMETERS ----------
-const float DISTORTION   = 0.3;
+const float DISTORTION   = 0.17;
 const float EDGE_WEAR    = 0.2;
 const float SCRATCH      = 0.02;
 const float ROUGHNESS    = 0.5;
