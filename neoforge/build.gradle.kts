@@ -42,6 +42,7 @@ dependencies {
 
     modImplementation("foundry.veil:veil-neoforge-1.21.1:4.1.2")
     modImplementation("curse.maven:fsable-1312371:8007005")
+    modCompileOnly("curse.maven:create-aeronautics-676721:8003941")
     api("dev.ryanhcode.sable-companion:sable-companion-common-1.21.1:[${sable_companion_version},)")
     jarJar("dev.ryanhcode.sable-companion:sable-companion-common-1.21.1:[${sable_companion_version},)")
 

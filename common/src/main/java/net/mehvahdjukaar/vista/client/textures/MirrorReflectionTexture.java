@@ -8,7 +8,6 @@ import net.mehvahdjukaar.vista.common.mirror.MirrorBlock;
 import net.mehvahdjukaar.vista.common.mirror.MirrorBlockEntity;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.minecraft.client.Camera;
-import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
@@ -126,8 +125,7 @@ public class MirrorReflectionTexture extends PerspectiveTexture {
     public void renderReflection(MirrorBlockEntity mirror, Vec3 eye) {
         if (mirror.isRemoved()) return;
         Level level = mirror.getLevel();
-        Minecraft mc = Minecraft.getInstance();
-        if (level == null || level != mc.level) return;
+        if (level == null) return;
 
         Direction dir = mirror.getBlockState().getValue(MirrorBlock.FACING);
         BlockPos pos = mirror.getBlockPos();
