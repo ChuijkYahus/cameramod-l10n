@@ -23,7 +23,7 @@ dependencies {
     implementation("com.github.bawnorton.mixinsquared:mixinsquared-forge:${mixin_squared_version}")
 
 
-    modCompileOnly("curse.maven:supplementaries-412082:8051628")
+    implementation("curse.maven:supplementaries-412082:8051628")
     modCompileOnly("curse.maven:quark-243121:7640331")
     modCompileOnly("curse.maven:zeta-968868:7640154")
 
@@ -40,7 +40,7 @@ dependencies {
     modCompileOnly("curse.maven:watermedia-869524:7072353")
 
     //  modImplementation("cc.tweaked:cc-tweaked-1.21.1-forge:1.117.0")
-
+    modCompileOnly("curse.maven:quark-243121:7640331")
 
     modImplementation("foundry.veil:veil-neoforge-1.21.1:4.1.2")
     modImplementation("curse.maven:fsable-1312371:8007005")
