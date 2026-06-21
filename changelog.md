@@ -1,1 +1,2 @@
-improved deps handlingjust 
+- updated DH compat to new DH
+- more sable compat
