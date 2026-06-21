@@ -1,4 +1,4 @@
-package net.mehvahdjukaar.vista.mixins;
+package net.mehvahdjukaar.vista.mixins.neoforge;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.sugar.Local;

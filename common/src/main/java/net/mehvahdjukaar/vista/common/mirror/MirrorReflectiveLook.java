@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 public final class MirrorReflectiveLook {
 
     public static final double MAX_DISTANCE = 64.0;
+    public static final int MAX_BOUNCES = 1;
     private static final double EPSILON = 1.0e-3;
 
     private MirrorReflectiveLook() {}
