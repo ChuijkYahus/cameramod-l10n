@@ -41,5 +41,6 @@
   "gui.vista.welcome.install_custom": "自定义安装",
   "gui.vista.welcome.custom_hint": "FFmpeg二进制文件URL：",
   "gui.vista.welcome.download": "下载",
-  "gui.vista.refresh": "刷新"
+  "gui.vista.refresh": "刷新",
+  "tag.vista.vista.cassette_tape.supporter_tapes": "Supporter Tapes"
 }

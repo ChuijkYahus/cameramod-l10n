@@ -22,5 +22,6 @@
   "gui.vista.welcome.install_defaults": "Alapértelmezett telepítés",
   "gui.vista.welcome.install_custom": "Tetszőleges telepítés",
   "gui.vista.welcome.download": "Letöltés",
-  "gui.vista.refresh": "Újratöltés"
+  "gui.vista.refresh": "Újratöltés",
+  "tag.vista.vista.cassette_tape.supporter_tapes": "Supporter Tapes"
 }

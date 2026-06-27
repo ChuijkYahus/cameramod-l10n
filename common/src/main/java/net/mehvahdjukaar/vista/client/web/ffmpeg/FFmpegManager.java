@@ -4,9 +4,9 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import net.mehvahdjukaar.vista.VistaMod;
-import net.mehvahdjukaar.vista.client.web.files.ArchiveUtils;
-import net.mehvahdjukaar.vista.client.web.files.FileDownloadUtils;
-import net.minecraft.client.Minecraft;
+import net.mehvahdjukaar.moonlight.api.util.ArchiveUtils;
+import net.mehvahdjukaar.moonlight.api.util.FileDownloadUtils;
+import net.mehvahdjukaar.moonlight.api.util.OsType;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
@@ -16,7 +16,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 
@@ -27,9 +26,9 @@ public final class FFmpegManager {
     private static final Path PROGRAM_FOLDER = Paths.get("vista_ffmpeg_bin");
     private static volatile int downloadProgress = -1;
 
-    private static final OsType OS_TYPE = OsType.detect();
-    private static final Path FFMPEG_PATH = PROGRAM_FOLDER.resolve(OS_TYPE.ffmpegName);
-    private static final Path FFPROBE_PATH = PROGRAM_FOLDER.resolve(OS_TYPE.ffprobeName);
+    private static final OsType OS_TYPE = OsType.current();
+    private static final Path FFMPEG_PATH = PROGRAM_FOLDER.resolve(OS_TYPE.executableName("ffmpeg"));
+    private static final Path FFPROBE_PATH = PROGRAM_FOLDER.resolve(OS_TYPE.executableName("ffprobe"));
 
     public static CompletableFuture<FFmpeg> getOrDownload(@Nullable String customUrl) {
         return CompletableFuture.supplyAsync(() -> initialize(customUrl));
@@ -85,7 +84,7 @@ public final class FFmpegManager {
             throw new IOException("Invalid JSON in " + SOURCES_CONFIG_PATH, e);
         }
 
-        String key = OS_TYPE.jsonKey;
+        String key = OS_TYPE.key();
         if (!root.has(key)) {
             throw new IOException("Missing key '" + key + "' in " + SOURCES_CONFIG_PATH);
         }
@@ -143,7 +142,7 @@ public final class FFmpegManager {
         }
         ArchiveUtils.extract(archive, PROGRAM_FOLDER);
         moveRequiredBinariesFromProgramFolder();
-        if (OS_TYPE.requiresExecutableBit) {
+        if (OS_TYPE.requiresExecutableBit()) {
             markExecutables();
         }
     }
@@ -153,30 +152,5 @@ public final class FFmpegManager {
             throw new IOException("Could not mark FFmpeg binaries as executable");
         }
     }
-
-    private enum OsType {
-        LINUX("linux", "ffmpeg", "ffprobe", true),
-        MACOS("macos", "ffmpeg", "ffprobe", true),
-        WINDOWS("windows", "ffmpeg.exe", "ffprobe.exe", false);
-
-        private final String jsonKey;
-        private final String ffmpegName;
-        private final String ffprobeName;
-        private final boolean requiresExecutableBit;
-
-        OsType(String sourceKey, String ffmpegName, String ffprobeName, boolean requiresExecutableBit) {
-            this.jsonKey = sourceKey;
-            this.ffmpegName = ffmpegName;
-            this.ffprobeName = ffprobeName;
-            this.requiresExecutableBit = requiresExecutableBit;
-        }
-
-        private static OsType detect() {
-            if (Minecraft.ON_OSX) return MACOS;
-            String os = System.getProperty("os.name").toLowerCase(Locale.ROOT);
-            return os.contains("win") ? OsType.WINDOWS : OsType.LINUX;
-        }
-    }
-
 
 }

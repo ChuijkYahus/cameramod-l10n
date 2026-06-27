@@ -25,5 +25,6 @@
   "subtitles.vista.television.insert": "Insertion de la cassette",
   "message.vista.viewfinder.control": "Appuyez sur %1$s pour descendre, %2$s pour verrouiller/déverrouiller",
   "item.vista.music_disc_sojourn": "Disque",
-  "jukebox_song.vista.sojourn": "Hlzfss - Sojourn"
+  "jukebox_song.vista.sojourn": "Hlzfss - Sojourn",
+  "tag.vista.vista.cassette_tape.supporter_tapes": "Supporter Tapes"
 }

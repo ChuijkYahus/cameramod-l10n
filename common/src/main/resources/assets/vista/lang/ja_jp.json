@@ -16,5 +16,6 @@
   "cassette_tape.vista.mc_98.tooltip": "Plantkillable - Mc 98",
   "subtitles.vista.television.eject": "カセットが取り出された",
   "subtitles.vista.television.insert": "カセットが挿入された",
-  "message.vista.viewfinder.control": "%1$sで降りる、%2$sでロック/解除"
+  "message.vista.viewfinder.control": "%1$sで降りる、%2$sでロック/解除",
+  "tag.vista.vista.cassette_tape.supporter_tapes": "Supporter Tapes"
 }

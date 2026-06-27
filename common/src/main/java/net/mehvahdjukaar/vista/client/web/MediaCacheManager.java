@@ -1,7 +1,7 @@
 package net.mehvahdjukaar.vista.client.web;
 
 import net.mehvahdjukaar.vista.VistaMod;
-import net.mehvahdjukaar.vista.client.web.files.FileDownloadUtils;
+import net.mehvahdjukaar.moonlight.api.util.FileDownloadUtils;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;

@@ -25,5 +25,6 @@
   "subtitles.vista.television.insert": "Fita Cassete é inserida",
   "message.vista.viewfinder.control": "Aperte %1$s para descer e %2$s para travar/disparar",
   "item.vista.music_disc_sojourn": "Disco Musical",
-  "jukebox_song.vista.sojourn": "Hlzfss - Sojourn"
+  "jukebox_song.vista.sojourn": "Hlzfss - Sojourn",
+  "tag.vista.vista.cassette_tape.supporter_tapes": "Supporter Tapes"
 }
