@@ -26,7 +26,6 @@ public class TvEnergyHandler implements IEnergyStorage {
     }
 
     public void tick() {
-        if (!CommonConfigs.TV_CONSUME_ENERGY.get()) return;
         boolean hasCassette = !tv.getDisplayedItem().isEmpty() &&
                 tv.getDisplayedItem().getItem() instanceof ITvCassette;
         boolean isPowered = tv.getBlockState().getValue(TVBlock.POWER_STATE).isOn();

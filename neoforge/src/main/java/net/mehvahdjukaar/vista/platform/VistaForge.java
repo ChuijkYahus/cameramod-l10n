@@ -3,6 +3,7 @@ package net.mehvahdjukaar.vista.platform;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.common.chunk_tracking.ServerCameraChunkManager;
 import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
+import net.mehvahdjukaar.vista.configs.CommonConfigs;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -44,6 +45,7 @@ public class VistaForge {
     }
 
     private void registerCapabilities(RegisterCapabilitiesEvent event) {
+        if (!CommonConfigs.TV_CONSUME_ENERGY.get()) return;
         event.registerBlockEntity(
                 Capabilities.EnergyStorage.BLOCK,
                 VistaMod.TV_TILE.get(),

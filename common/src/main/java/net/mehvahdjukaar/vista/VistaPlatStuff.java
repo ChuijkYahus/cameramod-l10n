@@ -10,6 +10,7 @@ import org.joml.Matrix4f;
 
 public class VistaPlatStuff {
 
+    @Contract
     @PlatformImpl
     public static void dispatchRenderStageAfterLevel(Minecraft mc, PoseStack poseStack, Camera camera, Matrix4f modelViewMatrix, Matrix4f projMatrix) {
         throw new AssertionError();
@@ -21,6 +22,7 @@ public class VistaPlatStuff {
         throw new AssertionError();
     }
 
+    @Contract
     @PlatformImpl
     public static void tickEnergy(TVBlockEntity tv) {
         throw new AssertionError();

@@ -16,9 +16,9 @@ val sable_companion_version: String by extra
 
 dependencies {
 
-    modCompileOnly("net.mehvahdjukaar:moonlight-neoforge:${moonlight_version}")
+    modCompileOnly("net.mehvahdjukaar:moonlight-common:${moonlight_version}")
     modApi("dev.ryanhcode.sable-companion:sable-companion-common-1.21.1:[${sable_companion_version},)")
-    accessTransformers("net.mehvahdjukaar:moonlight-neoforge:${moonlight_version}")
+    accessTransformers("net.mehvahdjukaar:moonlight-common:${moonlight_version}")
 
 
     implementation("com.github.bawnorton.mixinsquared:mixinsquared-common:${mixin_squared_version}")
