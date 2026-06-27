@@ -3,7 +3,7 @@
 #moj_import <fog.glsl>
 
 // Sampler0 = dynamic reflection texture (off-axis frustum render of the world)
-// Sampler1 = mirror front base material (block/mirror/front) — shows through where the
+// Sampler1 = mirror underlay base material (block/mirror/underlay) — shows through where the
 //           silvering has worn or scratched.
 // Sampler3 = mirror overlay (block/mirror/overlay) — alpha-blended decal stamped one full
 //           copy per block on top of everything (Sampler2 is reserved for the lightmap).

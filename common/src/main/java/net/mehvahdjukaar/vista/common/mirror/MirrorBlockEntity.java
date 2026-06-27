@@ -46,8 +46,11 @@ public class MirrorBlockEntity extends BlockEntity {
         this.connectedMirrorsAmount = size;
     }
 
+    // 14 (not 16) px per block: the mirror surface leaves a 1px frame on each side of every block
+    // face. Sizing the framebuffer to the visible 14px keeps a pixel-perfect texel:screen ratio,
+    // and since connected mirrors keep the per-block model this stays exact for any grid size.
     public Vec2i getScreenPixelSize() {
-        return new Vec2i(connectedMirrorsAmount.x() * 16, connectedMirrorsAmount.y() * 16);
+        return new Vec2i(connectedMirrorsAmount.x() * 14, connectedMirrorsAmount.y() * 14);
     }
 
     @Override

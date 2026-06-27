@@ -6,11 +6,11 @@ import net.mehvahdjukaar.moonlight.api.util.Utils;
 import net.mehvahdjukaar.moonlight.api.util.math.Rect2D;
 import net.mehvahdjukaar.moonlight.api.util.math.Vec2i;
 import net.mehvahdjukaar.vista.VistaMod;
-import net.mehvahdjukaar.vista.common.tv.PowerState;
 import net.mehvahdjukaar.vista.common.connection.AbstractGridAccess;
 import net.mehvahdjukaar.vista.common.connection.ConnectionType;
 import net.mehvahdjukaar.vista.common.connection.GridTile;
 import net.mehvahdjukaar.vista.common.connection.IConnectedBlock;
+import net.mehvahdjukaar.vista.common.tv.PowerState;
 import net.mehvahdjukaar.vista.configs.CommonConfigs;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -28,19 +28,37 @@ import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
 public class MirrorBlock extends HorizontalDirectionalBlock implements EntityBlock, IOptionalEntityBlock, IConnectedBlock {
 
     public static final MapCodec<MirrorBlock> CODEC = simpleCodec(MirrorBlock::new);
     public static final EnumProperty<ConnectionType> CONNECTION = ConnectionType.STATE_PROPERTY;
+    // false = mirror surface flush with the front (near) face of the block, toward the viewer.
+    // true  = surface recessed to the back of the block cell, set away from the viewer.
+    public static final BooleanProperty FAR = BooleanProperty.create("far");
+
+    // Recession (in blocks) of the FAR model's mirror plane from the block's front face. The far
+    // model element runs z=14..16, so its mirror face sits 14px deeper than the near model's.
+    public static final double FAR_RECESSION = 14.0 / 16.0;
 
     public MirrorBlock(Properties properties) {
         super(properties);
         this.registerDefaultState(this.stateDefinition.any()
                 .setValue(FACING, Direction.NORTH)
+                .setValue(FAR, false)
                 .setValue(CONNECTION, ConnectionType.SINGLE));
+    }
+
+    /**
+     * Depth (in blocks) from the block's front face to the mirror surface for this state.
+     * 0 for the near model, {@link #FAR_RECESSION} for the far model.
+     */
+    public static double surfaceRecession(BlockState state) {
+        return state.hasProperty(FAR) && state.getValue(FAR) ? FAR_RECESSION : 0.0;
     }
 
     @Override
@@ -50,7 +68,7 @@ public class MirrorBlock extends HorizontalDirectionalBlock implements EntityBlo
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(FACING, CONNECTION);
+        builder.add(FACING, FAR, CONNECTION);
     }
 
     @Override
@@ -79,7 +97,26 @@ public class MirrorBlock extends HorizontalDirectionalBlock implements EntityBlo
         ConnectionType type = getTypeFromNeighbors(context.getLevel(), context.getClickedPos(), facing);
         return this.defaultBlockState()
                 .setValue(FACING, facing)
+                .setValue(FAR, isFarHalf(context, facing))
                 .setValue(CONNECTION, type);
+    }
+
+    /**
+     * Decides near vs far from where along the facing (depth) axis the player clicked inside the
+     * target cell. {@code facing} points back toward the viewer, so a hit in the half nearer the
+     * viewer places the near model; a hit in the far half places the recessed model.
+     */
+    private static boolean isFarHalf(BlockPlaceContext context, Direction facing) {
+        Vec3 hit = context.getClickLocation();
+        BlockPos pos = context.getClickedPos();
+        double frac = switch (facing.getAxis()) {
+            case X -> hit.x - pos.getX();
+            case Y -> hit.y - pos.getY();
+            case Z -> hit.z - pos.getZ();
+        };
+        // (frac - 0.5) * step > 0 means the hit is on the viewer's side of the cell centre.
+        double towardViewer = (frac - 0.5) * facing.getAxisDirection().getStep();
+        return towardViewer < 0;
     }
 
     @Override

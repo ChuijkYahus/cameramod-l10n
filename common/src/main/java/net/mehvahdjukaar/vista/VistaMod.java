@@ -5,9 +5,6 @@ import net.mehvahdjukaar.moonlight.api.misc.*;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.platform.RegHelper;
 import net.mehvahdjukaar.moonlight.api.platform.network.NetworkHelper;
-import net.mehvahdjukaar.vista.common.chunk_tracking.ExtraChunkViewData;
-import net.mehvahdjukaar.vista.common.chunk_tracking.ServerCameraChunkManager;
-import net.mehvahdjukaar.vista.common.chunk_tracking.ServerExtraChunkViewData;
 import net.mehvahdjukaar.vista.common.ModLootOverrides;
 import net.mehvahdjukaar.vista.common.broadcast.BroadcastLocationType;
 import net.mehvahdjukaar.vista.common.broadcast.BroadcastManager;
@@ -16,13 +13,16 @@ import net.mehvahdjukaar.vista.common.cassette.CassetteItem;
 import net.mehvahdjukaar.vista.common.cassette.CassetteTape;
 import net.mehvahdjukaar.vista.common.cassette.CassetteTapeLootFunction;
 import net.mehvahdjukaar.vista.common.cassette.HollowCassetteItem;
+import net.mehvahdjukaar.vista.common.chunk_tracking.ExtraChunkViewData;
+import net.mehvahdjukaar.vista.common.chunk_tracking.ServerCameraChunkManager;
+import net.mehvahdjukaar.vista.common.chunk_tracking.ServerExtraChunkViewData;
+import net.mehvahdjukaar.vista.common.enderman.AngeredFromTvCondition;
+import net.mehvahdjukaar.vista.common.enderman.EndermanFreezeWhenLookedAtThroughTVGoal;
 import net.mehvahdjukaar.vista.common.mirror.MirrorBlock;
 import net.mehvahdjukaar.vista.common.mirror.MirrorBlockEntity;
 import net.mehvahdjukaar.vista.common.tv.TVBlock;
 import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
 import net.mehvahdjukaar.vista.common.tv.TVItem;
-import net.mehvahdjukaar.vista.common.enderman.AngeredFromTvCondition;
-import net.mehvahdjukaar.vista.common.enderman.EndermanFreezeWhenLookedAtThroughTVGoal;
 import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlock;
 import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
 import net.mehvahdjukaar.vista.common.wave_gate.WaveGateBlock;
@@ -251,7 +251,7 @@ public class VistaMod {
     private static void addItemsToTabs(RegHelper.ItemToTabEvent event) {
         event.add(CreativeModeTabs.REDSTONE_BLOCKS, VIEWFINDER.get());
         event.add(CreativeModeTabs.REDSTONE_BLOCKS, TV.get());
-        event.add(CreativeModeTabs.FUNCTIONAL_BLOCKS, MIRROR.get());
+        //event.add(CreativeModeTabs.FUNCTIONAL_BLOCKS, MIRROR.get());
         CreativeModeTab.ItemDisplayParameters parameters = event.getParameters();
         for (var v : parameters.holders().lookupOrThrow(CASSETTE_TAPE_REGISTRY_KEY).listElements().toList()) {
             if (v.is(SUPPORTER_TAPES_TAG)) continue;

@@ -1,2 +1,2 @@
-- updated DH compat to new DH
-- more sable compat
+- better compat with DH
+- vastluy improved far away chunk client handling so blocks, entities and such all update properly

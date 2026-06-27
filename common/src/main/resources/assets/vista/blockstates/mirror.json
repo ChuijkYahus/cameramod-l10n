@@ -1,44 +1,34 @@
 {
   "variants": {
-    "facing=north,connection=single":       { "model": "vista:block/mirror" },
-    "facing=north,connection=center":       { "model": "vista:block/mirror" },
-    "facing=north,connection=top":          { "model": "vista:block/mirror" },
-    "facing=north,connection=bottom":       { "model": "vista:block/mirror" },
-    "facing=north,connection=left":         { "model": "vista:block/mirror" },
-    "facing=north,connection=right":        { "model": "vista:block/mirror" },
-    "facing=north,connection=top_left":     { "model": "vista:block/mirror" },
-    "facing=north,connection=top_right":    { "model": "vista:block/mirror" },
-    "facing=north,connection=bottom_left":  { "model": "vista:block/mirror" },
-    "facing=north,connection=bottom_right": { "model": "vista:block/mirror" },
-    "facing=east,connection=single":        { "model": "vista:block/mirror", "y": 90 },
-    "facing=east,connection=center":        { "model": "vista:block/mirror", "y": 90 },
-    "facing=east,connection=top":           { "model": "vista:block/mirror", "y": 90 },
-    "facing=east,connection=bottom":        { "model": "vista:block/mirror", "y": 90 },
-    "facing=east,connection=left":          { "model": "vista:block/mirror", "y": 90 },
-    "facing=east,connection=right":         { "model": "vista:block/mirror", "y": 90 },
-    "facing=east,connection=top_left":      { "model": "vista:block/mirror", "y": 90 },
-    "facing=east,connection=top_right":     { "model": "vista:block/mirror", "y": 90 },
-    "facing=east,connection=bottom_left":   { "model": "vista:block/mirror", "y": 90 },
-    "facing=east,connection=bottom_right":  { "model": "vista:block/mirror", "y": 90 },
-    "facing=south,connection=single":       { "model": "vista:block/mirror", "y": 180 },
-    "facing=south,connection=center":       { "model": "vista:block/mirror", "y": 180 },
-    "facing=south,connection=top":          { "model": "vista:block/mirror", "y": 180 },
-    "facing=south,connection=bottom":       { "model": "vista:block/mirror", "y": 180 },
-    "facing=south,connection=left":         { "model": "vista:block/mirror", "y": 180 },
-    "facing=south,connection=right":        { "model": "vista:block/mirror", "y": 180 },
-    "facing=south,connection=top_left":     { "model": "vista:block/mirror", "y": 180 },
-    "facing=south,connection=top_right":    { "model": "vista:block/mirror", "y": 180 },
-    "facing=south,connection=bottom_left":  { "model": "vista:block/mirror", "y": 180 },
-    "facing=south,connection=bottom_right": { "model": "vista:block/mirror", "y": 180 },
-    "facing=west,connection=single":        { "model": "vista:block/mirror", "y": 270 },
-    "facing=west,connection=center":        { "model": "vista:block/mirror", "y": 270 },
-    "facing=west,connection=top":           { "model": "vista:block/mirror", "y": 270 },
-    "facing=west,connection=bottom":        { "model": "vista:block/mirror", "y": 270 },
-    "facing=west,connection=left":          { "model": "vista:block/mirror", "y": 270 },
-    "facing=west,connection=right":         { "model": "vista:block/mirror", "y": 270 },
-    "facing=west,connection=top_left":      { "model": "vista:block/mirror", "y": 270 },
-    "facing=west,connection=top_right":     { "model": "vista:block/mirror", "y": 270 },
-    "facing=west,connection=bottom_left":   { "model": "vista:block/mirror", "y": 270 },
-    "facing=west,connection=bottom_right":  { "model": "vista:block/mirror", "y": 270 }
+    "facing=north,far=false": {
+      "model": "vista:block/mirror"
+    },
+    "facing=east,far=false": {
+      "model": "vista:block/mirror",
+      "y": 90
+    },
+    "facing=south,far=false": {
+      "model": "vista:block/mirror",
+      "y": 180
+    },
+    "facing=west,far=false": {
+      "model": "vista:block/mirror",
+      "y": 270
+    },
+    "facing=north,far=true": {
+      "model": "vista:block/mirror_far"
+    },
+    "facing=east,far=true": {
+      "model": "vista:block/mirror_far",
+      "y": 90
+    },
+    "facing=south,far=true": {
+      "model": "vista:block/mirror_far",
+      "y": 180
+    },
+    "facing=west,far=true": {
+      "model": "vista:block/mirror_far",
+      "y": 270
+    }
   }
 }

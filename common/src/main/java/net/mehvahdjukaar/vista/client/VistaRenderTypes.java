@@ -96,7 +96,7 @@ public class VistaRenderTypes extends RenderType {
     private static final Function<MirrorKey, RenderType> MIRROR_MATERIAL_RENDER_TYPE = Util.memoize(k -> {
         var textureState = MultiTextureStateShard.builder()
                 .add(k.reflectionTexture, true, false)
-                .add(VistaModClient.MIRROR_FRONT, false, false)
+                .add(VistaModClient.MIRROR_UNDERLAY, false, false)
                 .build();
         CompositeState compositeState = CompositeState.builder()
                 .setShaderState(MIRROR_MATERIAL_SHADER_STATE)

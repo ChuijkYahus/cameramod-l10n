@@ -1,9 +1,8 @@
 package net.mehvahdjukaar.vista.mixins;
 
-import net.mehvahdjukaar.vista.VistaMod;
+import net.mehvahdjukaar.supplementaries.common.block.blocks.BlackboardBlock;
 import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.client.IClientChunkCacheExt;
-import net.mehvahdjukaar.vista.common.chunk_tracking.ExtraChunkViewData;
 import net.minecraft.client.multiplayer.ClientChunkCache;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
@@ -52,6 +51,7 @@ public class ClientChunkCacheMixin implements IClientChunkCacheExt {
         if (VistaModClient.CLIENT_EXTRA_CHUNK_VIEW_DATA.containsChunk(x, z)) {
             LevelChunk chunk = this.vista$pinnedChunks.get(ChunkPos.asLong(x, z));
             if (chunk != null) {
+                BlackboardBlock
                 cir.setReturnValue(chunk);
             }
         }
@@ -64,8 +64,6 @@ public class ClientChunkCacheMixin implements IClientChunkCacheExt {
             CallbackInfoReturnable<LevelChunk> cir) {
         if (VistaModClient.CLIENT_EXTRA_CHUNK_VIEW_DATA.containsChunk(x, z) && cir.getReturnValue() != null) {
             this.vista$pinnedChunks.put(ChunkPos.asLong(x, z), cir.getReturnValue());
-            net.mehvahdjukaar.vista.VistaMod.LOGGER.info(
-                    "[Vista/Chunks] Client received zone chunk ({}, {})", x, z);
         }
     }
 

@@ -17,6 +17,7 @@
     "CameraMixin",
     "ClientChunkCacheMixin",
     "ClientChunkCacheStorageMixin",
+    "ClientLevelMixin",
     "CompatIrisBobbingMixin",
     "CompatIrisDhCompat",
     "CompatIrisFrameCounterMixin",

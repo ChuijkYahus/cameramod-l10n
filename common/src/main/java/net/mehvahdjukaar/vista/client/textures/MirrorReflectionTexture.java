@@ -45,6 +45,10 @@ public class MirrorReflectionTexture extends PerspectiveTexture {
     private static final float MIN_NEAR = 0.05f;
     private static final float FAR = 1000f;
 
+    // Fraction of each block face the mirror surface actually covers — the inner 14px, leaving a
+    // 1px frame on every side. Matches the quad inset in MirrorBlockEntityRenderer.
+    private static final double SURFACE_FRACTION = 14.0 / 16.0;
+
     // Wall-clock duration of the silvering fade-in (reflectivity 0 → full). Decoupled from
     // tick rate so it stays snappy regardless of TPS / config update mode.
     private static final long FADE_DURATION_NANOS = 300_000_000L;
@@ -129,6 +133,7 @@ public class MirrorReflectionTexture extends PerspectiveTexture {
 
         Direction dir = mirror.getBlockState().getValue(MirrorBlock.FACING);
         BlockPos pos = mirror.getBlockPos();
+        double recession = MirrorBlock.surfaceRecession(mirror.getBlockState());
         Vec3 normal = Vec3.atLowerCornerOf(dir.getNormal());
 
         // Build the mirror's local right axis in world space, FROM THE VIEWER'S POV (viewer
@@ -145,10 +150,13 @@ public class MirrorReflectionTexture extends PerspectiveTexture {
         // For connected mirrors the master is at the bottom-left of the group.
         // The group centre is offset right by (W-1)/2 and up by (H-1)/2 from the master centre.
         Vec2i connection = mirror.getConnectedCount();
-        double halfW = connection.x() * 0.5;
-        double halfH = connection.y() * 0.5;
+        // The reflective surface is the inner 14px of every block face (1px frame each side), so the
+        // off-axis frustum corners use the inset extent — this keeps the reflection's parallax
+        // matched to the visible mirror area rather than the full block face.
+        double halfW = connection.x() * 0.5 * SURFACE_FRACTION;
+        double halfH = connection.y() * 0.5 * SURFACE_FRACTION;
 
-        Vec3 masterCenter = Vec3.atCenterOf(pos).add(normal.scale(0.5));
+        Vec3 masterCenter = Vec3.atCenterOf(pos).add(normal.scale(0.5 - recession));
         Vec3 groupCenter = masterCenter
                 .add(camRight.scale((1-connection.x() ) * 0.5))
                 .add(worldUp.scale((connection.y() - 1) * 0.5));
@@ -214,7 +222,7 @@ public class MirrorReflectionTexture extends PerspectiveTexture {
         // Blit the freshly-rendered write target onto the read target so the next frame's quad
         // samples the new image (matches RenderableDynamicTexture.redraw()'s tail).
         // No overlay is composited here — mirror_material.fsh consumes this reflection as
-        // Sampler0, MIRROR_FRONT as Sampler1 (base material), and MIRROR_OVERLAY as Sampler3
+        // Sampler0, MIRROR_UNDERLAY as Sampler1 (base material), and MIRROR_OVERLAY as Sampler3
         // (per-tile decal applied last).
         swapBackToFront();
         if (!hasRendered) {

@@ -6,7 +6,6 @@ import com.mojang.math.Axis;
 import net.mehvahdjukaar.moonlight.api.client.util.LOD;
 import net.mehvahdjukaar.moonlight.api.client.util.VertexUtil;
 import net.mehvahdjukaar.moonlight.api.misc.ForgeOverride;
-import net.minecraft.world.level.LightLayer;
 import net.mehvahdjukaar.moonlight.api.util.math.Vec2i;
 import net.mehvahdjukaar.vista.client.MirrorReflection;
 import net.mehvahdjukaar.vista.client.VistaRenderTypes;
@@ -22,10 +21,8 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.core.Direction;
-import net.minecraft.world.entity.Display;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
@@ -74,7 +71,8 @@ public class MirrorBlockEntityRenderer implements BlockEntityRenderer<MirrorBloc
         if (lod.isPlaneCulled(dir, 0.5f, 1.5f, 0f)) return;
 
         Vec3 normal = Vec3.atLowerCornerOf(dir.getNormal());
-        Vec3 planePoint = Vec3.atCenterOf(blockEntity.getBlockPos()).add(normal.scale(0.5));
+        double recession = MirrorBlock.surfaceRecession(blockEntity.getBlockState());
+        Vec3 planePoint = Vec3.atCenterOf(blockEntity.getBlockPos()).add(normal.scale(0.5 - recession));
 
         Minecraft mc = Minecraft.getInstance();
         Camera mainCamera = mc.gameRenderer.mainCamera;
@@ -102,7 +100,7 @@ public class MirrorBlockEntityRenderer implements BlockEntityRenderer<MirrorBloc
 
         if (text == null) return;
 
-        drawMirrorFace(blockEntity, dir, poseStack, buffer, text);
+        drawMirrorFace(blockEntity, dir, poseStack, buffer, text, recession);
     }
 
     /**
@@ -141,7 +139,8 @@ public class MirrorBlockEntityRenderer implements BlockEntityRenderer<MirrorBloc
     }
 
     private void drawMirrorFace(MirrorBlockEntity blockEntity, Direction dir, PoseStack poseStack,
-                                       MultiBufferSource buffer, MirrorReflectionTexture text) {
+                                MultiBufferSource buffer, MirrorReflectionTexture text,
+                                double recession) {
         Vec2i connection = blockEntity.getConnectedCount();
         float w = connection.x();
         float h = connection.y();
@@ -149,7 +148,9 @@ public class MirrorBlockEntityRenderer implements BlockEntityRenderer<MirrorBloc
         poseStack.pushPose();
         poseStack.translate(0.5, 0.5, 0.5);
         poseStack.mulPose(Axis.YP.rotationDegrees(180 - dir.toYRot()));
-        poseStack.translate(0, 0, -0.5 - SURFACE_OFFSET);
+        // recession pushes the surface back into the cell for the FAR model; SURFACE_OFFSET keeps
+        // it a hair in front of the block-model face so geometry never overdraws it.
+        poseStack.translate(0, 0, -0.5 + (float) recession - SURFACE_OFFSET);
 
         Level level = blockEntity.getLevel();
         int skyBrightness = level.getBrightness(LightLayer.SKY, blockEntity.getBlockPos().relative(dir));
@@ -157,12 +158,18 @@ public class MirrorBlockEntityRenderer implements BlockEntityRenderer<MirrorBloc
 
         VertexConsumer vc = buffer.getBuffer(VistaRenderTypes.mirrorMaterial(
                 text.getTextureLocation(), (int) w, (int) h));
+        // Inset the reflection quad by 1px per block so the frame_front border shows around it.
+        // The inset scales with the grid extent (w/16, h/16 per side) so the visible surface is
+        // exactly 14w x 14h px — a 1:1 match with the 14px-per-block framebuffer, i.e. pixel
+        // perfect for any connected size.
+        float insetX = w / 16f;
+        float insetY = h / 16f;
         // Master is at bottom-right in local-rotated space (grid extends along facing.CCW
         // = local -X), so the quad spans from local x=0.5-w to x=0.5.
         // UVs rotated 180° (u0,v0=1,1; u1,v1=0,0) — framebuffer texture is upside-down
         // and mirrored relative to the local quad orientation.
         VertexUtil.addQuad(vc, poseStack,
-                0.5f - w, -0.5f, 0.5f, h - 0.5f,
+                0.5f - w + insetX, -0.5f + insetY, 0.5f - insetX, h - 0.5f - insetY,
                 1f, 1f, 0f, 0f,
                 255, 255, 255, 255,
                 VertexUtil.lightU(light), VertexUtil.lightV(light));

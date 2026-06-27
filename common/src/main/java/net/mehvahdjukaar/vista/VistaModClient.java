@@ -55,7 +55,7 @@ public class VistaModClient {
     public static final ModelLayerLocation VIEWFINDER_MODEL = loc("viewfinder");
     public static final Material WAVE_EFFECT = new Material(LOCATION_BLOCKS, VistaMod.res("block/wave_gate/wave"));
 
-    public static final ResourceLocation MIRROR_FRONT = VistaMod.res("textures/block/mirror/front.png");
+    public static final ResourceLocation MIRROR_UNDERLAY = VistaMod.res("textures/block/mirror/underlay.png");
     public static final ResourceLocation MIRROR_OVERLAY = VistaMod.res("textures/block/mirror/overlay.png");
     public static final ResourceLocation LL_OVERLAY = VistaMod.res("textures/cassette_tape/liveleak.png");
     public static final ResourceLocation PAUSE_OVERLAY = VistaMod.res("textures/cassette_tape/pause.png");

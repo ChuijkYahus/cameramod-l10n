@@ -3,12 +3,12 @@ package net.mehvahdjukaar.vista.mixins;
 import com.mojang.logging.LogUtils;
 import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.client.ClientChunkStuffHelper;
-import net.mehvahdjukaar.vista.common.chunk_tracking.ExtraChunkViewData;
 import net.mehvahdjukaar.vista.common.chunk_tracking.ILevelRendererExt;
 import net.mehvahdjukaar.vista.common.chunk_tracking.IPinnableRenderSection;
 import net.mehvahdjukaar.vista.common.chunk_tracking.IViewAreaExt;
 import net.minecraft.client.renderer.ViewArea;
 import net.minecraft.client.renderer.chunk.SectionRenderDispatcher;
+import net.minecraft.core.SectionPos;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import org.slf4j.Logger;
@@ -20,8 +20,9 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import java.lang.reflect.Constructor;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 @Mixin(ViewArea.class)
@@ -44,6 +45,15 @@ public class ViewAreaMixin implements IViewAreaExt {
      * torus grid ends.
      */
     @Unique private int vista$normalSectionCount = -1;
+
+    /**
+     * Reverse lookup from exact {@link SectionPos} long to the pinned RenderSection living
+     * at that world position. The torus {@code sections} array can't be indexed by true
+     * coordinates (it's floorMod'd), so block/light dirtying for far zone chunks resolves
+     * the section through this map instead.
+     */
+    @Unique
+    private final Map<Long, SectionRenderDispatcher.RenderSection> vista$pinnedBySection = new HashMap<>();
 
     // ── Constructor hook ───────────────────────────────────────────────────────
 
@@ -86,10 +96,28 @@ public class ViewAreaMixin implements IViewAreaExt {
         vista$buildPinnedSections(vista$dispatcher);
     }
 
+    @Override
+    public void vista$setPinnedSectionDirty(int secX, int secY, int secZ, boolean reRenderOnMainThread) {
+        SectionRenderDispatcher.RenderSection section =
+                this.vista$pinnedBySection.get(SectionPos.asLong(secX, secY, secZ));
+        if (section != null) {
+            section.setDirty(reRenderOnMainThread);
+        }
+    }
+
+    @Override
+    public boolean vista$isPinnedSectionCompiled(int secX, int secY, int secZ) {
+        SectionRenderDispatcher.RenderSection section =
+                this.vista$pinnedBySection.get(SectionPos.asLong(secX, secY, secZ));
+        return section != null
+                && section.getCompiled() != SectionRenderDispatcher.CompiledSection.UNCOMPILED;
+    }
+
     // ── Shared builder ─────────────────────────────────────────────────────────
 
     @Unique
     private void vista$buildPinnedSections(SectionRenderDispatcher dispatcher) {
+        this.vista$pinnedBySection.clear();
         Set<ChunkPos> extraChunks = VistaModClient.CLIENT_EXTRA_CHUNK_VIEW_DATA.getAllChunks();
         if (extraChunks.isEmpty()) return;
 
@@ -112,6 +140,9 @@ public class ViewAreaMixin implements IViewAreaExt {
                     if (section instanceof IPinnableRenderSection ps) {
                         ps.vista$setPinned(true);
                     }
+                    this.vista$pinnedBySection.put(
+                            SectionPos.asLong(chunkPos.x, SectionPos.blockToSectionCoord(yOrigin), chunkPos.z),
+                            section);
                 }
                 slotOffset++;
             }

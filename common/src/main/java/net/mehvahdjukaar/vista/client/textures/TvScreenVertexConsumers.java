@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.function.Function;
 
 public class TvScreenVertexConsumers {
-    private static final ResourceLocation DUMMY_TEXTURE = VistaMod.res("textures/cassette_tape/color_bars.png");
+    private static final ResourceLocation DUMMY_TEXTURE = VistaMod.res("textures/cassette_tape/color_bars_static.png");
 
     private static final Map<Smile, ResourceLocation> SMILES = Map.of(
             Smile.HAPPY, VistaModClient.SMILE_SCREEN,

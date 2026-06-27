@@ -4,11 +4,8 @@ import com.google.common.collect.HashBiMap;
 import com.mojang.serialization.Codec;
 import net.mehvahdjukaar.moonlight.api.misc.WorldSavedData;
 import net.mehvahdjukaar.moonlight.api.misc.WorldSavedDataType;
-import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.vista.VistaMod;
-import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.common.cassette.IBroadcastSource;
-import net.minecraft.core.GlobalPos;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
@@ -168,11 +165,16 @@ public final class BroadcastManager extends WorldSavedData {
         var result = pos.get(clientSide);
         if (result.isValid()) {
             return result.getValue();
-        }
-        else{
-            if (!clientSide) {
-                unlinkFeed(feedId);
-            }
+        } else {
+            // Do NOT auto-unlink here. getBroadcast is a hot read called every tick
+            // (enderman observation, feed rendering, ...). pos.get() returns "invalid"
+            // for transient states too: a chunk that is loaded mid-tick before its block
+            // entities are placed, or a position whose level/sub-level doesn't resolve
+            // this tick. Unlinking on that permanently destroys a valid TV<->ViewFinder
+            // link and syncs the deletion to clients, leaving the feed stuck on the
+            // disconnected (white) overlay. Links are removed explicitly when the
+            // ViewFinder / WaveGate block is broken (see ViewFinderBlock, WaveGateBlock,
+            // IBroadcastSource#setRemoved).
             return null;
         }
     }
