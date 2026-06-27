@@ -4,6 +4,7 @@ import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.common.chunk_tracking.ExtraChunkViewData;
 import net.mehvahdjukaar.vista.common.chunk_tracking.IChunkViewWithZones;
 import net.mehvahdjukaar.vista.common.chunk_tracking.ServerExtraChunkViewData;
+import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import net.minecraft.server.level.ChunkMap;
 import net.minecraft.server.level.ChunkTrackingView;
 import net.minecraft.server.level.ServerPlayer;
@@ -63,6 +64,21 @@ public abstract class ChunkMapMixin {
         if (flushed > 0) {
             VistaMod.LOGGER.debug("[Vista/Chunks] applyChunkTrackingView flushed {} zone chunks for {}", flushed, player.getName().getString());
         }
+    }
+
+    /**
+     * Subscribes the player to LIVE updates for camera-zone chunks. Block changes,
+     * block-entity updates and entity tracking all gate on {@code isChunkTracked}
+     * (-> {@code getChunkTrackingView().contains}, which we deliberately do NOT
+     * patch — see {@link ChunkTrackingViewMixin}). Without this, zone chunks only
+     * ever get their one-shot initial snapshot and never receive live updates, so
+     * a moving piston never changes and entities are never broadcast.
+     */
+    @ModifyReturnValue(method = "isChunkTracked", at = @At("RETURN"))
+    private boolean vista$trackZoneChunksForBroadcast(boolean original, ServerPlayer player, int x, int z) {
+        if (original) return true;
+        ExtraChunkViewData data = VistaMod.EXTRA_VIEW_AREAS.getOrCreate(player);
+        return data != null && data.containsChunk(x, z);
     }
 
     /**

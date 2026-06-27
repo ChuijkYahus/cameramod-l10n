@@ -6,6 +6,7 @@
   "mixins": [
     "AnvilMenuMixin",
     "ChunkMapMixin",
+    "ChunkMapTrackedEntityMixin",
     "ChunkTrackingViewMixin",
     "CompatGeckoLibMixin",
     "EndermanMixin",
