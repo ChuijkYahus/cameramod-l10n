@@ -125,8 +125,19 @@ public class MirrorBlockEntityRenderer implements BlockEntityRenderer<MirrorBloc
         switch (mode) {
             case OFF:
                 return null;
-            case SHARED:
+            case SHARED: {
+                // Reuse this mirror's own direct-view texture, read-only: re-queueing it here with
+                // the nested (reflected) eye would clobber its depth-0 PENDING entry (same uuid key)
+                // and corrupt/flicker the mirror's real direct reflection. Only fall back to
+                // scheduling when no rendered texture exists yet (e.g. the mirror is visible *only*
+                // through this one and never directly) — in that case there's no direct-view entry
+                // to clobber. Parallax is still wrong at depth >= 1; that's the documented SHARED
+                // trade-off (use RECURSIVE for correct nested parallax).
+                MirrorReflectionTexture shared =
+                        MirrorTextureManager.getMirrorTexture(blockEntity.getId(), screenSize);
+                if (shared != null && shared.hasRendered()) return shared;
                 return MirrorTextureManager.getMirrorTexture(blockEntity, screenSize, eye);
+            }
             case RECURSIVE: {
                 int maxDepth = ClientConfigs.MIRROR_MAX_RECURSION_DEPTH.get();
                 if (depth > maxDepth) return null;

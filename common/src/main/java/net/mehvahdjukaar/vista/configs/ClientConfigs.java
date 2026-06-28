@@ -63,7 +63,7 @@ public class ClientConfigs {
                 .define("update_mode", MirrorUpdateMode.RENDER_TICK_END);
         MIRROR_RECURSION_MODE = builder
                 .comment("How mirrors-inside-mirrors are handled. OFF: nested mirrors don't render at all (you see the frame, no reflection). SHARED (cheap): each mirror reuses its own self-reflection texture when seen inside another mirror — looks fine at a glance but parallax is wrong at depth >=1 (the deeper reflections won't slide correctly as you move). RECURSIVE (expensive): each chain gets its own off-axis render with correct parallax, up to max_recursion_depth. Beyond the depth cap the nested mirror is not drawn at all.")
-                .define("recursion_mode", MirrorRecursionMode.SHARED);
+                .define("recursion_mode", MirrorRecursionMode.RECURSIVE);
         MIRROR_MAX_RECURSION_DEPTH = builder
                 .comment("Max nesting depth in RECURSIVE recursion_mode. 0 = no recursion (equivalent to OFF). 1 = one level of correct nested reflection. Each extra level multiplies cost, but resolution_divider and distance_divider attenuate per-level cost.")
                 .define("max_recursion_depth", 1, 0, 8);

@@ -1,2 +1,2 @@
-- greatly improved far away chunk client handling so blocks, entities and such all update properly
-- better compat with DH
+- Added mirrors
+- Craft them with crystalline, an item dropped by elden guardians
