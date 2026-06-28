@@ -94,7 +94,10 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
         poseStack.mulPose(Axis.YP.rotationDegrees(180 - yaw));
         // Screen sits coplanar with the block-model front face; POLYGON_OFFSET_LAYERING on the
         // crt render type biases its depth toward the camera so it wins without a forward nudge.
-        poseStack.translate(-screenCenter.x, screenCenter.y, -0.5);
+        // Inside a nested level render the polygon offset doesn't apply, so nudge the screen
+        // forward manually there to avoid z-fighting with the block face.
+        float screenZ = VistaLevelRenderer.isRenderingLiveFeed() ? -0.505f : -0.5f;
+        poseStack.translate(-screenCenter.x, screenCenter.y, screenZ);
 
         Vec2i pixelEffectRes = ClientConfigs.SCALE_PIXELS.get() ? screenSize : TVBlockEntity.MIN_SCREEN_PIXEL_SIZE_VEC;
 

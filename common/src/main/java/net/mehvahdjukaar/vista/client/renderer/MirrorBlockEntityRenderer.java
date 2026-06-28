@@ -32,6 +32,12 @@ import java.util.UUID;
 
 public class MirrorBlockEntityRenderer implements BlockEntityRenderer<MirrorBlockEntity> {
 
+    // Forward nudge to keep the quad clear of the coplanar block-model face. Normally unused —
+    // POLYGON_OFFSET_LAYERING on the render type handles z-fighting. But inside a nested level
+    // render (another mirror's reflection / a TV feed) the polygon-offset state doesn't take, so
+    // we fall back to this manual offset there.
+    private static final float SURFACE_OFFSET = 0.01f;
+
     public MirrorBlockEntityRenderer(BlockEntityRendererProvider.Context context) {
     }
 
@@ -163,7 +169,10 @@ public class MirrorBlockEntityRenderer implements BlockEntityRenderer<MirrorBloc
         // recession pushes the surface back into the cell for the FAR model. The surface sits
         // coplanar with the block-model face; POLYGON_OFFSET_LAYERING on the render type biases
         // its depth toward the camera so it wins over the face without a manual forward nudge.
-        poseStack.translate(0, 0, -0.5 + (float) recession);
+        // Exception: inside a nested level render the polygon offset doesn't apply, so nudge the
+        // quad forward manually there to avoid z-fighting with the block face.
+        float zFightOffset = VistaLevelRenderer.isRenderingLiveFeed() ? SURFACE_OFFSET : 0f;
+        poseStack.translate(0, 0, -0.5 + (float) recession - zFightOffset);
 
         Level level = blockEntity.getLevel();
         int skyBrightness = level.getBrightness(LightLayer.SKY, blockEntity.getBlockPos().relative(dir));
