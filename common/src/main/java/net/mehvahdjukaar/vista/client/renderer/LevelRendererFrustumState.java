@@ -7,7 +7,7 @@ import net.minecraft.client.renderer.ViewArea;
 import net.minecraft.client.renderer.chunk.SectionRenderDispatcher;
 import org.jetbrains.annotations.Nullable;
 
-public class LevelRendererCameraState {
+public class LevelRendererFrustumState {
 
     private int lastCameraSectionX = Integer.MIN_VALUE;
     private int lastCameraSectionY = Integer.MIN_VALUE;
@@ -25,8 +25,8 @@ public class LevelRendererCameraState {
     //lazy initialized
     private SectionOcclusionGraph sectionOcclusionGraph;
     private ObjectArrayList<SectionRenderDispatcher.RenderSection> visibleSections = new ObjectArrayList<>(10000);
-    
-    public LevelRendererCameraState() {
+
+    public LevelRendererFrustumState() {
         VistaLevelRenderer.registerManagedState(this);
     }
 
@@ -67,8 +67,8 @@ public class LevelRendererCameraState {
         this.visibleSections = lr.visibleSections;
     }
 
-    public static LevelRendererCameraState capture(LevelRenderer lr) {
-        var instance = new LevelRendererCameraState();
+    public static LevelRendererFrustumState capture(LevelRenderer lr) {
+        var instance = new LevelRendererFrustumState();
         instance.copyFrom(lr);
         return instance;
     }

@@ -1,7 +1,7 @@
 package net.mehvahdjukaar.vista.client.textures;
 
 import net.mehvahdjukaar.moonlight.api.client.texture_renderer.RenderableDynamicTexture;
-import net.mehvahdjukaar.vista.client.renderer.LevelRendererCameraState;
+import net.mehvahdjukaar.vista.client.renderer.LevelRendererFrustumState;
 import net.minecraft.resources.ResourceLocation;
 
 import java.util.UUID;
@@ -19,7 +19,7 @@ public abstract class PerspectiveTexture extends RenderableDynamicTexture {
             t -> ((PerspectiveTexture) t).refresh();
 
     private final UUID associatedUUID;
-    private final LevelRendererCameraState rendererState = new LevelRendererCameraState();
+    private final LevelRendererFrustumState rendererState = new LevelRendererFrustumState();
 
     protected PerspectiveTexture(ResourceLocation res, int width, int height, UUID id) {
         super(res, width, height, REFRESH_DISPATCH);
@@ -32,7 +32,7 @@ public abstract class PerspectiveTexture extends RenderableDynamicTexture {
     public void applyPostChain() {
     }
 
-    public LevelRendererCameraState getRendererState() {
+    public LevelRendererFrustumState getRendererState() {
         return rendererState;
     }
 

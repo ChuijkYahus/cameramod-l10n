@@ -1,2 +1,3 @@
 - Added mirrors
 - Craft them with crystalline, an item dropped by elden guardians
+- fixes

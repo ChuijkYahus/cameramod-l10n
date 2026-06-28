@@ -45,7 +45,7 @@ import static net.minecraft.client.Minecraft.ON_OSX;
 
 public class VistaLevelRenderer {
 
-    private static final Set<LevelRendererCameraState> MANAGED_STATES = new WeakHashSet<>();
+    private static final Set<LevelRendererFrustumState> MANAGED_STATES = new WeakHashSet<>();
     private static final Object STATES_LOCK = new Object();
     // Tracks MC's main occlusion graph so async chunk/section callbacks can forward into it
     // alongside the feed graphs. Only the outermost render writes this — nested renders see
@@ -179,14 +179,14 @@ public class VistaLevelRenderer {
      */
     public static void invalidateManagedGraphs() {
         synchronized (STATES_LOCK) {
-            for (LevelRendererCameraState state : MANAGED_STATES) {
+            for (LevelRendererFrustumState state : MANAGED_STATES) {
                 SectionOcclusionGraph graph = state.getOcclusionGraph();
                 if (graph != null) graph.invalidate();
             }
         }
     }
 
-    public static void registerManagedState(LevelRendererCameraState state) {
+    public static void registerManagedState(LevelRendererFrustumState state) {
         synchronized (STATES_LOCK) {
             MANAGED_STATES.add(state);
         }
@@ -201,7 +201,7 @@ public class VistaLevelRenderer {
      */
     public static void onLevelRendererAllChanged() {
         synchronized (STATES_LOCK) {
-            for (LevelRendererCameraState state : MANAGED_STATES) {
+            for (LevelRendererFrustumState state : MANAGED_STATES) {
                 state.resetForLevelRendererReload();
             }
         }
@@ -287,29 +287,16 @@ public class VistaLevelRenderer {
         boolean wasEffectActive = mc.gameRenderer.effectActive;
 
         // switch to feed camera state
-        LevelRendererCameraState oldCameraState = LevelRendererCameraState.capture(mc.levelRenderer);
-        LevelRendererCameraState feedCameraState = text.getRendererState();
+        LevelRendererFrustumState oldCameraState = LevelRendererFrustumState.capture(mc.levelRenderer);
+        LevelRendererFrustumState feedCameraState = text.getRendererState();
 
         RenderSystemState oldRenderState = RenderSystemState.capture();
 
-        // Force the FANCY translucency path for this nested render. Fabulous graphics renders
-        // translucency into separate deferred targets and composites them with a transparency
-        // post-chain, which doesn't compose into our off-screen canvas (renderLevel branches on
-        // the transparencyChain field; render-type target binding branches on
-        // Minecraft.useShaderTransparency, overridden to false while isRenderingLiveFeed()). Null
-        // the chain (access-widened) for the duration so renderLevel takes the inline path.
-        //
-        // Also null translucentTarget: in the inline branch renderLevel does
-        // `if (translucentTarget != null) translucentTarget.clear()`, and RenderTarget.clear() ends
-        // by binding framebuffer 0 — stealing the binding away from our canvas so translucent
-        // blocks/particles would render into the window instead of the texture. When Fabulous is
-        // actually off this field is null and the clear is skipped; mirror that exactly here.
-        //
-        // Both stored in locals so re-entrant nested renders each restore their own value.
-        PostChain savedTransparencyChain = mc.levelRenderer.transparencyChain;
-        RenderTarget savedTranslucentTarget = mc.levelRenderer.translucentTarget;
-        mc.levelRenderer.transparencyChain = null;
-        mc.levelRenderer.translucentTarget = null;
+        // Force the genuine FANCY path for this nested render by reproducing the Fabulous-off state
+        // (null transparency chain + deferred targets) so the world composes into our off-screen
+        // canvas instead of Fabulous's deferred targets. See FabulousDeferredState for the why.
+        // Held in a local so re-entrant nested renders each restore their own values.
+        FabulousDeferredState fabulousState = FabulousDeferredState.captureAndDisable(mc.levelRenderer);
 
         UUID mirrorUuid = renderingToken instanceof MirrorBlockEntity m ? m.getId() : null;
         // Pull the texture's logical recursion depth + parent chain so nested BE-renderer calls
@@ -374,9 +361,8 @@ public class VistaLevelRenderer {
                 MC_OWN_GRAPH.set(null);
             }
 
-            // restore the fabulous deferred state we nulled for this nested render
-            mc.levelRenderer.transparencyChain = savedTransparencyChain;
-            mc.levelRenderer.translucentTarget = savedTranslucentTarget;
+            // restore the fabulous deferred state we disabled for this nested render
+            fabulousState.restore(mc.levelRenderer);
 
             // restore old camera state
             oldCameraState.apply(mc.levelRenderer);
@@ -656,11 +642,11 @@ public class VistaLevelRenderer {
 
     public static void onChunkLoaded(ChunkPos chunkPos, SectionOcclusionGraph sectionOcclusionGraph) {
         if (CompatHandler.SODIUM) return;
-        LevelRendererCameraState[] snapshot;
+        LevelRendererFrustumState[] snapshot;
         synchronized (STATES_LOCK) {
-            snapshot = MANAGED_STATES.toArray(new LevelRendererCameraState[0]);
+            snapshot = MANAGED_STATES.toArray(new LevelRendererFrustumState[0]);
         }
-        for (LevelRendererCameraState state : snapshot) {
+        for (LevelRendererFrustumState state : snapshot) {
             SectionOcclusionGraph graph = state.getOcclusionGraph();
             if (graph != null && graph != sectionOcclusionGraph) {
                 graph.onChunkLoaded(chunkPos);
@@ -674,11 +660,11 @@ public class VistaLevelRenderer {
 
     public static void onRecentlyCompiledSection(SectionRenderDispatcher.RenderSection renderSection, SectionOcclusionGraph sectionOcclusionGraph) {
         if (CompatHandler.SODIUM) return;
-        LevelRendererCameraState[] snapshot;
+        LevelRendererFrustumState[] snapshot;
         synchronized (STATES_LOCK) {
-            snapshot = MANAGED_STATES.toArray(new LevelRendererCameraState[0]);
+            snapshot = MANAGED_STATES.toArray(new LevelRendererFrustumState[0]);
         }
-        for (LevelRendererCameraState state : snapshot) {
+        for (LevelRendererFrustumState state : snapshot) {
             SectionOcclusionGraph graph = state.getOcclusionGraph();
             if (graph != null && graph != sectionOcclusionGraph) {
                 graph.onSectionCompiled(renderSection);
