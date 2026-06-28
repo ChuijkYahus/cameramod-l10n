@@ -47,7 +47,7 @@ public class ModLootOverrides {
             event.addTableReference(ENDERMAN_LOOT);
         }
 
-        if (ELDER_GUARDIAN_TABLE.equals(key)) {
+        if (CommonConfigs.isMirrorEnabled() && ELDER_GUARDIAN_TABLE.equals(key)) {
             event.addTableReference(ELDER_GUARDIAN_LOOT);
         }
     }

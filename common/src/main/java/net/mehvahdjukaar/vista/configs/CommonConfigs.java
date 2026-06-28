@@ -19,6 +19,7 @@ public class CommonConfigs {
     public static final Supplier<Boolean> TV_SQUARE_ASPECT_RATIO;
     public static final Supplier<Integer> MAX_CONNECTED_MIRROR_SIZE;
     public static final Supplier<Boolean> MIRROR_SQUARE_ASPECT_RATIO;
+    public static final Supplier<Boolean> MIRROR_ENABLED;
     public static final Supplier<Boolean> CREEPER_DROP;
     public static final Supplier<Boolean> CHEST_DROP;
     public static final Supplier<Mode> WAVE_GATE_MODE;
@@ -47,6 +48,11 @@ public class CommonConfigs {
         MIRROR_SQUARE_ASPECT_RATIO = builder
                 .comment("Forces connected mirrors to have a square aspect ratio.")
                 .define("mirror_square_aspect_ratio", true);
+        MIRROR_ENABLED = builder
+                .comment("Whether mirrors (and the crystalline item used to craft them) are enabled. Disabling hides them from creative tabs, disables the mirror recipe, and stops crystalline from dropping from elder guardians.")
+                .affectsDynamicPacks()
+                .worldReload()
+                .define("mirror_enabled", true);
         CREEPER_DROP = builder
                 .comment("Whether creepers should drop tapes when killed by the pillagers.")
                 .define("creeper_drop", true);
@@ -76,6 +82,10 @@ public class CommonConfigs {
 
     public static void init() {
 
+    }
+
+    public static boolean isMirrorEnabled() {
+        return MIRROR_ENABLED.get();
     }
 
     public static boolean isWaveGateOn() {

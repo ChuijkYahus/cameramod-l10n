@@ -27,6 +27,7 @@ public class ClientConfigs {
     public static final Supplier<Integer> MIRROR_MAX_RECURSION_DEPTH;
     public static final Supplier<Double> MIRROR_RECURSION_RES_DIVIDER;
     public static final Supplier<Double> MIRROR_RECURSION_DIST_DIVIDER;
+    public static final Supplier<Boolean> MIRROR_SMOOTH;
     public static final Supplier<Double> UPDATE_FPS;
     public static final Supplier<Double> MIN_UPDATE_FPS;
     public static final Supplier<Double> THROTTLING_UPDATE_MS;
@@ -72,6 +73,9 @@ public class ClientConfigs {
         MIRROR_RECURSION_DIST_DIVIDER = builder
                 .comment("Per-level render-distance divider for RECURSIVE recursion_mode. Render distance at depth D = base / divider^D. 2.0 means each nesting halves render distance.")
                 .define("recursion_distance_divider", 2.0, 1.0, 16.0);
+        MIRROR_SMOOTH = builder
+                .comment("Smooth the mirror reflection with bilinear texture filtering. Enabled gives a softer, less pixelated reflection; disabled keeps it crisp and pixelated.")
+                .define("smooth_reflection", false);
         builder.pop();
 
         builder.push("television");

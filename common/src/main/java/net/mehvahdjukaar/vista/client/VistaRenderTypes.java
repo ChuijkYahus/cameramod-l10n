@@ -90,15 +90,20 @@ public class VistaRenderTypes extends RenderType {
         setFloat(shader, "FadeAnimation", key.turnOnAnim.getValue(pt));
     }
 
-    private record MirrorKey(ResourceLocation reflectionTexture, int wTiles, int hTiles) {}
+    private record MirrorKey(ResourceLocation reflectionTexture, int wTiles, int hTiles, boolean smooth) {
+    }
 
     public static RenderType mirrorMaterial(ResourceLocation reflectionTexture, int wTiles, int hTiles) {
-        return MIRROR_MATERIAL_RENDER_TYPE.apply(new MirrorKey(reflectionTexture, wTiles, hTiles));
+        // Read the smoothing config here so toggling it picks a distinct cached render type
+        // (the blur flag is baked into the texture-state shard at build time, not per-draw).
+        return MIRROR_MATERIAL_RENDER_TYPE.apply(
+                new MirrorKey(reflectionTexture, wTiles, hTiles, ClientConfigs.MIRROR_SMOOTH.get()));
     }
 
     private static final Function<MirrorKey, RenderType> MIRROR_MATERIAL_RENDER_TYPE = Util.memoize(k -> {
         var textureState = MultiTextureStateShard.builder()
-                .add(k.reflectionTexture, true, false)
+                // Bilinear (smooth) vs nearest (crisp) sampling of the reflection, driven by config.
+                .add(k.reflectionTexture, k.smooth, false)
                 .add(VistaModClient.MIRROR_UNDERLAY, false, false)
                 .build();
         CompositeState compositeState = CompositeState.builder()

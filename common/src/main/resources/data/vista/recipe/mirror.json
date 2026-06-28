@@ -1,14 +1,23 @@
 {
+  "fabric:load_conditions": [
+    {
+      "condition": "vista:flag",
+      "flag": "mirror"
+    }
+  ],
+  "neoforge:conditions": [
+    {
+      "type": "vista:flag",
+      "flag": "mirror"
+    }
+  ],
   "type": "minecraft:crafting_shaped",
   "pattern": [
-    "PGP",
+    "GGG",
     "GCG",
-    "PGP"
+    "GGG"
   ],
   "key": {
-    "P": {
-      "item": "minecraft:prismarine_shard"
-    },
     "G": {
       "item": "minecraft:glass"
     },

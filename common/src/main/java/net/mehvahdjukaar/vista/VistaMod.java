@@ -126,7 +126,7 @@ public class VistaMod {
                     .sound(SoundType.GLASS)
                     .mapColor(MapColor.METAL)
                     .strength(0.3f)
-                    .noOcclusion()));
+                    .noOcclusion()), new Item.Properties().rarity(Rarity.RARE));
 
     public static final Supplier<BlockEntityType<MirrorBlockEntity>> MIRROR_TILE = RegHelper.registerBlockEntityType(
             res("mirror"), MirrorBlockEntity::new, MIRROR);
@@ -240,6 +240,7 @@ public class VistaMod {
         RegHelper.registerSimpleRecipeCondition(VistaMod.res("flag"),
                 s -> {
                     if (Objects.equals(s, "wave_gate")) return CommonConfigs.isWaveGateCraftable();
+                    if (Objects.equals(s, "mirror")) return CommonConfigs.isMirrorEnabled();
                     return true;
                 });
 
@@ -257,8 +258,10 @@ public class VistaMod {
     private static void addItemsToTabs(RegHelper.ItemToTabEvent event) {
         event.add(CreativeModeTabs.REDSTONE_BLOCKS, VIEWFINDER.get());
         event.add(CreativeModeTabs.REDSTONE_BLOCKS, TV.get());
-        event.add(CreativeModeTabs.FUNCTIONAL_BLOCKS, MIRROR.get());
-        event.add(CreativeModeTabs.INGREDIENTS, CRYSTALLINE.get());
+        if (CommonConfigs.isMirrorEnabled()) {
+            event.add(CreativeModeTabs.FUNCTIONAL_BLOCKS, MIRROR.get());
+            event.addAfter(CreativeModeTabs.INGREDIENTS, (i) -> i.is(Items.NAUTILUS_SHELL), CRYSTALLINE.get());
+        }
         CreativeModeTab.ItemDisplayParameters parameters = event.getParameters();
         for (var v : parameters.holders().lookupOrThrow(CASSETTE_TAPE_REGISTRY_KEY).listElements().toList()) {
             if (v.is(SUPPORTER_TAPES_TAG)) continue;
