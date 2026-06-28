@@ -57,6 +57,9 @@ public class VistaRenderTypes extends RenderType {
                         .setTransparencyState(RenderStateShard.TRANSLUCENT_TRANSPARENCY)
                         .setLightmapState(LIGHTMAP)
                         .setCullState(NO_CULL)
+                        // Depth-bias the screen toward the camera so it wins over the coplanar
+                        // block-model face instead of needing a manual forward nudge.
+                        .setLayeringState(POLYGON_OFFSET_LAYERING)
                         .setTextureState(textureStateBuilder.build())
                         .setTexturingState(new TexturingStateShard("set_texel_size",
                                 () -> setCameraDrawUniforms(k),
@@ -103,6 +106,9 @@ public class VistaRenderTypes extends RenderType {
                 .setTransparencyState(NO_TRANSPARENCY)
                 .setLightmapState(LIGHTMAP)
                 .setOverlayState(NO_OVERLAY)
+                // Depth-bias the surface toward the camera so it wins over the coplanar
+                // block-model face instead of needing a manual forward nudge.
+                .setLayeringState(POLYGON_OFFSET_LAYERING)
                 .setTextureState(textureState)
                 // Sampler0/1 are bound by the texture-state shard (reflection, front),
                 // Sampler2 by LIGHTMAP. Bind the overlay directly to unit 3 here — putting it

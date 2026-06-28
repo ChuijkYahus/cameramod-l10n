@@ -92,7 +92,9 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
         poseStack.pushPose();
         poseStack.translate(0.5, 0.5, 0.5);
         poseStack.mulPose(Axis.YP.rotationDegrees(180 - yaw));
-        poseStack.translate(-screenCenter.x, screenCenter.y, -0.505);
+        // Screen sits coplanar with the block-model front face; POLYGON_OFFSET_LAYERING on the
+        // crt render type biases its depth toward the camera so it wins without a forward nudge.
+        poseStack.translate(-screenCenter.x, screenCenter.y, -0.5);
 
         Vec2i pixelEffectRes = ClientConfigs.SCALE_PIXELS.get() ? screenSize : TVBlockEntity.MIN_SCREEN_PIXEL_SIZE_VEC;
 

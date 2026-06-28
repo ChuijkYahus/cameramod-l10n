@@ -32,9 +32,6 @@ import java.util.UUID;
 
 public class MirrorBlockEntityRenderer implements BlockEntityRenderer<MirrorBlockEntity> {
 
-    // Push the visual quad well clear of the block-model front face so geometry doesn't overdraw it.
-    private static final float SURFACE_OFFSET = 0.01f;
-
     public MirrorBlockEntityRenderer(BlockEntityRendererProvider.Context context) {
     }
 
@@ -152,9 +149,10 @@ public class MirrorBlockEntityRenderer implements BlockEntityRenderer<MirrorBloc
         poseStack.pushPose();
         poseStack.translate(0.5, 0.5, 0.5);
         poseStack.mulPose(Axis.YP.rotationDegrees(180 - dir.toYRot()));
-        // recession pushes the surface back into the cell for the FAR model; SURFACE_OFFSET keeps
-        // it a hair in front of the block-model face so geometry never overdraws it.
-        poseStack.translate(0, 0, -0.5 + (float) recession - SURFACE_OFFSET);
+        // recession pushes the surface back into the cell for the FAR model. The surface sits
+        // coplanar with the block-model face; POLYGON_OFFSET_LAYERING on the render type biases
+        // its depth toward the camera so it wins over the face without a manual forward nudge.
+        poseStack.translate(0, 0, -0.5 + (float) recession);
 
         Level level = blockEntity.getLevel();
         int skyBrightness = level.getBrightness(LightLayer.SKY, blockEntity.getBlockPos().relative(dir));

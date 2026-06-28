@@ -36,6 +36,7 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.core.component.DataComponentType;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.resources.RegistryFileCodec;
@@ -196,6 +197,11 @@ public class VistaMod {
                     .jukeboxPlayable(SOJOURN_DISC_SONG.getKey())
                     .stacksTo(1).rarity(Rarity.RARE)));
 
+    public static final Supplier<Item> CRYSTALLINE = RegHelper.registerItem(res("crystalline"),
+            () -> new Item(new Item.Properties()
+                    .rarity(Rarity.RARE)
+                    .component(DataComponents.ENCHANTMENT_GLINT_OVERRIDE, true)));
+
     public static void init() {
         if (CompatHandler.IRIS) {
             VistaMod.LOGGER.error("IRIS mod detected. Vista WILL have visual issues and degraded performance. This is not something that I can fix and happens even with shaderpacks off. Trust me I tried but it's inherently due to how Iris was made and should be handled there.");
@@ -251,7 +257,8 @@ public class VistaMod {
     private static void addItemsToTabs(RegHelper.ItemToTabEvent event) {
         event.add(CreativeModeTabs.REDSTONE_BLOCKS, VIEWFINDER.get());
         event.add(CreativeModeTabs.REDSTONE_BLOCKS, TV.get());
-        //event.add(CreativeModeTabs.FUNCTIONAL_BLOCKS, MIRROR.get());
+        event.add(CreativeModeTabs.FUNCTIONAL_BLOCKS, MIRROR.get());
+        event.add(CreativeModeTabs.INGREDIENTS, CRYSTALLINE.get());
         CreativeModeTab.ItemDisplayParameters parameters = event.getParameters();
         for (var v : parameters.holders().lookupOrThrow(CASSETTE_TAPE_REGISTRY_KEY).listElements().toList()) {
             if (v.is(SUPPORTER_TAPES_TAG)) continue;

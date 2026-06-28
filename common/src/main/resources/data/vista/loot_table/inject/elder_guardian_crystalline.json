@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:entity",
+  "pools": [
+    {
+      "bonus_rolls": 0.0,
+      "entries": [
+        {
+          "type": "item",
+          "weight": 1,
+          "name": "vista:crystalline"
+        }
+      ],
+      "rolls": 1.0
+    }
+  ],
+  "random_sequence": "vista:entities/elder_guardian"
+}

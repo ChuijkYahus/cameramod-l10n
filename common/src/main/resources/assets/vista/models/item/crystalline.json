@@ -1,6 +1,6 @@
 {
   "parent": "item/generated",
   "textures": {
-    "layer0": "vista:item/mirror"
+    "layer0": "vista:item/crystaline"
   }
 }
