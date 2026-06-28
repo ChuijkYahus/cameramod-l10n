@@ -45,9 +45,10 @@ public class MirrorReflectionTexture extends PerspectiveTexture {
     private static final float MIN_NEAR = 0.05f;
     private static final float FAR = 1000f;
 
-    // Fraction of each block face the mirror surface actually covers — the inner 14px, leaving a
-    // 1px frame on every side. Matches the quad inset in MirrorBlockEntityRenderer.
-    private static final double SURFACE_FRACTION = 14.0 / 16.0;
+    // Width (in blocks) of the mirror's frame across the whole group — a fixed 1px on each outer
+    // side (2px total), independent of grid size. Matches the quad inset in
+    // MirrorBlockEntityRenderer and MirrorBlockEntity.FRAME_PIXELS.
+    private static final double FRAME_BLOCKS = 2.0 / 16.0;
 
     // Wall-clock duration of the silvering fade-in (reflectivity 0 → full). Decoupled from
     // tick rate so it stays snappy regardless of TPS / config update mode.
@@ -150,11 +151,11 @@ public class MirrorReflectionTexture extends PerspectiveTexture {
         // For connected mirrors the master is at the bottom-left of the group.
         // The group centre is offset right by (W-1)/2 and up by (H-1)/2 from the master centre.
         Vec2i connection = mirror.getConnectedCount();
-        // The reflective surface is the inner 14px of every block face (1px frame each side), so the
-        // off-axis frustum corners use the inset extent — this keeps the reflection's parallax
-        // matched to the visible mirror area rather than the full block face.
-        double halfW = connection.x() * 0.5 * SURFACE_FRACTION;
-        double halfH = connection.y() * 0.5 * SURFACE_FRACTION;
+        // The reflective surface is the group's block face minus a fixed 1px frame on each outer
+        // side, so the off-axis frustum corners use the inset extent — this keeps the reflection's
+        // parallax matched to the visible mirror area rather than the full block face.
+        double halfW = (connection.x() - FRAME_BLOCKS) * 0.5;
+        double halfH = (connection.y() - FRAME_BLOCKS) * 0.5;
 
         Vec3 masterCenter = Vec3.atCenterOf(pos).add(normal.scale(0.5 - recession));
         Vec3 groupCenter = masterCenter

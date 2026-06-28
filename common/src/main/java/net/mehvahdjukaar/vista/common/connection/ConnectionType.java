@@ -18,7 +18,16 @@ public enum ConnectionType implements StringRepresentable {
     TOP_LEFT(C.D | C.R),
     TOP_RIGHT(C.D | C.L),
     BOTTOM_LEFT(C.U | C.R),
-    BOTTOM_RIGHT(C.U | C.L);
+    BOTTOM_RIGHT(C.U | C.L),
+    // Thin-strip cells (1xN / Nx1 grids). A 1-wide or 1-tall strip needs cells connected on a single
+    // axis, which none of the 2D-grid types above cover. Without these, fromConnections() falls back
+    // to SINGLE for every cell of a strip, so the grid never merges (non-square aspect ratio only).
+    H_LEFT(C.R),         // left end of a horizontal strip
+    H_RIGHT(C.L),        // right end of a horizontal strip
+    H_MIDDLE(C.L | C.R), // interior cell of a horizontal strip
+    V_BOTTOM(C.U),       // bottom end of a vertical strip
+    V_TOP(C.D),          // top end of a vertical strip
+    V_MIDDLE(C.U | C.D); // interior cell of a vertical strip
 
     private final int mask;
 

@@ -20,6 +20,7 @@ public abstract class AbstractGridAccess implements GridAccessor {
 
     protected final BlockPos pos;
     protected final Direction facing;
+    protected final BlockState referenceState;
     protected final Level level;
     protected final Block owner;
 
@@ -30,6 +31,7 @@ public abstract class AbstractGridAccess implements GridAccessor {
     protected AbstractGridAccess(Level level, BlockPos pos, BlockState state, Block owner) {
         this.pos = pos;
         this.facing = state.getValue(HorizontalDirectionalBlock.FACING);
+        this.referenceState = state;
         this.level = level;
         this.owner = owner;
     }
@@ -51,7 +53,7 @@ public abstract class AbstractGridAccess implements GridAccessor {
     }
 
     protected final boolean matchesOwnBlock(BlockState state) {
-        return state.getBlock() == owner && state.getValue(HorizontalDirectionalBlock.FACING) == facing;
+        return owner instanceof IConnectedBlock cb && cb.connectionMatches(referenceState, state);
     }
 
     @Override

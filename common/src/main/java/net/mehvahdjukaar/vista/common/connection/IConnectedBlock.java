@@ -25,25 +25,40 @@ public interface IConnectedBlock {
 
     AbstractGridAccess createGridAccess(Level level, BlockPos pos, BlockState state);
 
-    default ConnectionType getTypeFromNeighbors(Level level, BlockPos pos, Direction facing) {
+    /**
+     * Whether two spatially-adjacent blocks of this type are allowed to merge into the same
+     * connected grid. By default this only requires a matching {@code FACING}; subclasses can
+     * tighten it to also require other model-defining properties to match (e.g. the mirror's
+     * near/far surface), so visually distinct variants never connect.
+     */
+    default boolean connectionMatches(BlockState self, BlockState other) {
+        return other.is((Block) this) &&
+                other.getValue(HorizontalDirectionalBlock.FACING) == self.getValue(HorizontalDirectionalBlock.FACING);
+    }
+
+    default ConnectionType getTypeFromNeighbors(Level level, BlockPos pos, BlockState state) {
         if (maxConnectedSize() <= 1) return ConnectionType.SINGLE;
-        boolean up = isNeighborConnected(level, pos, facing, Direction.UP);
-        boolean down = isNeighborConnected(level, pos, facing, Direction.DOWN);
-        boolean left = isNeighborConnected(level, pos, facing, facing.getClockWise());
-        boolean right = isNeighborConnected(level, pos, facing, facing.getCounterClockWise());
+        Direction facing = state.getValue(HorizontalDirectionalBlock.FACING);
+        boolean up = isNeighborConnected(level, pos, state, Direction.UP);
+        boolean down = isNeighborConnected(level, pos, state, Direction.DOWN);
+        boolean left = isNeighborConnected(level, pos, state, facing.getClockWise());
+        boolean right = isNeighborConnected(level, pos, state, facing.getCounterClockWise());
         return ConnectionType.fromConnections(up, down, left, right);
     }
 
-    default boolean isNeighborConnected(Level level, BlockPos myPos, Direction myFacing, Direction toDir) {
+    default boolean isNeighborConnected(Level level, BlockPos myPos, BlockState myState, Direction toDir) {
         BlockState neighbor = level.getBlockState(myPos.relative(toDir));
-        if (!neighbor.is((Block) this)) return false;
-        return neighbor.getValue(HorizontalDirectionalBlock.FACING) == myFacing &&
-                neighbor.getValue(connectionProperty()).isConnected(toDir.getOpposite(), myFacing);
+        if (!connectionMatches(myState, neighbor)) return false;
+        Direction myFacing = myState.getValue(HorizontalDirectionalBlock.FACING);
+        return neighbor.getValue(connectionProperty()).isConnected(toDir.getOpposite(), myFacing);
     }
 
     default boolean shouldHaveBlockEntity(BlockState state) {
         ConnectionType conn = state.getValue(connectionProperty());
-        return conn == ConnectionType.SINGLE || conn == ConnectionType.BOTTOM_LEFT;
+        // The master/BE lives in the bottom-left cell of its grid: the cell with a border on both its
+        // bottom and left edges. This covers SINGLE, BOTTOM_LEFT, and the bottom-left ends of thin
+        // strips (H_LEFT, V_BOTTOM) without enumerating each type.
+        return conn.hasEdge(Direction2D.DOWN) && conn.hasEdge(Direction2D.LEFT);
     }
 
     default void enlargeConnection(BlockState state, Level level, BlockPos pos) {
@@ -79,7 +94,6 @@ public interface IConnectedBlock {
     default BlockEntity findMasterBlockEntity(LevelAccessor level, BlockPos pos, BlockState state) {
         ConnectionType type = state.getValue(connectionProperty());
         Direction facing = state.getValue(HorizontalDirectionalBlock.FACING);
-        Block self = (Block) this;
         BlockPos current = pos;
 
         BlockEntity be = level.getBlockEntity(current);
@@ -88,14 +102,14 @@ public interface IConnectedBlock {
         while (type.isConnected(Direction.DOWN, facing)) {
             current = current.below();
             BlockState below = level.getBlockState(current);
-            if (!below.is(self) || below.getValue(HorizontalDirectionalBlock.FACING) != facing) return null;
+            if (!connectionMatches(state, below)) return null;
             type = below.getValue(connectionProperty());
         }
         Direction myLeft = facing.getClockWise();
         while (type.isConnected(myLeft, facing)) {
             current = current.relative(myLeft);
             BlockState side = level.getBlockState(current);
-            if (!side.is(self) || side.getValue(HorizontalDirectionalBlock.FACING) != facing) return null;
+            if (!connectionMatches(state, side)) return null;
             type = side.getValue(connectionProperty());
         }
         return level.getBlockEntity(current);

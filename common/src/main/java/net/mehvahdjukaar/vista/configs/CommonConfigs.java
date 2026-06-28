@@ -40,7 +40,7 @@ public class CommonConfigs {
                 .define("max_connected_tv_size", 8, 1, 24);
         TV_SQUARE_ASPECT_RATIO = builder
                 .comment("Makes connected tvs just have a square aspect ratio. If you set to false cassettes will be stretched and will look worse as a result")
-                .define("square_aspect_ratio", true);
+                .define("tv_square_aspect_ratio", true);
         MAX_CONNECTED_MIRROR_SIZE = builder
                 .comment("Maximum size of connected mirrors (in blocks). Set to 1 to disable multi-block mirrors.")
                 .define("max_connected_mirror_size", 8, 1, 24);

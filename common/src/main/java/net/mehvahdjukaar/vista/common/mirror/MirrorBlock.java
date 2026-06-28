@@ -3,6 +3,7 @@ package net.mehvahdjukaar.vista.common.mirror;
 import com.mojang.serialization.MapCodec;
 import net.mehvahdjukaar.moonlight.api.block.IOptionalEntityBlock;
 import net.mehvahdjukaar.moonlight.api.util.Utils;
+import net.mehvahdjukaar.moonlight.api.util.math.MthUtils;
 import net.mehvahdjukaar.moonlight.api.util.math.Rect2D;
 import net.mehvahdjukaar.moonlight.api.util.math.Vec2i;
 import net.mehvahdjukaar.vista.VistaMod;
@@ -18,6 +19,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.EntityBlock;
@@ -31,7 +33,11 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.Map;
 
 public class MirrorBlock extends HorizontalDirectionalBlock implements EntityBlock, IOptionalEntityBlock, IConnectedBlock {
 
@@ -44,6 +50,14 @@ public class MirrorBlock extends HorizontalDirectionalBlock implements EntityBlo
     // Recession (in blocks) of the FAR model's mirror plane from the block's front face. The far
     // model element runs z=14..16, so its mirror face sits 14px deeper than the near model's.
     public static final double FAR_RECESSION = 14.0 / 16.0;
+
+    // Collision/outline shapes matching the 2px-thick block models, keyed by FACING. The base shape
+    // is defined for NORTH (front face at z=0) and rotated for the other horizontal directions — the
+    // same convention the blockstate uses to rotate the model.
+    private static final Map<Direction, VoxelShape> NEAR_SHAPES =
+            MthUtils.getAllRotatedVoxelShapesHorizontal(Block.box(0, 0, 0, 16, 16, 2));
+    private static final Map<Direction, VoxelShape> FAR_SHAPES =
+            MthUtils.getAllRotatedVoxelShapesHorizontal(Block.box(0, 0, 14, 16, 16, 16));
 
     public MirrorBlock(Properties properties) {
         super(properties);
@@ -67,6 +81,12 @@ public class MirrorBlock extends HorizontalDirectionalBlock implements EntityBlo
     }
 
     @Override
+    protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        Map<Direction, VoxelShape> shapes = state.getValue(FAR) ? FAR_SHAPES : NEAR_SHAPES;
+        return shapes.get(state.getValue(FACING));
+    }
+
+    @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         builder.add(FACING, FAR, CONNECTION);
     }
@@ -74,6 +94,15 @@ public class MirrorBlock extends HorizontalDirectionalBlock implements EntityBlo
     @Override
     public EnumProperty<ConnectionType> connectionProperty() {
         return CONNECTION;
+    }
+
+    // Mirrors only connect to neighbors sharing both facing AND near/far surface, so a near and a
+    // far mirror sitting side by side stay separate grids (their reflection planes are at different
+    // depths, so merging them would be visually wrong).
+    @Override
+    public boolean connectionMatches(BlockState self, BlockState other) {
+        return IConnectedBlock.super.connectionMatches(self, other) &&
+                other.getValue(FAR) == self.getValue(FAR);
     }
 
     @Override
@@ -94,11 +123,11 @@ public class MirrorBlock extends HorizontalDirectionalBlock implements EntityBlo
     @Override
     public @Nullable BlockState getStateForPlacement(BlockPlaceContext context) {
         Direction facing = context.getHorizontalDirection().getOpposite();
-        ConnectionType type = getTypeFromNeighbors(context.getLevel(), context.getClickedPos(), facing);
-        return this.defaultBlockState()
+        BlockState state = this.defaultBlockState()
                 .setValue(FACING, facing)
-                .setValue(FAR, isFarHalf(context, facing))
-                .setValue(CONNECTION, type);
+                .setValue(FAR, isFarHalf(context, facing));
+        ConnectionType type = getTypeFromNeighbors(context.getLevel(), context.getClickedPos(), state);
+        return state.setValue(CONNECTION, type);
     }
 
     /**
@@ -206,6 +235,8 @@ public class MirrorBlock extends HorizontalDirectionalBlock implements EntityBlo
         protected void onMasterApplied(BlockPos target, Rect2D rect) {
             if (level.getBlockEntity(target) instanceof MirrorBlockEntity mirror) {
                 mirror.setConnectionSize(rect.getSize());
+                // MirrorBlockEntity#setChanged pushes the new connection size to clients, so the
+                // reflection re-sizes to match the reshaped grid.
                 mirror.setChanged();
             }
         }

@@ -7,11 +7,7 @@ import net.mehvahdjukaar.moonlight.api.util.Utils;
 import net.mehvahdjukaar.moonlight.api.util.math.Rect2D;
 import net.mehvahdjukaar.moonlight.api.util.math.Vec2i;
 import net.mehvahdjukaar.vista.VistaMod;
-import net.mehvahdjukaar.vista.common.connection.AbstractGridAccess;
-import net.mehvahdjukaar.vista.common.connection.ConnectionType;
-import net.mehvahdjukaar.vista.common.connection.GridTile;
-import net.mehvahdjukaar.vista.common.connection.IConnectedBlock;
-import net.mehvahdjukaar.vista.common.connection.RectFinder;
+import net.mehvahdjukaar.vista.common.connection.*;
 import net.mehvahdjukaar.vista.configs.CommonConfigs;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -104,12 +100,11 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
     public @Nullable BlockState getStateForPlacement(BlockPlaceContext context) {
         boolean powered = context.getLevel().hasNeighborSignal(context.getClickedPos());
         Direction facing = context.getHorizontalDirection().getOpposite();
-        ConnectionType type = getTypeFromNeighbors(context.getLevel(), context.getClickedPos(), facing);
-
-        return this.defaultBlockState()
+        BlockState state = this.defaultBlockState()
                 .setValue(POWER_STATE, PowerState.direct(powered))
-                .setValue(FACING, facing)
-                .setValue(CONNECTION, type);
+                .setValue(FACING, facing);
+        ConnectionType type = getTypeFromNeighbors(context.getLevel(), context.getClickedPos(), state);
+        return state.setValue(CONNECTION, type);
     }
 
     @Override

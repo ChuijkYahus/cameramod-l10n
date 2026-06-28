@@ -149,6 +149,96 @@
     "facing=west,connection=center": {
       "model": "vista:block/television_center",
       "y": 270
+    },
+    "facing=north,connection=h_left": {
+      "model": "vista:block/television_h_left"
+    },
+    "facing=north,connection=h_right": {
+      "model": "vista:block/television_h_right"
+    },
+    "facing=north,connection=h_middle": {
+      "model": "vista:block/television_h_middle"
+    },
+    "facing=north,connection=v_top": {
+      "model": "vista:block/television_v_top"
+    },
+    "facing=north,connection=v_bottom": {
+      "model": "vista:block/television_v_bottom"
+    },
+    "facing=north,connection=v_middle": {
+      "model": "vista:block/television_v_middle"
+    },
+    "facing=east,connection=h_left": {
+      "model": "vista:block/television_h_left",
+      "y": 90
+    },
+    "facing=east,connection=h_right": {
+      "model": "vista:block/television_h_right",
+      "y": 90
+    },
+    "facing=east,connection=h_middle": {
+      "model": "vista:block/television_h_middle",
+      "y": 90
+    },
+    "facing=east,connection=v_top": {
+      "model": "vista:block/television_v_top",
+      "y": 90
+    },
+    "facing=east,connection=v_bottom": {
+      "model": "vista:block/television_v_bottom",
+      "y": 90
+    },
+    "facing=east,connection=v_middle": {
+      "model": "vista:block/television_v_middle",
+      "y": 90
+    },
+    "facing=south,connection=h_left": {
+      "model": "vista:block/television_h_left",
+      "y": 180
+    },
+    "facing=south,connection=h_right": {
+      "model": "vista:block/television_h_right",
+      "y": 180
+    },
+    "facing=south,connection=h_middle": {
+      "model": "vista:block/television_h_middle",
+      "y": 180
+    },
+    "facing=south,connection=v_top": {
+      "model": "vista:block/television_v_top",
+      "y": 180
+    },
+    "facing=south,connection=v_bottom": {
+      "model": "vista:block/television_v_bottom",
+      "y": 180
+    },
+    "facing=south,connection=v_middle": {
+      "model": "vista:block/television_v_middle",
+      "y": 180
+    },
+    "facing=west,connection=h_left": {
+      "model": "vista:block/television_h_left",
+      "y": 270
+    },
+    "facing=west,connection=h_right": {
+      "model": "vista:block/television_h_right",
+      "y": 270
+    },
+    "facing=west,connection=h_middle": {
+      "model": "vista:block/television_h_middle",
+      "y": 270
+    },
+    "facing=west,connection=v_top": {
+      "model": "vista:block/television_v_top",
+      "y": 270
+    },
+    "facing=west,connection=v_bottom": {
+      "model": "vista:block/television_v_bottom",
+      "y": 270
+    },
+    "facing=west,connection=v_middle": {
+      "model": "vista:block/television_v_middle",
+      "y": 270
     }
   }
 }

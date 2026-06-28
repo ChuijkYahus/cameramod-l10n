@@ -158,18 +158,17 @@ public class MirrorBlockEntityRenderer implements BlockEntityRenderer<MirrorBloc
 
         VertexConsumer vc = buffer.getBuffer(VistaRenderTypes.mirrorMaterial(
                 text.getTextureLocation(), (int) w, (int) h));
-        // Inset the reflection quad by 1px per block so the frame_front border shows around it.
-        // The inset scales with the grid extent (w/16, h/16 per side) so the visible surface is
-        // exactly 14w x 14h px — a 1:1 match with the 14px-per-block framebuffer, i.e. pixel
-        // perfect for any connected size.
-        float insetX = w / 16f;
-        float insetY = h / 16f;
+        // Inset the reflection quad by a fixed 1px on the outer edge so the frame_front border shows
+        // around it. The inset does NOT scale with the grid: the frame stays 1px wide no matter how
+        // many blocks the mirror spans, leaving a visible (16w-2) x (16h-2) px surface — a 1:1 match
+        // with the framebuffer (see MirrorBlockEntity.FRAME_PIXELS), i.e. pixel perfect at any size.
+        float inset = 1f / 16f;
         // Master is at bottom-right in local-rotated space (grid extends along facing.CCW
         // = local -X), so the quad spans from local x=0.5-w to x=0.5.
         // UVs rotated 180° (u0,v0=1,1; u1,v1=0,0) — framebuffer texture is upside-down
         // and mirrored relative to the local quad orientation.
         VertexUtil.addQuad(vc, poseStack,
-                0.5f - w + insetX, -0.5f + insetY, 0.5f - insetX, h - 0.5f - insetY,
+                0.5f - w + inset, -0.5f + inset, 0.5f - inset, h - 0.5f - inset,
                 1f, 1f, 0f, 0f,
                 255, 255, 255, 255,
                 VertexUtil.lightU(light), VertexUtil.lightV(light));

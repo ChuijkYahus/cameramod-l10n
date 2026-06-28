@@ -1,6 +1,5 @@
 package net.mehvahdjukaar.vista.mixins;
 
-import net.mehvahdjukaar.supplementaries.common.block.blocks.BlackboardBlock;
 import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.client.IClientChunkCacheExt;
 import net.minecraft.client.multiplayer.ClientChunkCache;
@@ -51,7 +50,6 @@ public class ClientChunkCacheMixin implements IClientChunkCacheExt {
         if (VistaModClient.CLIENT_EXTRA_CHUNK_VIEW_DATA.containsChunk(x, z)) {
             LevelChunk chunk = this.vista$pinnedChunks.get(ChunkPos.asLong(x, z));
             if (chunk != null) {
-                BlackboardBlock
                 cir.setReturnValue(chunk);
             }
         }

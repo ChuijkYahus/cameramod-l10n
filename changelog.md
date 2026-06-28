@@ -1,2 +1,2 @@
+- greatly improved far away chunk client handling so blocks, entities and such all update properly
 - better compat with DH
-- vastluy improved far away chunk client handling so blocks, entities and such all update properly
