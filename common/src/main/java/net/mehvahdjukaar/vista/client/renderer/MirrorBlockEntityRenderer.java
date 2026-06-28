@@ -66,12 +66,15 @@ public class MirrorBlockEntityRenderer implements BlockEntityRenderer<MirrorBloc
     public void render(MirrorBlockEntity blockEntity, float partialTick, PoseStack poseStack,
                        MultiBufferSource buffer, int light, int overlay) {
         Direction dir = blockEntity.getBlockState().getValue(MirrorBlock.FACING);
+        double recession = MirrorBlock.surfaceRecession(blockEntity.getBlockState());
 
+        // Cull against the actual mirror surface plane, recessed into the cell for the FAR model.
+        // Using a fixed 0.5 (front face) here would cull the recessed quad early once the viewer
+        // gets close enough to cross the front face but not the recessed surface.
         LOD lod = LOD.at(blockEntity);
-        if (lod.isPlaneCulled(dir, 0.5f, 1.5f, 0f)) return;
+        if (lod.isPlaneCulled(dir, (float) (0.5 - recession), 1.5f, 0f)) return;
 
         Vec3 normal = Vec3.atLowerCornerOf(dir.getNormal());
-        double recession = MirrorBlock.surfaceRecession(blockEntity.getBlockState());
         Vec3 planePoint = Vec3.atCenterOf(blockEntity.getBlockPos()).add(normal.scale(0.5 - recession));
 
         Minecraft mc = Minecraft.getInstance();
@@ -88,11 +91,12 @@ public class MirrorBlockEntityRenderer implements BlockEntityRenderer<MirrorBloc
             Vec2i screenSize = blockEntity.getScreenPixelSize();
             // Capture the eye NOW, while we still have the camera that was used to render the BE.
             // The actual reflection render fires later in the frame; if we resampled the camera at
-            // refresh time it could drift from the source view. Use the raw camera position (the
-            // pre-bob state vanilla exposes) — duplicating GameRenderer.bobView math here would
-            // silently break under any mod that alters bob behavior, and the visual mismatch between
-            // a bobbed BE quad and an un-bobbed reflection is sub-pixel for typical walk speeds.
-            Vec3 eye = mainCamera.getPosition();
+            // refresh time it could drift from the source view. Offset the raw camera position by
+            // this frame's view-bob displacement (getMainBobEyeOffset) so the reflection's parallax
+            // tracks the *bobbed* POV the displayed quad is drawn with — without it the far reflected
+            // scene wobbles against the surface as you walk. The offset is read off the bob matrix
+            // the game built, so no bob math is duplicated and mod-altered bob still works.
+            Vec3 eye = mainCamera.getPosition().add(VistaLevelRenderer.getMainBobEyeOffset());
             text = MirrorTextureManager.getMirrorTexture(blockEntity, screenSize, eye);
         } else {
             text = resolveNestedTexture(blockEntity, mainCamera.getPosition(), depth);

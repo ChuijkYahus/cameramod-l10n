@@ -3,8 +3,12 @@ package net.mehvahdjukaar.vista.mixins;
 import com.llamalad7.mixinextras.expression.Definition;
 import com.llamalad7.mixinextras.expression.Expression;
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
+import com.llamalad7.mixinextras.sugar.Local;
+import com.mojang.blaze3d.vertex.PoseStack;
 import net.mehvahdjukaar.vista.client.ViewFinderController;
 import net.mehvahdjukaar.vista.client.renderer.VistaLevelRenderer;
+import net.minecraft.client.Camera;
+import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.resources.ResourceLocation;
 import org.spongepowered.asm.mixin.Mixin;
@@ -30,6 +34,17 @@ public class GameRendererMixin {
         if (VistaLevelRenderer.isRenderingLiveFeed()) {
             ci.cancel();
         }
+    }
+
+    // Capture the view-bob displacement at the exact point vanilla folds the bob pose into the
+    // projection matrix (poseStack holds bobHurt + bobView, starting from identity). Mirrors read
+    // this offset to reflect the bobbed eye so the far reflected scene doesn't wobble. See
+    // VistaLevelRenderer#captureMainBobEyeOffset.
+    @Inject(method = "renderLevel", at = @At(value = "INVOKE",
+            target = "Lcom/mojang/blaze3d/vertex/PoseStack;last()Lcom/mojang/blaze3d/vertex/PoseStack$Pose;"))
+    private void vista$captureBobEyeOffset(DeltaTracker deltaTracker, CallbackInfo ci,
+                                           @Local Camera camera, @Local PoseStack poseStack) {
+        VistaLevelRenderer.captureMainBobEyeOffset(camera, poseStack.last().pose());
     }
 
 }

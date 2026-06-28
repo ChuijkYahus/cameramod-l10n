@@ -34,14 +34,10 @@ import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
+import org.joml.Vector3f;
 import org.lwjgl.opengl.GL11C;
 
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Deque;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static net.minecraft.client.Minecraft.ON_OSX;
@@ -84,8 +80,42 @@ public class VistaLevelRenderer {
 
     private static ResourceKey<Level> lastLevel = null;
 
+    // World-space displacement of the main view's eye caused by view bob this frame. In this MC
+    // version bob is folded into the projection matrix (GameRenderer.renderLevel), so the modelview
+    // keeps the raw, un-bobbed camera position. Mirrors must reflect the *bobbed* eye, otherwise the
+    // reflected scene's parallax tracks the un-bobbed POV while the displayed quad bobs — a mismatch
+    // that's invisible at the mirror surface but grows with reflected depth (the far scene wobbles).
+    // Captured every main pass by GameRendererMixin via captureMainBobEyeOffset; stays ZERO when bob
+    // is disabled or the eye isn't moving. Main-thread render only, so a plain static is safe.
+    private static Vec3 mainBobEyeOffset = Vec3.ZERO;
+
     public static boolean isRenderingLiveFeed() {
         return !RENDER_STACK.isEmpty();
+    }
+
+    /**
+     * Records the world-space eye displacement that view bob introduced this main pass. Reads it
+     * straight off the bob pose matrix the game already built (so any mod that alters bob, plus
+     * bob-hurt and the bob-disabled case, are all handled with no duplicated bob math).
+     *
+     * <p>The bob transform {@code B} sits in view space between projection and modelview, so the
+     * effective eye solves {@code B · R_w2v · (eye - camPos) = 0}, giving
+     * {@code eye = camPos + R_v2w · translation(B⁻¹)}. We only need the offset
+     * {@code R_v2w · translation(B⁻¹)} — {@code camera.rotation()} is exactly {@code R_v2w}
+     * (view→world). Only the eye *position* matters for reflection correctness; bob's rotation is
+     * already carried by the mirror quad in the main pass.
+     *
+     * @param bobPose {@code poseStack.last().pose()} after bobHurt + bobView, i.e. the pure bob
+     *                transform starting from identity.
+     */
+    public static void captureMainBobEyeOffset(Camera camera, Matrix4f bobPose) {
+        Vector3f off = new Matrix4f(bobPose).invert().getTranslation(new Vector3f());
+        camera.rotation().transform(off);
+        mainBobEyeOffset = new Vec3(off.x, off.y, off.z);
+    }
+
+    public static Vec3 getMainBobEyeOffset() {
+        return mainBobEyeOffset;
     }
 
     public static boolean isViewFinderRenderingLiveFeed(ViewFinderBlockEntity vf) {
@@ -361,14 +391,14 @@ public class VistaLevelRenderer {
 
         PoseStack poseStack = new PoseStack();
 
-        // NOTE: don't bake bobView/bobHurt into the reflection modelview here. Doing so
-        // double-bobs the mirror: the main view already bobs the displayed mirror surface (via
-        // its own modelview), and if the framebuffer content is *also* rendered with bob, the
-        // two stack visibly. A correct fix would offset the *reflected eye position* by the
-        // bob's geometric translation so parallax tracks the bobbed POV — but bobView is a
-        // non-linear modelview transform, not a simple position offset, so extracting that is
-        // not a one-liner. Left as a TODO; the current behavior is "reflection appears slightly
-        // stable while the surface bobs with the view", which reads better than double-bob.
+        // NOTE: don't bake bobView/bobHurt into the reflection modelview here. The displayed mirror
+        // surface already bobs (the quad goes through the main pass's bobbed projection), so baking
+        // bob into the framebuffer content too would double-bob the surface. Parallax against the
+        // bobbed POV is instead handled where it belongs — at the *eye position*: the mirror eye is
+        // offset by VistaLevelRenderer.getMainBobEyeOffset() before reflection (see
+        // MirrorBlockEntityRenderer). That's sufficient because reflecting a ray from the bobbed eye
+        // through a mirror-plane point only depends on the eye position, not the bob rotation, which
+        // the quad already carries. So the camera here stays pinned to the mirror normal.
         Quaternionf cameraRotation = camera.rotation().conjugate(new Quaternionf());
         Matrix4f cameraMatrix = (new Matrix4f()).rotation(cameraRotation);
         Vec3 cameraPos = camera.getPosition();
