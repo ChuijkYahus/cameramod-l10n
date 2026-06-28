@@ -16,6 +16,7 @@ import net.mehvahdjukaar.vista.integration.CompatHandler;
 import net.mehvahdjukaar.vista.integration.iris.IrisCompat;
 import net.minecraft.client.Camera;
 import net.minecraft.client.DeltaTracker;
+import net.minecraft.client.GraphicsStatus;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.*;
@@ -91,6 +92,16 @@ public class VistaLevelRenderer {
 
     public static boolean isRenderingLiveFeed() {
         return !RENDER_STACK.isEmpty();
+    }
+
+    /**
+     * Whether the mirror/TV surface quads need their legacy manual forward z-offset instead of
+     * relying on POLYGON_OFFSET_LAYERING. True inside nested level renders (the polygon-offset
+     * state doesn't take there) and always under FAST graphics (where it z-fights otherwise).
+     */
+    public static boolean needsManualSurfaceOffset() {
+        if (isRenderingLiveFeed()) return true;
+        return Minecraft.getInstance().options.graphicsMode().get() == GraphicsStatus.FAST;
     }
 
     /**
@@ -281,6 +292,25 @@ public class VistaLevelRenderer {
 
         RenderSystemState oldRenderState = RenderSystemState.capture();
 
+        // Force the FANCY translucency path for this nested render. Fabulous graphics renders
+        // translucency into separate deferred targets and composites them with a transparency
+        // post-chain, which doesn't compose into our off-screen canvas (renderLevel branches on
+        // the transparencyChain field; render-type target binding branches on
+        // Minecraft.useShaderTransparency, overridden to false while isRenderingLiveFeed()). Null
+        // the chain (access-widened) for the duration so renderLevel takes the inline path.
+        //
+        // Also null translucentTarget: in the inline branch renderLevel does
+        // `if (translucentTarget != null) translucentTarget.clear()`, and RenderTarget.clear() ends
+        // by binding framebuffer 0 — stealing the binding away from our canvas so translucent
+        // blocks/particles would render into the window instead of the texture. When Fabulous is
+        // actually off this field is null and the clear is skipped; mirror that exactly here.
+        //
+        // Both stored in locals so re-entrant nested renders each restore their own value.
+        PostChain savedTransparencyChain = mc.levelRenderer.transparencyChain;
+        RenderTarget savedTranslucentTarget = mc.levelRenderer.translucentTarget;
+        mc.levelRenderer.transparencyChain = null;
+        mc.levelRenderer.translucentTarget = null;
+
         UUID mirrorUuid = renderingToken instanceof MirrorBlockEntity m ? m.getId() : null;
         // Pull the texture's logical recursion depth + parent chain so nested BE-renderer calls
         // can correctly derive THEIR depth/chain from this frame. The PENDING flush only knows
@@ -343,6 +373,10 @@ public class VistaLevelRenderer {
             if (isOutermost) {
                 MC_OWN_GRAPH.set(null);
             }
+
+            // restore the fabulous deferred state we nulled for this nested render
+            mc.levelRenderer.transparencyChain = savedTransparencyChain;
+            mc.levelRenderer.translucentTarget = savedTranslucentTarget;
 
             // restore old camera state
             oldCameraState.apply(mc.levelRenderer);

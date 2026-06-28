@@ -169,9 +169,9 @@ public class MirrorBlockEntityRenderer implements BlockEntityRenderer<MirrorBloc
         // recession pushes the surface back into the cell for the FAR model. The surface sits
         // coplanar with the block-model face; POLYGON_OFFSET_LAYERING on the render type biases
         // its depth toward the camera so it wins over the face without a manual forward nudge.
-        // Exception: inside a nested level render the polygon offset doesn't apply, so nudge the
-        // quad forward manually there to avoid z-fighting with the block face.
-        float zFightOffset = VistaLevelRenderer.isRenderingLiveFeed() ? SURFACE_OFFSET : 0f;
+        // Exception: inside nested level renders and under FAST graphics the polygon offset doesn't
+        // hold, so nudge the quad forward manually there to avoid z-fighting with the block face.
+        float zFightOffset = VistaLevelRenderer.needsManualSurfaceOffset() ? SURFACE_OFFSET : 0f;
         poseStack.translate(0, 0, -0.5 + (float) recession - zFightOffset);
 
         Level level = blockEntity.getLevel();

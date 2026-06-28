@@ -33,6 +33,7 @@
     "KeyboardHandlerMixin",
     "LevelRendererMixin",
     "LocalPlayerMixin",
+    "MinecraftMixin",
     "MouseHandlerMixin",
     "RenderSectionMixin",
     "SectionOcclusionGraphMixin",

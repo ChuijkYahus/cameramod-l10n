@@ -3,12 +3,13 @@ package net.mehvahdjukaar.vista.client.web.ffmpeg;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
-import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.moonlight.api.util.ArchiveUtils;
 import net.mehvahdjukaar.moonlight.api.util.FileDownloadUtils;
 import net.mehvahdjukaar.moonlight.api.util.OsType;
+import net.mehvahdjukaar.vista.VistaMod;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -42,6 +43,15 @@ public final class FFmpegManager {
         try {
             Files.createDirectories(PROGRAM_FOLDER);
             if (!hasRequiredFiles()) {
+                // Prefer a system-wide install (in PATH) before downloading our own copy,
+                // unless the user explicitly forced a custom download URL.
+                if (customUrl == null) {
+                    FFmpeg system = detectSystemFFmpeg();
+                    if (system != null) {
+                        downloadProgress = -1;
+                        return system;
+                    }
+                }
                 downloadProgress = -1;
                 String downloadUrl = customUrl != null ? customUrl : getDownloadUrlFromSources();
                 Path archive = PROGRAM_FOLDER.resolve(ArchiveUtils.extractFileNameFromUrl(downloadUrl));
@@ -57,20 +67,51 @@ public final class FFmpegManager {
 
                 extractAndInstall(archive);
                 Files.deleteIfExists(archive);
-                downloadProgress = -1;
-            } else {
-                downloadProgress = -1;
-                VistaMod.LOGGER.info("FFmpeg binaries found at {}", FFMPEG_PATH);
             }
+            downloadProgress = -1;
         } catch (Exception e) {
             downloadProgress = -1;
             throw new RuntimeException("FFmpeg setup failed. Aborting.", e);
         }
+        VistaMod.LOGGER.info("Using managed FFmpeg binaries at {}", FFMPEG_PATH.toAbsolutePath());
         return new FFmpeg(FFMPEG_PATH, FFPROBE_PATH);
     }
 
     public static boolean hasRequiredFiles() {
         return Files.exists(FFMPEG_PATH) && Files.exists(FFPROBE_PATH);
+    }
+
+    /**
+     * Looks for a system-wide FFmpeg install on the user's PATH. Both ffmpeg and ffprobe
+     * must be present, otherwise we fall back to downloading our own copy.
+     */
+    @Nullable
+    private static FFmpeg detectSystemFFmpeg() {
+        Path ffmpeg = findInPath(OS_TYPE.executableName("ffmpeg"));
+        Path ffprobe = findInPath(OS_TYPE.executableName("ffprobe"));
+        if (ffmpeg != null && ffprobe != null) {
+            VistaMod.LOGGER.info("Using system FFmpeg from PATH: {} and {}", ffmpeg, ffprobe);
+            return new FFmpeg(ffmpeg, ffprobe);
+        }
+        return null;
+    }
+
+    @Nullable
+    private static Path findInPath(String executableName) {
+        String pathEnv = System.getenv("PATH");
+        if (pathEnv == null || pathEnv.isEmpty()) return null;
+        for (String dir : pathEnv.split(File.pathSeparator)) {
+            if (dir.isEmpty()) continue;
+            try {
+                Path candidate = Paths.get(dir).resolve(executableName);
+                if (Files.isRegularFile(candidate) && Files.isExecutable(candidate)) {
+                    return candidate.toAbsolutePath();
+                }
+            } catch (Exception ignored) {
+                // malformed PATH entry, skip
+            }
+        }
+        return null;
     }
 
     private static String getDownloadUrlFromSources() throws IOException {
