@@ -25,12 +25,6 @@ public interface IConnectedBlock {
 
     AbstractGridAccess createGridAccess(Level level, BlockPos pos, BlockState state);
 
-    /**
-     * Whether two spatially-adjacent blocks of this type are allowed to merge into the same
-     * connected grid. By default this only requires a matching {@code FACING}; subclasses can
-     * tighten it to also require other model-defining properties to match (e.g. the mirror's
-     * near/far surface), so visually distinct variants never connect.
-     */
     default boolean connectionMatches(BlockState self, BlockState other) {
         return other.is((Block) this) &&
                 other.getValue(HorizontalDirectionalBlock.FACING) == self.getValue(HorizontalDirectionalBlock.FACING);
@@ -55,9 +49,6 @@ public interface IConnectedBlock {
 
     default boolean shouldHaveBlockEntity(BlockState state) {
         ConnectionType conn = state.getValue(connectionProperty());
-        // The master/BE lives in the bottom-left cell of its grid: the cell with a border on both its
-        // bottom and left edges. This covers SINGLE, BOTTOM_LEFT, and the bottom-left ends of thin
-        // strips (H_LEFT, V_BOTTOM) without enumerating each type.
         return conn.hasEdge(Direction2D.DOWN) && conn.hasEdge(Direction2D.LEFT);
     }
 

@@ -2,8 +2,8 @@
   "parent": "minecraft:block/block",
   "textures": {
     "particle": "vista:block/mirror/side",
-    "front": "vista:block/mirror/front/default",
-    "back": "vista:block/mirror/back/default",
+    "front": "vista:block/mirror/front/left_middle",
+    "back": "vista:block/mirror/back/right_middle",
     "side": "vista:block/mirror/side"
   },
   "elements": [
@@ -11,12 +11,12 @@
       "from": [
         0,
         0,
-        0
+        14
       ],
       "to": [
         16,
         16,
-        2
+        16
       ],
       "faces": {
         "north": {
@@ -25,39 +25,12 @@
         "south": {
           "texture": "#back"
         },
-        "up": {
-          "texture": "#side",
-          "uv": [
-            0,
-            0,
-            16,
-            2
-          ]
-        },
-        "down": {
-          "texture": "#side",
-          "uv": [
-            0,
-            14,
-            16,
-            16
-          ]
-        },
         "east": {
           "texture": "#side",
           "uv": [
             14,
             0,
             16,
-            16
-          ]
-        },
-        "west": {
-          "texture": "#side",
-          "uv": [
-            0,
-            0,
-            2,
             16
           ]
         }

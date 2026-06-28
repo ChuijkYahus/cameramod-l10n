@@ -39,6 +39,22 @@ const float EDGE_WEAR    = 0.2;
 const float SCRATCH      = 0.02;
 const float ROUGHNESS    = 0.5;
 const float REFLECTIVITY = 0.9;
+// Drop-shadow along the bottom/right outer edge: how far the 1px band is blended toward the
+// shadow color. 0 = none, 1 = fully shadow color.
+const float SHADOW_BLEND = 0.2;
+const vec3  SHADOW_COLOR = vec3(35.0, 44.0, 40.0) / 255.0;
+
+// ---------- PER-BLOCK TILING ----------
+// Tile one full 16px copy of a per-block texture across the connected grid, but trim 1px off
+// the whole group's OUTER edge only. The visible surface is (16*Tiles - 2) px wide (the frame
+// covers the outer ring — see MirrorBlockEntity.FRAME_PIXELS and the quad inset in
+// MirrorBlockEntityRenderer), so mapping uv[0,1] onto the full 16*Tiles texel space and
+// trimming the first/last texel lines the texture up pixel-perfect with the framebuffer.
+// For a 1x1 mirror this samples the inner 14x14 of the 16x16 texture (outer pixel dropped);
+// for 2x2+ the interior (merged) cell edges stay continuous and only the outer ring is trimmed.
+vec2 tiledUV(vec2 uv) {
+    return fract((1.0 + uv * (16.0 * Tiles - 2.0)) / 16.0);
+}
 
 // ---------- HASH / NOISE ----------
 float hash(vec2 p) {
@@ -117,8 +133,8 @@ void main() {
     refl /= total;
 
     // ---------- BASE ----------
-    // Tile the base material one full copy per block — same pattern as the old overlay blit.
-    vec3 base = (texture(Sampler1, fract(uv * Tiles)) * vertexColor).rgb;
+    // Tile the base material one full copy per block, pixel-perfect with the framebuffer.
+    vec3 base = (texture(Sampler1, tiledUV(uv)) * vertexColor).rgb;
 
     // ---------- EFFECTS ----------
     float edge = edgeMask(uv);
@@ -138,9 +154,21 @@ void main() {
     vec4 outColor = vec4(color, 1.0) * lightMapColor * ColorModulator;
 
     // ---------- OVERLAY ----------
-    // One full overlay copy per block, alpha-composited on top — matches the old per-tile blit.
-    vec4 ovl = texture(Sampler3, fract(uv * Tiles));
+    // One full overlay copy per block, alpha-composited on top, pixel-perfect with the framebuffer.
+    vec4 ovl = texture(Sampler3, tiledUV(uv));
     outColor.rgb = mix(outColor.rgb, ovl.rgb, ovl.a);
+
+    // ---------- EDGE SHADOW ----------
+    // A 1px-wide band along the bottom and right OUTER edges of the whole mirror group, blended
+    // toward a static shadow color to read as a recessed/drop shadow. The band is keyed to the
+    // framebuffer pixel grid (visible surface = 16*Tiles - 2 px, see tiledUV()), so it stays
+    // exactly one world pixel wide at any mirror size. v=1 -> world bottom; u=1 -> viewer's right.
+    vec2 surfacePx = 16.0 * Tiles - 2.0;
+    bool bottomEdge = floor(uv.y * surfacePx.y) > surfacePx.y - 2.0;
+    bool rightEdge  = floor(uv.x * surfacePx.x) > surfacePx.x - 2.0;
+    if (bottomEdge || rightEdge) {
+        outColor.rgb = mix(outColor.rgb, SHADOW_COLOR, SHADOW_BLEND);
+    }
 
     fragColor = linear_fog(outColor, vertexDistance, FogStart, FogEnd, FogColor);
 }
