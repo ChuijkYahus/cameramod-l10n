@@ -19,6 +19,7 @@ public class CommonConfigs {
     public static final Supplier<Boolean> TV_SQUARE_ASPECT_RATIO;
     public static final Supplier<Integer> MAX_CONNECTED_MIRROR_SIZE;
     public static final Supplier<Boolean> MIRROR_SQUARE_ASPECT_RATIO;
+    public static final Supplier<MirrorPlacement> MIRROR_PLACEMENT;
     public static final Supplier<Boolean> MIRROR_ENABLED;
     public static final Supplier<Boolean> CREEPER_DROP;
     public static final Supplier<Boolean> CHEST_DROP;
@@ -48,6 +49,9 @@ public class CommonConfigs {
         MIRROR_SQUARE_ASPECT_RATIO = builder
                 .comment("Forces connected mirrors to have a square aspect ratio.")
                 .define("mirror_square_aspect_ratio", true);
+        MIRROR_PLACEMENT = builder
+                .comment("Which mirror placements are allowed. NEAR: surface always flush with the front face. FAR: surface always recessed into the block. BOTH: near or far is chosen from where you click along the block's depth axis (near half = near, far half = recessed).")
+                .define("mirror_placement", MirrorPlacement.BOTH);
         MIRROR_ENABLED = builder
                 .comment("Whether mirrors (and the crystalline item used to craft them) are enabled. Disabling hides them from creative tabs, disables the mirror recipe, and stops crystalline from dropping from elder guardians.")
                 .affectsDynamicPacks()
@@ -107,6 +111,12 @@ public class CommonConfigs {
         CRAFTABLE,
         CREATIVE_ONLY,
         OFF
+    }
+
+    public enum MirrorPlacement {
+        NEAR,
+        FAR,
+        BOTH
     }
 
 }

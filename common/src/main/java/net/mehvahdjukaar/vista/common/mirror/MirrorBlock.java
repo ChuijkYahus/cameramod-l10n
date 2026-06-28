@@ -125,9 +125,21 @@ public class MirrorBlock extends HorizontalDirectionalBlock implements EntityBlo
         Direction facing = context.getHorizontalDirection().getOpposite();
         BlockState state = this.defaultBlockState()
                 .setValue(FACING, facing)
-                .setValue(FAR, isFarHalf(context, facing));
+                .setValue(FAR, shouldPlaceFar(context, facing));
         ConnectionType type = getTypeFromNeighbors(context.getLevel(), context.getClickedPos(), state);
         return state.setValue(CONNECTION, type);
+    }
+
+    /**
+     * Resolves near vs far for placement, honoring the {@link CommonConfigs#MIRROR_PLACEMENT} config:
+     * NEAR/FAR force the respective model, BOTH defers to where the player clicked ({@link #isFarHalf}).
+     */
+    private static boolean shouldPlaceFar(BlockPlaceContext context, Direction facing) {
+        return switch (CommonConfigs.MIRROR_PLACEMENT.get()) {
+            case NEAR -> false;
+            case FAR -> true;
+            case BOTH -> isFarHalf(context, facing);
+        };
     }
 
     /**
