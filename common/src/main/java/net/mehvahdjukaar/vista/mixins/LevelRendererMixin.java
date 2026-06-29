@@ -3,13 +3,17 @@ package net.mehvahdjukaar.vista.mixins;
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import com.llamalad7.mixinextras.sugar.Local;
+import com.mojang.blaze3d.vertex.PoseStack;
+import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.client.renderer.VistaLevelRenderer;
 import net.mehvahdjukaar.vista.common.chunk_tracking.ILevelRendererExt;
 import net.mehvahdjukaar.vista.common.chunk_tracking.IViewAreaExt;
+import net.mehvahdjukaar.vista.integration.vampire.VampireCompat;
 import net.minecraft.client.Camera;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.LevelRenderer;
+import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.SectionOcclusionGraph;
 import net.minecraft.client.renderer.ViewArea;
 import net.minecraft.client.renderer.chunk.SectionRenderDispatcher;
@@ -17,6 +21,7 @@ import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.ChunkPos;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
@@ -78,6 +83,31 @@ public class LevelRendererMixin implements ILevelRendererExt {
             return entity;
         }
         return original;
+    }
+
+    /**
+     * Hide entities that shouldn't appear on reflective/recorded surfaces (e.g. vampires) while
+     * rendering a mirror reflection or a camera/TV feed. Mirrors use the
+     * {@code cant_see_through_mirror} tag, feeds use {@code cant_see_through_tv}; vampire players
+     * (queried via {@link VampireCompat}) are hidden from both. The main view is never affected.
+     */
+    @Inject(method = "renderEntity", at = @At("HEAD"), cancellable = true)
+    private void vista$hideMirrorInvisibleEntities(Entity entity, double camX, double camY, double camZ,
+                                                   float partialTick, PoseStack poseStack,
+                                                   MultiBufferSource bufferSource, CallbackInfo ci) {
+        boolean mirror = VistaLevelRenderer.isRenderingMirrorReflection();
+        boolean tv = VistaLevelRenderer.isRenderingCameraFeed();
+        if (!mirror && !tv) return;
+
+        boolean hidden = (mirror && entity.getType().is(VistaMod.CANT_SEE_THROUGH_MIRROR))
+                || (tv && entity.getType().is(VistaMod.CANT_SEE_THROUGH_TV));
+
+        // Vampire players are still minecraft:player, so the entity-type tags can't catch them.
+        if (!hidden && entity instanceof Player player) {
+            hidden = VampireCompat.isVampire(player);
+        }
+
+        if (hidden) ci.cancel();
     }
 
     @Inject(method = "setupRender", at = @At("HEAD"), cancellable = true)

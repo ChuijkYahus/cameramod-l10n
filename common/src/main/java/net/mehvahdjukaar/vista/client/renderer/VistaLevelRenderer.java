@@ -94,6 +94,16 @@ public class VistaLevelRenderer {
         return !RENDER_STACK.isEmpty();
     }
 
+    public static boolean isRenderingMirrorReflection() {
+        RenderFrame top = RENDER_STACK.peek();
+        return top != null && top.mirrorUuid != null;
+    }
+
+    public static boolean isRenderingCameraFeed() {
+        RenderFrame top = RENDER_STACK.peek();
+        return top != null && top.mirrorUuid == null;
+    }
+
     /**
      * Whether the mirror/TV surface quads need their legacy manual forward z-offset instead of
      * relying on POLYGON_OFFSET_LAYERING. True inside nested level renders (the polygon-offset

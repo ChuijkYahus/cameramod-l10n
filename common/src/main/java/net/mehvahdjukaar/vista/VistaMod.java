@@ -192,6 +192,14 @@ public class VistaMod {
     public static final TagKey<Item> GLASS_PANES_TAG = TagKey.create(
             Registries.ITEM, ResourceLocation.fromNamespaceAndPath("c", "glass_panes"));
 
+    // Entities of these types are not drawn in mirror reflections (e.g. vampires).
+    public static final TagKey<net.minecraft.world.entity.EntityType<?>> CANT_SEE_THROUGH_MIRROR = TagKey.create(
+            Registries.ENTITY_TYPE, res("cant_see_through_mirror"));
+
+    // Entities of these types are not drawn in camera/TV feeds (e.g. vampires).
+    public static final TagKey<net.minecraft.world.entity.EntityType<?>> CANT_SEE_THROUGH_TV = TagKey.create(
+            Registries.ENTITY_TYPE, res("cant_see_through_tv"));
+
     public static final Supplier<Item> SOJOURN_MUSIC_DISC = RegHelper.registerItem(res("music_disc_sojourn"),
             () -> new Item(new Item.Properties()
                     .jukeboxPlayable(SOJOURN_DISC_SONG.getKey())

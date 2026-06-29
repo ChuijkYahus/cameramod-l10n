@@ -1,7 +1,7 @@
 package net.mehvahdjukaar.vista.client.web;
 
-import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.moonlight.api.util.FileDownloadUtils;
+import net.mehvahdjukaar.vista.VistaMod;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
@@ -53,10 +53,15 @@ public class MediaCacheManager {
      * For local filesystem paths or {@code file://} URLs, the path is used directly with no caching.
      */
     public Path getOrDownload(URI uri) throws Exception {
-        return getOrDownload(uri, null);
+        return getOrDownload(uri, null, null);
     }
 
     public Path getOrDownload(URI uri, @Nullable FileDownloadUtils.ProgressCallback progressCallback) throws Exception {
+        return getOrDownload(uri, progressCallback, null);
+    }
+
+    public Path getOrDownload(URI uri, @Nullable FileDownloadUtils.ProgressCallback progressCallback,
+                              @Nullable FileDownloadUtils.RetryCallback retryCallback) throws Exception {
         // Handle local filesystem paths or file:// URLs without going through HTTP download/caching
         try {
             String scheme = uri.getScheme();
@@ -112,7 +117,7 @@ public class MediaCacheManager {
             pendingDownloads.put(key, downloadFuture);
 
             try {
-                Path cachedPath = downloadAndCache(uri.toString(), key, progressCallback);
+                Path cachedPath = downloadAndCache(uri.toString(), key, progressCallback, retryCallback);
                 downloadFuture.complete(cachedPath);
                 synchronized (this) {
                     urlToEntry.put(key, new CachedEntry(cachedPath, 1));
@@ -159,9 +164,12 @@ public class MediaCacheManager {
     }
 
     // ---------- private helpers ----------
-    private Path downloadAndCache(String urlStr, String key, @Nullable FileDownloadUtils.ProgressCallback progressCallback) throws Exception {
+    private Path downloadAndCache(String urlStr, String key, @Nullable FileDownloadUtils.ProgressCallback progressCallback,
+                                  @Nullable FileDownloadUtils.RetryCallback retryCallback) throws Exception {
+        // Deterministic client errors (403/404/...) fail fast inside moonlight's downloader now,
+        // so a doomed request no longer sits through the ~30s retry backoff.
         Path cachedPath = cacheDir.resolve(key + ".video");
-        FileDownloadUtils.download(urlStr, cachedPath, "Mozilla/5.0", progressCallback);
+        FileDownloadUtils.download(urlStr, cachedPath, "Mozilla/5.0", progressCallback, retryCallback);
         return cachedPath;
     }
 

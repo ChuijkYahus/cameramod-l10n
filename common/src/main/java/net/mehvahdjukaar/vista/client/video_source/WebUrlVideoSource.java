@@ -7,6 +7,7 @@ import net.mehvahdjukaar.vista.client.CrtOverlay;
 import net.mehvahdjukaar.vista.client.textures.IWebTexture;
 import net.mehvahdjukaar.vista.client.textures.TvScreenVertexConsumers;
 import net.mehvahdjukaar.vista.client.textures.WebTexturesManager;
+import net.mehvahdjukaar.vista.client.web.MediaError;
 import net.mehvahdjukaar.vista.client.web.MediaStatus;
 import net.mehvahdjukaar.vista.common.tv.IntAnimationState;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -15,7 +16,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.net.URI;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.UUID;
 
@@ -64,7 +64,8 @@ public class WebUrlVideoSource implements IVideoSource {
                                                         boolean showsTime) {
 
         if (uri == null) {
-            return TvScreenVertexConsumers.getNoiseVC(buffer, pixelEffectRes, switchAnim);
+            // No link configured (blank/unset url) -> show a benign test card, not "broken" static.
+            return TvScreenVertexConsumers.getBarsVC(buffer, pixelEffectRes, switchAnim);
         }
 
         if (textureHandle == null || !lastScreenSize.equals(screenSize)) {
@@ -80,6 +81,10 @@ public class WebUrlVideoSource implements IVideoSource {
         }
 
         if (state == MediaStatus.FAILED) {
+            ResourceLocation errorScreen = errorScreen(texture.getError());
+            if (errorScreen != null) {
+                return TvScreenVertexConsumers.getErrorVc(buffer, pixelEffectRes, errorScreen, switchAnim);
+            }
             return TvScreenVertexConsumers.getNoiseVC(buffer, pixelEffectRes, switchAnim);
         } else if (state == MediaStatus.LOADING) {
             if (VistaModClient.isFFmpegDownloading()) {
@@ -91,6 +96,9 @@ public class WebUrlVideoSource implements IVideoSource {
             int progress = texture.getDownloadProgress();
             if (progress >= 0) {
                 //return TvScreenVertexConsumers.getDownloadingVc(buffer, pixelEffectRes, progress, switchAnim);
+            }
+            if (texture.isRetrying()) {
+                return TvScreenVertexConsumers.getRetryingVc(buffer, pixelEffectRes, videoAnimationTick, switchAnim);
             }
             return TvScreenVertexConsumers.getWaitingVc(buffer, pixelEffectRes, videoAnimationTick, switchAnim);
         }
@@ -104,5 +112,16 @@ public class WebUrlVideoSource implements IVideoSource {
 
         return TvScreenVertexConsumers.getSingleTextureVC(buffer, textureId, overlay, pixelEffectRes, switchAnim, staticAnim);
 
+    }
+
+    @Nullable
+    private static ResourceLocation errorScreen(MediaError error) {
+        return switch (error) {
+            case FORBIDDEN -> VistaModClient.FORBIDDEN_SCREEN;
+            case NOT_FOUND -> VistaModClient.NOT_FOUND_SCREEN;
+            case BAD_LINK -> VistaModClient.BAD_LINK_SCREEN;
+            case NO_FFMPEG -> VistaModClient.NO_FFMPEG_SCREEN;
+            case NONE -> null;
+        };
     }
 }

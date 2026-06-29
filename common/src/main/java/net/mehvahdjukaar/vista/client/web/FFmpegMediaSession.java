@@ -28,6 +28,8 @@ public class FFmpegMediaSession implements IMediaSession {
     private volatile FFmpegMediaDecoder decoder;
     private volatile boolean completed;
     private volatile boolean failed;
+    private volatile boolean retrying;
+    private volatile MediaError error = MediaError.NONE;
     private volatile boolean closed;
     private volatile int downloadProgress = 0;
 
@@ -44,7 +46,10 @@ public class FFmpegMediaSession implements IMediaSession {
 
     private void asyncThreadJob(URI uri, @Nullable FFmpeg ffmpeg, MediaCacheManager cacheManager) {
         try {
-            Path videoPath = cacheManager.getOrDownload(uri, percent -> this.downloadProgress = percent);
+            Path videoPath = cacheManager.getOrDownload(uri,
+                    percent -> this.downloadProgress = percent,
+                    (attempt, max, cause) -> this.retrying = true);
+            this.retrying = false; // download resolved, stop showing the retry state
             if (closed) return;
 
             FFmpeg effectiveFfmpeg = ffmpeg;
@@ -57,6 +62,7 @@ public class FFmpegMediaSession implements IMediaSession {
 
             if (effectiveFfmpeg == null) {
                 this.failed = true;
+                this.error = MediaError.NO_FFMPEG;
                 return;
             }
 
@@ -65,9 +71,11 @@ public class FFmpegMediaSession implements IMediaSession {
             newDecoder.run(); //blocking until done
         } catch (Exception e) {
             failed = true;
+            this.error = MediaError.classify(e);
             VistaMod.LOGGER.error("Failed to load web video {}", uri, e);
         } finally {
             this.downloadProgress = -1;
+            this.retrying = false;
         }
     }
 
@@ -97,6 +105,16 @@ public class FFmpegMediaSession implements IMediaSession {
 
     public boolean isFailed() {
         return failed || loadFuture.isCompletedExceptionally();
+    }
+
+    @Override
+    public MediaError getError() {
+        return error;
+    }
+
+    @Override
+    public boolean isRetrying() {
+        return retrying;
     }
 
     @Override

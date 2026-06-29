@@ -26,6 +26,7 @@ public class CompatHandler {
     public static final boolean ALEX_CAVES = PlatHelper.isModLoaded("alexs-caves");
     public static final boolean FLASHBACK = PlatHelper.isModLoaded("flashback");
     public static final boolean VEIL = PlatHelper.isModLoaded("veil");
+    public static final boolean VAMPIRISM = PlatHelper.isModLoaded("vampirism");
     public static final boolean WATERMEDIA = isWatermediaCompatible();
 
     private static boolean isWatermediaCompatible() {

@@ -1,6 +1,7 @@
 package net.mehvahdjukaar.vista.client.textures;
 
 import net.mehvahdjukaar.vista.client.web.IMediaSession;
+import net.mehvahdjukaar.vista.client.web.MediaError;
 import net.mehvahdjukaar.vista.client.web.MediaStatus;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.AbstractTexture;
@@ -29,5 +30,13 @@ public interface IWebTexture extends AutoCloseable {
 
     default int getDownloadProgress() {
         return getSession().getDownloadProgress();
+    }
+
+    default MediaError getError() {
+        return getSession().getError();
+    }
+
+    default boolean isRetrying() {
+        return getSession().isRetrying();
     }
 }

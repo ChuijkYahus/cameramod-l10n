@@ -66,6 +66,20 @@ public class TvScreenVertexConsumers {
         return createAnimatedStripVC(buffer, VistaModClient.BLACK_LOADING_SCREEN, scale, tickCount, CrtOverlay.NONE, switchAnim);
     }
 
+    /**
+     * Same loading dots as {@link #getWaitingVc} but orange: a transient failure is being retried.
+     */
+    public static @NotNull VertexConsumer getRetryingVc(MultiBufferSource buffer, Vec2i scale, int tickCount, IntAnimationState switchAnim) {
+        return createAnimatedStripVC(buffer, VistaModClient.RETRYING_SCREEN, scale, tickCount, CrtOverlay.NONE, switchAnim);
+    }
+
+    /**
+     * Full-screen error card (403/404/bad link/ffmpeg): a standalone black screen with the symbol.
+     */
+    public static @NotNull VertexConsumer getErrorVc(MultiBufferSource buffer, Vec2i scale, ResourceLocation screen, IntAnimationState switchAnim) {
+        return createAnimatedStripVC(buffer, screen, scale, 0, CrtOverlay.NONE, switchAnim);
+    }
+
 
     public static VertexConsumer getNoEnergyVC(MultiBufferSource buffer, Vec2i scale, IntAnimationState switchAnim) {
         return createAnimatedStripVC(buffer, VistaModClient.NO_ENERGY_SCREEN, scale, 0, CrtOverlay.NONE, switchAnim);

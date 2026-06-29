@@ -13,6 +13,20 @@ public interface IMediaSession extends AutoCloseable {
 
     boolean isFailed();
 
+    /**
+     * Category of the failure when {@link #isFailed()} is true, otherwise {@link MediaError#NONE}.
+     */
+    default MediaError getError() {
+        return MediaError.NONE;
+    }
+
+    /**
+     * True while a transient download failure is being retried (backoff in progress).
+     */
+    default boolean isRetrying() {
+        return false;
+    }
+
     default int getDownloadProgress() {
         return -1;
     }

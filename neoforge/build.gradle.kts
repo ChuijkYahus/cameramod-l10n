@@ -36,8 +36,12 @@ dependencies {
     modCompileOnly("curse.maven:distant-horizons-508933:8287411")
     modCompileOnly("maven.modrinth:iris:1.8.8+1.21.1-neoforge")
 
-    modCompileOnly("curse.maven:geckolib-388172:7707149")
+    modImplementation("curse.maven:geckolib-388172:7707149")
     modCompileOnly("curse.maven:watermedia-869524:7072353")
+
+    modImplementation("curse.maven:vampirism-become-a-vampire-233029:8105838")
+    modImplementation("curse.maven:origins-neoforge-1375372:8179055")
+    modImplementation("curse.maven:jupiter-1072905:7738312") // required by Origins (NeoForge)
 
     //  modImplementation("cc.tweaked:cc-tweaked-1.21.1-forge:1.117.0")
     modCompileOnly("curse.maven:quark-243121:7640331")

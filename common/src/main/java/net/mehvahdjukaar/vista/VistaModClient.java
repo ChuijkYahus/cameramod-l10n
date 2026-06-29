@@ -63,8 +63,13 @@ public class VistaModClient {
     public static final ResourceLocation DISCONNECT_OVERLAY = VistaMod.res("textures/cassette_tape/disconnect.png");
     public static final ResourceLocation LOADING_OVERLAY = VistaMod.res("textures/cassette_tape/loading_dots.png");
     public static final ResourceLocation BLACK_LOADING_SCREEN = VistaMod.res("loading_dots_black");
+    public static final ResourceLocation RETRYING_SCREEN = VistaMod.res("loading_dots_orange");
 
     public static final ResourceLocation BARS_SCREEN = VistaMod.res("color_bars");
+    public static final ResourceLocation FORBIDDEN_SCREEN = VistaMod.res("forbidden");
+    public static final ResourceLocation NOT_FOUND_SCREEN = VistaMod.res("not_found");
+    public static final ResourceLocation BAD_LINK_SCREEN = VistaMod.res("bad_link");
+    public static final ResourceLocation NO_FFMPEG_SCREEN = VistaMod.res("no_ffmpeg");
     public static final ResourceLocation NO_ENERGY_SCREEN = VistaMod.res("no_power");
     public static final ResourceLocation SMILE_SCREEN = VistaMod.res("smile");
     public static final ResourceLocation NEUTRAL_SCREEN = VistaMod.res("neutral");
@@ -132,14 +137,33 @@ public class VistaModClient {
         ffmpegFuture = FFmpegManager.getOrDownload(url);
     }
 
+    private static void useFFmpeg(FFmpeg ffmpeg) {
+        ffmpegFuture = CompletableFuture.completedFuture(ffmpeg);
+    }
+
+    // Tries to make FFmpeg ready without any download: existing downloaded binaries,
+    // or a system-wide install on the user's PATH. Returns true if FFmpeg is now ready.
+    private static boolean tryReadyWithoutDownload() {
+        if (FFmpegManager.hasRequiredFiles()) {
+            instantiateFFmpeg(null);
+            return true;
+        }
+        FFmpeg system = FFmpegManager.detectSystemFFmpeg();
+        if (system != null) {
+            useFFmpeg(system);
+            return true;
+        }
+        return false;
+    }
+
     private static ModelLayerLocation loc(String name) {
         return new ModelLayerLocation(VistaMod.res(name), name);
     }
 
     public static void init() {
         ClientConfigs.init();
-        //init instantly if it has the files
-        if (FFmpegManager.hasRequiredFiles() && ClientConfigs.canUseFFmpeg()) instantiateFFmpeg(null);
+        //init instantly if it's already available without downloading (local binaries or system PATH)
+        if (ClientConfigs.canUseFFmpeg()) tryReadyWithoutDownload();
 
         ClientHelper.addBlockEntityRenderersRegistration(VistaModClient::registerBlockEntityRenderers);
         ClientHelper.addShaderRegistration(VistaModClient::registerShaders);

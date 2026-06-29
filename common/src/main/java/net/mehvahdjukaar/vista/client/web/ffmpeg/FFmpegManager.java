@@ -84,9 +84,11 @@ public final class FFmpegManager {
     /**
      * Looks for a system-wide FFmpeg install on the user's PATH. Both ffmpeg and ffprobe
      * must be present, otherwise we fall back to downloading our own copy.
+     * Cheap (a handful of filesystem stats) and never downloads anything, so it's safe
+     * to call on the main thread to decide whether a download is even needed.
      */
     @Nullable
-    private static FFmpeg detectSystemFFmpeg() {
+    public static FFmpeg detectSystemFFmpeg() {
         Path ffmpeg = findInPath(OS_TYPE.executableName("ffmpeg"));
         Path ffprobe = findInPath(OS_TYPE.executableName("ffprobe"));
         if (ffmpeg != null && ffprobe != null) {

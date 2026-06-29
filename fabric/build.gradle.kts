@@ -41,6 +41,9 @@ dependencies {
     modCompileOnly("maven.modrinth:flashback:0.32.0")
     modCompileOnly("curse.maven:geckolib-388172:7707138")
 
+    // Vampirism has no Fabric version
+    modCompileOnly("curse.maven:origins-391943:7365871")
+
     modCompileOnly("foundry.veil:veil-neoforge-1.21.1:4.0.0")
 
    // modRuntimeOnly("foundry.veil:veil-fabric-1.21.1:4.0.0")
