@@ -24,6 +24,7 @@
     "CompatIrisMixin",
     "CompatIrisRenderingMixin",
     "CompatIrisTimerMixin",
+    "CompatSimpleCloudsMixin",
     "CompatVeilMixin",
     "DebugRendererMixin",
     "FrustumMixin",

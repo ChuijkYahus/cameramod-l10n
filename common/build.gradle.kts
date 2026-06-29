@@ -1,5 +1,3 @@
-import org.gradle.kotlin.dsl.accessTransformers
-
 plugins {
     id("com.possible-triangle.common")
 }
@@ -47,5 +45,8 @@ dependencies {
     modImplementation("curse.maven:watermedia-869524:7072353")
 
     modCompileOnly("foundry.veil:veil-neoforge-1.21.1:4.0.0")
+
+    // disables its global cloud renderer during nested TV/mirror feed renders (CompatSimpleCloudsMixin)
+    modCompileOnly("curse.maven:simple-clouds-1121215:6928979")
 
 }
