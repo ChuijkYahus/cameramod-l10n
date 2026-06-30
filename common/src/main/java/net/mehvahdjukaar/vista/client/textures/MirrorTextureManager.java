@@ -1,9 +1,9 @@
 package net.mehvahdjukaar.vista.client.textures;
 
 import net.mehvahdjukaar.moonlight.api.client.texture_renderer.DynamicTextureRenderer;
+import net.mehvahdjukaar.moonlight.api.client.util.LOD;
 import net.mehvahdjukaar.moonlight.api.util.math.Vec2i;
 import net.mehvahdjukaar.vista.VistaMod;
-import net.mehvahdjukaar.vista.client.renderer.VistaLevelRenderer;
 import net.mehvahdjukaar.vista.common.mirror.MirrorBlockEntity;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.minecraft.client.Minecraft;
@@ -11,11 +11,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * Owns the static state for mirror reflections: the texture cache lookups and the RENDER_TICK_END
@@ -30,13 +26,39 @@ public class MirrorTextureManager {
     private static final Map<String, Pending> PENDING = new HashMap<>();
 
     private record Pending(MirrorBlockEntity mirror, Vec2i screenSize, Vec3 eye,
-                           int depth, List<UUID> parentChain) {}
+                           int depth, List<UUID> parentChain, int lod) {
+    }
 
-    private static int scaledResolution(int baseSize, int depth) {
-        if (depth <= 0) return baseSize * ClientConfigs.MIRROR_RESOLUTION_SCALE.get();
-        double divider = Math.pow(ClientConfigs.MIRROR_RECURSION_RES_DIVIDER.get(), depth);
-        int scaled = (int) (baseSize * ClientConfigs.MIRROR_RESOLUTION_SCALE.get() / divider);
+    private static int scaledResolution(int baseSize, int depth, int lod) {
+        int scaled = baseSize * ClientConfigs.MIRROR_RESOLUTION_SCALE.get();
+        if (depth > 0) {
+            double divider = Math.pow(ClientConfigs.MIRROR_RECURSION_RES_DIVIDER.get(), depth);
+            scaled = (int) (scaled / divider);
+        }
+        // Distance LOD: halve resolution per level (0 = full, 1 = half, 2 = quarter) so a mirror the
+        // player has walked away from streams a cheaper texture without touching the render distance cap.
+        scaled >>= lod;
         return Math.max(1, scaled);
+    }
+
+    /**
+     * Direct-view distance LOD level (0 = full res, 1 = half, 2 = quarter), derived from the fixed
+     * {@link LOD} distance bands. Two halving steps spread across the near/medium range; the mirror
+     * render-distance cap ({@code MIRROR_RENDER_DISTANCE}) is unchanged, this only lowers the texture
+     * resolution for mirrors that are still in range but far away.
+     */
+    public static int distanceLod(LOD lod) {
+        if (lod.within(24)) return 0;     // <= 24 blocks: full resolution
+        if (lod.within(40)) return 1;     // <= 40 blocks: half resolution
+        return 2;                         //  > 40 blocks: quarter resolution
+    }
+
+    /**
+     * Same as {@link #distanceLod(LOD)} but always measured from the main camera, for use from
+     * inside a nested reflection render where the block-entity dispatcher camera is the reflected one.
+     */
+    public static int distanceLod(MirrorBlockEntity mirror) {
+        return distanceLod(LOD.at(Minecraft.getInstance().gameRenderer.mainCamera, mirror.getBlockPos()));
     }
 
     private static String chainKey(UUID self, List<UUID> parentChain) {
@@ -53,9 +75,11 @@ public class MirrorTextureManager {
      * view the player sees.
      */
     @Nullable
-    public static MirrorReflectionTexture getMirrorTexture(UUID uuid, Vec2i screenSize) {
-        int w = scaledResolution(screenSize.x(), 0);
-        int h = scaledResolution(screenSize.y(), 0);
+    public static MirrorReflectionTexture getMirrorTexture(UUID uuid, Vec2i screenSize, int lod) {
+        int w = scaledResolution(screenSize.x(), 0, lod);
+        int h = scaledResolution(screenSize.y(), 0, lod);
+        // w/h shrink per LOD level, so each distance tier resolves to its own cached texture id —
+        // moving between bands transparently switches the mirror to the lower/higher-res texture.
         ResourceLocation textureId = VistaMod.res(
                 "mirror_" + uuid + "_" + w + "x" + h);
         return DynamicTextureRenderer.requestTexture(textureId, () ->
@@ -70,8 +94,9 @@ public class MirrorTextureManager {
     @Nullable
     public static MirrorReflectionTexture getMirrorTextureForChain(UUID uuid, Vec2i screenSize,
                                                                     int depth, List<UUID> parentChain) {
-        int w = scaledResolution(screenSize.x(), depth);
-        int h = scaledResolution(screenSize.y(), depth);
+        // Nested chains attenuate by recursion depth only; distance LOD (lod=0) doesn't apply here.
+        int w = scaledResolution(screenSize.x(), depth, 0);
+        int h = scaledResolution(screenSize.y(), depth, 0);
         String name = "mirror_chain_" + chainKey(uuid, parentChain) + "_" + w + "x" + h + "_d" + depth;
         ResourceLocation textureId = VistaMod.res(name);
         // List.copyOf inside the constructor freezes the chain identity at construction —
@@ -90,11 +115,11 @@ public class MirrorTextureManager {
      * after allocation is uninitialised, so the BE renderer skips drawing to avoid a white flash.
      */
     @Nullable
-    public static MirrorReflectionTexture getMirrorTexture(MirrorBlockEntity mirror, Vec2i screenSize, Vec3 eye) {
-        MirrorReflectionTexture texture = getMirrorTexture(mirror.getId(), screenSize);
+    public static MirrorReflectionTexture getMirrorTexture(MirrorBlockEntity mirror, Vec2i screenSize, Vec3 eye, int lod) {
+        MirrorReflectionTexture texture = getMirrorTexture(mirror.getId(), screenSize, lod);
         if (texture == null) return null;
         if (ClientConfigs.MIRROR_UPDATE_MODE.get() != ClientConfigs.MirrorUpdateMode.TEXTURE_REFRESH) {
-            requestUpdate(mirror, screenSize, eye, 0, List.of());
+            requestUpdate(mirror, screenSize, eye, 0, List.of(), lod);
         } else {
             texture.setPending(mirror, eye);
             texture.setUpdateNextTick(true);
@@ -114,7 +139,8 @@ public class MirrorTextureManager {
                                                                     Vec3 eye, int depth, List<UUID> parentChain) {
         MirrorReflectionTexture texture = getMirrorTextureForChain(mirror.getId(), screenSize, depth, parentChain);
         if (texture == null) return null;
-        requestUpdate(mirror, screenSize, eye, depth, parentChain);
+        // Chain textures attenuate by depth, not distance LOD, so lod is irrelevant (0) here.
+        requestUpdate(mirror, screenSize, eye, depth, parentChain, 0);
         return texture.hasRendered() ? texture : null;
     }
 
@@ -124,9 +150,9 @@ public class MirrorTextureManager {
      * the iteration triggers) land in next frame's PENDING.
      */
     private static void requestUpdate(MirrorBlockEntity mirror, Vec2i screenSize, Vec3 eye,
-                                       int depth, List<UUID> parentChain) {
+                                      int depth, List<UUID> parentChain, int lod) {
         String key = "d" + depth + "/" + chainKey(mirror.getId(), parentChain);
-        PENDING.put(key, new Pending(mirror, screenSize, eye, depth, parentChain));
+        PENDING.put(key, new Pending(mirror, screenSize, eye, depth, parentChain, lod));
     }
 
     public static void processPending() {
@@ -144,7 +170,7 @@ public class MirrorTextureManager {
         PENDING.clear();
         for (Pending p : snapshot) {
             MirrorReflectionTexture text = p.depth == 0
-                    ? getMirrorTexture(p.mirror.getId(), p.screenSize)
+                    ? getMirrorTexture(p.mirror.getId(), p.screenSize, p.lod)
                     : getMirrorTextureForChain(p.mirror.getId(), p.screenSize, p.depth, p.parentChain);
             if (text != null) text.renderReflection(p.mirror, p.eye);
         }

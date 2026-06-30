@@ -9,7 +9,9 @@ import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.client.renderer.VistaLevelRenderer;
 import net.mehvahdjukaar.vista.common.chunk_tracking.ILevelRendererExt;
 import net.mehvahdjukaar.vista.common.chunk_tracking.IViewAreaExt;
-import net.mehvahdjukaar.vista.integration.vampire.VampireCompat;
+import net.mehvahdjukaar.vista.integration.CompatHandler;
+import net.mehvahdjukaar.vista.integration.supernatural.SupernaturalCompat;
+import net.mehvahdjukaar.vista.integration.vampirism.VampirismCompat;
 import net.minecraft.client.Camera;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.LevelRenderer;
@@ -21,6 +23,7 @@ import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.ChunkPos;
 import org.jetbrains.annotations.Nullable;
@@ -88,8 +91,9 @@ public class LevelRendererMixin implements ILevelRendererExt {
     /**
      * Hide entities that shouldn't appear on reflective/recorded surfaces (e.g. vampires) while
      * rendering a mirror reflection or a camera/TV feed. Mirrors use the
-     * {@code cant_see_through_mirror} tag, feeds use {@code cant_see_through_tv}; vampire players
-     * (queried via {@link VampireCompat}) are hidden from both. The main view is never affected.
+     * {@code cant_see_through_mirror} tag, feeds use {@code cant_see_through_tv}; vampires from mods
+     * (queried via {@link VampirismCompat} and {@link SupernaturalCompat}) are hidden from both. The
+     * main view is never affected.
      */
     @Inject(method = "renderEntity", at = @At("HEAD"), cancellable = true)
     private void vista$hideMirrorInvisibleEntities(Entity entity, double camX, double camY, double camZ,
@@ -102,9 +106,14 @@ public class LevelRendererMixin implements ILevelRendererExt {
         boolean hidden = (mirror && entity.getType().is(VistaMod.CANT_SEE_THROUGH_MIRROR))
                 || (tv && entity.getType().is(VistaMod.CANT_SEE_THROUGH_TV));
 
-        // Vampire players are still minecraft:player, so the entity-type tags can't catch them.
-        if (!hidden && entity instanceof Player player) {
-            hidden = VampireCompat.isVampire(player);
+        // Vampire players are still minecraft:player, and some vampire mods flag mobs through an API
+        // rather than a tag, so the entity-type tags above can't catch either — ask each vampire compat.
+        // The mod-loaded flags gate the calls so the compat impls (which reference mod types) are never
+        // classloaded when the mod is absent. Supernatural handles both its mobs and players; Vampirism
+        // only knows about players.
+        if (!hidden && entity instanceof LivingEntity living) {
+            hidden = (CompatHandler.SUPERNATURAL && SupernaturalCompat.isVampire(living))
+                    || (CompatHandler.VAMPIRISM && living instanceof Player player && VampirismCompat.isVampire(player));
         }
 
         if (hidden) ci.cancel();

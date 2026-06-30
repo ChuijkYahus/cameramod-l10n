@@ -53,6 +53,7 @@ dependencies {
 
     runtimeOnly("org.anarres:jcpp:1.4.14")
     modImplementation("io.github.douira:glsl-transformer:2.0.1")
+    modCompileOnly("curse.maven:simple-clouds-1121215:6928979")
 
     // modImplementation("cc.tweaked-cobalt:cobalt:0.93")
 

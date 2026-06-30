@@ -40,11 +40,13 @@ dependencies {
     modCompileOnly("curse.maven:watermedia-869524:7072353")
 
     modImplementation("curse.maven:vampirism-become-a-vampire-233029:8105838")
+    modImplementation("curse.maven:supernatural-610880:8275088")
     modImplementation("curse.maven:origins-neoforge-1375372:8179055")
     modImplementation("curse.maven:jupiter-1072905:7738312") // required by Origins (NeoForge)
 
     //  modImplementation("cc.tweaked:cc-tweaked-1.21.1-forge:1.117.0")
     modCompileOnly("curse.maven:quark-243121:7640331")
+    modCompileOnly("curse.maven:simple-clouds-1121215:6928979")
 
     modCompileOnly("foundry.veil:veil-neoforge-1.21.1:4.1.2")
     modCompileOnly("curse.maven:fsable-1312371:8007005")

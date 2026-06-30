@@ -100,7 +100,10 @@ public class MirrorBlockEntityRenderer implements BlockEntityRenderer<MirrorBloc
             // scene wobbles against the surface as you walk. The offset is read off the bob matrix
             // the game built, so no bob math is duplicated and mod-altered bob still works.
             Vec3 eye = mainCamera.getPosition().add(VistaLevelRenderer.getMainBobEyeOffset());
-            text = MirrorTextureManager.getMirrorTexture(blockEntity, screenSize, eye);
+            // depth 0 means this BE pass runs under the main camera, so the LOD computed at the top
+            // of render() is the player's real distance to the mirror — use it to pick the texture tier.
+            text = MirrorTextureManager.getMirrorTexture(blockEntity, screenSize, eye,
+                    MirrorTextureManager.distanceLod(lod));
         } else {
             text = resolveNestedTexture(blockEntity, mainCamera.getPosition(), depth);
         }
@@ -139,10 +142,13 @@ public class MirrorBlockEntityRenderer implements BlockEntityRenderer<MirrorBloc
                 // through this one and never directly) — in that case there's no direct-view entry
                 // to clobber. Parallax is still wrong at depth >= 1; that's the documented SHARED
                 // trade-off (use RECURSIVE for correct nested parallax).
+                // Reuse the direct-view texture at the tier the main camera currently sees it, so the
+                // SHARED lookup keys to the same texture the depth-0 pass renders (not a stale full-res one).
+                int sharedLod = MirrorTextureManager.distanceLod(blockEntity);
                 MirrorReflectionTexture shared =
-                        MirrorTextureManager.getMirrorTexture(blockEntity.getId(), screenSize);
+                        MirrorTextureManager.getMirrorTexture(blockEntity.getId(), screenSize, sharedLod);
                 if (shared != null && shared.hasRendered()) return shared;
-                return MirrorTextureManager.getMirrorTexture(blockEntity, screenSize, eye);
+                return MirrorTextureManager.getMirrorTexture(blockEntity, screenSize, eye, sharedLod);
             }
             case RECURSIVE: {
                 int maxDepth = ClientConfigs.MIRROR_MAX_RECURSION_DEPTH.get();
