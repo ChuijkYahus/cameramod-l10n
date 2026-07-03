@@ -25,6 +25,7 @@ import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
 import net.mehvahdjukaar.vista.common.tv.TVItem;
 import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlock;
 import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
+import net.mehvahdjukaar.vista.common.view_finder.ViewFinderMenu;
 import net.mehvahdjukaar.vista.common.wave_gate.WaveGateBlock;
 import net.mehvahdjukaar.vista.common.wave_gate.WaveGateBlockEntity;
 import net.mehvahdjukaar.vista.configs.CommonConfigs;
@@ -48,6 +49,7 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.monster.EnderMan;
+import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.*;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -120,6 +122,9 @@ public class VistaMod {
 
     public static final Supplier<BlockEntityType<ViewFinderBlockEntity>> VIEWFINDER_TILE = RegHelper.registerBlockEntityType(
             res("viewfinder"), ViewFinderBlockEntity::new, VIEWFINDER);
+
+    public static final Supplier<MenuType<ViewFinderMenu>> VIEWFINDER_MENU = RegHelper.registerMenuType(
+            res("viewfinder"), ViewFinderMenu::create);
 
     public static final Supplier<Block> MIRROR = RegHelper.registerBlockWithItem(res("mirror"),
             () -> new MirrorBlock(Block.Properties.of()

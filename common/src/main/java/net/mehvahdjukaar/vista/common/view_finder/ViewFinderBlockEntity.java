@@ -15,7 +15,6 @@ import net.mehvahdjukaar.vista.integration.CompatHandler;
 import net.mehvahdjukaar.vista.network.SyncViewFinderPacket;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.GlobalPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
@@ -27,7 +26,9 @@ import net.minecraft.tags.ItemTags;
 import net.minecraft.util.ExtraCodecs;
 import net.minecraft.util.Mth;
 import net.minecraft.util.VisibleForDebug;
+import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -136,7 +137,15 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
 
     @Override
     protected Component getDefaultName() {
-        return Component.literal("View Finder");
+        return Component.translatable("block.vista.viewfinder");
+    }
+
+    @Nullable
+    @Override
+    public AbstractContainerMenu createMenu(int id, Inventory inventory) {
+        //thanks mojank
+        if (inventory.player.isSpectator()) return null;
+        return new ViewFinderMenu(id, inventory, this);
     }
 
     public int getZoomLevel() {
@@ -189,9 +198,10 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
         }
     }
 
+
     @Override
-    public void updateClientVisualsOnLoad() {
-        super.updateClientVisualsOnLoad();
+    public void clientSideUpdateWhenChanged(HolderLookup.Provider registries) {
+        super.clientSideUpdateWhenChanged(registries);
         videoSource.onItemChanged();
     }
 

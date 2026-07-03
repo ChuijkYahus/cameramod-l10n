@@ -161,22 +161,22 @@ public class ViewFinderBlock extends DirectionalBlock implements EntityBlock, IR
         ItemStack heldItem = player.getItemInHand(hand);
         if (heldItem.is(VistaMod.HOLLOW_CASSETTE.get())) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         if (level.getBlockEntity(pos) instanceof ViewFinderBlockEntity tile) {
-
-            if (player.isSecondaryUseActive() || tile.isEmpty()) {
-                ItemInteractionResult itemAdd = tile.interactWithPlayerItem(player, hand, stack);
-                if (itemAdd.consumesAction()) {
-                    return itemAdd;
-                }
-            }
             if (player instanceof ServerPlayer sp) {
-                //same as super but sends custom packet
-                if (sp.gameMode.getGameModeForPlayer() == GameType.ADVENTURE &&
-                        tile.getAdventureModeOperation() == ViewFinderBlockEntity.AdventureModeOperation.NO_INTERACTION) {
+                boolean adventure = sp.gameMode.getGameModeForPlayer() == GameType.ADVENTURE;
+                ViewFinderBlockEntity.AdventureModeOperation advOp = tile.getAdventureModeOperation();
+                if (adventure && advOp == ViewFinderBlockEntity.AdventureModeOperation.NO_INTERACTION) {
                     return ItemInteractionResult.sidedSuccess(level.isClientSide());
                 }
-                if (tile.canBeUsedBy(pos, player)) {
-                    tile.setCurrentUser(player.getUUID());
-                    NetworkHelper.sendToClientPlayer(sp, new ClientBoundControlViewFinderPacket(TileOrEntityTarget.of(tile)));
+                // sneaking (or adventure view-only, where the lens must not be touched) jumps straight
+                // into viewing. A normal click opens the GUI to manage the lens and press "view".
+                if (player.isSecondaryUseActive() || (adventure && advOp == ViewFinderBlockEntity.AdventureModeOperation.VIEW_ONLY)) {
+                    //same as super but sends custom packet
+                    if (tile.canBeUsedBy(pos, player)) {
+                        tile.setCurrentUser(player.getUUID());
+                        NetworkHelper.sendToClientPlayer(sp, new ClientBoundControlViewFinderPacket(TileOrEntityTarget.of(tile)));
+                    }
+                } else {
+                    Utils.openGuiIfPossible(tile, sp, stack, hitResult.getDirection(), hitResult.getLocation());
                 }
             }
             return ItemInteractionResult.sidedSuccess(level.isClientSide());

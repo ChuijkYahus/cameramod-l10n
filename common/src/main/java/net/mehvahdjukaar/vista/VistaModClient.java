@@ -14,6 +14,7 @@ import net.mehvahdjukaar.vista.client.textures.CassetteTexturesManager;
 import net.mehvahdjukaar.vista.client.textures.LiveFeedTexturesManager;
 import net.mehvahdjukaar.vista.client.textures.MirrorTextureManager;
 import net.mehvahdjukaar.vista.client.textures.WebTexturesManager;
+import net.mehvahdjukaar.vista.client.ui.ViewFinderScreen;
 import net.mehvahdjukaar.vista.client.ui.VistaWelcomeScreen;
 import net.mehvahdjukaar.vista.client.web.ffmpeg.FFmpeg;
 import net.mehvahdjukaar.vista.client.web.ffmpeg.FFmpegManager;
@@ -170,6 +171,7 @@ public class VistaModClient {
         ClientHelper.addModelLayerRegistration(VistaModClient::registerModelLayers);
         ClientHelper.addItemColorsRegistration(VistaModClient::registerItemColors);
         ClientHelper.addItemRenderersRegistration(VistaModClient::registerItemRenderers);
+        ClientHelper.addMenuScreensRegistration(VistaModClient::registerMenuScreens);
 
         ClientHelper.addClientReloadListener(() -> CassetteTexturesManager.INSTANCE, VistaMod.res("gif_manager"));
 
@@ -202,6 +204,10 @@ public class VistaModClient {
 
     private static void registerItemRenderers(ClientHelper.ItemRendererEvent event) {
         event.register(VistaMod.TV_ITEM.get(), new TvItemRenderer());
+    }
+
+    private static void registerMenuScreens(ClientHelper.MenuScreenEvent event) {
+        event.register(VistaMod.VIEWFINDER_MENU.get(), ViewFinderScreen::new);
     }
 
     private static void registerItemColors(ClientHelper.ItemColorEvent event) {

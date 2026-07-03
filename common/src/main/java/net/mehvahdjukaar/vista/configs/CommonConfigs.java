@@ -26,6 +26,7 @@ public class CommonConfigs {
     public static final Supplier<Mode> WAVE_GATE_MODE;
     public static final Supplier<Integer> SEND_CHUNKS_VIEWED_BY_VIEW_FINDER;
     public static final Supplier<Boolean> LOAD_CHUNKS_VIEWED_BY_VIEW_FINDER;
+    public static final Supplier<ViewFinderInteraction> VIEW_FINDER_INTERACTION;
     public static final Supplier<Boolean> TV_CONSUME_ENERGY;
     public static final Supplier<Integer> TV_ENERGY_CONSUMPTION_RATE;
 
@@ -37,6 +38,9 @@ public class CommonConfigs {
                 .define("send_chunks_viewed_by_view_finders", 4, 0, 16);
         LOAD_CHUNKS_VIEWED_BY_VIEW_FINDER = builder.comment("Server loads chunks that are near a far away view finder linked to a tv that's close to at least 1 player. Will increase server strain")
                 .define("chunkload_chunks_viewed_by_view_finders", false);
+        VIEW_FINDER_INTERACTION = builder
+                .comment("How right-clicking a view finder behaves. GUI: opens a screen with the lens slot, pitch/yaw angle controls and a 'view' button (sneak to jump straight into viewing). LEGACY: no screen at all - click to look through it directly, and use items on it to insert/remove the lens.")
+                .define("view_finder_interaction", ViewFinderInteraction.GUI);
         TV_MAX_CONNECTED_TV_SIZE = builder
                 .comment("Maximum size of connected TVs (in blocks). Set to 1 to disable multi-block TVs.")
                 .define("max_connected_tv_size", 8, 1, 24);
@@ -90,6 +94,10 @@ public class CommonConfigs {
 
     public static boolean isMirrorEnabled() {
         return MIRROR_ENABLED.get();
+    }
+
+    public static boolean isViewFinderGuiEnabled() {
+        return VIEW_FINDER_INTERACTION.get() == ViewFinderInteraction.GUI;
     }
 
     public static boolean isWaveGateOn() {
