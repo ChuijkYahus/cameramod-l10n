@@ -20,6 +20,9 @@ import net.mehvahdjukaar.vista.common.enderman.AngeredFromTvCondition;
 import net.mehvahdjukaar.vista.common.enderman.EndermanFreezeWhenLookedAtThroughTVGoal;
 import net.mehvahdjukaar.vista.common.mirror.MirrorBlock;
 import net.mehvahdjukaar.vista.common.mirror.MirrorBlockEntity;
+import net.mehvahdjukaar.vista.common.picture_tape.PictureTapeContent;
+import net.mehvahdjukaar.vista.common.picture_tape.PictureTapeItem;
+import net.mehvahdjukaar.vista.common.picture_tape.PictureTapeMenu;
 import net.mehvahdjukaar.vista.common.tv.TVBlock;
 import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
 import net.mehvahdjukaar.vista.common.tv.TVItem;
@@ -155,6 +158,21 @@ public class VistaMod {
                     .rarity(Rarity.RARE)
                     .stacksTo(1)));
 
+    public static final Supplier<DataComponentType<PictureTapeContent>> PICTURE_TAPE_CONTENT = RegHelper.registerDataComponent(
+            res("picture_tape"), () ->
+                    DataComponentType.<PictureTapeContent>builder()
+                            .persistent(PictureTapeContent.CODEC)
+                            .networkSynchronized(PictureTapeContent.STREAM_CODEC)
+                            .build());
+
+    public static final Supplier<PictureTapeItem> PICTURE_TAPE = RegHelper.registerItem(res("picture_tape"),
+            () -> new PictureTapeItem(new Item.Properties()
+                    .stacksTo(1)
+                    .component(PICTURE_TAPE_CONTENT.get(), PictureTapeContent.EMPTY)));
+
+    public static final Supplier<MenuType<PictureTapeMenu>> PICTURE_TAPE_MENU = RegHelper.registerMenuType(
+            res("picture_tape"), PictureTapeMenu::fromBuffer);
+
 
     public static final Supplier<DataComponentType<UUID>> LINKED_FEED_COMPONENT = RegHelper.registerDataComponent(
             res("linked_feed"), () ->
@@ -283,6 +301,7 @@ public class VistaMod {
             event.add(CreativeModeTabs.TOOLS_AND_UTILITIES, stack);
         }
         event.add(CreativeModeTabs.TOOLS_AND_UTILITIES, HOLLOW_CASSETTE.get());
+        event.add(CreativeModeTabs.TOOLS_AND_UTILITIES, PICTURE_TAPE.get());
         event.addAfter(CreativeModeTabs.TOOLS_AND_UTILITIES, i -> i.is(C_MUSIC_DISCS), SOJOURN_MUSIC_DISC.get());
 
         if (CommonConfigs.isWaveGateCraftable()) {

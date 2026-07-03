@@ -2,30 +2,25 @@ package net.mehvahdjukaar.vista.platform;
 
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.common.chunk_tracking.ServerCameraChunkManager;
-import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
 import net.mehvahdjukaar.vista.configs.CommonConfigs;
-import net.minecraft.core.Direction;
+import net.mehvahdjukaar.vista.integration.CompatHandler;
+import net.mehvahdjukaar.vista.integration.create.CreateCompat;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.Mod;
-import net.neoforged.neoforge.capabilities.BlockCapabilityCache;
+import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.energy.EnergyStorage;
-import net.neoforged.neoforge.energy.IEnergyStorage;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
-import net.neoforged.neoforge.items.IItemHandler;
-import org.jetbrains.annotations.Nullable;
 
 import java.lang.ref.WeakReference;
-import java.util.WeakHashMap;
 
 import static net.mehvahdjukaar.vista.VistaMod.MOD_ID;
 
@@ -41,7 +36,14 @@ public class VistaForge {
         modBus = new WeakReference<>(bus);
         VistaMod.init();
         bus.addListener(this::registerCapabilities);
+        bus.addListener(this::onCommonSetup);
         NeoForge.EVENT_BUS.register(this);
+    }
+
+    //PlatHelper.addCommonSetup in common
+    private void onCommonSetup(FMLCommonSetupEvent event) {
+        // Create's interaction registry isn't thread-safe, so register on the main thread
+        if (CompatHandler.CREATE) event.enqueueWork(CreateCompat::setup);
     }
 
     private void registerCapabilities(RegisterCapabilitiesEvent event) {

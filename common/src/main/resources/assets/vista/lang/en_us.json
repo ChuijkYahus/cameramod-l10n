@@ -5,6 +5,7 @@
   "item.vista.cassette": "Cassette",
   "item.vista.hollow_cassette": "Hollow Cassette",
   "item.vista.picture_tape": "Picture Tape",
+  "item.vista.picture_tape.maps_count": "Maps: %s",
   "block.vista.viewfinder": "Viewfinder",
   "block.vista.mirror": "Mirror Block",
   "tooltip.vista.cassette.tape": "Tape: %s",

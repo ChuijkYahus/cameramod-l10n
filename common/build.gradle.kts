@@ -49,7 +49,4 @@ dependencies {
     // disables its global cloud renderer during nested TV/mirror feed renders (CompatSimpleCloudsMixin)
     modCompileOnly("curse.maven:simple-clouds-1121215:6928979")
 
-    // view finders mounted on trains/contraptions
-    modCompileOnly("curse.maven:create-328085:7963363")
-
 }

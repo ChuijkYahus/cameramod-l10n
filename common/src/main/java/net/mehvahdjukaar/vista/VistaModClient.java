@@ -14,6 +14,7 @@ import net.mehvahdjukaar.vista.client.textures.CassetteTexturesManager;
 import net.mehvahdjukaar.vista.client.textures.LiveFeedTexturesManager;
 import net.mehvahdjukaar.vista.client.textures.MirrorTextureManager;
 import net.mehvahdjukaar.vista.client.textures.WebTexturesManager;
+import net.mehvahdjukaar.vista.client.ui.PictureTapeScreen;
 import net.mehvahdjukaar.vista.client.ui.ViewFinderScreen;
 import net.mehvahdjukaar.vista.client.ui.VistaWelcomeScreen;
 import net.mehvahdjukaar.vista.client.web.ffmpeg.FFmpeg;
@@ -208,6 +209,7 @@ public class VistaModClient {
 
     private static void registerMenuScreens(ClientHelper.MenuScreenEvent event) {
         event.register(VistaMod.VIEWFINDER_MENU.get(), ViewFinderScreen::new);
+        event.register(VistaMod.PICTURE_TAPE_MENU.get(), PictureTapeScreen::new);
     }
 
     private static void registerItemColors(ClientHelper.ItemColorEvent event) {

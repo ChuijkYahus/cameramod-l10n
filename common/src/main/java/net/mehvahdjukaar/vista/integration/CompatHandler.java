@@ -12,7 +12,6 @@ import net.mehvahdjukaar.vista.integration.flashback.FlashbackCompat;
 import net.mehvahdjukaar.vista.integration.iris.IrisCompat;
 import net.mehvahdjukaar.vista.integration.veil.VeilCompat;
 import net.mehvahdjukaar.vista.integration.watermedia.WatermediaSession;
-import net.minecraft.world.item.CreativeModeTabs;
 
 public class CompatHandler {
 
@@ -28,6 +27,7 @@ public class CompatHandler {
     public static final boolean VEIL = PlatHelper.isModLoaded("veil");
     public static final boolean VAMPIRISM = PlatHelper.isModLoaded("vampirism");
     public static final boolean SUPERNATURAL = PlatHelper.isModLoaded("supernatural");
+    public static final boolean CREATE = PlatHelper.isModLoaded("create");
     public static final boolean WATERMEDIA = isWatermediaCompatible();
 
     private static boolean isWatermediaCompatible() {
@@ -61,7 +61,6 @@ public class CompatHandler {
 
 
     public static void addItemsToTabs(RegHelper.ItemToTabEvent event) {
-        if (EXPOSURE) event.add(CreativeModeTabs.TOOLS_AND_UTILITIES, ExposureCompat.PICTURE_TAPE.get());
     }
 
     public static void addConfigs(ConfigBuilder builder) {

@@ -11,16 +11,14 @@ import net.mehvahdjukaar.moonlight.api.util.math.MthUtils;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.common.broadcast.BroadcastManager;
 import net.mehvahdjukaar.vista.common.broadcast.LevelBEBroadcastLocation;
+import net.mehvahdjukaar.vista.configs.CommonConfigs;
 import net.mehvahdjukaar.vista.network.ClientBoundControlViewFinderPacket;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
-import net.minecraft.world.Containers;
-import net.minecraft.world.InteractionHand;
-import net.minecraft.world.ItemInteractionResult;
-import net.minecraft.world.MenuProvider;
+import net.minecraft.world.*;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -161,27 +159,63 @@ public class ViewFinderBlock extends DirectionalBlock implements EntityBlock, IR
         ItemStack heldItem = player.getItemInHand(hand);
         if (heldItem.is(VistaMod.HOLLOW_CASSETTE.get())) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         if (level.getBlockEntity(pos) instanceof ViewFinderBlockEntity tile) {
+            if (CommonConfigs.isViewFinderGuiEnabled()) {
+                openGuiOrView(tile, level, pos, player, stack, hitResult);
+                return ItemInteractionResult.sidedSuccess(level.isClientSide());
+            }
+            // LEGACY behavior: item-based lens insertion + direct look-through, no GUI
+            if (player.isSecondaryUseActive() || tile.isEmpty()) {
+                ItemInteractionResult itemAdd = tile.interactWithPlayerItem(player, hand, stack);
+                if (itemAdd.consumesAction()) {
+                    return itemAdd;
+                }
+            }
             if (player instanceof ServerPlayer sp) {
-                boolean adventure = sp.gameMode.getGameModeForPlayer() == GameType.ADVENTURE;
-                ViewFinderBlockEntity.AdventureModeOperation advOp = tile.getAdventureModeOperation();
-                if (adventure && advOp == ViewFinderBlockEntity.AdventureModeOperation.NO_INTERACTION) {
+                //same as super but sends custom packet
+                if (isAdventureNoInteraction(sp, tile)) {
                     return ItemInteractionResult.sidedSuccess(level.isClientSide());
                 }
-                // sneaking (or adventure view-only, where the lens must not be touched) jumps straight
-                // into viewing. A normal click opens the GUI to manage the lens and press "view".
-                if (player.isSecondaryUseActive() || (adventure && advOp == ViewFinderBlockEntity.AdventureModeOperation.VIEW_ONLY)) {
-                    //same as super but sends custom packet
-                    if (tile.canBeUsedBy(pos, player)) {
-                        tile.setCurrentUser(player.getUUID());
-                        NetworkHelper.sendToClientPlayer(sp, new ClientBoundControlViewFinderPacket(TileOrEntityTarget.of(tile)));
-                    }
-                } else {
-                    Utils.openGuiIfPossible(tile, sp, stack, hitResult.getDirection(), hitResult.getLocation());
-                }
+                startViewing(tile, pos, sp);
             }
             return ItemInteractionResult.sidedSuccess(level.isClientSide());
         }
         return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+    }
+
+    @Override
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
+        // only the GUI path handles empty-hand clicks; legacy mode keeps its item-driven interaction
+        if (CommonConfigs.isViewFinderGuiEnabled() && level.getBlockEntity(pos) instanceof ViewFinderBlockEntity tile) {
+            openGuiOrView(tile, level, pos, player, ItemStack.EMPTY, hitResult);
+            return InteractionResult.sidedSuccess(level.isClientSide());
+        }
+        return InteractionResult.PASS;
+    }
+
+    // GUI path: sneaking (or adventure view-only, where the lens must not be touched) jumps straight
+    // into viewing; a normal click opens the screen to manage the lens, set angles and press "view".
+    private void openGuiOrView(ViewFinderBlockEntity tile, Level level, BlockPos pos, Player player, ItemStack stack, BlockHitResult hitResult) {
+        if (!(player instanceof ServerPlayer sp)) return;
+        if (isAdventureNoInteraction(sp, tile)) return;
+        boolean viewOnly = sp.gameMode.getGameModeForPlayer() == GameType.ADVENTURE &&
+                tile.getAdventureModeOperation() == ViewFinderBlockEntity.AdventureModeOperation.VIEW_ONLY;
+        if (player.isSecondaryUseActive() || viewOnly) {
+            startViewing(tile, pos, sp);
+        } else {
+            Utils.openGuiIfPossible(tile, sp, stack, hitResult.getDirection(), hitResult.getLocation());
+        }
+    }
+
+    private static boolean isAdventureNoInteraction(ServerPlayer sp, ViewFinderBlockEntity tile) {
+        return sp.gameMode.getGameModeForPlayer() == GameType.ADVENTURE &&
+                tile.getAdventureModeOperation() == ViewFinderBlockEntity.AdventureModeOperation.NO_INTERACTION;
+    }
+
+    private static void startViewing(ViewFinderBlockEntity tile, BlockPos pos, ServerPlayer sp) {
+        if (tile.canBeUsedBy(pos, sp)) {
+            tile.setCurrentUser(sp.getUUID());
+            NetworkHelper.sendToClientPlayer(sp, new ClientBoundControlViewFinderPacket(TileOrEntityTarget.of(tile)));
+        }
     }
 
     @Override

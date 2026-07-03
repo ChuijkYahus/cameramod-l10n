@@ -127,4 +127,11 @@ public class CommonConfigs {
         BOTH
     }
 
+    public enum ViewFinderInteraction {
+        // opens the container screen (lens slot + angle controls + view button)
+        GUI,
+        // old behavior: no screen, direct look-through and item-based lens insertion
+        LEGACY
+    }
+
 }

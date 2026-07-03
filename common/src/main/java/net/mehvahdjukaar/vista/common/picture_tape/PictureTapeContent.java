@@ -1,4 +1,4 @@
-package net.mehvahdjukaar.vista.integration.exposure;
+package net.mehvahdjukaar.vista.common.picture_tape;
 
 import com.mojang.serialization.Codec;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -11,6 +11,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
 
+/**
+ * Immutable content of a picture tape: an ordered list of stored items (filled maps).
+ * The list is always kept compact (no empty gaps) by the menu.
+ */
 public final class PictureTapeContent {
 
     public static final Codec<PictureTapeContent> CODEC = ItemStack.CODEC.listOf()
@@ -50,44 +54,43 @@ public final class PictureTapeContent {
         return pictures.size();
     }
 
+    public PictureTapeContent withInsertedAtIndex(int index, ItemStack picture) {
+        List<ItemStack> newPictures = new ArrayList<>(this.pictures);
+        if (index < 0 || index > newPictures.size()) {
+            throw new IndexOutOfBoundsException("Index: " + index + ", Size: " + newPictures.size());
+        }
+        newPictures.add(index, picture);
+        return new PictureTapeContent(newPictures, playSpeed);
+    }
+
+    public PictureTapeContent withRemovedAtIndex(int index) {
+        List<ItemStack> newPictures = new ArrayList<>(this.pictures);
+        if (index < 0 || index >= newPictures.size()) {
+            throw new IndexOutOfBoundsException("Index: " + index + ", Size: " + newPictures.size());
+        }
+        newPictures.remove(index);
+        return new PictureTapeContent(newPictures, playSpeed);
+    }
+
+    public PictureTapeContent withPlaySpeed(int speed) {
+        return new PictureTapeContent(this.pictures, speed);
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (obj == this) return true;
         if (obj == null || obj.getClass() != this.getClass()) return false;
         var that = (PictureTapeContent) obj;
-        return Objects.equals(this.pictures, that.pictures);
+        return this.playSpeed == that.playSpeed && Objects.equals(this.pictures, that.pictures);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(pictures);
+        return Objects.hash(pictures, playSpeed);
     }
 
     @Override
     public String toString() {
-        return "PictureTapeContent[" +
-                "pictures=" + pictures + ']';
-    }
-
-    public PictureTapeContent withInsertedAtIndex(int index, ItemStack picture) {
-        List<ItemStack> newPictures = new ArrayList<>(List.copyOf(this.pictures));
-        if (index < 0 || index > newPictures.size()) {
-            throw new IndexOutOfBoundsException("Index: " + index + ", Size: " + newPictures.size());
-        }
-        newPictures.add(index, picture);
-        return new PictureTapeContent(newPictures);
-    }
-
-    public PictureTapeContent withRemovedAtIndex(int index) {
-        List<ItemStack> newPictures = new ArrayList<>(List.copyOf(this.pictures));
-        if (index < 0 || index >= newPictures.size()) {
-            throw new IndexOutOfBoundsException("Index: " + index + ", Size: " + newPictures.size());
-        }
-        newPictures.remove(index);
-        return new PictureTapeContent(newPictures);
-    }
-
-    public PictureTapeContent withPlaySpeed(int speed) {
-        return new PictureTapeContent(this.pictures, speed);
+        return "PictureTapeContent[pictures=" + pictures + ", playSpeed=" + playSpeed + ']';
     }
 }
