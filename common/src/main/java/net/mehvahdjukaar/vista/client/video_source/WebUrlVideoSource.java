@@ -120,8 +120,8 @@ public class WebUrlVideoSource implements IVideoSource {
             case FORBIDDEN -> VistaModClient.FORBIDDEN_SCREEN;
             case NOT_FOUND -> VistaModClient.NOT_FOUND_SCREEN;
             case BAD_LINK -> VistaModClient.BAD_LINK_SCREEN;
-            case NO_FFMPEG -> VistaModClient.NO_FFMPEG_SCREEN;
-            case NONE -> null;
+            // no backend available -> plain static noise instead of a dedicated card
+            case NO_FFMPEG, NONE -> null;
         };
     }
 }

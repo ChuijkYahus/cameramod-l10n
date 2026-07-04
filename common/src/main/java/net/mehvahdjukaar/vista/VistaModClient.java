@@ -72,7 +72,6 @@ public class VistaModClient {
     public static final ResourceLocation FORBIDDEN_SCREEN = VistaMod.res("forbidden");
     public static final ResourceLocation NOT_FOUND_SCREEN = VistaMod.res("not_found");
     public static final ResourceLocation BAD_LINK_SCREEN = VistaMod.res("bad_link");
-    public static final ResourceLocation NO_FFMPEG_SCREEN = VistaMod.res("no_ffmpeg");
     public static final ResourceLocation NO_ENERGY_SCREEN = VistaMod.res("no_power");
     public static final ResourceLocation SMILE_SCREEN = VistaMod.res("smile");
     public static final ResourceLocation NEUTRAL_SCREEN = VistaMod.res("neutral");

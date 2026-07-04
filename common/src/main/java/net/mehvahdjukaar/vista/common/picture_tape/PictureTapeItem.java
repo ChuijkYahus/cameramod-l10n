@@ -1,5 +1,6 @@
 package net.mehvahdjukaar.vista.common.picture_tape;
 
+import net.mehvahdjukaar.candlelight.api.VirtualOverride;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.common.cassette.ITvCassette;
@@ -86,7 +87,17 @@ public class PictureTapeItem extends Item implements ITvCassette {
     }
 
     @Override
-    public int getAnalogSignalStrength(ItemStack stack) {
+    public int getAnalogSignalStrengthInTv(ItemStack stack) {
         return Math.min(15, getContent(stack).size());
+    }
+
+    @VirtualOverride("neoforge")
+    public boolean shouldCauseReequipAnimation(ItemStack oldStack, ItemStack newStack, boolean slotChanged) {
+        return slotChanged || oldStack.getItem() != newStack.getItem();
+    }
+
+    @VirtualOverride("fabric")
+    public boolean allowComponentsUpdateAnimation(Player player, InteractionHand hand, ItemStack oldStack, ItemStack newStack) {
+        return oldStack.getItem() != newStack.getItem();
     }
 }

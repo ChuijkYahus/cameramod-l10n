@@ -68,7 +68,7 @@ public class HollowCassetteItem extends Item implements  ITvCassette {
     }
 
     @Override
-    public int getAnalogSignalStrength(ItemStack stack) {
+    public int getAnalogSignalStrengthInTv(ItemStack stack) {
         return 15;
     }
 }

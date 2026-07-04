@@ -349,7 +349,7 @@ public class TVBlockEntity extends ItemDisplayTile {
 
     public int getComparatorOutput() {
         ItemStack displayed = this.getDisplayedItem();
-        if (displayed.getItem() instanceof ITvCassette tc) return tc.getAnalogSignalStrength(displayed);
+        if (displayed.getItem() instanceof ITvCassette tc) return tc.getAnalogSignalStrengthInTv(displayed);
         return 0;
     }
 

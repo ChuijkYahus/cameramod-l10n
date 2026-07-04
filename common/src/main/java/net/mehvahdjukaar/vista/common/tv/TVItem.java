@@ -1,6 +1,6 @@
 package net.mehvahdjukaar.vista.common.tv;
 
-import net.mehvahdjukaar.moonlight.api.misc.ForgeOverride;
+import net.mehvahdjukaar.candlelight.api.VirtualOverride;
 import net.minecraft.world.entity.monster.EnderMan;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.BlockItem;
@@ -13,7 +13,7 @@ public class TVItem extends BlockItem {
         super(block, properties);
     }
 
-    @ForgeOverride
+    @VirtualOverride("neoforge")
     public boolean isEnderMask(ItemStack stack, Player player, EnderMan enderMan) {
         return true;
     }

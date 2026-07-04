@@ -80,7 +80,7 @@ public class CassetteItem extends Item implements ITvCassette {
     }
 
     @Override
-    public int getAnalogSignalStrength(ItemStack stack) {
+    public int getAnalogSignalStrengthInTv(ItemStack stack) {
         Holder<CassetteTape> tape = stack.get(VistaMod.CASSETTE_TAPE_COMPONENT.get());
         if (tape != null) {
             return tape.value().getRedstoneOutput();
