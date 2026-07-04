@@ -55,6 +55,9 @@ dependencies {
     modImplementation("io.github.douira:glsl-transformer:2.0.1")
     modCompileOnly("curse.maven:simple-clouds-1121215:6928979")
 
+    // Create contraption view-finder integration (platform impl: CreatePlatStuffImpl)
+    modCompileOnly("curse.maven:create-fabric-624165:7286603")
+
     // modImplementation("cc.tweaked-cobalt:cobalt:0.93")
 
 }

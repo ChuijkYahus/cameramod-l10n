@@ -12,6 +12,9 @@ import net.mehvahdjukaar.vista.common.cassette.IBroadcastSource;
 import net.mehvahdjukaar.vista.common.cassette.ITvCassette;
 import net.mehvahdjukaar.vista.common.chunk_tracking.ServerCameraChunkManager;
 import net.mehvahdjukaar.vista.common.enderman.TVEndermanObservationController;
+import net.mehvahdjukaar.vista.common.picture_tape.PictureTapeContent;
+import net.mehvahdjukaar.vista.common.picture_tape.PictureTapeItem;
+import net.mehvahdjukaar.vista.common.picture_tape.PictureTapeMaps;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.mehvahdjukaar.vista.configs.CommonConfigs;
 import net.minecraft.core.BlockPos;
@@ -19,6 +22,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
@@ -36,6 +40,7 @@ import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
 import java.util.UUID;
 
 public class TVBlockEntity extends ItemDisplayTile {
@@ -46,6 +51,8 @@ public class TVBlockEntity extends ItemDisplayTile {
     private boolean paused = false;
     private int videoPlaybackTicks = 0;
     private boolean showsTime = false;
+    // slideshow: last map frame index whose data we pushed to nearby players (-1 = none)
+    private int lastSentMapFrame = -1;
 
     //client, I think
     private IVideoSource videoSource = IVideoSource.EMPTY;
@@ -286,6 +293,8 @@ public class TVBlockEntity extends ItemDisplayTile {
         } else {
             if (consumeEnergy && !tv.hasEnergy()) return;
 
+            tv.pushSlideshowMaps(world, pos, powered);
+
             //enderman stuff
             // Run once every TV_OBSERVATION_INTERVAL ticks, offset by pos so different TVs
             // don't all fire on the same tick. Previous `% 27 == 0` skipped only 1/27 ticks
@@ -360,5 +369,35 @@ public class TVBlockEntity extends ItemDisplayTile {
     private boolean hasEnergy() {
         if (!CommonConfigs.TV_CONSUME_ENERGY.get()) return true;
         return VistaPlatStuff.tvHasEnergy(this);
+    }
+
+    // Maps stored on a picture tape aren't tracked by vanilla, so when one is playing we push the
+    // current (and next) frame's map data to nearby players as the slideshow advances.
+    private void pushSlideshowMaps(Level level, BlockPos pos, boolean powered) {
+        if (!powered || paused || !(level instanceof ServerLevel serverLevel)) {
+            lastSentMapFrame = -1;
+            return;
+        }
+        ItemStack displayed = getDisplayedItem();
+        if (!(displayed.getItem() instanceof PictureTapeItem)) {
+            lastSentMapFrame = -1;
+            return;
+        }
+        PictureTapeContent content = PictureTapeItem.getContent(displayed);
+        int count = content.size();
+        if (count == 0) return;
+        int speed = Math.max(1, content.playbackSpeed());
+        int frame = (videoPlaybackTicks / speed) % count;
+        if (frame == lastSentMapFrame) return;
+        lastSentMapFrame = frame;
+
+        List<ItemStack> pics = content.pictures().toList();
+        ItemStack current = pics.get(frame);
+        ItemStack next = pics.get((frame + 1) % count);
+        for (ServerPlayer sp : serverLevel.players()) {
+            if (sp.blockPosition().distSqr(pos) > 96 * 96) continue;
+            PictureTapeMaps.sendMapData(sp, current);
+            if (next != current) PictureTapeMaps.sendMapData(sp, next);
+        }
     }
 }

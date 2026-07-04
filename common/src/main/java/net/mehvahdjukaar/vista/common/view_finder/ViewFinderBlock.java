@@ -192,17 +192,17 @@ public class ViewFinderBlock extends DirectionalBlock implements EntityBlock, IR
         return InteractionResult.PASS;
     }
 
-    // GUI path: sneaking (or adventure view-only, where the lens must not be touched) jumps straight
-    // into viewing; a normal click opens the screen to manage the lens, set angles and press "view".
+    // GUI path: a normal click looks straight through the view finder; sneaking opens the screen to
+    // manage the lens and set angles. Adventure view-only always jumps straight into viewing.
     private void openGuiOrView(ViewFinderBlockEntity tile, Level level, BlockPos pos, Player player, ItemStack stack, BlockHitResult hitResult) {
         if (!(player instanceof ServerPlayer sp)) return;
         if (isAdventureNoInteraction(sp, tile)) return;
         boolean viewOnly = sp.gameMode.getGameModeForPlayer() == GameType.ADVENTURE &&
                 tile.getAdventureModeOperation() == ViewFinderBlockEntity.AdventureModeOperation.VIEW_ONLY;
-        if (player.isSecondaryUseActive() || viewOnly) {
-            startViewing(tile, pos, sp);
-        } else {
+        if (player.isSecondaryUseActive() && !viewOnly) {
             Utils.openGuiIfPossible(tile, sp, stack, hitResult.getDirection(), hitResult.getLocation());
+        } else {
+            startViewing(tile, pos, sp);
         }
     }
 

@@ -49,4 +49,7 @@ dependencies {
     // disables its global cloud renderer during nested TV/mirror feed renders (CompatSimpleCloudsMixin)
     modCompileOnly("curse.maven:simple-clouds-1121215:6928979")
 
+    // Create integration is common but Create-free (delegates to CreatePlatStuff); the platform impls hold
+    // the actual Create references, so the dependency lives in :neoforge and :fabric.
+
 }

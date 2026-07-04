@@ -1,20 +1,14 @@
 package net.mehvahdjukaar.vista.client.ui;
 
-import com.mojang.blaze3d.vertex.PoseStack;
 import net.mehvahdjukaar.vista.common.picture_tape.PictureTapeMenu;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.AbstractSliderButton;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
-import net.minecraft.client.renderer.LightTexture;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.MapItem;
-import net.minecraft.world.level.saveddata.maps.MapId;
-import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
 
 /**
  * Gallery screen for the picture tape: a horizontally scrolling strip of maps above the standard
@@ -49,6 +43,7 @@ public class PictureTapeScreen extends AbstractContainerScreen<PictureTapeMenu> 
 
     private double scrollOffset = 0;
     private boolean draggingScrollbar = false;
+    private int lastSentSpeed;
 
     public PictureTapeScreen(PictureTapeMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
@@ -63,6 +58,12 @@ public class PictureTapeScreen extends AbstractContainerScreen<PictureTapeMenu> 
         this.titleLabelY = 6;
         this.inventoryLabelX = PictureTapeMenu.INV_X;
         this.inventoryLabelY = PictureTapeMenu.INV_TOP - 11;
+
+        // tiny playback-speed slider next to the title
+        this.lastSentSpeed = getMenu().getPlaySpeed();
+        int sliderW = 64, sliderH = 12;
+        addRenderableWidget(new SpeedSlider(leftPos + imageWidth - 8 - sliderW, topPos + 4, sliderW, sliderH,
+                getMenu().getPlaySpeed()));
     }
 
     // ---- geometry helpers ----
@@ -158,7 +159,7 @@ public class PictureTapeScreen extends AbstractContainerScreen<PictureTapeMenu> 
             int cx = vx + PAD + i * CELL - (int) scrollOffset;
             if (cx + MAP_SIZE < vx || cx > vx + VIEW_W) continue;
             if (i < filled) {
-                drawMap(g, getMenu().getMaps().getItem(i), cx, cy);
+                drawEntry(g, getMenu().getMaps().getItem(i), cx, cy);
             } else {
                 drawAddCell(g, cx, cy);
             }
@@ -169,30 +170,11 @@ public class PictureTapeScreen extends AbstractContainerScreen<PictureTapeMenu> 
         g.disableScissor();
     }
 
-    private void drawMap(GuiGraphics g, ItemStack stack, int x, int y) {
+    private void drawEntry(GuiGraphics g, ItemStack stack, int x, int y) {
         if (stack.isEmpty()) return;
         // dark frame around the thumbnail
         g.fill(x - 1, y - 1, x + MAP_SIZE + 1, y + MAP_SIZE + 1, 0xFF000000);
-
-        MapId mapId = stack.get(DataComponents.MAP_ID);
-        MapItemSavedData data = this.minecraft.level == null || mapId == null
-                ? null : MapItem.getSavedData(mapId, this.minecraft.level);
-        if (mapId == null || data == null) {
-            // map data not available yet: show a neutral placeholder with the item icon
-            g.fill(x, y, x + MAP_SIZE, y + MAP_SIZE, 0xFF888888);
-            g.renderItem(stack, x + MAP_SIZE / 2 - 8, y + MAP_SIZE / 2 - 8);
-            return;
-        }
-
-        PoseStack pose = g.pose();
-        pose.pushPose();
-        pose.translate(x, y, 1.0);
-        float scale = MAP_SIZE / 128f;
-        pose.scale(scale, scale, 1f);
-        MultiBufferSource.BufferSource buffer = g.bufferSource();
-        this.minecraft.gameRenderer.getMapRenderer().render(pose, buffer, mapId, data, false, LightTexture.FULL_BRIGHT);
-        g.flush();
-        pose.popPose();
+        PictureTapeRenderers.render(g, stack, x, y, MAP_SIZE);
     }
 
     private void drawAddCell(GuiGraphics g, int x, int y) {
@@ -285,5 +267,35 @@ public class PictureTapeScreen extends AbstractContainerScreen<PictureTapeMenu> 
         int handleW = handleWidth();
         double t = (mouseX - sx - handleW / 2.0) / (SB_W - handleW);
         scrollOffset = Mth.clamp(t, 0, 1) * max;
+    }
+
+    private static double speedToValue(int speed) {
+        int clamped = Mth.clamp(speed, PictureTapeMenu.MIN_SPEED, PictureTapeMenu.MAX_SPEED);
+        return (clamped - PictureTapeMenu.MIN_SPEED) / (double) (PictureTapeMenu.MAX_SPEED - PictureTapeMenu.MIN_SPEED);
+    }
+
+    private class SpeedSlider extends AbstractSliderButton {
+        SpeedSlider(int x, int y, int width, int height, int initialSpeed) {
+            super(x, y, width, height, Component.empty(), speedToValue(initialSpeed));
+            updateMessage();
+        }
+
+        @Override
+        protected void updateMessage() {
+            setMessage(Component.translatable("gui.vista.picture_tape.speed", speedTicks()));
+        }
+
+        @Override
+        protected void applyValue() {
+            int speed = speedTicks();
+            if (speed != lastSentSpeed) {
+                lastSentSpeed = speed;
+                minecraft.gameMode.handleInventoryButtonClick(getMenu().containerId, speed);
+            }
+        }
+
+        private int speedTicks() {
+            return (int) Math.round(Mth.lerp(this.value, PictureTapeMenu.MIN_SPEED, PictureTapeMenu.MAX_SPEED));
+        }
     }
 }

@@ -33,6 +33,7 @@ import net.mehvahdjukaar.vista.common.wave_gate.WaveGateBlock;
 import net.mehvahdjukaar.vista.common.wave_gate.WaveGateBlockEntity;
 import net.mehvahdjukaar.vista.configs.CommonConfigs;
 import net.mehvahdjukaar.vista.integration.CompatHandler;
+import net.mehvahdjukaar.vista.integration.create.ContraptionBroadcastLocation;
 import net.mehvahdjukaar.vista.integration.supplementaries.SuppCompat;
 import net.mehvahdjukaar.vista.network.ClientBoundSyncExtraChunksPacket;
 import net.mehvahdjukaar.vista.network.ModNetwork;
@@ -96,6 +97,11 @@ public class VistaMod {
     public static final Supplier<BroadcastLocationType> LEVEL_BE_BROADCAST =
             RegHelper.register(res("level_be_location"),
                     () -> LevelBEBroadcastLocation.TYPE, BROADCAST_LOCATION_REGISTRY.key());
+
+    // view finders broadcasting from inside a Create contraption (resolved via CreateBroadcastHooks)
+    public static final Supplier<BroadcastLocationType> CONTRAPTION_BROADCAST =
+            RegHelper.register(res("contraption_location"),
+                    () -> ContraptionBroadcastLocation.TYPE, BROADCAST_LOCATION_REGISTRY.key());
 
     public static final WorldSavedDataType<BroadcastManager> VIEWFINDER_CONNECTION =
             RegHelper.registerWorldSavedData(res("viewfinder_connection"), BroadcastManager::create,

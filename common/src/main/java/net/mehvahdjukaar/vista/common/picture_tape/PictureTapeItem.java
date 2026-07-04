@@ -2,6 +2,7 @@ package net.mehvahdjukaar.vista.common.picture_tape;
 
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.vista.VistaMod;
+import net.mehvahdjukaar.vista.common.cassette.ITvCassette;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -14,7 +15,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
@@ -25,7 +25,7 @@ import java.util.List;
  * A roll of tape that stores up to {@link #MAX_MAPS} filled maps. Right-clicking opens a
  * horizontally scrolling gallery where maps can be added, viewed and taken back out.
  */
-public class PictureTapeItem extends Item {
+public class PictureTapeItem extends Item implements ITvCassette {
 
     public static final int MAX_MAPS = 16;
 
@@ -42,10 +42,12 @@ public class PictureTapeItem extends Item {
     }
 
     /**
-     * Only filled maps may be stored on the tape.
+     * Whether the given stack may be stored on the tape. Filled maps are always allowed; other
+     * picture types (e.g. Exposure photographs) are contributed by integrations via
+     * {@link PictureTapeEntries}.
      */
     public static boolean isValidEntry(ItemStack stack) {
-        return stack.is(Items.FILLED_MAP);
+        return PictureTapeEntries.isValid(stack);
     }
 
     @Override
@@ -78,8 +80,13 @@ public class PictureTapeItem extends Item {
     public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
         int count = getContent(stack).size();
         if (count > 0) {
-            tooltip.add(Component.translatable("item.vista.picture_tape.maps_count", count)
+            tooltip.add(Component.translatable("item.vista.picture_tape.pictures_count", count)
                     .withStyle(ChatFormatting.GRAY));
         }
+    }
+
+    @Override
+    public int getAnalogSignalStrength(ItemStack stack) {
+        return Math.min(15, getContent(stack).size());
     }
 }

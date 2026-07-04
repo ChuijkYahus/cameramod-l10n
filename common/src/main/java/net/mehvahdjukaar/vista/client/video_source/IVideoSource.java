@@ -6,6 +6,7 @@ import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.client.textures.TvScreenVertexConsumers;
 import net.mehvahdjukaar.vista.common.cassette.CassetteItem;
+import net.mehvahdjukaar.vista.common.picture_tape.PictureTapeItem;
 import net.mehvahdjukaar.vista.common.tv.IntAnimationState;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.sounds.SoundEvent;
@@ -39,6 +40,8 @@ public interface IVideoSource {
         if (stack.getItem() instanceof CassetteItem) {
             var tape = stack.get(VistaMod.CASSETTE_TAPE_COMPONENT.get());
             if (tape != null) return new CassetteTapeVideoSource(tape);
+        } else if (stack.getItem() instanceof PictureTapeItem) {
+            return new PictureTapeVideoSource(stack);
         } else if (stack.has(VistaMod.LINKED_FEED_COMPONENT.get())) {
             return new BroadcastVideoSource(stack.get(VistaMod.LINKED_FEED_COMPONENT.get()));
         }

@@ -4,7 +4,6 @@ import com.mojang.math.Axis;
 import net.mehvahdjukaar.moonlight.api.block.IOneUserInteractable;
 import net.mehvahdjukaar.moonlight.api.block.ItemDisplayTile;
 import net.mehvahdjukaar.moonlight.api.misc.OrientationRig;
-import net.mehvahdjukaar.moonlight.api.platform.network.NetworkHelper;
 import net.mehvahdjukaar.moonlight.api.util.math.EntityAngles;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.client.video_source.IVideoSource;
@@ -12,7 +11,6 @@ import net.mehvahdjukaar.vista.client.video_source.LiveFeedVideoSource;
 import net.mehvahdjukaar.vista.common.broadcast.LevelBEBroadcastLocation;
 import net.mehvahdjukaar.vista.common.cassette.IBroadcastSource;
 import net.mehvahdjukaar.vista.integration.CompatHandler;
-import net.mehvahdjukaar.vista.network.SyncViewFinderPacket;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
@@ -329,7 +327,25 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
     }
 
     private Quaternionf getStructureAdditionalRotation() {
-        return Axis.YP.rotationDegrees(-this.getBlockState().getValue(ViewFinderBlock.ROTATE_TILE).ordinal() * 90);
+        return getStructureAdditionalRotation(this.getBlockState());
+    }
+
+    private static Quaternionf getStructureAdditionalRotation(BlockState state) {
+        return Axis.YP.rotationDegrees(-state.getValue(ViewFinderBlock.ROTATE_TILE).ordinal() * 90);
+    }
+
+    /**
+     * Bakes a view finder's aim into save NBT (matching {@link #saveAdditional}/{@link #loadAdditional}) without a
+     * live block entity - used to persist aim into a Create contraption's stored block data. {@code localRot} is the
+     * world-local orientation as sent over the network; the stored rig rotation strips the block's structural spin.
+     */
+    public static CompoundTag buildAimNbt(CompoundTag base, BlockState state, Quaternionf localRot, int zoom, boolean locked) {
+        Quaternionf additional = getStructureAdditionalRotation(state);
+        Quaternionf rig = localRot.mul(additional.invert(new Quaternionf()), new Quaternionf());
+        base.put("orientation", ExtraCodecs.QUATERNIONF.encodeStart(NbtOps.INSTANCE, rig).getOrThrow());
+        base.putInt("zoom", zoom);
+        base.putBoolean("locked", locked);
+        return base;
     }
 
     public Vector3f getGlobalFacing(float partialTicks) {
@@ -366,20 +382,16 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
         return rot.mul(additionalRot);
     }
 
-    // Network
+    // Network. The reference frame decides how the aim travels: a world view finder locates itself by block pos,
+    // a contraption view finder needs its own packet (no server-side block entity exists inside a contraption).
     public void syncToServer(boolean removeOwner, Player playerWhoChangedIt) {
-        NetworkHelper.sendToServer(new SyncViewFinderPacket(
-                this.getWantedLocalOrientation(), this.zoom,
-                this.locked, removeOwner, referenceFrame.makeNetworkTarget(),
-                playerWhoChangedIt.getUUID()));
+        referenceFrame.sendAimToServer(this.getWantedLocalOrientation(), this.zoom,
+                this.locked, removeOwner, playerWhoChangedIt);
     }
 
     public void syncToClients() {
         if (level instanceof ServerLevel sl) {
-            NetworkHelper.sendToAllClientPlayersInDefaultRange(sl,
-                    BlockPos.containing(referenceFrame.position(1)), new SyncViewFinderPacket(
-                            this.getWantedLocalOrientation(), this.zoom,
-                            this.locked, false, referenceFrame.makeNetworkTarget(), null));
+            referenceFrame.sendAimToClients(sl, this.getWantedLocalOrientation(), this.zoom, this.locked);
         }
     }
 

@@ -1,9 +1,7 @@
 package net.mehvahdjukaar.vista.common.picture_tape;
 
 import net.mehvahdjukaar.vista.VistaMod;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.network.protocol.Packet;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Inventory;
@@ -13,10 +11,6 @@ import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.MapItem;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.level.saveddata.maps.MapId;
-import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -32,6 +26,10 @@ public class PictureTapeMenu extends AbstractContainerMenu {
 
     public static final int MAX_MAPS = PictureTapeItem.MAX_MAPS;
 
+    // slideshow speed range, in ticks per picture
+    public static final int MIN_SPEED = 2;
+    public static final int MAX_SPEED = 100;
+
     // player inventory geometry, shared with the screen so the two agree
     public static final int INV_X = 8;
     public static final int INV_TOP = 88;
@@ -41,6 +39,8 @@ public class PictureTapeMenu extends AbstractContainerMenu {
     private final ItemStack tapeStack;
     private final Player owner;
     private final SimpleContainer maps = new SimpleContainer(MAX_MAPS);
+    // ticks each picture is shown when played in a TV
+    private int playSpeed;
     // guards against re-entrant container updates while we rewrite the map slots
     private boolean mutating = false;
 
@@ -62,6 +62,7 @@ public class PictureTapeMenu extends AbstractContainerMenu {
         }
 
         // load stored maps into the working container
+        this.playSpeed = PictureTapeItem.getContent(tapeStack).playbackSpeed();
         this.mutating = true;
         List<ItemStack> stored = PictureTapeItem.getContent(tapeStack).pictures().toList();
         for (int i = 0; i < MAX_MAPS && i < stored.size(); i++) {
@@ -108,10 +109,48 @@ public class PictureTapeMenu extends AbstractContainerMenu {
         return filled < MAX_MAPS ? filled + 1 : MAX_MAPS;
     }
 
+    public int getPlaySpeed() {
+        return playSpeed;
+    }
+
     @Override
     public void clicked(int slotId, int button, ClickType clickType, Player player) {
+        // dropping a picture onto an existing one inserts it there and pushes the rest right;
+        // fall back to vanilla's swap only when the tape is already full
+        if (clickType == ClickType.PICKUP && button == 0 && slotId >= 0 && slotId < MAX_MAPS) {
+            ItemStack carried = getCarried();
+            int filled = getFilledCount();
+            if (slotId < filled && filled < MAX_MAPS
+                    && !carried.isEmpty() && PictureTapeItem.isValidEntry(carried)) {
+                insertShifted(slotId, carried);
+                compact();
+                return;
+            }
+        }
         super.clicked(slotId, button, clickType, player);
         compact();
+    }
+
+    // Insert the carried item at index, shifting everything from index onward one slot to the right.
+    private void insertShifted(int index, ItemStack carried) {
+        this.mutating = true;
+        for (int i = MAX_MAPS - 1; i > index; i--) {
+            maps.setItem(i, maps.getItem(i - 1));
+        }
+        maps.setItem(index, carried.split(1));
+        this.mutating = false;
+        setCarried(carried);
+    }
+
+    // The speed slider sends the desired ticks-per-picture as the button id.
+    @Override
+    public boolean clickMenuButton(Player player, int id) {
+        if (id >= MIN_SPEED && id <= MAX_SPEED) {
+            this.playSpeed = id;
+            compact();
+            return true;
+        }
+        return false;
     }
 
     // Remove gaps, keep filled maps contiguous at the front, and persist to the tape item.
@@ -137,7 +176,7 @@ public class PictureTapeMenu extends AbstractContainerMenu {
             }
             this.mutating = false;
         }
-        PictureTapeItem.setContent(tapeStack, new PictureTapeContent(new ArrayList<>(filled)));
+        PictureTapeItem.setContent(tapeStack, new PictureTapeContent(new ArrayList<>(filled), playSpeed));
         pushMapData();
     }
 
@@ -145,17 +184,8 @@ public class PictureTapeMenu extends AbstractContainerMenu {
     // sitting inside the tape aren't ticked and would otherwise render blank on the client.
     private void pushMapData() {
         if (!(owner instanceof ServerPlayer serverPlayer)) return;
-        Level level = serverPlayer.level();
         for (int i = 0; i < MAX_MAPS; i++) {
-            ItemStack stack = maps.getItem(i);
-            if (stack.isEmpty()) continue;
-            MapId mapId = stack.get(DataComponents.MAP_ID);
-            if (mapId == null) continue;
-            MapItemSavedData data = MapItem.getSavedData(mapId, level);
-            if (data == null) continue;
-            data.tickCarriedBy(serverPlayer, stack);
-            Packet<?> packet = data.getUpdatePacket(mapId, serverPlayer);
-            if (packet != null) serverPlayer.connection.send(packet);
+            PictureTapeMaps.sendMapData(serverPlayer, maps.getItem(i));
         }
     }
 
