@@ -38,11 +38,11 @@ public class PictureTapeMenu extends AbstractContainerMenu {
     private final int tapeSlot;
     private final ItemStack tapeStack;
     private final Player owner;
-    private final SimpleContainer maps = new SimpleContainer(MAX_MAPS);
+    private final SimpleContainer tapeContent = new SimpleContainer(MAX_MAPS);
     // ticks each picture is shown when played in a TV
     private int playSpeed;
     // guards against re-entrant container updates while we rewrite the map slots
-    private boolean mutating = false;
+    private boolean mutating;
 
     public static PictureTapeMenu fromBuffer(int containerId, Inventory playerInventory, FriendlyByteBuf buffer) {
         return new PictureTapeMenu(containerId, playerInventory, buffer.readVarInt());
@@ -66,13 +66,13 @@ public class PictureTapeMenu extends AbstractContainerMenu {
         this.mutating = true;
         List<ItemStack> stored = PictureTapeItem.getContent(tapeStack).pictures().toList();
         for (int i = 0; i < MAX_MAPS && i < stored.size(); i++) {
-            maps.setItem(i, stored.get(i).copy());
+            tapeContent.setItem(i, stored.get(i).copy());
         }
         this.mutating = false;
 
         // map slots (0..MAX_MAPS-1), parked off-screen; the screen draws them as maps and routes clicks
         for (int i = 0; i < MAX_MAPS; i++) {
-            this.addSlot(new MapSlot(maps, i));
+            this.addSlot(new MapSlot(tapeContent, i));
         }
 
         // player inventory
@@ -89,14 +89,14 @@ public class PictureTapeMenu extends AbstractContainerMenu {
         pushMapData();
     }
 
-    public SimpleContainer getMaps() {
-        return maps;
+    public SimpleContainer getTapeContent() {
+        return tapeContent;
     }
 
     public int getFilledCount() {
         int n = 0;
         for (int i = 0; i < MAX_MAPS; i++) {
-            if (!maps.getItem(i).isEmpty()) n++;
+            if (!tapeContent.getItem(i).isEmpty()) n++;
         }
         return n;
     }
@@ -135,9 +135,9 @@ public class PictureTapeMenu extends AbstractContainerMenu {
     private void insertShifted(int index, ItemStack carried) {
         this.mutating = true;
         for (int i = MAX_MAPS - 1; i > index; i--) {
-            maps.setItem(i, maps.getItem(i - 1));
+            tapeContent.setItem(i, tapeContent.getItem(i - 1));
         }
-        maps.setItem(index, carried.split(1));
+        tapeContent.setItem(index, carried.split(1));
         this.mutating = false;
         setCarried(carried);
     }
@@ -158,13 +158,13 @@ public class PictureTapeMenu extends AbstractContainerMenu {
         if (mutating) return;
         List<ItemStack> filled = new ArrayList<>();
         for (int i = 0; i < MAX_MAPS; i++) {
-            ItemStack s = maps.getItem(i);
+            ItemStack s = tapeContent.getItem(i);
             if (!s.isEmpty()) filled.add(s);
         }
         boolean hasGap = false;
         for (int i = 0; i < MAX_MAPS; i++) {
             boolean shouldBeFilled = i < filled.size();
-            if (maps.getItem(i).isEmpty() == shouldBeFilled) {
+            if (tapeContent.getItem(i).isEmpty() == shouldBeFilled) {
                 hasGap = true;
                 break;
             }
@@ -172,7 +172,7 @@ public class PictureTapeMenu extends AbstractContainerMenu {
         if (hasGap) {
             this.mutating = true;
             for (int i = 0; i < MAX_MAPS; i++) {
-                maps.setItem(i, i < filled.size() ? filled.get(i) : ItemStack.EMPTY);
+                tapeContent.setItem(i, i < filled.size() ? filled.get(i) : ItemStack.EMPTY);
             }
             this.mutating = false;
         }
@@ -185,7 +185,7 @@ public class PictureTapeMenu extends AbstractContainerMenu {
     private void pushMapData() {
         if (!(owner instanceof ServerPlayer serverPlayer)) return;
         for (int i = 0; i < MAX_MAPS; i++) {
-            PictureTapeMaps.sendMapData(serverPlayer, maps.getItem(i));
+            PictureTapeMaps.sendMapData(serverPlayer, tapeContent.getItem(i));
         }
     }
 

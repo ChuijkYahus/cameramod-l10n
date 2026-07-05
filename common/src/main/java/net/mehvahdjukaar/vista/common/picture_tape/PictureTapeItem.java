@@ -22,10 +22,6 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
-/**
- * A roll of tape that stores up to {@link #MAX_MAPS} filled maps. Right-clicking opens a
- * horizontally scrolling gallery where maps can be added, viewed and taken back out.
- */
 public class PictureTapeItem extends Item implements ITvCassette {
 
     public static final int MAX_MAPS = 16;

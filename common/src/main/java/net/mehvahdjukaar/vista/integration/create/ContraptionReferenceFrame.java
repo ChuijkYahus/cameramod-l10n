@@ -38,13 +38,13 @@ public record ContraptionReferenceFrame(Entity contraption, BlockPos localPos) i
     }
 
     @Override
-    public void sendAimToServer(Quaternionf localRot, int zoom, boolean locked, boolean removeOwner, Player player) {
+    public void syncToServer(Quaternionf localRot, int zoom, boolean locked, boolean removeOwner, Player player) {
         NetworkHelper.sendToServer(new SyncContraptionViewFinderPacket(
                 contraption.getUUID(), localPos, localRot, zoom, locked, removeOwner));
     }
 
     @Override
-    public void sendAimToClients(ServerLevel level, Quaternionf localRot, int zoom, boolean locked) {
+    public void syncToCLients(ServerLevel level, Quaternionf localRot, int zoom, boolean locked) {
         // contraptions have no server-side block entity, so nothing calls this; the server relay happens inside
         // SyncContraptionViewFinderPacket when it receives the client's aim change.
     }

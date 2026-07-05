@@ -11,10 +11,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
 
-/**
- * Immutable content of a picture tape: an ordered list of stored items (filled maps).
- * The list is always kept compact (no empty gaps) by the menu.
- */
 public final class PictureTapeContent {
 
     public static final Codec<PictureTapeContent> CODEC = ItemStack.CODEC.listOf()

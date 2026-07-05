@@ -105,7 +105,7 @@ public class PictureTapeScreen extends AbstractContainerScreen<PictureTapeMenu> 
         super.render(g, mouseX, mouseY, partialTick);
         int cell = cellAt(mouseX, mouseY);
         if (cell >= 0 && cell < getMenu().getFilledCount()) {
-            ItemStack s = getMenu().getMaps().getItem(cell);
+            ItemStack s = getMenu().getTapeContent().getItem(cell);
             if (!s.isEmpty()) {
                 g.renderTooltip(this.font, s, mouseX, mouseY);
                 return;
@@ -159,7 +159,7 @@ public class PictureTapeScreen extends AbstractContainerScreen<PictureTapeMenu> 
             int cx = vx + PAD + i * CELL - (int) scrollOffset;
             if (cx + MAP_SIZE < vx || cx > vx + VIEW_W) continue;
             if (i < filled) {
-                drawEntry(g, getMenu().getMaps().getItem(i), cx, cy);
+                drawEntry(g, getMenu().getTapeContent().getItem(i), cx, cy);
             } else {
                 drawAddCell(g, cx, cy);
             }

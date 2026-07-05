@@ -25,7 +25,7 @@ public interface ReferenceFrame {
      * locates the view finder by {@link #makeNetworkTarget()}; frames whose view finder has no addressable
      * server-side block entity (e.g. inside a Create contraption) override this with their own packet.
      */
-    default void sendAimToServer(Quaternionf localRot, int zoom, boolean locked, boolean removeOwner, Player player) {
+    default void syncToServer(Quaternionf localRot, int zoom, boolean locked, boolean removeOwner, Player player) {
         NetworkHelper.sendToServer(new SyncViewFinderPacket(
                 localRot, zoom, locked, removeOwner, makeNetworkTarget(), player.getUUID()));
     }
@@ -33,7 +33,7 @@ public interface ReferenceFrame {
     /**
      * Broadcast an authoritative aim to tracking clients. Default routes through {@link SyncViewFinderPacket}.
      */
-    default void sendAimToClients(ServerLevel level, Quaternionf localRot, int zoom, boolean locked) {
+    default void syncToCLients(ServerLevel level, Quaternionf localRot, int zoom, boolean locked) {
         NetworkHelper.sendToAllClientPlayersInDefaultRange(level, BlockPos.containing(position(1)),
                 new SyncViewFinderPacket(localRot, zoom, locked, false, makeNetworkTarget(), null));
     }

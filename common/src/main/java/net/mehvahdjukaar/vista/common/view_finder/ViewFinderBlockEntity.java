@@ -385,13 +385,13 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
     // Network. The reference frame decides how the aim travels: a world view finder locates itself by block pos,
     // a contraption view finder needs its own packet (no server-side block entity exists inside a contraption).
     public void syncToServer(boolean removeOwner, Player playerWhoChangedIt) {
-        referenceFrame.sendAimToServer(this.getWantedLocalOrientation(), this.zoom,
+        referenceFrame.syncToServer(this.getWantedLocalOrientation(), this.zoom,
                 this.locked, removeOwner, playerWhoChangedIt);
     }
 
     public void syncToClients() {
         if (level instanceof ServerLevel sl) {
-            referenceFrame.sendAimToClients(sl, this.getWantedLocalOrientation(), this.zoom, this.locked);
+            referenceFrame.syncToCLients(sl, this.getWantedLocalOrientation(), this.zoom, this.locked);
         }
     }
 
