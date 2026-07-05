@@ -3,7 +3,6 @@ package net.mehvahdjukaar.vista.mixins;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import net.mehvahdjukaar.vista.VistaModClient;
-import net.mehvahdjukaar.vista.client.ClientChunkStuffHelper;
 import net.mehvahdjukaar.vista.client.renderer.FeedSectionOcclusionGraph;
 import net.mehvahdjukaar.vista.common.chunk_tracking.IPinnableRenderSection;
 import net.minecraft.client.Camera;
@@ -59,8 +58,8 @@ public class SectionOcclusionGraphMixin {
         if (this.viewArea == null) return;
         for (SectionRenderDispatcher.RenderSection section : this.viewArea.sections) {
             if (section instanceof IPinnableRenderSection ps && ps.vista$isPinned()) {
-                var node = ClientChunkStuffHelper.createNode(section);
-                if (node != null) nodeQueue.add(node);
+                // Node constructor widened via vista.accesswidener.
+                nodeQueue.add(new SectionOcclusionGraph.Node(section, null, 0));
             }
         }
     }

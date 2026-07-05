@@ -18,6 +18,7 @@ accessible field net/minecraft/client/Camera level Lnet/minecraft/world/level/Bl
 
 accessible method net/minecraft/server/level/ChunkMap markChunkPendingToSend (Lnet/minecraft/server/level/ServerPlayer;Lnet/minecraft/world/level/ChunkPos;)V
 accessible class net/minecraft/client/renderer/SectionOcclusionGraph$Node
+accessible method net/minecraft/client/renderer/SectionOcclusionGraph$Node <init> (Lnet/minecraft/client/renderer/chunk/SectionRenderDispatcher$RenderSection;Lnet/minecraft/core/Direction;I)V
 
 accessible field net/minecraft/client/renderer/texture/DynamicTexture pixels Lcom/mojang/blaze3d/platform/NativeImage;
 #Render system state
