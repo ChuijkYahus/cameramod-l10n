@@ -53,7 +53,7 @@ public class ViewFinderPeripheral implements IPeripheral {
 
     @LuaFunction
     public void setZoom(int zoom) {
-        byte power = (byte) Math.min(Math.max(zoom, 1), ViewFinderBlockEntity.MAX_ZOOM);
+        byte power = (byte) Math.clamp(zoom, 1, ViewFinderBlockEntity.MAX_ZOOM);
         this.tile.setZoomLevel(power);
         this.tile.syncToClients();
     }
