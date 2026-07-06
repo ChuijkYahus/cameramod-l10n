@@ -55,8 +55,9 @@ dependencies {
     modImplementation("io.github.douira:glsl-transformer:2.0.1")
     modCompileOnly("curse.maven:simple-clouds-1121215:6928979")
 
-    // Create contraption view-finder integration (platform impl: CreatePlatStuffImpl)
-    modCompileOnly("curse.maven:create-fabric-624165:7286603")
+    // Create contraption view-finder integration disabled on Fabric: Create Fabric has no build for this
+    // Minecraft version (latest release is for 1.20.1). See CompatHandler.CREATE.
+    //modCompileOnly("curse.maven:create-fabric-624165:7286603")
 
     // modImplementation("cc.tweaked-cobalt:cobalt:0.93")
 

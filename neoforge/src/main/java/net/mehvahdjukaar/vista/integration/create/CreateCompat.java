@@ -1,12 +1,16 @@
-package net.mehvahdjukaar.vista.integration.create.platform;
+package net.mehvahdjukaar.vista.integration.create;
 
 import com.simibubi.create.api.behaviour.interaction.MovingInteractionBehaviour;
 import com.simibubi.create.api.behaviour.movement.MovementBehaviour;
 import com.simibubi.create.content.contraptions.AbstractContraptionEntity;
 import com.simibubi.create.content.contraptions.Contraption;
 import com.simibubi.create.content.contraptions.behaviour.MovementContext;
+import net.mehvahdjukaar.moonlight.api.platform.RegHelper;
+import net.mehvahdjukaar.moonlight.api.platform.network.NetworkHelper;
+import net.mehvahdjukaar.vista.VistaMod;
+import net.mehvahdjukaar.vista.common.broadcast.BroadcastLocationType;
+import net.mehvahdjukaar.vista.common.broadcast.BroadcastManager;
 import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
-import net.mehvahdjukaar.vista.integration.create.CreateCompat;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -25,8 +29,67 @@ import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 import java.util.UUID;
+import java.util.function.Supplier;
 
-public class CreateCompatImpl {
+/**
+ * Create integration: lets view finders be controlled while mounted on trains and contraptions, and keeps their
+ * broadcast feed linked to TVs while riding a moving contraption.
+ *
+ * <p>NeoForge-only: Create has no Fabric build for this Minecraft version (latest Create Fabric release is for
+ * 1.20.1), so this whole integration - including the {@code contraption_location} broadcast type and its network
+ * packet - lives here instead of in common. See {@link net.mehvahdjukaar.vista.integration.CompatHandler#CREATE}.
+ */
+public class CreateCompat {
+
+    // registered unconditionally (like VistaMod's other registry entries) so the type/packet exist regardless
+    // of whether Create is actually installed; only CreateCompat#setup is gated behind CompatHandler.CREATE.
+    public static final Supplier<BroadcastLocationType> CONTRAPTION_BROADCAST =
+            RegHelper.register(VistaMod.res("contraption_location"),
+                    () -> ContraptionBroadcastLocation.TYPE, VistaMod.BROADCAST_LOCATION_REGISTRY.key());
+
+    public static void registerNetwork() {
+        NetworkHelper.addNetworkRegistration(
+                event -> event.registerBidirectional(SyncContraptionViewFinderPacket.CODEC), 2);
+    }
+
+    public static void setup() {
+        registerViewFinderBehaviours(VistaMod.VIEWFINDER.get());
+    }
+
+    /**
+     * Client-side callback from the contraption interaction behaviour: if the clicked block is a view finder,
+     * enter camera control. Returns whether the interaction was handled.
+     */
+    public static boolean onContraptionInteractClient(@Nullable BlockEntity be, Entity contraption, BlockPos localPos) {
+        if (be instanceof ViewFinderBlockEntity vf) {
+            CreateClientCompat.startControlling(vf, contraption, localPos);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Server-side callback from the movement behaviour: (re)register the view finder's feed while it moves.
+     */
+    public static void linkContraptionFeed(Level world, Entity contraption, BlockPos localPos,
+                                           @Nullable CompoundTag blockEntityData) {
+        if (world.isClientSide()) return;
+        if (blockEntityData == null || !blockEntityData.hasUUID("UUID")) return;
+        UUID feedId = blockEntityData.getUUID("UUID");
+        // linkFeed is a no-op when unchanged, so calling it every tick is cheap
+        BroadcastManager.getInstance(world).linkFeed(feedId,
+                new ContraptionBroadcastLocation(world.dimension(), contraption.getUUID(), localPos));
+    }
+
+    /**
+     * Server-side callback from the movement behaviour: drop the contraption feed link when it stops moving.
+     */
+    public static void unlinkContraptionFeed(Level world, Entity contraption, BlockPos localPos) {
+        if (world.isClientSide()) return;
+        // remove by value: if the block already re-registered a world location on disassembly, this is a no-op
+        BroadcastManager.getInstance(world).unlinkFeed(
+                new ContraptionBroadcastLocation(world.dimension(), contraption.getUUID(), localPos));
+    }
 
     public static void registerViewFinderBehaviours(Block viewFinder) {
         MovingInteractionBehaviour.REGISTRY.register(viewFinder, new MovingInteractionBehaviour() {
@@ -36,7 +99,7 @@ public class CreateCompatImpl {
                 // Create fires this on both sides; camera control is entered on the client only
                 if (contraptionEntity.level().isClientSide) {
                     BlockEntity be = contraptionEntity.getContraption().getBlockEntityClientSide(localPos);
-                    return CreateCompat.onContraptionInteractClient(be, contraptionEntity, localPos);
+                    return onContraptionInteractClient(be, contraptionEntity, localPos);
                 }
                 return true;
             }
@@ -56,12 +119,12 @@ public class CreateCompatImpl {
             @Override
             public void stopMoving(MovementContext ctx) {
                 AbstractContraptionEntity e = ctx.contraption.entity;
-                if (e != null) CreateCompat.unlinkContraptionFeed(ctx.world, e, ctx.localPos);
+                if (e != null) unlinkContraptionFeed(ctx.world, e, ctx.localPos);
             }
 
             private void link(MovementContext ctx) {
                 AbstractContraptionEntity e = ctx.contraption.entity;
-                if (e != null) CreateCompat.linkContraptionFeed(ctx.world, e, ctx.localPos, ctx.blockEntityData);
+                if (e != null) linkContraptionFeed(ctx.world, e, ctx.localPos, ctx.blockEntityData);
             }
         });
     }
@@ -108,6 +171,9 @@ public class CreateCompatImpl {
         return null;
     }
 
+    /**
+     * Bake a view finder's aim into the contraption's stored block NBT so it persists past the live render.
+     */
     public static void persistViewFinderAim(Entity contraption, BlockPos localPos, Quaternionf localRot,
                                             int zoom, boolean locked) {
         Contraption c = ((AbstractContraptionEntity) contraption).getContraption();
