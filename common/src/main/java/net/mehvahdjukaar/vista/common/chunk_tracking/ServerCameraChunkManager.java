@@ -20,6 +20,7 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.function.BiPredicate;
@@ -222,7 +223,10 @@ public class ServerCameraChunkManager {
 
         for (TVBlockEntity tv : candidates) {
             if (!visited.add(tv)) continue;
+            if (tv.isRemoved()) continue;
             BlockPos tvRealPos = BlockPos.containing(SableCompanion.INSTANCE.projectOutOfSubLevel(level,(Position) Vec3.atLowerCornerOf(tv.getBlockPos())));
+            // TV on a Sable sublevel whose projection no-ops (sublevel held/removed): stale, unreachable
+            if (SableCompanion.INSTANCE.isInPlotGrid(level, tvRealPos)) continue;
             ChunkPos tvChunk = new ChunkPos(tvRealPos);
             if (!inZone.test(tvChunk.x, tvChunk.z)) continue;
 
@@ -237,8 +241,11 @@ public class ServerCameraChunkManager {
             // stored position is the plot-grid storage coordinate. Force-loading/sending those plot
             // chunks fights Sable's plot lifecycle (shutdown hangs, chunks not loading). Resolve the
             // real-world chunk anchor where the sublevel logically is; Sable manages the sublevel's
-            // own chunks itself.
+            // own chunks itself. Null when the position cannot be resolved to a real-world chunk
+            // (held/removed sublevel with no cached anchor): skip entirely rather than let a
+            // plot-grid coordinate reach setChunkForced / the zone system.
             dest = normalizeGlobalPos(level, dest);
+            if (dest == null) continue;
 
             //TODO: send chunks even if outside of current dim.
             if (dest.dimension().equals(level.dimension())) {
@@ -275,7 +282,13 @@ public class ServerCameraChunkManager {
      * sublevel (a no-op outside one) and snap to chunk granularity (Y dropped) so sub-chunk movement
      * doesn't churn the desired-set or re-send packets. Everything downstream operates on
      * {@link ChunkPos}, so this loses nothing.
+     *
+     * <p>Returns null when the position lies in a Sable plot grid and the projection no-ops
+     * (the sublevel is held/unloaded or removed). Plot-grid coordinates must never reach
+     * {@code setChunkForced} or the zone system: vanilla tickets/holders in the plot grid fight
+     * Sable's injected PlotChunkHolders (shutdown drain loop never ends, chunks never load).
      */
+    @Nullable
     private static GlobalPos normalizeGlobalPos(ServerLevel playerLevel, GlobalPos dest) {
         // Project against the ViewFinder's OWN level (it may be cross-dimension).
         ServerLevel destLevel = dest.dimension().equals(playerLevel.dimension())
@@ -284,6 +297,7 @@ public class ServerCameraChunkManager {
         if (destLevel == null) return dest;
         Vec3 world = SableCompanion.INSTANCE.projectOutOfSubLevel(
                 destLevel, (Position) Vec3.atLowerCornerOf(dest.pos()));
+        if (SableCompanion.INSTANCE.isInPlotGrid(destLevel, (Position) world)) return null;
         ChunkPos chunk = new ChunkPos(BlockPos.containing(world));
         return GlobalPos.of(dest.dimension(), chunk.getWorldPosition());
     }
