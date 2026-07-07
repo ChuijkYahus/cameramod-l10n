@@ -36,6 +36,7 @@ dependencies {
     //modCompileOnly("maven.modrinth:entityculling:1.10.1-1.21.1+-+NeoForge")
     //modCompileOnly "curse.maven:entityculling-448233:7900085"
     modCompileOnly("curse.maven:jei-238222:7420587")
+    modCompileOnly("maven.modrinth:jade:15.10.5+neoforge")
     //modCompileOnly("curse.maven:irisshaders-455508:6213635")
     modCompileOnly("curse.maven:sodium-394468:6382651")
     //due to geckolib state machine nonsense

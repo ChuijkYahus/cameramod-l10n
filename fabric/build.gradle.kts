@@ -37,6 +37,7 @@ dependencies {
     modCompileOnly("curse.maven:sodium-394468:6382649")
     modCompileOnly("curse.maven:cc-tweaked-282001:5714511")
     modCompileOnly("curse.maven:jei-238222:7420583")
+    modRuntimeOnly("maven.modrinth:jade:15.10.5+fabric")
     modCompileOnly("com.terraformersmc:modmenu:4.0.6")
     modCompileOnly("maven.modrinth:flashback:0.32.0")
     modCompileOnly("curse.maven:geckolib-388172:7707138")
