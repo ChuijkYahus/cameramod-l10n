@@ -1,5 +1,6 @@
 package net.mehvahdjukaar.vista.integration;
 
+import net.mehvahdjukaar.candlelight.api.PlatformImpl;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.platform.RegHelper;
 import net.mehvahdjukaar.moonlight.api.platform.configs.ConfigBuilder;
@@ -54,14 +55,25 @@ public class CompatHandler {
     }
 
     public static void init() {
+        initPlat();
         if (EXPOSURE) ExposureCompat.init();
         if (COMPUTER_CRAFT) CCCompat.init();
         PlatHelper.addCommonSetup(() -> {
             if (COMPUTER_CRAFT) CCCompat.setup();
             if (PlatHelper.getPhysicalSide().isClient() && WATERMEDIA) WatermediaSession.initHack();
+            setupPlat();
         });
     }
 
+    @PlatformImpl
+    public static void initPlat() {
+        throw new AssertionError();
+    }
+
+    @PlatformImpl
+    public static void setupPlat() {
+        throw new AssertionError();
+    }
 
     public static void addItemsToTabs(RegHelper.ItemToTabEvent event) {
     }

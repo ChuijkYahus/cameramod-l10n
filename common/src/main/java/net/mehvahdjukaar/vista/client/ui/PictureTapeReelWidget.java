@@ -25,8 +25,8 @@ public class PictureTapeReelWidget extends AbstractWidget {
     // reel sprite size
     private static final int REEL_W = 40;
     private static final int REEL_H = 52;
-    // spacing between reels and padding at the strip ends
-    private static final int GAP = 4;
+    // reels butt together into a continuous film strip; only the strip ends are padded
+    private static final int GAP = 0;
     private static final int PAD = 2;
     private static final int CELL = REEL_W + GAP;                 // stride between reels
     // transparent window inside the foreground where the map image shows through

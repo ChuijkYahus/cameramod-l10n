@@ -15,8 +15,8 @@ public class CCCompatImpl {
 
     protected static final BlockCapability<ViewFinderPeripheral, Direction> VIEW_FINDER_CAP =
             BlockCapability.createSided(VistaMod.res("view_finder"), ViewFinderPeripheral.class);
-    protected static final BlockCapability<WaveGatePeripheral, Direction> CASSETTE_BURNER_CAP =
-            BlockCapability.createSided(VistaMod.res("cassette_burner"), WaveGatePeripheral.class);
+    protected static final BlockCapability<WaveGatePeripheral, Direction> WAVE_GATE_CAP =
+            BlockCapability.createSided(VistaMod.res("wave_gate"), WaveGatePeripheral.class);
 
 
     public static void init() {
@@ -25,12 +25,13 @@ public class CCCompatImpl {
 
     public static void setup() {
         ForgeComputerCraftAPI.registerGenericCapability(VIEW_FINDER_CAP);
+        ForgeComputerCraftAPI.registerGenericCapability(WAVE_GATE_CAP);
     }
 
     public static void registerCap(RegisterCapabilitiesEvent event) {
         event.registerBlockEntity(VIEW_FINDER_CAP, VistaMod.VIEWFINDER_TILE.get(),
                 (tile, object2) -> new ViewFinderPeripheral(tile));
-        event.registerBlockEntity(CASSETTE_BURNER_CAP, VistaMod.WAVE_GATE_TILE.get(),
+        event.registerBlockEntity(WAVE_GATE_CAP, VistaMod.WAVE_GATE_TILE.get(),
                 (tile, object2) -> new WaveGatePeripheral(tile));
     }
 

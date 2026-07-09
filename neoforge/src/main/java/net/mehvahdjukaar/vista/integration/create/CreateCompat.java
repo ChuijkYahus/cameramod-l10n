@@ -47,7 +47,7 @@ public class CreateCompat {
             RegHelper.register(VistaMod.res("contraption_location"),
                     () -> ContraptionBroadcastLocation.TYPE, VistaMod.BROADCAST_LOCATION_REGISTRY.key());
 
-    public static void registerNetwork() {
+    public static void init() {
         NetworkHelper.addNetworkRegistration(
                 event -> event.registerBidirectional(SyncContraptionViewFinderPacket.CODEC), 2);
     }

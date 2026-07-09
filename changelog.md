@@ -1,2 +1,1 @@
-- more improvement to sable compat
-- fixed a fabric crash
+- fixed some bugs

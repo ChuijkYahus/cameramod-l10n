@@ -222,7 +222,6 @@ public class ViewFinderController {
         Player player = Minecraft.getInstance().player;
         if (player == null) return;
         setupPostShaders();
-
         if (!isActive()) return;
         if (viewFinder.stillValid(player)) {
             //keep setting zoom so we avoid jitter
