@@ -47,8 +47,8 @@ public class FeedConnectionDebugRenderer implements DebugRenderer.SimpleDebugRen
             IBroadcastLocation loc = p.getValue();
             GlobalPos from;
             //TODO: render others too
-            if (loc instanceof LevelBEBroadcastLocation(GlobalPos globalPos)) {
-                from = globalPos;
+            if (loc instanceof LevelBEBroadcastLocation beLoc) {
+                from = beLoc.globalPos();
             } else {
                 continue;
             }

@@ -1,8 +1,6 @@
 package net.mehvahdjukaar.vista.mixins;
 
-import com.mojang.logging.LogUtils;
 import net.mehvahdjukaar.vista.VistaModClient;
-import net.mehvahdjukaar.vista.client.ClientChunkStuffHelper;
 import net.mehvahdjukaar.vista.common.chunk_tracking.ILevelRendererExt;
 import net.mehvahdjukaar.vista.common.chunk_tracking.IPinnableRenderSection;
 import net.mehvahdjukaar.vista.common.chunk_tracking.IViewAreaExt;
@@ -11,7 +9,6 @@ import net.minecraft.client.renderer.chunk.SectionRenderDispatcher;
 import net.minecraft.core.SectionPos;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
-import org.slf4j.Logger;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -27,9 +24,6 @@ import java.util.Set;
 
 @Mixin(ViewArea.class)
 public class ViewAreaMixin implements IViewAreaExt {
-
-    @Unique
-    private static final Logger VISTA_LOGGER = LogUtils.getLogger();
 
     @Final
     @Shadow protected Level level;
@@ -132,18 +126,15 @@ public class ViewAreaMixin implements IViewAreaExt {
             for (int yIndex = 0; yIndex < this.sectionGridSizeY; yIndex++) {
                 int newIndex = base + slotOffset;
                 int yOrigin = this.level.getMinBuildHeight() + yIndex * 16;
-                SectionRenderDispatcher.RenderSection section = ClientChunkStuffHelper.createRenderSection(dispatcher, newIndex, blockX, yOrigin, blockZ);
-                if (section == null) {
-                    VISTA_LOGGER.error("Failed to create pinned RenderSection at ({}, {}, {})", blockX, yOrigin, blockZ);
-                } else {
-                    extended[newIndex] = section;
-                    if (section instanceof IPinnableRenderSection ps) {
-                        ps.vista$setPinned(true);
-                    }
-                    this.vista$pinnedBySection.put(
-                            SectionPos.asLong(chunkPos.x, SectionPos.blockToSectionCoord(yOrigin), chunkPos.z),
-                            section);
+                // RenderSection is a non-static inner class with a public constructor.
+                SectionRenderDispatcher.RenderSection section = dispatcher.new RenderSection(newIndex, blockX, yOrigin, blockZ);
+                extended[newIndex] = section;
+                if (section instanceof IPinnableRenderSection ps) {
+                    ps.vista$setPinned(true);
                 }
+                this.vista$pinnedBySection.put(
+                        SectionPos.asLong(chunkPos.x, SectionPos.blockToSectionCoord(yOrigin), chunkPos.z),
+                        section);
                 slotOffset++;
             }
         }

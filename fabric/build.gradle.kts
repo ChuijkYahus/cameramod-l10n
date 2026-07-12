@@ -37,6 +37,7 @@ dependencies {
     modCompileOnly("curse.maven:sodium-394468:6382649")
     modCompileOnly("curse.maven:cc-tweaked-282001:5714511")
     modCompileOnly("curse.maven:jei-238222:7420583")
+    modRuntimeOnly("maven.modrinth:jade:15.10.5+fabric")
     modCompileOnly("com.terraformersmc:modmenu:4.0.6")
     modCompileOnly("maven.modrinth:flashback:0.32.0")
     modCompileOnly("curse.maven:geckolib-388172:7707138")
@@ -55,8 +56,9 @@ dependencies {
     modImplementation("io.github.douira:glsl-transformer:2.0.1")
     modCompileOnly("curse.maven:simple-clouds-1121215:6928979")
 
-    // Create contraption view-finder integration (platform impl: CreatePlatStuffImpl)
-    modCompileOnly("curse.maven:create-fabric-624165:7286603")
+    // Create contraption view-finder integration disabled on Fabric: Create Fabric has no build for this
+    // Minecraft version (latest release is for 1.20.1). See CompatHandler.CREATE.
+    //modCompileOnly("curse.maven:create-fabric-624165:7286603")
 
     // modImplementation("cc.tweaked-cobalt:cobalt:0.93")
 

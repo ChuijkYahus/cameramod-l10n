@@ -3,6 +3,8 @@ package net.mehvahdjukaar.vista.client.renderer;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
+import dev.ryanhcode.sable.companion.ClientSubLevelAccess;
+import dev.ryanhcode.sable.companion.SableCompanion;
 import net.mehvahdjukaar.candlelight.api.VirtualOverride;
 import net.mehvahdjukaar.moonlight.api.client.util.LOD;
 import net.mehvahdjukaar.moonlight.api.client.util.VertexUtil;
@@ -71,19 +73,30 @@ public class MirrorBlockEntityRenderer implements BlockEntityRenderer<MirrorBloc
         Direction dir = blockEntity.getBlockState().getValue(MirrorBlock.FACING);
         double recession = MirrorBlock.surfaceRecession(blockEntity.getBlockState());
 
+        // Mirror on a Sable sublevel (a "ship"): its block position is a plot-grid coordinate.
+        // Vista's nested renders drive their cameras in plot space for plot block entities (same
+        // as the view finder feed camera), so ALL reflection math must see the viewer's eye in
+        // that space too — mixing spaces reflects the eye across a plane thousands of blocks
+        // away and the reflection renders nothing but sky.
+        ClientSubLevelAccess subLevel = SableCompanion.INSTANCE.getContainingClient(blockEntity);
+
         // Cull against the actual mirror surface plane, recessed into the cell for the FAR model.
         // Using a fixed 0.5 (front face) here would cull the recessed quad early once the viewer
         // gets close enough to cross the front face but not the recessed surface.
+        // Skipped for sublevel mirrors: LOD works in main-camera world space, meaningless against
+        // a plot-space plane — the viewerInFront() gate below covers back-side culling there.
         LOD lod = LOD.at(blockEntity);
-        if (lod.isPlaneCulled(dir, (float) (0.5 - recession), 1.5f, 0f)) return;
+        if (subLevel == null && lod.isPlaneCulled(dir, (float) (0.5 - recession), 1.5f, 0f)) return;
 
         Vec3 normal = Vec3.atLowerCornerOf(dir.getNormal());
         Vec3 planePoint = Vec3.atCenterOf(blockEntity.getBlockPos()).add(normal.scale(0.5 - recession));
 
         Minecraft mc = Minecraft.getInstance();
         Camera mainCamera = mc.gameRenderer.mainCamera;
-        MirrorReflection reflection = MirrorReflection.compute(
-                planePoint, normal, mainCamera.getPosition());
+        Vec3 eyeLocal = subLevel == null
+                ? mainCamera.getPosition()
+                : subLevel.renderPose(partialTick).transformPositionInverse(mainCamera.getPosition());
+        MirrorReflection reflection = MirrorReflection.compute(planePoint, normal, eyeLocal);
         if (!reflection.viewerInFront()) return;
 
         int depth = VistaLevelRenderer.getCurrentDepth();
@@ -100,12 +113,19 @@ public class MirrorBlockEntityRenderer implements BlockEntityRenderer<MirrorBloc
             // scene wobbles against the surface as you walk. The offset is read off the bob matrix
             // the game built, so no bob math is duplicated and mod-altered bob still works.
             Vec3 eye = mainCamera.getPosition().add(VistaLevelRenderer.getMainBobEyeOffset());
+            // Sublevel mirrors: transform the bobbed eye into plot space (position AND bob offset
+            // get rotated by the inverse ship pose in one go).
+            if (subLevel != null) eye = subLevel.renderPose(partialTick).transformPositionInverse(eye);
             // depth 0 means this BE pass runs under the main camera, so the LOD computed at the top
             // of render() is the player's real distance to the mirror — use it to pick the texture tier.
-            text = MirrorTextureManager.getMirrorTexture(blockEntity, screenSize, eye,
-                    MirrorTextureManager.distanceLod(lod));
+            // For sublevel mirrors that LOD is meaningless (world-space camera vs plot-space BE), so
+            // measure from the plot-space eye instead.
+            int texLod = subLevel == null
+                    ? MirrorTextureManager.distanceLod(lod)
+                    : MirrorTextureManager.distanceLod(eyeLocal, blockEntity.getBlockPos());
+            text = MirrorTextureManager.getMirrorTexture(blockEntity, screenSize, eye, texLod);
         } else {
-            text = resolveNestedTexture(blockEntity, mainCamera.getPosition(), depth);
+            text = resolveNestedTexture(blockEntity, eyeLocal, depth);
         }
 
         if (text == null) return;

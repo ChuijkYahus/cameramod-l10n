@@ -1,12 +1,16 @@
 package net.mehvahdjukaar.vista.client.textures;
 
+import dev.ryanhcode.sable.companion.ClientSubLevelAccess;
+import dev.ryanhcode.sable.companion.SableCompanion;
 import net.mehvahdjukaar.moonlight.api.client.texture_renderer.DynamicTextureRenderer;
 import net.mehvahdjukaar.moonlight.api.client.util.LOD;
 import net.mehvahdjukaar.moonlight.api.util.math.Vec2i;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.common.mirror.MirrorBlockEntity;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
+import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
+import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
@@ -56,9 +60,28 @@ public class MirrorTextureManager {
     /**
      * Same as {@link #distanceLod(LOD)} but always measured from the main camera, for use from
      * inside a nested reflection render where the block-entity dispatcher camera is the reflected one.
+     * Sublevel-aware: for a mirror riding a Sable ship the main camera is transformed into the
+     * ship's plot space first (world-camera-to-plot-position distance is meaningless).
      */
     public static int distanceLod(MirrorBlockEntity mirror) {
-        return distanceLod(LOD.at(Minecraft.getInstance().gameRenderer.mainCamera, mirror.getBlockPos()));
+        Camera camera = Minecraft.getInstance().gameRenderer.mainCamera;
+        ClientSubLevelAccess subLevel = SableCompanion.INSTANCE.getContainingClient(mirror);
+        if (subLevel != null) {
+            return distanceLod(subLevel.renderPose().transformPositionInverse(camera.getPosition()),
+                    mirror.getBlockPos());
+        }
+        return distanceLod(LOD.at(camera, mirror.getBlockPos()));
+    }
+
+    /**
+     * {@link #distanceLod(LOD)} measured from an explicit eye position (already in the mirror's own
+     * space — for sublevel mirrors that's the plot space the reflection math runs in).
+     */
+    public static int distanceLod(Vec3 eye, BlockPos mirrorPos) {
+        double distSq = eye.distanceToSqr(Vec3.atCenterOf(mirrorPos));
+        if (distSq <= 24 * 24) return 0;
+        if (distSq <= 40 * 40) return 1;
+        return 2;
     }
 
     private static String chainKey(UUID self, List<UUID> parentChain) {

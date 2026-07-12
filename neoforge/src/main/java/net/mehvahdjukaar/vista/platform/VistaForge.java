@@ -35,6 +35,7 @@ public class VistaForge {
     public VistaForge(IEventBus bus) {
         modBus = new WeakReference<>(bus);
         VistaMod.init();
+        CreateCompat.registerNetwork();
         bus.addListener(this::registerCapabilities);
         bus.addListener(this::onCommonSetup);
         NeoForge.EVENT_BUS.register(this);

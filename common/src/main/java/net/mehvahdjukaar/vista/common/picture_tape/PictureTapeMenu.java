@@ -32,7 +32,7 @@ public class PictureTapeMenu extends AbstractContainerMenu {
 
     // player inventory geometry, shared with the screen so the two agree
     public static final int INV_X = 8;
-    public static final int INV_TOP = 88;
+    public static final int INV_TOP = 99;
     public static final int HOTBAR_Y = INV_TOP + 58;
 
     private final int tapeSlot;

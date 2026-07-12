@@ -1,48 +1,58 @@
 package net.mehvahdjukaar.vista.client.ui;
 
+import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.common.picture_tape.PictureTapeMenu;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.AbstractSliderButton;
+import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * Gallery screen for the picture tape: a horizontally scrolling strip of maps above the standard
- * player inventory. Maps render as their actual image, the trailing outlined cell is where new
- * maps get dropped/shift-clicked in, and clicking a map takes it back out.
+ * Gallery screen for the picture tape. A horizontally scrolling film strip of maps ({@link
+ * PictureTapeReelWidget}) sits above the player inventory, driven by a loom-style scrollbar along
+ * the top and a vertical playback-speed slider down the right side. Everything is laid out over the
+ * {@code picture_tape.png} background; all pixel positions live in static fields.
  */
 public class PictureTapeScreen extends AbstractContainerScreen<PictureTapeMenu> {
 
-    // strip geometry (relative to leftPos/topPos)
-    private static final int VIEW_X = 8;
-    private static final int VIEW_Y = 18;
-    private static final int VIEW_W = 160;
-    private static final int VIEW_H = 48;
-    private static final int MAP_SIZE = 40;
-    private static final int GAP = 6;
-    private static final int PAD = 4;                          // padding before the first cell
-    private static final int CELL = MAP_SIZE + GAP;            // stride between cells
-    private static final int MAP_TOP = VIEW_Y + (VIEW_H - MAP_SIZE) / 2;
+    private static final ResourceLocation BACKGROUND = VistaMod.res("textures/gui/picture_tape.png");
+    private static final ResourceLocation SCROLLER = VistaMod.res("picture_tape/scroller");
+    private static final ResourceLocation SCROLLER_DISABLED = VistaMod.res("picture_tape/scroller_disabled");
+    private static final ResourceLocation SPEED_HANDLE = VistaMod.res("picture_tape/scroller_speed");
+    private static final ResourceLocation SPEED_HANDLE_DISABLED = VistaMod.res("picture_tape/scroller_speed_disabled");
 
-    private static final int SB_X = VIEW_X;
-    private static final int SB_Y = VIEW_Y + VIEW_H + 2;
-    private static final int SB_W = VIEW_W;
-    private static final int SB_H = 6;
+    private static final int IMAGE_W = 176;
+    private static final int IMAGE_H = 181;
 
-    // vanilla inventory palette
-    private static final int PANEL = 0xFFC6C6C6;
-    private static final int BEVEL_LIGHT = 0xFFFFFFFF;
-    private static final int BEVEL_DARK = 0xFF555555;
-    private static final int SLOT_BG = 0xFF8B8B8B;
-    private static final int RECESS = 0xFF373737;
-    private static final int OUTLINE = 0xFF777777;
+    // scrolling reel strip (relative to leftPos/topPos)
+    private static final int REEL_VIEW_X = 8;
+    private static final int REEL_VIEW_Y = 32;
+    private static final int REEL_VIEW_W = 135;
+    private static final int REEL_VIEW_H = 52;
 
-    private double scrollOffset = 0;
-    private boolean draggingScrollbar = false;
+    // horizontal scrollbar track above the strip; handle is scroller.png (15x12)
+    private static final int HBAR_X = 8;
+    private static final int HBAR_Y = 17;
+    private static final int HBAR_W = 135;
+    private static final int HBAR_H = 12;
+    private static final int HBAR_HANDLE_W = 15;
+    private static final int HBAR_HANDLE_H = 12;
+
+    // vertical speed slider track on the right; handle is scroller_speed.png (19x12)
+    private static final int SPEED_X = 149;
+    private static final int SPEED_Y = 17;
+    private static final int SPEED_W = 19;
+    private static final int SPEED_H = 67;
+    private static final int SPEED_HANDLE_W = 19;
+    private static final int SPEED_HANDLE_H = 12;
+
+    private PictureTapeReelWidget reelStrip;
     private int lastSentSpeed;
 
     public PictureTapeScreen(PictureTapeMenu menu, Inventory playerInventory, Component title) {
@@ -51,51 +61,29 @@ public class PictureTapeScreen extends AbstractContainerScreen<PictureTapeMenu> 
 
     @Override
     protected void init() {
-        this.imageWidth = 176;
-        this.imageHeight = 171;
+        this.imageWidth = IMAGE_W;
+        this.imageHeight = IMAGE_H;
         super.init();
-        this.titleLabelX = VIEW_X;
+        this.titleLabelX = REEL_VIEW_X;
         this.titleLabelY = 6;
         this.inventoryLabelX = PictureTapeMenu.INV_X;
         this.inventoryLabelY = PictureTapeMenu.INV_TOP - 11;
 
-        // tiny playback-speed slider next to the title
+        this.reelStrip = addRenderableWidget(new PictureTapeReelWidget(
+                leftPos + REEL_VIEW_X, topPos + REEL_VIEW_Y, REEL_VIEW_W, REEL_VIEW_H,
+                getMenu(), this::onCellClicked));
+        addRenderableWidget(new HorizontalScrollBar(
+                leftPos + HBAR_X, topPos + HBAR_Y, HBAR_W, HBAR_H));
+
         this.lastSentSpeed = getMenu().getPlaySpeed();
-        int sliderW = 64, sliderH = 12;
-        addRenderableWidget(new SpeedSlider(leftPos + imageWidth - 8 - sliderW, topPos + 4, sliderW, sliderH,
-                getMenu().getPlaySpeed()));
+        addRenderableWidget(new SpeedSlider(
+                leftPos + SPEED_X, topPos + SPEED_Y, SPEED_W, SPEED_H, getMenu().getPlaySpeed()));
     }
 
-    // ---- geometry helpers ----
-
-    private int contentWidth() {
-        int cells = getMenu().getVisibleCells();
-        return cells * CELL - GAP + PAD * 2;
-    }
-
-    private int maxScroll() {
-        return Math.max(0, contentWidth() - VIEW_W);
-    }
-
-    private int handleWidth() {
-        int content = contentWidth();
-        if (content <= VIEW_W) return SB_W;
-        return Math.max(16, (int) ((long) SB_W * VIEW_W / content));
-    }
-
-    // returns the cell (== map slot index) under the mouse, or -1
-    private int cellAt(double mouseX, double mouseY) {
-        int vx = leftPos + VIEW_X, vy = topPos + VIEW_Y;
-        if (mouseX < vx || mouseX >= vx + VIEW_W || mouseY < vy || mouseY >= vy + VIEW_H) return -1;
-        int cy = topPos + MAP_TOP;
-        int cells = getMenu().getVisibleCells();
-        for (int i = 0; i < cells; i++) {
-            int cx = vx + PAD + i * CELL - (int) scrollOffset;
-            if (mouseX >= cx && mouseX < cx + MAP_SIZE && mouseY >= cy && mouseY < cy + MAP_SIZE) {
-                return i;
-            }
-        }
-        return -1;
+    private void onCellClicked(int cell, int button, boolean shift) {
+        ClickType type = shift ? ClickType.QUICK_MOVE : ClickType.PICKUP;
+        this.minecraft.gameMode.handleInventoryMouseClick(
+                getMenu().containerId, cell, button, type, this.minecraft.player);
     }
 
     // ---- rendering ----
@@ -103,170 +91,18 @@ public class PictureTapeScreen extends AbstractContainerScreen<PictureTapeMenu> 
     @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
         super.render(g, mouseX, mouseY, partialTick);
-        int cell = cellAt(mouseX, mouseY);
-        if (cell >= 0 && cell < getMenu().getFilledCount()) {
-            ItemStack s = getMenu().getTapeContent().getItem(cell);
-            if (!s.isEmpty()) {
-                g.renderTooltip(this.font, s, mouseX, mouseY);
-                return;
-            }
+        int cell = reelStrip.cellAt(mouseX, mouseY);
+        ItemStack hovered = reelStrip.itemAt(cell);
+        if (!hovered.isEmpty()) {
+            g.renderTooltip(this.font, hovered, mouseX, mouseY);
+            return;
         }
         this.renderTooltip(g, mouseX, mouseY);
     }
 
     @Override
     protected void renderBg(GuiGraphics g, float partialTick, int mouseX, int mouseY) {
-        int l = leftPos, t = topPos, r = leftPos + imageWidth, b = topPos + imageHeight;
-
-        // window panel
-        g.fill(l, t, r, b, PANEL);
-        g.fill(l, t, r, t + 1, BEVEL_LIGHT);
-        g.fill(l, t, l + 1, b, BEVEL_LIGHT);
-        g.fill(r - 1, t, r, b, BEVEL_DARK);
-        g.fill(l, b - 1, r, b, BEVEL_DARK);
-
-        // strip recess
-        int vx = leftPos + VIEW_X, vy = topPos + VIEW_Y;
-        g.fill(vx, vy, vx + VIEW_W, vy + VIEW_H, RECESS);
-        g.fill(vx, vy, vx + VIEW_W, vy + 1, BEVEL_DARK);
-        g.fill(vx, vy, vx + 1, vy + VIEW_H, BEVEL_DARK);
-        g.fill(vx + VIEW_W - 1, vy, vx + VIEW_W, vy + VIEW_H, BEVEL_LIGHT);
-        g.fill(vx, vy + VIEW_H - 1, vx + VIEW_W, vy + VIEW_H, BEVEL_LIGHT);
-
-        // player inventory slot backgrounds
-        for (int row = 0; row < 3; row++) {
-            for (int col = 0; col < 9; col++) {
-                drawSlotBg(g, leftPos + PictureTapeMenu.INV_X + col * 18, topPos + PictureTapeMenu.INV_TOP + row * 18);
-            }
-        }
-        for (int col = 0; col < 9; col++) {
-            drawSlotBg(g, leftPos + PictureTapeMenu.INV_X + col * 18, topPos + PictureTapeMenu.HOTBAR_Y);
-        }
-
-        renderStrip(g, mouseX, mouseY);
-        renderScrollbar(g);
-    }
-
-    private void renderStrip(GuiGraphics g, int mouseX, int mouseY) {
-        int vx = leftPos + VIEW_X, vy = topPos + VIEW_Y;
-        int cy = topPos + MAP_TOP;
-        int filled = getMenu().getFilledCount();
-        int cells = getMenu().getVisibleCells();
-        int hovered = cellAt(mouseX, mouseY);
-
-        g.enableScissor(vx, vy, vx + VIEW_W, vy + VIEW_H);
-        for (int i = 0; i < cells; i++) {
-            int cx = vx + PAD + i * CELL - (int) scrollOffset;
-            if (cx + MAP_SIZE < vx || cx > vx + VIEW_W) continue;
-            if (i < filled) {
-                drawEntry(g, getMenu().getTapeContent().getItem(i), cx, cy);
-            } else {
-                drawAddCell(g, cx, cy);
-            }
-            if (i == hovered) {
-                g.fill(cx, cy, cx + MAP_SIZE, cy + MAP_SIZE, 0x33FFFFFF);
-            }
-        }
-        g.disableScissor();
-    }
-
-    private void drawEntry(GuiGraphics g, ItemStack stack, int x, int y) {
-        if (stack.isEmpty()) return;
-        // dark frame around the thumbnail
-        g.fill(x - 1, y - 1, x + MAP_SIZE + 1, y + MAP_SIZE + 1, 0xFF000000);
-        PictureTapeRenderers.render(g, stack, x, y, MAP_SIZE);
-    }
-
-    private void drawAddCell(GuiGraphics g, int x, int y) {
-        g.renderOutline(x, y, MAP_SIZE, MAP_SIZE, 0xFF4A4A4A);
-        g.renderOutline(x + 1, y + 1, MAP_SIZE - 2, MAP_SIZE - 2, 0x66FFFFFF);
-        int cx = x + MAP_SIZE / 2;
-        int cy = y + MAP_SIZE / 2;
-        g.fill(cx - 8, cy - 1, cx + 8, cy + 1, OUTLINE);
-        g.fill(cx - 1, cy - 8, cx + 1, cy + 8, OUTLINE);
-    }
-
-    private void renderScrollbar(GuiGraphics g) {
-        if (maxScroll() <= 0) return;
-        int sx = leftPos + SB_X, sy = topPos + SB_Y;
-        g.fill(sx, sy, sx + SB_W, sy + SB_H, RECESS);
-
-        int handleW = handleWidth();
-        int handleX = sx + (int) (scrollOffset / maxScroll() * (SB_W - handleW));
-        g.fill(handleX, sy, handleX + handleW, sy + SB_H, 0xFFAAAAAA);
-        g.fill(handleX, sy, handleX + handleW, sy + 1, BEVEL_LIGHT);
-        g.fill(handleX, sy, handleX + 1, sy + SB_H, BEVEL_LIGHT);
-        g.fill(handleX + handleW - 1, sy, handleX + handleW, sy + SB_H, BEVEL_DARK);
-        g.fill(handleX, sy + SB_H - 1, handleX + handleW, sy + SB_H, BEVEL_DARK);
-    }
-
-    private void drawSlotBg(GuiGraphics g, int x, int y) {
-        g.fill(x, y, x + 16, y + 16, SLOT_BG);
-        g.fill(x - 1, y - 1, x + 16, y, RECESS);
-        g.fill(x - 1, y - 1, x, y + 16, RECESS);
-        g.fill(x + 16, y, x + 17, y + 17, BEVEL_LIGHT);
-        g.fill(x - 1, y + 16, x + 17, y + 17, BEVEL_LIGHT);
-    }
-
-    // ---- input ----
-
-    @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
-        int max = maxScroll();
-        if (max > 0) {
-            scrollOffset = Mth.clamp(scrollOffset - scrollY * (CELL / 2.0), 0, max);
-            return true;
-        }
-        return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
-    }
-
-    @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (maxScroll() > 0 && isOverScrollbar(mouseX, mouseY)) {
-            draggingScrollbar = true;
-            dragScrollbar(mouseX);
-            return true;
-        }
-        int cell = cellAt(mouseX, mouseY);
-        if (cell >= 0) {
-            ClickType type = hasShiftDown() ? ClickType.QUICK_MOVE : ClickType.PICKUP;
-            this.minecraft.gameMode.handleInventoryMouseClick(
-                    getMenu().containerId, cell, button, type, this.minecraft.player);
-            return true;
-        }
-        return super.mouseClicked(mouseX, mouseY, button);
-    }
-
-    @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
-        if (draggingScrollbar) {
-            dragScrollbar(mouseX);
-            return true;
-        }
-        return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
-    }
-
-    @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int button) {
-        draggingScrollbar = false;
-        return super.mouseReleased(mouseX, mouseY, button);
-    }
-
-    private boolean isOverScrollbar(double mouseX, double mouseY) {
-        int sx = leftPos + SB_X, sy = topPos + SB_Y;
-        return mouseX >= sx && mouseX < sx + SB_W && mouseY >= sy && mouseY < sy + SB_H;
-    }
-
-    private void dragScrollbar(double mouseX) {
-        int max = maxScroll();
-        if (max <= 0) {
-            scrollOffset = 0;
-            return;
-        }
-        int sx = leftPos + SB_X;
-        int handleW = handleWidth();
-        double t = (mouseX - sx - handleW / 2.0) / (SB_W - handleW);
-        scrollOffset = Mth.clamp(t, 0, 1) * max;
+        g.blit(BACKGROUND, leftPos, topPos, 0, 0, imageWidth, imageHeight);
     }
 
     private static double speedToValue(int speed) {
@@ -274,19 +110,85 @@ public class PictureTapeScreen extends AbstractContainerScreen<PictureTapeMenu> 
         return (clamped - PictureTapeMenu.MIN_SPEED) / (double) (PictureTapeMenu.MAX_SPEED - PictureTapeMenu.MIN_SPEED);
     }
 
-    private class SpeedSlider extends AbstractSliderButton {
+    // ---- horizontal scrollbar (loom style) ----
+
+    private class HorizontalScrollBar extends AbstractWidget {
+        HorizontalScrollBar(int x, int y, int width, int height) {
+            super(x, y, width, height, Component.empty());
+        }
+
+        @Override
+        protected void renderWidget(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
+            boolean can = reelStrip.canScroll();
+            int handleX = getX() + (int) (reelStrip.getScrollFraction() * (width - HBAR_HANDLE_W));
+            int handleY = getY() + (height - HBAR_HANDLE_H) / 2;
+            g.blitSprite(can ? SCROLLER : SCROLLER_DISABLED, handleX, handleY, HBAR_HANDLE_W, HBAR_HANDLE_H);
+        }
+
+        private void seek(double mouseX) {
+            double fraction = (mouseX - getX() - HBAR_HANDLE_W / 2.0) / (width - HBAR_HANDLE_W);
+            reelStrip.setScrollFraction(Mth.clamp(fraction, 0, 1));
+        }
+
+        @Override
+        public boolean mouseClicked(double mouseX, double mouseY, int button) {
+            if (reelStrip.canScroll() && isMouseOver(mouseX, mouseY)) {
+                seek(mouseX);
+                return true;
+            }
+            return false;
+        }
+
+        @Override
+        protected void onDrag(double mouseX, double mouseY, double dragX, double dragY) {
+            seek(mouseX);
+        }
+
+        @Override
+        public void onClick(double mouseX, double mouseY) {
+        }
+
+        @Override
+        protected void updateWidgetNarration(NarrationElementOutput narration) {
+        }
+    }
+
+    // ---- vertical playback-speed slider ----
+
+    private class SpeedSlider extends AbstractWidget {
+        private static final int TEXT_COLOR = 0xFF404040;
+        private double value;
+
         SpeedSlider(int x, int y, int width, int height, int initialSpeed) {
-            super(x, y, width, height, Component.empty(), speedToValue(initialSpeed));
-            updateMessage();
+            super(x, y, width, height, Component.empty());
+            this.value = speedToValue(initialSpeed);
+        }
+
+        private int speedTicks() {
+            return (int) Math.round(Mth.lerp(value, PictureTapeMenu.MIN_SPEED, PictureTapeMenu.MAX_SPEED));
         }
 
         @Override
-        protected void updateMessage() {
-            setMessage(Component.translatable("gui.vista.picture_tape.speed", speedTicks()));
+        protected void renderWidget(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
+            int range = height - SPEED_HANDLE_H;
+            int handleX = getX() + (width - SPEED_HANDLE_W) / 2;
+            int handleY = getY() + (int) ((1 - value) * range);
+            g.blitSprite(SPEED_HANDLE, handleX, handleY, SPEED_HANDLE_W, SPEED_HANDLE_H);
+
+            String text = String.valueOf(speedTicks());
+            int tx = handleX + (SPEED_HANDLE_W - font.width(text)) / 2;
+            int ty = handleY + (SPEED_HANDLE_H - font.lineHeight) / 2 + 1;
+            g.drawString(font, text, tx, ty, TEXT_COLOR, false);
         }
 
-        @Override
-        protected void applyValue() {
+        private void seek(double mouseY) {
+            int range = height - SPEED_HANDLE_H;
+            double v = 1 - (mouseY - getY() - SPEED_HANDLE_H / 2.0) / range;
+            this.value = Mth.clamp(v, 0, 1);
+            applyValue();
+        }
+
+        private void applyValue() {
             int speed = speedTicks();
             if (speed != lastSentSpeed) {
                 lastSentSpeed = speed;
@@ -294,8 +196,26 @@ public class PictureTapeScreen extends AbstractContainerScreen<PictureTapeMenu> 
             }
         }
 
-        private int speedTicks() {
-            return (int) Math.round(Mth.lerp(this.value, PictureTapeMenu.MIN_SPEED, PictureTapeMenu.MAX_SPEED));
+        @Override
+        public boolean mouseClicked(double mouseX, double mouseY, int button) {
+            if (isMouseOver(mouseX, mouseY)) {
+                seek(mouseY);
+                return true;
+            }
+            return false;
+        }
+
+        @Override
+        protected void onDrag(double mouseX, double mouseY, double dragX, double dragY) {
+            seek(mouseY);
+        }
+
+        @Override
+        public void onClick(double mouseX, double mouseY) {
+        }
+
+        @Override
+        protected void updateWidgetNarration(NarrationElementOutput narration) {
         }
     }
 }

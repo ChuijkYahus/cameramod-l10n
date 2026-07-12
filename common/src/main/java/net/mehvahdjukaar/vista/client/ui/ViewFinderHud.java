@@ -47,6 +47,8 @@ public class ViewFinderHud implements LayeredDraw.Layer {
 
             renderSpyglassOverlay(graphics, this.scopeScale);
             renderBar(graphics, screenWidth, screenHeight, tile.getZoomLevel(), deltaTracker.getGameTimeDeltaPartialTick(false));
+
+            restoreOverlayRenderState();
         }
     }
 
@@ -56,6 +58,19 @@ public class ViewFinderHud implements LayeredDraw.Layer {
         RenderSystem.disableDepthTest();
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         RenderSystem.setShader(GameRenderer::getPositionTexShader);
+    }
+
+    // We render as a HUD LayeredDraw layer, and setupOverlayRenderState() disables the depth test.
+    // Vanilla never re-enables it between layers, so later overlay renderers that assume the default
+    // GUI state (depth test on) break: Jade in particular renders its tooltip without re-enabling depth
+    // itself, so with the test left off its text and background get depth-culled by the item/entity
+    // model (which re-enables it internally) and vanish, leaving only the icon. Restore the vanilla
+    // default so nothing leaks downstream.
+    private void restoreOverlayRenderState() {
+        RenderSystem.enableDepthTest();
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
     }
 
 

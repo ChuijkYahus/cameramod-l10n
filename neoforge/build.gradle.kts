@@ -31,6 +31,7 @@ dependencies {
     modCompileOnly("curse.maven:exposure-871755:7862664")
     modCompileOnly("curse.maven:cc-tweaked-282001:5714512")
     modCompileOnly("curse.maven:jei-238222:7420587")
+    modRuntimeOnly("maven.modrinth:jade:15.10.5+neoforge")
     modCompileOnly("curse.maven:sodium-394468:6382649")
     modCompileOnly("curse.maven:irisshaders-455508:6213635")
     modCompileOnly("curse.maven:distant-horizons-508933:8287411")
