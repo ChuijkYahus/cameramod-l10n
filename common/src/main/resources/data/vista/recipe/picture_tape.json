@@ -15,7 +15,7 @@
   "pattern": [
     "DDD",
     "DID",
-    "DKD"
+    "DDD"
   ],
   "key": {
     "D": {
@@ -23,9 +23,6 @@
     },
     "I": {
       "tag": "c:ingots/iron"
-    },
-    "K": {
-      "item": "minecraft:kelp"
     }
   },
   "result": {

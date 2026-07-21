@@ -7,11 +7,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Client-side registry resolving a picture-tape entry to the texture used when playing it on a TV.
- * The vanilla map provider is built in; integrations register their own (gated behind their
- * mod-compat check). First match wins.
- */
 public class PictureTapeFrames {
 
     public interface ImageProvider {

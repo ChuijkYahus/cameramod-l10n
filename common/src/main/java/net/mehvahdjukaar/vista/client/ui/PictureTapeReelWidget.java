@@ -33,6 +33,12 @@ public class PictureTapeReelWidget extends AbstractWidget {
 
     private static final int HOVER_TINT = 0x33FFFFFF;
 
+    // GuiGraphics.renderItem lifts item icons to z=150 and MapTapeEntryRenderer lifts the map to z=1;
+    // in the GUI ortho higher z draws nearer, so the film frame has to sit above all of that or the
+    // picture (and placeholder icons) would poke through it instead of showing only inside the window.
+    private static final int FRAME_Z = 200;
+    private static final int HOVER_Z = FRAME_Z - 10;             // tints the picture window, still under the frame
+
     /**
      * Routes a click on a reel back to the screen (which forwards it to the menu).
      */
@@ -115,19 +121,28 @@ public class PictureTapeReelWidget extends AbstractWidget {
             if (i < filled) {
                 PictureTapeRenderers.render(g, menu.getTapeContent().getItem(i), cx + IMG_X, cy + IMG_Y, IMG_SIZE);
             }
-            //hover tint goes under the frame so only the picture window lights up, not the frame itself
+            //hover tint goes above the picture but under the frame, so only the picture window lights up
             if (i == hovered) {
+                g.pose().pushPose();
+                g.pose().translate(0, 0, HOVER_Z);
                 g.fill(cx, cy, cx + REEL_W, cy + REEL_H, HOVER_TINT);
+                g.pose().popPose();
             }
             //film frame overlay sits on top of every cell so the strip reads as continuous
+            g.pose().pushPose();
+            g.pose().translate(0, 0, FRAME_Z);
             g.blitSprite(REEL_FOREGROUND, cx, cy, REEL_W, REEL_H);
+            g.pose().popPose();
         }
 
-        //sprocketed end caps at the two extremes of the strip
+        //sprocketed end caps at the two extremes of the strip, part of the same frame layer
         int stripStart = getX() + PAD - (int) scrollOffset;
         int stripEnd = stripStart + cells * CELL - GAP;
+        g.pose().pushPose();
+        g.pose().translate(0, 0, FRAME_Z);
         g.blitSprite(REEL_LEFT, stripStart - CAP_W, getY(), CAP_W, REEL_H);
         g.blitSprite(REEL_RIGHT, stripEnd, getY(), CAP_W, REEL_H);
+        g.pose().popPose();
         g.disableScissor();
     }
 
