@@ -25,6 +25,7 @@ public class PictureTapeFrames {
 
     static {
         register(new MapFrameTextureProvider());
+        register(new PaintingFrameTextureProvider());
     }
 
     public static void register(Provider provider) {

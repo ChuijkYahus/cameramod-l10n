@@ -7,7 +7,6 @@ import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.item.MapItem;
 import net.minecraft.world.level.saveddata.maps.MapId;
 import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
@@ -19,7 +18,7 @@ public class MapTapeEntryRenderer implements TapeEntryRenderer {
 
     @Override
     public boolean matches(ItemStack stack) {
-        return stack.is(Items.FILLED_MAP);
+        return stack.has(DataComponents.MAP_ID);
     }
 
     @Override

@@ -10,6 +10,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.stats.Stats;
+import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.MenuProvider;
@@ -29,6 +30,8 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 
 public class PictureTapeItem extends Item implements ITvCassette {
+
+    private static final int BAR_COLOR = Mth.color(0.4F, 0.4F, 1.0F);
 
     public PictureTapeItem(Properties properties) {
         super(properties);
@@ -141,6 +144,23 @@ public class PictureTapeItem extends Item implements ITvCassette {
 
     private static void playRemoveSound(Player player) {
         player.playSound(SoundEvents.BUNDLE_REMOVE_ONE, 0.8F, 0.8F + player.level().getRandom().nextFloat() * 0.4F);
+    }
+
+    // fullness bar under the item, like a bundle
+
+    @Override
+    public boolean isBarVisible(ItemStack stack) {
+        return getContent(stack).size() > 0;
+    }
+
+    @Override
+    public int getBarWidth(ItemStack stack) {
+        return Math.min(1 + 12 * getContent(stack).size() / getMaxEntries(), 13);
+    }
+
+    @Override
+    public int getBarColor(ItemStack stack) {
+        return BAR_COLOR;
     }
 
     @Override

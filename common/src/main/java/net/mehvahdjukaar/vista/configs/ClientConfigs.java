@@ -51,7 +51,7 @@ public class ClientConfigs {
     static {
         ConfigBuilder builder = ConfigBuilder.create(VistaMod.MOD_ID, ConfigType.CLIENT);
 
-        builder.push("mirror");
+        builder.icon("mirror").push("mirror");
         MIRROR_RENDER_DISTANCE = builder
                 .comment("Block entity render distance for mirrors. Mirrors beyond this distance will not render their reflection.")
                 .define("render_distance", 64, 1, 2048);
@@ -61,32 +61,36 @@ public class ClientConfigs {
         MIRROR_UPDATE_MODE = builder
                 .comment("How mirror reflections are dispatched. RENDER_TICK_END (default, recommended): the BE renderer queues mirrors into a pending list; the queue is flushed from a top-level frame hook (Fabric mixin after GameRenderer.render; NeoForge RenderFrameEvent.Post) that's guaranteed to run outside any level render — safe under recursive renderLevel calls from other mods. TEXTURE_REFRESH: piggybacks on the live-feed texture refresh dispatch (one render per visible mirror, end-of-frame). Switch to TEXTURE_REFRESH if you suspect a timing-related rendering glitch.")
                 .define("update_mode", MirrorUpdateMode.RENDER_TICK_END);
-        MIRROR_RECURSION_MODE = builder
-                .comment("How mirrors-inside-mirrors are handled. OFF: nested mirrors don't render at all (you see the frame, no reflection). SHARED (cheap): each mirror reuses its own self-reflection texture when seen inside another mirror — looks fine at a glance but parallax is wrong at depth >=1 (the deeper reflections won't slide correctly as you move). RECURSIVE (expensive): each chain gets its own off-axis render with correct parallax, up to max_recursion_depth. Beyond the depth cap the nested mirror is not drawn at all.")
-                .define("recursion_mode", MirrorRecursionMode.RECURSIVE);
-        MIRROR_MAX_RECURSION_DEPTH = builder
-                .comment("Max nesting depth in RECURSIVE recursion_mode. 0 = no recursion (equivalent to OFF). 1 = one level of correct nested reflection. Each extra level multiplies cost, but resolution_divider and distance_divider attenuate per-level cost.")
-                .define("max_recursion_depth", 1, 0, 8);
-        MIRROR_RECURSION_RES_DIVIDER = builder
-                .comment("Per-level resolution divider for RECURSIVE recursion_mode. Texture resolution at depth D = base * (1 / divider^D). 2.0 means each nesting halves resolution.")
-                .define("recursion_resolution_divider", 2.0, 1.0, 16.0);
-        MIRROR_RECURSION_DIST_DIVIDER = builder
-                .comment("Per-level render-distance divider for RECURSIVE recursion_mode. Render distance at depth D = base / divider^D. 2.0 means each nesting halves render distance.")
-                .define("recursion_distance_divider", 2.0, 1.0, 16.0);
         MIRROR_SMOOTH = builder
                 .comment("Smooth the mirror reflection with bilinear texture filtering. Enabled gives a softer, less pixelated reflection; disabled keeps it crisp and pixelated.")
                 .define("smooth_reflection", false);
-        builder.pop();
 
-        builder.push("television");
-        builder.push("visuals");
+        builder.push("recursion");
+        MIRROR_RECURSION_MODE = builder
+                .comment("How mirrors-inside-mirrors are handled. OFF: nested mirrors don't render at all (you see the frame, no reflection). SHARED (cheap): each mirror reuses its own self-reflection texture when seen inside another mirror — looks fine at a glance but parallax is wrong at depth >=1 (the deeper reflections won't slide correctly as you move). RECURSIVE (expensive): each chain gets its own off-axis render with correct parallax, up to max_depth. Beyond the depth cap the nested mirror is not drawn at all.")
+                .define("mode", MirrorRecursionMode.RECURSIVE);
+        MIRROR_MAX_RECURSION_DEPTH = builder
+                .comment("Max nesting depth in RECURSIVE recursion mode. 0 = no recursion (equivalent to OFF). 1 = one level of correct nested reflection. Each extra level multiplies cost, but resolution_divider and distance_divider attenuate per-level cost.")
+                .define("max_depth", 1, 0, 8);
+        MIRROR_RECURSION_RES_DIVIDER = builder
+                .comment("Per-level resolution divider for RECURSIVE recursion mode. Texture resolution at depth D = base * (1 / divider^D). 2.0 means each nesting halves resolution.")
+                .define("resolution_divider", 2.0, 1.0, 16.0);
+        MIRROR_RECURSION_DIST_DIVIDER = builder
+                .comment("Per-level render-distance divider for RECURSIVE recursion mode. Render distance at depth D = base / divider^D. 2.0 means each nesting halves render distance.")
+                .define("distance_divider", 2.0, 1.0, 16.0);
+        builder.pop(); // recursion
+        builder.pop(); // mirror
+
+        builder.icon("television").push("television");
         RENDER_DISTANCE = builder
                 .comment("Render distance that television will use when rendering the live feed. Decreasing this will improve the performance of TVs, possibly by a lot")
                 .define("render_distance", 64, 1, 2048);
 
-        SCREEN_EFFECTS = builder
-                .comment("Turns off all the tv screen effects and draws it as a simple texture. Disabling can make the render slightly faster. All below options will be ignored if this is disabled")
-                .define("screen_effects", true);
+        // screen_effects gates all the visual options below it: when off, they gray out in the config screen.
+        // No explicit icon (the television icon already marks the parent tv entry) - it auto-infers from the name,
+        // which has no matching item, so it shows as a plain checkmark toggle.
+        builder.comment("Turns off all the tv screen effects and draws it as a simple texture. Disabling can make the render slightly faster. All below options will be ignored if this is disabled");
+        SCREEN_EFFECTS = builder.pushFeature("screen_effects");
         PIXEL_DENSITY = builder
                 .comment("Pixel density of televisions, in pixels per block side")
                 .define("pixel_density", 1.37f, 0.1f, 10);
@@ -98,9 +102,9 @@ public class ClientConfigs {
         TURN_OFF_EFFECTS = builder
                 .comment("Plays an animation when the television is turned off or on")
                 .define("turn_off_animation", true);
-        builder.pop();
-        builder.push("live_feed");
+        builder.pop(); // screen_effects
 
+        builder.icon("hollow_cassette").push("live_feed");
         UPDATE_FPS = builder
                 .gameRestart()
                 .comment("How many times per second the television updates its live feed texture. Lowering this will improve performance but make the video less smooth, fractions work too")
@@ -128,12 +132,15 @@ public class ClientConfigs {
 
         CompatHandler.addConfigs(builder);
 
-        builder.pop();
+        builder.pop(); // live_feed
+        builder.pop(); // television
 
-        builder.push("wave_gate");
+        builder.icon("wave_gate").push("wave_gate");
         VIDEO_ENGINE = CompatHandler.WATERMEDIA ? builder.comment("Toggle between local FFmpeg driven video loading and WaterMedia (VLC) mod usage. Requires Watermedia mod. FFmpeg mode has improved visuals and functionality, and likely supports more media types. Watermedia on the other hand supports youtube links. The first mode uses both, prioritizing our local FFmpeg impl and falling back to watermedia on media player links.")
                                                   .define("media_engine", EngineMode.TRY_FFMPEG_FIRST_THEN_VLC) : () -> EngineMode.TRY_FFMPEG_FIRST_THEN_VLC;
-        ENABLE_FFMPEG = builder.comment("Enable FFmpeg use. This is needed if you want to use the Wave Gate")
+        ENABLE_FFMPEG = builder
+                .icon("wave_gate")
+                .comment("Enable FFmpeg use. This is needed if you want to use the Wave Gate")
                 .define("ffmpeg_enabled", true);
         WEB_RESOLUTION_SCALE = builder
                 .comment("Scale factor for web images resolution")
@@ -145,9 +152,7 @@ public class ClientConfigs {
                 .define("bilinear_sampling", false);
         SAFE_URLS = builder.comment("A list of regex which will filter out valid URLs. At least one of these must match for a URL video to work")
                 .define("safe_urls", List.of());
-        builder.pop();
-
-        builder.pop();
+        builder.pop(); // wave_gate
 
         builder.onChange(() -> {
             List<String> elements = SAFE_URLS.get();

@@ -145,8 +145,8 @@ public class TVBlockEntity extends ItemDisplayTile {
     }
 
     @Override
-    public void updateTileOnInventoryChanged() {
-        super.updateTileOnInventoryChanged();
+    public void serverSideUpdateWhenChanged(HolderLookup.Provider registries) {
+        super.serverSideUpdateWhenChanged(registries);
         ItemStack displayedItem = this.getDisplayedItem();
         if (displayedItem.isEmpty()) {
             this.paused = false;
@@ -162,8 +162,8 @@ public class TVBlockEntity extends ItemDisplayTile {
     }
 
     @Override
-    public void updateClientVisualsOnLoad() {
-        super.updateClientVisualsOnLoad();
+    public void clientSideUpdateWhenChanged(HolderLookup.Provider registries) {
+        super.clientSideUpdateWhenChanged(registries);
         this.videoSource = IVideoSource.create(this.getDisplayedItem());
         this.videoPlaybackTicks = 0;
     }

@@ -1,5 +1,6 @@
 package net.mehvahdjukaar.vista.common.picture_tape;
 
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
@@ -12,7 +13,9 @@ public class PictureTapeEntries {
     private static final List<Predicate<ItemStack>> VALIDATORS = new ArrayList<>();
 
     static {
-        register(stack -> stack.is(Items.FILLED_MAP));
+        // any filled map, including other mods' maps (they all carry the vanilla map id component)
+        register(stack -> stack.has(DataComponents.MAP_ID));
+        register(stack -> stack.is(Items.PAINTING));
     }
 
     public static void register(Predicate<ItemStack> validator) {

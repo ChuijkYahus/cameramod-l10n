@@ -6,7 +6,6 @@ import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.item.MapItem;
 import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.level.saveddata.maps.MapId;
@@ -25,7 +24,7 @@ public class MapFrameTextureProvider implements PictureTapeFrames.Provider {
 
     @Override
     public boolean matches(ItemStack stack) {
-        return stack.is(Items.FILLED_MAP);
+        return stack.has(DataComponents.MAP_ID);
     }
 
     @Override

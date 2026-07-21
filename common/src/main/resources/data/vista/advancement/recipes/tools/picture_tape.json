@@ -1,4 +1,16 @@
 {
+  "fabric:load_conditions": [
+    {
+      "condition": "vista:flag",
+      "flag": "picture_tape"
+    }
+  ],
+  "neoforge:conditions": [
+    {
+      "type": "vista:flag",
+      "flag": "picture_tape"
+    }
+  ],
   "parent": "minecraft:recipes/root",
   "criteria": {
     "has_dried_kelp": {

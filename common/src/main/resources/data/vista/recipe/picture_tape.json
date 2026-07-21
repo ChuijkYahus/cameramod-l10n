@@ -1,4 +1,16 @@
 {
+  "fabric:load_conditions": [
+    {
+      "condition": "vista:flag",
+      "flag": "picture_tape"
+    }
+  ],
+  "neoforge:conditions": [
+    {
+      "type": "vista:flag",
+      "flag": "picture_tape"
+    }
+  ],
   "type": "minecraft:crafting_shaped",
   "pattern": [
     "DDD",

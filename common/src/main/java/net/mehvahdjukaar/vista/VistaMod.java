@@ -277,6 +277,7 @@ public class VistaMod {
                 s -> {
                     if (Objects.equals(s, "wave_gate")) return CommonConfigs.isWaveGateCraftable();
                     if (Objects.equals(s, "mirror")) return CommonConfigs.isMirrorEnabled();
+                    if (Objects.equals(s, "picture_tape")) return CommonConfigs.isPictureTapeEnabled();
                     return true;
                 });
 
@@ -306,7 +307,9 @@ public class VistaMod {
             event.add(CreativeModeTabs.TOOLS_AND_UTILITIES, stack);
         }
         event.add(CreativeModeTabs.TOOLS_AND_UTILITIES, HOLLOW_CASSETTE.get());
-        event.add(CreativeModeTabs.TOOLS_AND_UTILITIES, PICTURE_TAPE.get());
+        if (CommonConfigs.isPictureTapeEnabled()) {
+            event.add(CreativeModeTabs.TOOLS_AND_UTILITIES, PICTURE_TAPE.get());
+        }
         event.addAfter(CreativeModeTabs.TOOLS_AND_UTILITIES, i -> i.is(C_MUSIC_DISCS), SOJOURN_MUSIC_DISC.get());
 
         if (CommonConfigs.isWaveGateCraftable()) {
