@@ -29,6 +29,7 @@ public class CommonConfigs {
     public static final Supplier<ViewFinderInteraction> VIEW_FINDER_INTERACTION;
     public static final Supplier<Boolean> TV_CONSUME_ENERGY;
     public static final Supplier<Integer> TV_ENERGY_CONSUMPTION_RATE;
+    public static final Supplier<Integer> PICTURE_TAPE_MAX_ENTRIES;
 
     static {
         ConfigBuilder builder = ConfigBuilder.create(VistaMod.MOD_ID, ConfigType.COMMON_SYNCED);
@@ -81,6 +82,10 @@ public class CommonConfigs {
                 PlatHelper.getPlatform().isFabric() ? ()-> 0 :
                 builder.comment("Energy consumption rate per tick when TV is powered and has a cassette.")
                 .define("tv_energy_consumption_rate", 20, 1, 10000);
+
+        PICTURE_TAPE_MAX_ENTRIES = builder
+                .comment("Maximum number of pictures (filled maps) a single picture tape can hold.")
+                .define("picture_tape_max_entries", 16, 1, 64);
 
         builder.pop();
 

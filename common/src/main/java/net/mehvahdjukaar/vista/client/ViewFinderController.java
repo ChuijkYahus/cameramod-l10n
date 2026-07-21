@@ -181,13 +181,17 @@ public class ViewFinderController {
             if (newZoom != oldZoom) {
                 viewFinderZoom = newZoom;
                 needsToUpdateServer = true;
-                if (newZoom % 4 == 0)
-                    //TODO: proper sound here
-                    Minecraft.getInstance().getSoundManager()
-                            .play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 3));
+                if (newZoom % 4 == 0) playZoomClick();
             }
         }
         return true;
+    }
+
+    // click fed back while zooming, both from the overlay wheel and the view finder gui slider
+    public static void playZoomClick() {
+        //TODO: proper sound here
+        Minecraft.getInstance().getSoundManager()
+                .play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 3));
     }
 
     @EventCalled

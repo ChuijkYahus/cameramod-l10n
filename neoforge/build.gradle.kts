@@ -11,10 +11,13 @@ val moonlight_version: String by extra
 val supplementaries_version: String by extra
 val mixin_squared_version: String by extra
 val sable_companion_version: String by extra
+val codecui_version: String by extra
 
 dependencies {
 
     modImplementation("net.mehvahdjukaar:moonlight-neoforge:${moonlight_version}")
+
+    modRuntimeOnly("net.mehvahdjukaar:codecui-neoforge:${codecui_version}")
     accessTransformers("net.mehvahdjukaar:moonlight-neoforge:${moonlight_version}")
 
     annotationProcessor("com.github.bawnorton.mixinsquared:mixinsquared-common:${mixin_squared_version}")

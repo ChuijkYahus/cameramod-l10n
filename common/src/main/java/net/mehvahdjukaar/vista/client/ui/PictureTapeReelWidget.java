@@ -10,17 +10,13 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
 
-/**
- * Horizontally-scrolling film strip of stored maps. Each cell is a film "reel": a background slot,
- * the map image, and a foreground frame drawn over it. The trailing "add" cell uses the {@code new}
- * reel instead. The whole strip is scissored to its bounds so partially-scrolled reels are clipped.
- * <p>All pixel sizes live in static fields so they can be retuned if the art changes.
- */
 public class PictureTapeReelWidget extends AbstractWidget {
 
     private static final ResourceLocation REEL_BACKGROUND = VistaMod.res("picture_tape/reel_background");
     private static final ResourceLocation REEL_FOREGROUND = VistaMod.res("picture_tape/reel_foreground");
     private static final ResourceLocation REEL_NEW = VistaMod.res("picture_tape/reel_new");
+    private static final ResourceLocation REEL_LEFT = VistaMod.res("picture_tape/reel_left");
+    private static final ResourceLocation REEL_RIGHT = VistaMod.res("picture_tape/reel_right");
 
     // reel sprite size
     private static final int REEL_W = 40;
@@ -28,6 +24,7 @@ public class PictureTapeReelWidget extends AbstractWidget {
     // reels butt together into a continuous film strip; only the strip ends are padded
     private static final int GAP = 0;
     private static final int PAD = 2;
+    private static final int CAP_W = 2;                          // reel_left / reel_right end caps
     private static final int CELL = REEL_W + GAP;                 // stride between reels
     // transparent window inside the foreground where the map image shows through
     private static final int IMG_X = 1;                          // x offset of the image inside a reel
@@ -97,8 +94,14 @@ public class PictureTapeReelWidget extends AbstractWidget {
     @Override
     protected void renderWidget(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
         int filled = menu.getFilledCount();
-        int cells = menu.getVisibleCells();
+        int realCells = menu.getVisibleCells();
         int hovered = cellAt(mouseX, mouseY);
+
+        // pad the strip out with empty film so the viewport is never half-empty. these filler cells
+        // past the real content are purely visual: cellAt only knows about realCells, so they can be
+        // neither hovered, clicked, nor scrolled to (scrolling is still bounded by the real content).
+        int fillCells = Mth.ceil((width - PAD) / (float) CELL) + 1;
+        int cells = Math.max(realCells, fillCells);
 
         g.enableScissor(getX(), getY(), getX() + width, getY() + height);
         for (int i = 0; i < cells; i++) {
@@ -106,17 +109,25 @@ public class PictureTapeReelWidget extends AbstractWidget {
             int cy = getY();
             if (cx + REEL_W < getX() || cx > getX() + width) continue;
 
-            g.blitSprite(REEL_BACKGROUND, cx, cy, REEL_W, REEL_H);
+            //base plate: the first empty cell (the one you drop into) shows the "add" reel instead
+            ResourceLocation base = i == filled ? REEL_NEW : REEL_BACKGROUND;
+            g.blitSprite(base, cx, cy, REEL_W, REEL_H);
             if (i < filled) {
                 PictureTapeRenderers.render(g, menu.getTapeContent().getItem(i), cx + IMG_X, cy + IMG_Y, IMG_SIZE);
-                g.blitSprite(REEL_FOREGROUND, cx, cy, REEL_W, REEL_H);
-            } else {
-                g.blitSprite(REEL_NEW, cx, cy, REEL_W, REEL_H);
             }
+            //hover tint goes under the frame so only the picture window lights up, not the frame itself
             if (i == hovered) {
                 g.fill(cx, cy, cx + REEL_W, cy + REEL_H, HOVER_TINT);
             }
+            //film frame overlay sits on top of every cell so the strip reads as continuous
+            g.blitSprite(REEL_FOREGROUND, cx, cy, REEL_W, REEL_H);
         }
+
+        //sprocketed end caps at the two extremes of the strip
+        int stripStart = getX() + PAD - (int) scrollOffset;
+        int stripEnd = stripStart + cells * CELL - GAP;
+        g.blitSprite(REEL_LEFT, stripStart - CAP_W, getY(), CAP_W, REEL_H);
+        g.blitSprite(REEL_RIGHT, stripEnd, getY(), CAP_W, REEL_H);
         g.disableScissor();
     }
 

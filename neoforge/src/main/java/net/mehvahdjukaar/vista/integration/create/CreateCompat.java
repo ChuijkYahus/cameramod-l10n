@@ -31,14 +31,6 @@ import org.joml.Vector3f;
 import java.util.UUID;
 import java.util.function.Supplier;
 
-/**
- * Create integration: lets view finders be controlled while mounted on trains and contraptions, and keeps their
- * broadcast feed linked to TVs while riding a moving contraption.
- *
- * <p>NeoForge-only: Create has no Fabric build for this Minecraft version (latest Create Fabric release is for
- * 1.20.1), so this whole integration - including the {@code contraption_location} broadcast type and its network
- * packet - lives here instead of in common. See {@link net.mehvahdjukaar.vista.integration.CompatHandler#CREATE}.
- */
 public class CreateCompat {
 
     // registered unconditionally (like VistaMod's other registry entries) so the type/packet exist regardless

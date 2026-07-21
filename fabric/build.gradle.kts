@@ -17,10 +17,13 @@ val moonlight_version: String by extra
 val supplementaries_version: String by extra
 val mixin_squared_version: String by extra
 val sable_companion_version: String by extra
+val codecui_version: String by extra
 
 dependencies {
 
     modImplementation("net.mehvahdjukaar:moonlight-fabric:${moonlight_version}")
+
+    modRuntimeOnly("net.mehvahdjukaar:codecui-fabric:${codecui_version}")
 
     include("com.github.bawnorton.mixinsquared:mixinsquared-fabric:${mixin_squared_version}")
     implementation("com.github.bawnorton.mixinsquared:mixinsquared-fabric:${mixin_squared_version}")

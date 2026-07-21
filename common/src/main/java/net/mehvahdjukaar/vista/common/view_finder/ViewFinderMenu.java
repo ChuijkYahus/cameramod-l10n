@@ -16,10 +16,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Container menu for the view finder. Mirrors the cannon menu but exposes a single
- * slot: the lens the view finder holds.
- */
 public class ViewFinderMenu extends AbstractContainerMenu implements IContainerProvider {
 
     public final ViewFinderBlockEntity viewFinder;
@@ -36,7 +32,7 @@ public class ViewFinderMenu extends AbstractContainerMenu implements IContainerP
         if (this.viewFinder.isInWorld()) tile.startOpen(playerInventory.player);
 
         //single lens slot, centered in the lens aperture of the background
-        this.addSlot(new LensSlot(tile, 0, 68, 34, this));
+        this.addSlot(new LensSlot(tile, 0, 62, 25, this));
 
         for (int si = 0; si < 3; ++si)
             for (int sj = 0; sj < 9; ++sj)

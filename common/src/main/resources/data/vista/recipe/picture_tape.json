@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "DDD",
+    "DID",
+    "DKD"
+  ],
+  "key": {
+    "D": {
+      "item": "minecraft:dried_kelp"
+    },
+    "I": {
+      "tag": "c:ingots/iron"
+    },
+    "K": {
+      "item": "minecraft:kelp"
+    }
+  },
+  "result": {
+    "id": "vista:picture_tape",
+    "count": 1
+  }
+}

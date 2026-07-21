@@ -242,6 +242,8 @@ public class VistaMod {
         }
 
 
+        //named cassettr name the video on screen ontop left
+
         //turn on animation independent of texture size
         //TODO: alex mobs shaders compat
         //TODO: check panes not working for some

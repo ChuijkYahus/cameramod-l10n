@@ -7,12 +7,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
 
-/**
- * Registry of item types the picture tape can store. Vanilla filled maps are always allowed;
- * integrations (e.g. Exposure photographs) register their own predicates, gated behind their
- * respective mod-compat checks. Lives in common so both the server (placement validation) and
- * client agree on what's a valid entry.
- */
 public class PictureTapeEntries {
 
     private static final List<Predicate<ItemStack>> VALIDATORS = new ArrayList<>();
