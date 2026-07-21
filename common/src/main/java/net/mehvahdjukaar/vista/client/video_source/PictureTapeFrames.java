@@ -14,27 +14,27 @@ import java.util.List;
  */
 public class PictureTapeFrames {
 
-    public interface Provider {
+    public interface ImageProvider {
         boolean matches(ItemStack stack);
 
         @Nullable
         ResourceLocation getTexture(ItemStack stack);
     }
 
-    private static final List<Provider> PROVIDERS = new ArrayList<>();
+    private static final List<ImageProvider> PROVIDERS = new ArrayList<>();
 
     static {
         register(new MapFrameTextureProvider());
         register(new PaintingFrameTextureProvider());
     }
 
-    public static void register(Provider provider) {
+    public static void register(ImageProvider provider) {
         PROVIDERS.add(provider);
     }
 
     @Nullable
     public static ResourceLocation getFrameTexture(ItemStack stack) {
-        for (Provider provider : PROVIDERS) {
+        for (ImageProvider provider : PROVIDERS) {
             if (provider.matches(stack)) return provider.getTexture(stack);
         }
         return null;

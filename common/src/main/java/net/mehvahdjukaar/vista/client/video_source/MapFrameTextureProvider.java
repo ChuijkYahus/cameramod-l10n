@@ -18,7 +18,7 @@ import java.util.Map;
 /**
  * Builds (and caches) a {@link DynamicTexture} of a filled map's colours for TV playback.
  */
-public class MapFrameTextureProvider implements PictureTapeFrames.Provider {
+public class MapFrameTextureProvider implements PictureTapeFrames.ImageProvider {
 
     private static final Map<Integer, ResourceLocation> CACHE = new HashMap<>();
 

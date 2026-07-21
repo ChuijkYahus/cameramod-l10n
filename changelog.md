@@ -1,1 +1,3 @@
-- fixed some bugs
+- added picture tape item
+- picture tapes can now store and play Joy of Painting canvases
+- improved configs

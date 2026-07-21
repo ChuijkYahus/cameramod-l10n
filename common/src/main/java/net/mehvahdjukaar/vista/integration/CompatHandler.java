@@ -28,10 +28,8 @@ public class CompatHandler {
     public static final boolean VEIL = PlatHelper.isModLoaded("veil");
     public static final boolean VAMPIRISM = PlatHelper.isModLoaded("vampirism");
     public static final boolean SUPERNATURAL = PlatHelper.isModLoaded("supernatural");
-    // Create has no Fabric build for this Minecraft version (latest Create Fabric release is 1.20.1), so the
-    // whole integration lives in :neoforge only (see integration.create.CreateCompat there); this flag only
-    // ever gates a call reachable from that module.
     public static final boolean CREATE = PlatHelper.isModLoaded("create");
+    public static final boolean JOY_OF_PAINTING = PlatHelper.isModLoaded("xercapaint");
     public static final boolean WATERMEDIA = isWatermediaCompatible();
 
     private static boolean isWatermediaCompatible() {

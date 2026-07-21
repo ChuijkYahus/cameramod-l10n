@@ -20,10 +20,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-/**
- * Resolves the texture Exposure uses to draw a photograph, so tapes can play them on a TV.
- */
-public class ExposureFrameTextureProvider implements PictureTapeFrames.Provider {
+public class ExposureFrameTextureProvider implements PictureTapeFrames.ImageProvider {
 
     @Override
     public boolean matches(ItemStack stack) {
@@ -43,7 +40,7 @@ public class ExposureFrameTextureProvider implements PictureTapeFrames.Provider 
         if (stack.getItem() instanceof PhotographItem) return stack;
         if (stack.getItem() instanceof StackedPhotographsItem stacked) {
             List<ItemAndStack<PhotographItem>> photos = stacked.getPhotographs(stack);
-            return photos.isEmpty() ? ItemStack.EMPTY : photos.get(0).getItemStack();
+            return photos.isEmpty() ? ItemStack.EMPTY : photos.getFirst().getItemStack();
         }
         if (stack.getItem() instanceof AlbumItem album) {
             for (AlbumPage page : album.getContent(stack).pages()) {

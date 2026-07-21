@@ -7,7 +7,7 @@ import net.minecraft.world.item.Items;
 import org.jetbrains.annotations.Nullable;
 
 // plays a painting on a tv by stretching its variant art across the screen
-public class PaintingFrameTextureProvider implements PictureTapeFrames.Provider {
+public class PaintingFrameTextureProvider implements PictureTapeFrames.ImageProvider {
 
     @Override
     public boolean matches(ItemStack stack) {

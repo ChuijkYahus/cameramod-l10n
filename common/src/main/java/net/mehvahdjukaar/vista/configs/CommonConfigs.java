@@ -63,7 +63,7 @@ public class CommonConfigs {
         PICTURE_TAPE_ENABLED = builder.mainFeature();
         PICTURE_TAPE_MAX_ENTRIES = builder
                 .comment("Maximum number of pictures (filled maps) a single picture tape can hold.")
-                .define("max_entries", 16, 1, 64);
+                .define("max_entries", 32, 1, 256);
         builder.pop(); // picture_tape
 
         // mirror is a feature-gated category: its "enabled" toggle gates every option under it in the config screen.

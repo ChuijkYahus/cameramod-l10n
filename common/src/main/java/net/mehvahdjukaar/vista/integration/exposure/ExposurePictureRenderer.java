@@ -11,9 +11,6 @@ import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.world.item.ItemStack;
 
-/**
- * Renders Exposure photographs (single, stacked and albums) as thumbnails on the picture tape.
- */
 public class ExposurePictureRenderer implements TapeEntryRenderer {
 
     @Override
