@@ -11,6 +11,7 @@ import net.mehvahdjukaar.vista.integration.entity_culling.EntityCullingCompat;
 import net.mehvahdjukaar.vista.integration.exposure.ExposureCompat;
 import net.mehvahdjukaar.vista.integration.flashback.FlashbackCompat;
 import net.mehvahdjukaar.vista.integration.iris.IrisCompat;
+import net.mehvahdjukaar.vista.integration.supplementaries.SuppCompat;
 import net.mehvahdjukaar.vista.integration.veil.VeilCompat;
 import net.mehvahdjukaar.vista.integration.watermedia.WatermediaSession;
 
@@ -55,6 +56,7 @@ public class CompatHandler {
     public static void init() {
         initPlat();
         if (EXPOSURE) ExposureCompat.init();
+        if (SUPPLEMENTARIES) SuppCompat.init();
         if (COMPUTER_CRAFT) CCCompat.init();
         PlatHelper.addCommonSetup(() -> {
             if (COMPUTER_CRAFT) CCCompat.setup();

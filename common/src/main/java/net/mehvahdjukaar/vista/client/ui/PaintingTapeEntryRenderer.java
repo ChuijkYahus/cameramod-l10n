@@ -1,7 +1,6 @@
 package net.mehvahdjukaar.vista.client.ui;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.component.DataComponents;
@@ -27,19 +26,7 @@ public class PaintingTapeEntryRenderer implements TapeEntryRenderer {
     }
 
     @Override
-    public void render(GuiGraphics graphics, ItemStack stack, int x, int y, int size) {
-        PaintingVariant variant = resolveVariant(stack);
-        if (variant == null) {
-            graphics.blit(FALLBACK_TEXTURE, x, y, size, size, 0, 0, 16, 16, 16, 16);
-            return;
-        }
-        int tw = variant.width() * 16;
-        int th = variant.height() * 16;
-        graphics.blit(textureOf(variant), x, y, size, size, 0, 0, tw, th, tw, th);
-    }
-
-    // texture for tv playback; the tv stretches it to fill the screen
-    public static ResourceLocation textureFor(ItemStack stack) {
+    public ResourceLocation getTexture(ItemStack stack) {
         PaintingVariant variant = resolveVariant(stack);
         return variant == null ? FALLBACK_TEXTURE : textureOf(variant);
     }
