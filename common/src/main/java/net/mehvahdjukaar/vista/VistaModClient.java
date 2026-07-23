@@ -14,10 +14,10 @@ import net.mehvahdjukaar.vista.client.textures.CassetteTexturesManager;
 import net.mehvahdjukaar.vista.client.textures.LiveFeedTexturesManager;
 import net.mehvahdjukaar.vista.client.textures.MirrorTextureManager;
 import net.mehvahdjukaar.vista.client.textures.WebTexturesManager;
+import net.mehvahdjukaar.vista.client.ui.MapTapeEntryRenderer;
 import net.mehvahdjukaar.vista.client.ui.PictureTapeScreen;
 import net.mehvahdjukaar.vista.client.ui.ViewFinderScreen;
 import net.mehvahdjukaar.vista.client.ui.VistaWelcomeScreen;
-import net.mehvahdjukaar.vista.client.video_source.MapFrameTextureProvider;
 import net.mehvahdjukaar.vista.client.web.ffmpeg.FFmpeg;
 import net.mehvahdjukaar.vista.client.web.ffmpeg.FFmpegManager;
 import net.mehvahdjukaar.vista.common.chunk_tracking.ExtraChunkViewData;
@@ -245,7 +245,7 @@ public class VistaModClient {
         WebTexturesManager.clear();
         MirrorTextureManager.clear();
         VistaLevelRenderer.clear();
-        MapFrameTextureProvider.clear();
+        MapTapeEntryRenderer.clear();
     }
 
     public static void onClientTick(Minecraft minecraft) {
