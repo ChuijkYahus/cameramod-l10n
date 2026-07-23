@@ -92,6 +92,7 @@ public class PictureTapeScreen extends VistaContainerScreen<PictureTapeMenu> {
         int speed = speedBar.getMappedValue();
         if (speed != lastSentSpeed) {
             lastSentSpeed = speed;
+            getMenu().setPlaySpeedClientSide(speed);
             minecraft.gameMode.handleInventoryButtonClick(getMenu().containerId, speed);
         }
     }

@@ -6,10 +6,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.inventory.ClickType;
-import net.minecraft.world.inventory.MenuType;
-import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.inventory.*;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
@@ -32,8 +29,8 @@ public class PictureTapeMenu extends AbstractContainerMenu {
     private final Player owner;
     private final SimpleContainer tapeContent;
     private final int maxEntries;
-    // ticks each picture is shown when played in a TV
-    private int playSpeed;
+    // ticks each picture is shown when played in a TV. synced so the client keeps it across screen re-inits
+    private final DataSlot playSpeed = DataSlot.standalone();
     // guards against re-entrant container updates while we rewrite the map slots
     private boolean mutating;
 
@@ -57,7 +54,8 @@ public class PictureTapeMenu extends AbstractContainerMenu {
         }
 
         // load stored maps into the working container
-        this.playSpeed = PictureTapeItem.getContent(tapeStack).playbackSpeed();
+        this.playSpeed.set(PictureTapeItem.getContent(tapeStack).playbackSpeed());
+        this.addDataSlot(playSpeed);
         this.mutating = true;
         List<ItemStack> stored = PictureTapeItem.getContent(tapeStack).pictures().toList();
         for (int i = 0; i < this.maxEntries && i < stored.size(); i++) {
@@ -105,43 +103,68 @@ public class PictureTapeMenu extends AbstractContainerMenu {
     }
 
     public int getPlaySpeed() {
-        return playSpeed;
+        return playSpeed.get();
+    }
+
+    // client-side echo: the button click only reaches the server, so mirror it locally
+    // to bridge the round trip in case the screen re-inits in the meantime
+    public void setPlaySpeedClientSide(int speed) {
+        this.playSpeed.set(speed);
     }
 
     @Override
     public void clicked(int slotId, int button, ClickType clickType, Player player) {
-        // dropping a picture onto an existing one inserts it there and pushes the rest right;
-        // fall back to vanilla's swap only when the tape is already full
-        if (clickType == ClickType.PICKUP && button == 0 && slotId >= 0 && slotId < this.maxEntries) {
-            ItemStack carried = getCarried();
-            int filled = getFilledCount();
-            if (slotId < filled && filled < this.maxEntries
-                    && !carried.isEmpty() && PictureTapeItem.isValidEntry(carried)) {
-                insertShifted(slotId, carried);
-                compact();
-                return;
-            }
+        if (clickType == ClickType.PICKUP && button == 0 && slotId >= 0 && slotId < this.maxEntries
+                && tryInsertCarried(slotId)) {
+            compact();
+            return;
         }
         super.clicked(slotId, button, clickType, player);
         compact();
     }
 
-    // Insert the carried item at index, shifting everything from index onward one slot to the right.
-    private void insertShifted(int index, ItemStack carried) {
-        this.mutating = true;
-        for (int i = this.maxEntries - 1; i > index; i--) {
-            tapeContent.setItem(i, tapeContent.getItem(i - 1));
+    // Drops the carried item into the clicked cell. False when vanilla should handle the click instead,
+    // either because there's nothing to add or because the tape is already full.
+    private boolean tryInsertCarried(int index) {
+        ItemStack carried = getCarried();
+        int filled = getFilledCount();
+        int freeSpace = this.maxEntries - filled;
+        if (carried.isEmpty() || freeSpace <= 0) return false;
+        if (PictureTapeItem.isValidEntry(carried)) {
+            // only inserting before an existing picture needs us: vanilla places it just fine on the trailing cell
+            if (index >= filled) return false;
+            insertShifted(index, List.of(carried.split(1)));
+            setCarried(carried);
+            return true;
         }
-        tapeContent.setItem(index, carried.split(1));
+        // a pile of pictures goes in as the pictures it holds
+        PictureTapeEntries.Unpacked unpacked = PictureTapeEntries.unpack(carried, freeSpace);
+        if (unpacked == null) return false;
+        insertShifted(Math.min(index, filled), unpacked.pictures());
+        setCarried(unpacked.remainder());
+        return true;
+    }
+
+    // Insert pictures at index, pushing everything from index onward to the right.
+    private void insertShifted(int index, List<ItemStack> pictures) {
+        List<ItemStack> entries = new ArrayList<>();
+        for (int i = 0; i < this.maxEntries; i++) {
+            ItemStack s = tapeContent.getItem(i);
+            if (!s.isEmpty()) entries.add(s);
+        }
+        entries.addAll(Math.min(index, entries.size()), pictures);
+        this.mutating = true;
+        for (int i = 0; i < this.maxEntries; i++) {
+            tapeContent.setItem(i, i < entries.size() ? entries.get(i) : ItemStack.EMPTY);
+        }
         this.mutating = false;
-        setCarried(carried);
     }
 
     // The speed slider sends the desired ticks-per-picture as the button id.
     @Override
     public boolean clickMenuButton(Player player, int id) {
         if (id >= MIN_SPEED && id <= MAX_SPEED) {
-            this.playSpeed = id;
+            this.playSpeed.set(id);
             compact();
             return true;
         }
@@ -171,7 +194,7 @@ public class PictureTapeMenu extends AbstractContainerMenu {
             }
             this.mutating = false;
         }
-        PictureTapeItem.setContent(tapeStack, new PictureTapeContent(new ArrayList<>(filled), playSpeed));
+        PictureTapeItem.setContent(tapeStack, new PictureTapeContent(new ArrayList<>(filled), getPlaySpeed()));
         pushMapData();
     }
 
@@ -196,9 +219,18 @@ public class PictureTapeMenu extends AbstractContainerMenu {
                 if (!this.moveItemStackTo(stack, this.maxEntries, this.slots.size(), true)) {
                     return ItemStack.EMPTY;
                 }
+            } else if (!PictureTapeItem.isValidEntry(stack)) {
+                // a pile of pictures empties onto the end of the tape, as far as it fits
+                int filled = getFilledCount();
+                PictureTapeEntries.Unpacked unpacked = PictureTapeEntries.unpack(stack, this.maxEntries - filled);
+                if (unpacked == null) return ItemStack.EMPTY;
+                insertShifted(filled, unpacked.pictures());
+                slot.set(unpacked.remainder());
+                compact();
+                return ItemStack.EMPTY;
             } else {
-                // player inventory -> tape, only filled maps
-                if (!PictureTapeItem.isValidEntry(stack) || !this.moveItemStackTo(stack, 0, this.maxEntries, false)) {
+                // player inventory -> tape
+                if (!this.moveItemStackTo(stack, 0, this.maxEntries, false)) {
                     return ItemStack.EMPTY;
                 }
             }

@@ -96,6 +96,9 @@ public class PictureTapeItem extends Item implements ITvCassette {
         } else if (isValidEntry(slotItem) && canFit(tape)) {
             addLast(tape, slot.safeTake(slotItem.getCount(), 1, player));
             playInsertSound(player);
+        } else if (slot.allowModification(player)) {
+            ItemStack leftover = addUnpacked(tape, slotItem, player);
+            if (leftover != null) slot.set(leftover);
         }
         //consume the right-click either way so it edits the tape instead of swapping it into the slot
         return true;
@@ -115,12 +118,30 @@ public class PictureTapeItem extends Item implements ITvCassette {
         } else if (isValidEntry(other) && canFit(tape)) {
             addLast(tape, other.split(1));
             playInsertSound(player);
+        } else {
+            ItemStack leftover = addUnpacked(tape, other, player);
+            if (leftover != null) access.set(leftover);
         }
         return true;
     }
 
+    // a pile of pictures goes in as the pictures it holds. Gives back what's left of the pile,
+    // or null if this wasn't one to begin with
+    @Nullable
+    private static ItemStack addUnpacked(ItemStack tape, ItemStack container, Player player) {
+        PictureTapeEntries.Unpacked unpacked = PictureTapeEntries.unpack(container, freeSpace(tape));
+        if (unpacked == null) return null;
+        unpacked.pictures().forEach(picture -> addLast(tape, picture));
+        playInsertSound(player);
+        return unpacked.remainder();
+    }
+
     private static boolean canFit(ItemStack tape) {
-        return getContent(tape).size() < getMaxEntries();
+        return freeSpace(tape) > 0;
+    }
+
+    private static int freeSpace(ItemStack tape) {
+        return getMaxEntries() - getContent(tape).size();
     }
 
     private static void addLast(ItemStack tape, ItemStack picture) {
@@ -165,9 +186,11 @@ public class PictureTapeItem extends Item implements ITvCassette {
 
     @Override
     public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
-        int count = getContent(stack).size();
-        if (count > 0) {
-            tooltip.add(Component.translatable("item.vista.picture_tape.pictures_count", count)
+        PictureTapeContent content = getContent(stack);
+        if (content.size() > 0) {
+            tooltip.add(Component.translatable("item.vista.picture_tape.pictures_count", content.size())
+                    .withStyle(ChatFormatting.GRAY));
+            tooltip.add(Component.translatable("item.vista.picture_tape.speed", content.playbackSpeed())
                     .withStyle(ChatFormatting.GRAY));
         }
     }
