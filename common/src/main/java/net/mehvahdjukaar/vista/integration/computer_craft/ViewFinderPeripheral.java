@@ -4,7 +4,6 @@ import dan200.computercraft.api.lua.LuaFunction;
 import dan200.computercraft.api.peripheral.IPeripheral;
 import net.mehvahdjukaar.moonlight.api.util.math.EntityAngles;
 import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
-import net.minecraft.util.Mth;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Quaternionf;
 
@@ -27,7 +26,7 @@ public class ViewFinderPeripheral implements IPeripheral {
     public void setYaw(double value) {
         Quaternionf orientation = tile.getLocalOrientation(1);
         EntityAngles angles = EntityAngles.fromQuaternion(orientation);
-        angles = angles.withYaw((float) (Mth.DEG_TO_RAD * value));
+        angles = EntityAngles.of(angles.pitch(), (float) value); //both deg
 
         tile.setLocalOrientation(angles.toQuaternion());
         tile.syncToClients();
@@ -44,7 +43,7 @@ public class ViewFinderPeripheral implements IPeripheral {
     public void setPitch(double value) {
         Quaternionf orientation = tile.getLocalOrientation(1);
         EntityAngles angles = EntityAngles.fromQuaternion(orientation);
-        angles = angles.withPitch((float)  (Mth.DEG_TO_RAD * value));
+        angles = EntityAngles.of((float) value, angles.yaw()); //both deg
 
         tile.setLocalOrientation(angles.toQuaternion());
 

@@ -1,15 +1,17 @@
 package net.mehvahdjukaar.vista.client.ui;
 
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Client-side registry of {@link TapeEntryRenderer}s. The vanilla map renderer is built in;
- * integrations register their own (gated behind their mod-compat check). Renderers are tried in
- * registration order and the first match wins.
+ * Client-side registry of {@link TapeEntryRenderer}s, used both by the tape gallery and by TV playback.
+ * The vanilla ones are built in; integrations register their own (gated behind their mod-compat check).
+ * Renderers are tried in registration order and the first match wins.
  */
 public class PictureTapeRenderers {
 
@@ -17,6 +19,7 @@ public class PictureTapeRenderers {
 
     static {
         register(new MapTapeEntryRenderer());
+        register(new PaintingTapeEntryRenderer());
     }
 
     public static void register(TapeEntryRenderer renderer) {
@@ -24,14 +27,25 @@ public class PictureTapeRenderers {
     }
 
     public static void render(GuiGraphics graphics, ItemStack stack, int x, int y, int size) {
-        for (TapeEntryRenderer renderer : RENDERERS) {
-            if (renderer.matches(stack)) {
-                renderer.render(graphics, stack, x, y, size);
-                return;
-            }
+        TapeEntryRenderer renderer = find(stack);
+        if (renderer == null) {
+            TapeEntryRenderer.renderUnknown(graphics, stack, x, y, size);
+            return;
         }
-        // unknown entry: neutral background with the item icon centered
-        graphics.fill(x, y, x + size, y + size, 0xFF888888);
-        graphics.renderItem(stack, x + size / 2 - 8, y + size / 2 - 8);
+        renderer.render(graphics, stack, x, y, size);
+    }
+
+    @Nullable
+    public static ResourceLocation getFrameTexture(ItemStack stack) {
+        TapeEntryRenderer renderer = find(stack);
+        return renderer == null ? null : renderer.getTexture(stack);
+    }
+
+    @Nullable
+    private static TapeEntryRenderer find(ItemStack stack) {
+        for (TapeEntryRenderer renderer : RENDERERS) {
+            if (renderer.matches(stack)) return renderer;
+        }
+        return null;
     }
 }

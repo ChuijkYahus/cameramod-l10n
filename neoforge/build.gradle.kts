@@ -11,10 +11,13 @@ val moonlight_version: String by extra
 val supplementaries_version: String by extra
 val mixin_squared_version: String by extra
 val sable_companion_version: String by extra
+val codecui_version: String by extra
 
 dependencies {
 
     modImplementation("net.mehvahdjukaar:moonlight-neoforge:${moonlight_version}")
+
+    modRuntimeOnly("net.mehvahdjukaar:codecui-neoforge:${codecui_version}")
     accessTransformers("net.mehvahdjukaar:moonlight-neoforge:${moonlight_version}")
 
     annotationProcessor("com.github.bawnorton.mixinsquared:mixinsquared-common:${mixin_squared_version}")
@@ -28,7 +31,7 @@ dependencies {
     modCompileOnly("curse.maven:zeta-968868:7640154")
 
     //modImplementation("cc.tweaked-cobalt:cobalt:0.93")
-    modCompileOnly("curse.maven:exposure-871755:7862664")
+    modImplementation("curse.maven:exposure-871755:7862664")
     modCompileOnly("curse.maven:cc-tweaked-282001:5714512")
     modCompileOnly("curse.maven:jei-238222:7420587")
     modRuntimeOnly("maven.modrinth:jade:15.10.5+neoforge")
@@ -49,8 +52,8 @@ dependencies {
     modCompileOnly("curse.maven:quark-243121:7640331")
     modCompileOnly("curse.maven:simple-clouds-1121215:6928979")
 
-    modCompileOnly("foundry.veil:veil-neoforge-1.21.1:4.1.2")
-    modCompileOnly("curse.maven:fsable-1312371:8007005")
+    modImplementation("foundry.veil:veil-neoforge-1.21.1:4.1.2")
+    modImplementation("curse.maven:fsable-1312371:8007005")
     // Create contraption view-finder integration (platform impl: CreatePlatStuffImpl)
     modCompileOnly("curse.maven:create-328085:7963363")
     //modCompileOnly("curse.maven:create-aeronautics-676721:8003941")

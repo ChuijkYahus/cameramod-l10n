@@ -4,6 +4,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.mehvahdjukaar.moonlight.api.util.math.Vec2i;
 import net.mehvahdjukaar.vista.client.CrtOverlay;
 import net.mehvahdjukaar.vista.client.textures.TvScreenVertexConsumers;
+import net.mehvahdjukaar.vista.client.ui.PictureTapeRenderers;
 import net.mehvahdjukaar.vista.common.picture_tape.PictureTapeContent;
 import net.mehvahdjukaar.vista.common.picture_tape.PictureTapeItem;
 import net.mehvahdjukaar.vista.common.tv.IntAnimationState;
@@ -43,7 +44,7 @@ public class PictureTapeVideoSource implements IVideoSource {
             return TvScreenVertexConsumers.getBarsVC(buffer, pixelEffectRes, switchAnim);
         }
         int index = (videoAnimationTick / playSpeed) % pictures.size();
-        ResourceLocation texture = PictureTapeFrames.getFrameTexture(pictures.get(index));
+        ResourceLocation texture = PictureTapeRenderers.getFrameTexture(pictures.get(index));
         if (texture == null) {
             return TvScreenVertexConsumers.getNoiseVC(buffer, pixelEffectRes, switchAnim);
         }

@@ -46,7 +46,7 @@ public final class WaveGatePeripheral implements IPeripheral {
 
     @Override
     public String toString() {
-        return "CassetteBurnerPeripheral[" +
+        return "WaveGatePeripheral[" +
                 "tile=" + tile + ']';
 
     }

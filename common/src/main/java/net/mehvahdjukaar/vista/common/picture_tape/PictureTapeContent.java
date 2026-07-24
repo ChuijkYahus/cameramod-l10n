@@ -1,7 +1,9 @@
 package net.mehvahdjukaar.vista.common.picture_tape;
 
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
@@ -13,11 +15,20 @@ import java.util.stream.Stream;
 
 public final class PictureTapeContent {
 
-    public static final Codec<PictureTapeContent> CODEC = ItemStack.CODEC.listOf()
-            .xmap(PictureTapeContent::new, p -> p.pictures);
+    public static final int DEFAULT_SPEED = 40;
 
-    public static final StreamCodec<RegistryFriendlyByteBuf, PictureTapeContent> STREAM_CODEC = ItemStack.LIST_STREAM_CODEC
-            .map(PictureTapeContent::new, p -> p.pictures);
+    public static final Codec<PictureTapeContent> CODEC = Codec.withAlternative(
+            RecordCodecBuilder.create(i -> i.group(
+                    ItemStack.CODEC.listOf().fieldOf("pictures").forGetter(p -> p.pictures),
+                    Codec.INT.optionalFieldOf("play_speed", DEFAULT_SPEED).forGetter(p -> p.playSpeed)
+            ).apply(i, PictureTapeContent::new)),
+            // tapes written before the speed was stored were just a bare picture list
+            ItemStack.CODEC.listOf().xmap(PictureTapeContent::new, p -> p.pictures));
+
+    public static final StreamCodec<RegistryFriendlyByteBuf, PictureTapeContent> STREAM_CODEC = StreamCodec.composite(
+            ItemStack.LIST_STREAM_CODEC, p -> p.pictures,
+            ByteBufCodecs.VAR_INT, p -> p.playSpeed,
+            PictureTapeContent::new);
 
     public static final PictureTapeContent EMPTY = new PictureTapeContent(List.of());
 
@@ -30,7 +41,7 @@ public final class PictureTapeContent {
     }
 
     public PictureTapeContent(List<ItemStack> pictures) {
-        this(pictures, 40);
+        this(pictures, DEFAULT_SPEED);
     }
 
     public int playbackSpeed() {

@@ -3,15 +3,12 @@ package net.mehvahdjukaar.vista.platform;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.common.chunk_tracking.ServerCameraChunkManager;
 import net.mehvahdjukaar.vista.configs.CommonConfigs;
-import net.mehvahdjukaar.vista.integration.CompatHandler;
-import net.mehvahdjukaar.vista.integration.create.CreateCompat;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.Mod;
-import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.common.NeoForge;
@@ -35,16 +32,8 @@ public class VistaForge {
     public VistaForge(IEventBus bus) {
         modBus = new WeakReference<>(bus);
         VistaMod.init();
-        CreateCompat.registerNetwork();
         bus.addListener(this::registerCapabilities);
-        bus.addListener(this::onCommonSetup);
         NeoForge.EVENT_BUS.register(this);
-    }
-
-    //PlatHelper.addCommonSetup in common
-    private void onCommonSetup(FMLCommonSetupEvent event) {
-        // Create's interaction registry isn't thread-safe, so register on the main thread
-        if (CompatHandler.CREATE) event.enqueueWork(CreateCompat::setup);
     }
 
     private void registerCapabilities(RegisterCapabilitiesEvent event) {

@@ -1,21 +1,32 @@
 package net.mehvahdjukaar.vista.client.ui;
 
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
+import org.jetbrains.annotations.Nullable;
 
-/**
- * Draws one picture-tape entry as a square thumbnail. Implementations are contributed by
- * integrations and registered in {@link PictureTapeRenderers}.
- */
 public interface TapeEntryRenderer {
 
-    /**
-     * Whether this renderer can draw the given stack.
-     */
     boolean matches(ItemStack stack);
 
-    /**
-     * Draw {@code stack} as a {@code size}x{@code size} thumbnail with its top-left at (x, y).
-     */
-    void render(GuiGraphics graphics, ItemStack stack, int x, int y, int size);
+    @Nullable
+    ResourceLocation getTexture(ItemStack stack);
+
+    default void render(GuiGraphics graphics, ItemStack stack, int x, int y, int size) {
+        ResourceLocation texture = getTexture(stack);
+        if (texture == null) {
+            renderUnknown(graphics, stack, x, y, size);
+            return;
+        }
+        blitStretched(graphics, texture, x, y, size);
+    }
+
+    static void blitStretched(GuiGraphics graphics, ResourceLocation texture, int x, int y, int size) {
+        graphics.blit(texture, x, y, size, size, 0, 0, 1, 1, 1, 1);
+    }
+
+    static void renderUnknown(GuiGraphics graphics, ItemStack stack, int x, int y, int size) {
+        graphics.fill(x, y, x + size, y + size, 0xFF888888);
+        graphics.renderItem(stack, x + size / 2 - 8, y + size / 2 - 8);
+    }
 }

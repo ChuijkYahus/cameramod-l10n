@@ -5,10 +5,6 @@ import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.Entity;
 
-/**
- * Client-only entry point for the Create integration. Kept separate so referencing client classes
- * ({@link ViewFinderController}) never loads them on a dedicated server.
- */
 public class CreateClientCompat {
 
     public static void startControlling(ViewFinderBlockEntity vf, Entity contraption, BlockPos localPos) {

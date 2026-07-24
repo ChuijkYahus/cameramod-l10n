@@ -1,5 +1,6 @@
 package net.mehvahdjukaar.vista.integration;
 
+import net.mehvahdjukaar.candlelight.api.PlatformImpl;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.platform.RegHelper;
 import net.mehvahdjukaar.moonlight.api.platform.configs.ConfigBuilder;
@@ -10,6 +11,7 @@ import net.mehvahdjukaar.vista.integration.entity_culling.EntityCullingCompat;
 import net.mehvahdjukaar.vista.integration.exposure.ExposureCompat;
 import net.mehvahdjukaar.vista.integration.flashback.FlashbackCompat;
 import net.mehvahdjukaar.vista.integration.iris.IrisCompat;
+import net.mehvahdjukaar.vista.integration.supplementaries.SuppCompat;
 import net.mehvahdjukaar.vista.integration.veil.VeilCompat;
 import net.mehvahdjukaar.vista.integration.watermedia.WatermediaSession;
 
@@ -27,10 +29,8 @@ public class CompatHandler {
     public static final boolean VEIL = PlatHelper.isModLoaded("veil");
     public static final boolean VAMPIRISM = PlatHelper.isModLoaded("vampirism");
     public static final boolean SUPERNATURAL = PlatHelper.isModLoaded("supernatural");
-    // Create has no Fabric build for this Minecraft version (latest Create Fabric release is 1.20.1), so the
-    // whole integration lives in :neoforge only (see integration.create.CreateCompat there); this flag only
-    // ever gates a call reachable from that module.
     public static final boolean CREATE = PlatHelper.isModLoaded("create");
+    public static final boolean JOY_OF_PAINTING = PlatHelper.isModLoaded("xercapaint");
     public static final boolean WATERMEDIA = isWatermediaCompatible();
 
     private static boolean isWatermediaCompatible() {
@@ -54,14 +54,26 @@ public class CompatHandler {
     }
 
     public static void init() {
+        initPlat();
         if (EXPOSURE) ExposureCompat.init();
+        if (SUPPLEMENTARIES) SuppCompat.init();
         if (COMPUTER_CRAFT) CCCompat.init();
         PlatHelper.addCommonSetup(() -> {
             if (COMPUTER_CRAFT) CCCompat.setup();
             if (PlatHelper.getPhysicalSide().isClient() && WATERMEDIA) WatermediaSession.initHack();
+            setupPlat();
         });
     }
 
+    @PlatformImpl
+    public static void initPlat() {
+        throw new AssertionError();
+    }
+
+    @PlatformImpl
+    public static void setupPlat() {
+        throw new AssertionError();
+    }
 
     public static void addItemsToTabs(RegHelper.ItemToTabEvent event) {
     }

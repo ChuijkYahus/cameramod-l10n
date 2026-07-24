@@ -10,21 +10,32 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.Tooltip;
-import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Inventory;
 import org.joml.Quaternionf;
 
-public class ViewFinderScreen extends AbstractContainerScreen<ViewFinderMenu> {
+public class ViewFinderScreen extends VistaContainerScreen<ViewFinderMenu> {
 
-    private static final ResourceLocation BACKGROUND = VistaMod.res("textures/gui/viewfinder_gui.png");
+    private static final ResourceLocation BACKGROUND = VistaMod.res("textures/gui/viewfinder.png");
     private static final ResourceLocation VIEW_SPRITE = VistaMod.res("viewfinder/view");
     private static final ResourceLocation VIEW_HOVERED_SPRITE = VistaMod.res("viewfinder/view_highlighted");
     private static final ResourceLocation VIEW_DISABLED_SPRITE = VistaMod.res("viewfinder/view_disabled");
+    private static final ResourceLocation ZOOM_HANDLE_SPRITE = VistaMod.res("viewfinder/zoom_scroller");
+
+    // horizontal zoom slider track drawn on the background (relative to leftPos/topPos)
+    private static final int ZOOM_X = 37;
+    private static final int ZOOM_Y = 55;
+    private static final int ZOOM_W = 67;
+    private static final int ZOOM_H = 14;
+    private static final int ZOOM_HANDLE_W = 14;
+    private static final int ZOOM_HANDLE_H = 14;
 
     private NumberEditBox pitchSelector;
     private NumberEditBox yawSelector;
+    private ScrollBarWidget zoomBar;
+    private int lastZoomForSound;
 
     public ViewFinderScreen(ViewFinderMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title);
@@ -50,6 +61,29 @@ public class ViewFinderScreen extends AbstractContainerScreen<ViewFinderMenu> {
         this.pitchSelector.setNumber(eulerAngles.pitch());
         this.yawSelector = this.addRenderableWidget(new NumberEditBox(this.font, i + 144, j + 55, 18, 10));
         this.yawSelector.setNumber(eulerAngles.yaw());
+
+        //horizontal zoom slider along the gauge printed on the background
+        this.lastZoomForSound = Mth.clamp(tile.getZoomLevel(), 1, ViewFinderBlockEntity.MAX_ZOOM);
+        this.zoomBar = this.addRenderableWidget(new ScrollBarWidget(
+                ScrollBarWidget.Orientation.HORIZONTAL, i + ZOOM_X, j + ZOOM_Y, ZOOM_W, ZOOM_H,
+                ZOOM_HANDLE_SPRITE, ZOOM_HANDLE_W, ZOOM_HANDLE_H)
+                .showValue(1, ViewFinderBlockEntity.MAX_ZOOM)
+                .value(zoomToFraction(tile.getZoomLevel()))
+                .onChanged(f -> onZoomChanged()));
+    }
+
+    // matches the overlay: a click every 4 zoom steps as the value passes them
+    private void onZoomChanged() {
+        int zoom = this.zoomBar.getMappedValue();
+        if (zoom != lastZoomForSound) {
+            lastZoomForSound = zoom;
+            if (zoom % 4 == 0) ViewFinderController.playZoomClick();
+        }
+    }
+
+    private static double zoomToFraction(int zoom) {
+        int clamped = Mth.clamp(zoom, 1, ViewFinderBlockEntity.MAX_ZOOM);
+        return (clamped - 1) / (double) (ViewFinderBlockEntity.MAX_ZOOM - 1);
     }
 
     @Override
@@ -73,7 +107,7 @@ public class ViewFinderScreen extends AbstractContainerScreen<ViewFinderMenu> {
         float pitch = this.pitchSelector.getNumber();
         //update client immediately too
         Quaternionf wantedQuat = EntityAngles.of(pitch, yaw).toQuaternion();
-        tile.setTrustedInternalAttributes(wantedQuat, tile.getZoomLevel(), tile.isLocked());
+        tile.setTrustedInternalAttributes(wantedQuat, this.zoomBar.getMappedValue(), tile.isLocked());
         //release ownership unless we just entered view mode
         tile.syncToServer(!ViewFinderController.isActive(), minecraft.player);
     }
