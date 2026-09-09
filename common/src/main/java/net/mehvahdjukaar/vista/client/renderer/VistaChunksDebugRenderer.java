@@ -4,7 +4,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.vista.VistaModClient;
-import net.mehvahdjukaar.vista.client.PinnedChunks;
+import net.mehvahdjukaar.vista.client.chunk_tracking.ClientPinnedChunksManager;
 import net.mehvahdjukaar.vista.common.chunk_tracking.ExtraChunkViewData;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.minecraft.client.Minecraft;
@@ -35,7 +35,7 @@ public class VistaChunksDebugRenderer implements DebugRenderer.SimpleDebugRender
         if (!ClientConfigs.rendersDebug()) return;
 
         ClientChunkCache chunkSource = mc.level.getChunkSource();
-        Map<Long, LevelChunk> pinned = PinnedChunks.view();
+        Map<Long, LevelChunk> pinned = ClientPinnedChunksManager.view();
         camY += 60;
         int pcx = (int) Math.floor(camX) >> 4;
         int pcz = (int) Math.floor(camZ) >> 4;
@@ -119,7 +119,6 @@ public class VistaChunksDebugRenderer implements DebugRenderer.SimpleDebugRender
         }
     }
 
-    // camera-relative wireframe box for one chunk column
     private static void chunkBox(PoseStack ps, VertexConsumer vc,
                                  double camX, double camZ, int cx, int cz,
                                  double yMin, double yMax,

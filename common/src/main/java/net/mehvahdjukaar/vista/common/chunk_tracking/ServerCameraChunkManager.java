@@ -1,6 +1,5 @@
 package net.mehvahdjukaar.vista.common.chunk_tracking;
 
-import dev.ryanhcode.sable.companion.SableCompanion;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.platform.network.NetworkHelper;
 import net.mehvahdjukaar.vista.VistaMod;
@@ -8,10 +7,9 @@ import net.mehvahdjukaar.vista.common.broadcast.BroadcastManager;
 import net.mehvahdjukaar.vista.common.broadcast.IBroadcastLocation;
 import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
 import net.mehvahdjukaar.vista.configs.CommonConfigs;
+import net.mehvahdjukaar.vista.integration.sable.SableCompat;
 import net.mehvahdjukaar.vista.network.ClientBoundSyncExtraChunksPacket;
-import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
-import net.minecraft.core.Position;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ChunkMap;
@@ -20,7 +18,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -129,7 +126,7 @@ public class ServerCameraChunkManager {
 
         for (TVBlockEntity tv : loadedTvs) {
             if (tv.isRemoved() || visitedTvs.contains(tv)) continue;
-            ChunkPos tvChunk = chunkOutOfSableSubLevel(level, tv.getBlockPos());
+            ChunkPos tvChunk = SableCompat.projectChunkOutOfSubLevel(level, tv.getBlockPos());
             // TV on a Sable sublevel whose projection no-ops (sublevel held/removed): stale, unreachable
             if (tvChunk == null || !isChunkInArea.test(tvChunk.x, tvChunk.z)) continue;
             visitedTvs.add(tv);
@@ -164,16 +161,9 @@ public class ServerCameraChunkManager {
         //project against the ViewFinder's OWN level (it may be cross-dimension).
         ServerLevel viewFinderLevel = server.getLevel(viewFinder.dimension());
         if (viewFinderLevel == null) return viewFinder;
-        ChunkPos chunk = chunkOutOfSableSubLevel(viewFinderLevel, viewFinder.pos());
+        ChunkPos chunk = SableCompat.projectChunkOutOfSubLevel(viewFinderLevel, viewFinder.pos());
         if (chunk == null) return null;
         return GlobalPos.of(viewFinder.dimension(), chunk.getWorldPosition());
-    }
-
-    @Nullable
-    private static ChunkPos chunkOutOfSableSubLevel(ServerLevel level, BlockPos pos) {
-        Vec3 worldPos = SableCompanion.INSTANCE.projectOutOfSubLevel(level, (Position) Vec3.atLowerCornerOf(pos));
-        if (SableCompanion.INSTANCE.isInPlotGrid(level, worldPos)) return null;
-        return new ChunkPos(BlockPos.containing(worldPos));
     }
 
     private static void acquireForceLoad(MinecraftServer server, GlobalPos viewFinder, int zoneRadius) {

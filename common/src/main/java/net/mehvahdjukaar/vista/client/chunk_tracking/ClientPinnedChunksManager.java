@@ -1,4 +1,4 @@
-package net.mehvahdjukaar.vista.client;
+package net.mehvahdjukaar.vista.client.chunk_tracking;
 
 import net.mehvahdjukaar.vista.integration.CompatHandler;
 import net.minecraft.client.Minecraft;
@@ -10,11 +10,11 @@ import org.jetbrains.annotations.Nullable;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class PinnedChunks {
+public class ClientPinnedChunksManager {
 
     private static final Map<Long, LevelChunk> PINNED = new ConcurrentHashMap<>();
 
-    public static boolean wantsZoneChunks() {
+    public static boolean clientWantsZoneChunksSent() {
         //sodium does its own stuff.
         return !CompatHandler.SODIUM;
     }

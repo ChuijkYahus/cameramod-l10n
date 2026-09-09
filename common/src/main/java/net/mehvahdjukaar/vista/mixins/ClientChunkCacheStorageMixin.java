@@ -1,7 +1,7 @@
 package net.mehvahdjukaar.vista.mixins;
 
 import net.mehvahdjukaar.vista.VistaModClient;
-import net.mehvahdjukaar.vista.client.PinnedChunks;
+import net.mehvahdjukaar.vista.client.chunk_tracking.ClientPinnedChunksManager;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.chunk.LevelChunk;
 import org.spongepowered.asm.mixin.Final;
@@ -42,16 +42,16 @@ public class ClientChunkCacheStorageMixin {
         if (chunk != null) {
             ChunkPos pos = chunk.getPos();
             if (vista$isFarZoneChunk(pos)) {
-                PinnedChunks.pin(chunk);
+                ClientPinnedChunksManager.pin(chunk);
                 ci.cancel();
                 return;
             }
-            PinnedChunks.unpin(pos.x, pos.z);
+            ClientPinnedChunksManager.unpin(pos.x, pos.z);
         }
 
         LevelChunk evicted = this.chunks.get(chunkIndex);
         if (evicted != null && evicted != chunk && vista$isFarZoneChunk(evicted.getPos())) {
-            PinnedChunks.pin(evicted);
+            ClientPinnedChunksManager.pin(evicted);
         }
     }
 

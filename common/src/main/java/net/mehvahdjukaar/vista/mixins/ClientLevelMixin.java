@@ -1,6 +1,6 @@
 package net.mehvahdjukaar.vista.mixins;
 
-import net.mehvahdjukaar.vista.client.PinnedChunks;
+import net.mehvahdjukaar.vista.client.chunk_tracking.ClientPinnedChunksManager;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.world.level.chunk.LevelChunk;
 import org.spongepowered.asm.mixin.Mixin;
@@ -13,7 +13,7 @@ public class ClientLevelMixin {
 
     @Inject(method = "unload", at = @At("HEAD"), cancellable = true)
     private void vista$keepPinnedChunkAlive(LevelChunk chunk, CallbackInfo ci) {
-        if (PinnedChunks.isPinned(chunk)) {
+        if (ClientPinnedChunksManager.isPinned(chunk)) {
             ci.cancel();
         }
     }

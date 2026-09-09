@@ -3,9 +3,9 @@ package net.mehvahdjukaar.vista.network;
 import net.mehvahdjukaar.moonlight.api.platform.network.Message;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.VistaModClient;
-import net.mehvahdjukaar.vista.client.PinnedChunks;
+import net.mehvahdjukaar.vista.client.chunk_tracking.ClientPinnedChunksManager;
+import net.mehvahdjukaar.vista.client.chunk_tracking.ILevelRendererExt;
 import net.mehvahdjukaar.vista.common.chunk_tracking.ExtraChunkViewData;
-import net.mehvahdjukaar.vista.common.chunk_tracking.ILevelRendererExt;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -41,7 +41,7 @@ public record ClientBoundSyncExtraChunksPacket(ExtraChunkViewData data) implemen
         // ViewArea already has the right sections
         if (newChunks.equals(oldChunks)) return;
 
-        PinnedChunks.keepOnly(newChunks);
+        ClientPinnedChunksManager.keepOnly(newChunks);
 
         Minecraft mc = Minecraft.getInstance();
         if (mc.levelRenderer instanceof ILevelRendererExt ext) {

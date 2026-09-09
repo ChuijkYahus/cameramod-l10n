@@ -3,8 +3,6 @@ package net.mehvahdjukaar.vista.client.renderer;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
-import dev.ryanhcode.sable.companion.ClientSubLevelAccess;
-import dev.ryanhcode.sable.companion.SableCompanion;
 import net.mehvahdjukaar.candlelight.api.VirtualOverride;
 import net.mehvahdjukaar.moonlight.api.client.util.LOD;
 import net.mehvahdjukaar.moonlight.api.client.util.VertexUtil;
@@ -16,6 +14,7 @@ import net.mehvahdjukaar.vista.client.textures.MirrorTextureManager;
 import net.mehvahdjukaar.vista.common.mirror.MirrorBlock;
 import net.mehvahdjukaar.vista.common.mirror.MirrorBlockEntity;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
+import net.mehvahdjukaar.vista.integration.sable.SableCompatClient;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LightTexture;
@@ -69,19 +68,17 @@ public class MirrorBlockEntityRenderer implements BlockEntityRenderer<MirrorBloc
         Direction dir = blockEntity.getBlockState().getValue(MirrorBlock.FACING);
         double recession = MirrorBlock.surfaceRecession(blockEntity.getBlockState());
 
-        ClientSubLevelAccess subLevel = SableCompanion.INSTANCE.getContainingClient(blockEntity);
+        boolean onSubLevel = SableCompatClient.isOnSubLevel(blockEntity);
 
         LOD lod = LOD.at(blockEntity);
-        if (subLevel == null && lod.isPlaneCulled(dir, (float) (0.5 - recession), 1.5f, 0f)) return;
+        if (!onSubLevel && lod.isPlaneCulled(dir, (float) (0.5 - recession), 1.5f, 0f)) return;
 
         Vec3 normal = Vec3.atLowerCornerOf(dir.getNormal());
         Vec3 planePoint = Vec3.atCenterOf(blockEntity.getBlockPos()).add(normal.scale(0.5 - recession));
 
         Minecraft mc = Minecraft.getInstance();
         Camera mainCamera = mc.gameRenderer.mainCamera;
-        Vec3 eyeLocal = subLevel == null
-                ? mainCamera.getPosition()
-                : subLevel.renderPose(partialTick).transformPositionInverse(mainCamera.getPosition());
+        Vec3 eyeLocal = SableCompatClient.projectIntoSubLevel(blockEntity, mainCamera.getPosition(), partialTick);
         MirrorReflection reflection = MirrorReflection.compute(planePoint, normal, eyeLocal);
         if (!reflection.viewerInFront()) return;
 
@@ -91,10 +88,10 @@ public class MirrorBlockEntityRenderer implements BlockEntityRenderer<MirrorBloc
         if (depth == 0) {
             Vec2i screenSize = blockEntity.getScreenPixelSize();
             Vec3 eye = mainCamera.getPosition().add(VistaLevelRenderer.getMainBobEyeOffset());
-            if (subLevel != null) eye = subLevel.renderPose(partialTick).transformPositionInverse(eye);
-            int texLod = subLevel == null
-                    ? MirrorTextureManager.distanceLod(lod)
-                    : MirrorTextureManager.distanceLod(eyeLocal, blockEntity.getBlockPos());
+            eye = SableCompatClient.projectIntoSubLevel(blockEntity, eye, partialTick);
+            int texLod = onSubLevel
+                    ? MirrorTextureManager.distanceLod(eyeLocal, blockEntity.getBlockPos())
+                    : MirrorTextureManager.distanceLod(lod);
             text = MirrorTextureManager.getMirrorTexture(blockEntity, screenSize, eye, texLod);
         } else {
             text = resolveNestedTexture(blockEntity, eyeLocal, depth);

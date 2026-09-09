@@ -1,13 +1,12 @@
 package net.mehvahdjukaar.vista.client.textures;
 
-import dev.ryanhcode.sable.companion.ClientSubLevelAccess;
-import dev.ryanhcode.sable.companion.SableCompanion;
 import net.mehvahdjukaar.moonlight.api.client.texture_renderer.DynamicTextureRenderer;
 import net.mehvahdjukaar.moonlight.api.client.util.LOD;
 import net.mehvahdjukaar.moonlight.api.util.math.Vec2i;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.common.mirror.MirrorBlockEntity;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
+import net.mehvahdjukaar.vista.integration.sable.SableCompatClient;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
@@ -54,10 +53,8 @@ public class MirrorTextureManager {
     // plot space first, since comparing it to a plot position directly is meaningless.
     public static int distanceLod(MirrorBlockEntity mirror) {
         Camera camera = Minecraft.getInstance().gameRenderer.mainCamera;
-        ClientSubLevelAccess subLevel = SableCompanion.INSTANCE.getContainingClient(mirror);
-        if (subLevel != null) {
-            return distanceLod(subLevel.renderPose().transformPositionInverse(camera.getPosition()),
-                    mirror.getBlockPos());
+        if (SableCompatClient.isOnSubLevel(mirror)) {
+            return distanceLod(SableCompatClient.projectIntoSubLevel(mirror, camera.getPosition()), mirror.getBlockPos());
         }
         return distanceLod(LOD.at(camera, mirror.getBlockPos()));
     }

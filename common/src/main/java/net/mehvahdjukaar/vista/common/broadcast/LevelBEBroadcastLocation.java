@@ -1,20 +1,18 @@
 package net.mehvahdjukaar.vista.common.broadcast;
 
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import dev.ryanhcode.sable.companion.SableCompanion;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.common.cassette.IBroadcastSource;
+import net.mehvahdjukaar.vista.integration.sable.SableCompat;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
-import net.minecraft.core.Position;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
@@ -46,7 +44,7 @@ public final class LevelBEBroadcastLocation implements IBroadcastLocation {
 
     public static LevelBEBroadcastLocation of(Level level, BlockPos pos) {
         BlockPos anchor = null;
-        if (!level.isClientSide() && SableCompanion.INSTANCE.isInPlotGrid(level, pos)) {
+        if (!level.isClientSide() && SableCompat.isOnSubLevel(level, pos)) {
             anchor = projectToWorldAnchor(level, pos);
         }
         return new LevelBEBroadcastLocation(GlobalPos.of(level.dimension(), pos), anchor);
@@ -97,7 +95,7 @@ public final class LevelBEBroadcastLocation implements IBroadcastLocation {
     public @Nullable GlobalPos getChunkSendPosition() {
         MinecraftServer server = PlatHelper.getCurrentServer();
         Level level = server == null ? null : server.getLevel(globalPos.dimension());
-        if (level == null || !SableCompanion.INSTANCE.isInPlotGrid(level, globalPos.pos())) {
+        if (level == null || !SableCompat.isOnSubLevel(level, globalPos.pos())) {
             return globalPos; // normal in-world block entity: fast path
         }
         BlockPos anchor = projectToWorldAnchor(level, globalPos.pos());
@@ -113,9 +111,8 @@ public final class LevelBEBroadcastLocation implements IBroadcastLocation {
 
     @Nullable
     private static BlockPos projectToWorldAnchor(Level level, BlockPos plotPos) {
-        Vec3 world = SableCompanion.INSTANCE.projectOutOfSubLevel(level, (Position) Vec3.atCenterOf(plotPos));
-        if (SableCompanion.INSTANCE.isInPlotGrid(level, (Position) world)) return null;
-        return new ChunkPos(BlockPos.containing(world)).getWorldPosition();
+        ChunkPos chunk = SableCompat.projectChunkOutOfSubLevel(level, plotPos);
+        return chunk == null ? null : chunk.getWorldPosition();
     }
 
     @Override

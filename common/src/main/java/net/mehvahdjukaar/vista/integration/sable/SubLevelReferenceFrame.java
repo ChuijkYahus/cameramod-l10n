@@ -1,10 +1,11 @@
-package net.mehvahdjukaar.vista.common.view_finder;
+package net.mehvahdjukaar.vista.integration.sable;
 
 import dev.ryanhcode.sable.companion.ClientSubLevelAccess;
 import dev.ryanhcode.sable.companion.SableCompanion;
 import dev.ryanhcode.sable.companion.SubLevelAccess;
 import dev.ryanhcode.sable.companion.math.Pose3d;
 import dev.ryanhcode.sable.companion.math.Pose3dc;
+import net.mehvahdjukaar.vista.common.view_finder.WorldReferenceFrame;
 import net.minecraft.core.Position;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.Vec3;

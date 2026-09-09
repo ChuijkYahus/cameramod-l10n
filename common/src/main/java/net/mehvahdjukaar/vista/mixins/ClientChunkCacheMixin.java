@@ -1,6 +1,6 @@
 package net.mehvahdjukaar.vista.mixins;
 
-import net.mehvahdjukaar.vista.client.PinnedChunks;
+import net.mehvahdjukaar.vista.client.chunk_tracking.ClientPinnedChunksManager;
 import net.minecraft.client.multiplayer.ClientChunkCache;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.level.chunk.LevelChunk;
@@ -18,7 +18,7 @@ public class ClientChunkCacheMixin {
             at = @At("HEAD"), cancellable = true)
     private void vista$getPinnedChunk(int x, int z, ChunkStatus status, boolean require,
             CallbackInfoReturnable<LevelChunk> cir) {
-        LevelChunk chunk = PinnedChunks.get(x, z);
+        LevelChunk chunk = ClientPinnedChunksManager.get(x, z);
         if (chunk != null) {
             cir.setReturnValue(chunk);
         }
@@ -26,7 +26,7 @@ public class ClientChunkCacheMixin {
 
     @Inject(method = "replaceBiomes", at = @At("HEAD"), cancellable = true)
     private void vista$replacePinnedBiomes(int x, int z, FriendlyByteBuf buffer, CallbackInfo ci) {
-        LevelChunk chunk = PinnedChunks.get(x, z);
+        LevelChunk chunk = ClientPinnedChunksManager.get(x, z);
         if (chunk != null) {
             chunk.replaceBiomes(buffer);
             ci.cancel();

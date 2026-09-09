@@ -9,9 +9,9 @@ import net.mehvahdjukaar.moonlight.api.platform.ClientHelper;
 import net.mehvahdjukaar.moonlight.api.platform.RegHelper;
 import net.mehvahdjukaar.moonlight.api.platform.network.NetworkHelper;
 import net.mehvahdjukaar.moonlight.api.util.Utils;
-import net.mehvahdjukaar.vista.client.PinnedChunks;
 import net.mehvahdjukaar.vista.client.ViewFinderController;
 import net.mehvahdjukaar.vista.client.VistaDynamicResources;
+import net.mehvahdjukaar.vista.client.chunk_tracking.ClientPinnedChunksManager;
 import net.mehvahdjukaar.vista.client.renderer.*;
 import net.mehvahdjukaar.vista.client.textures.CassetteTexturesManager;
 import net.mehvahdjukaar.vista.client.textures.LiveFeedTexturesManager;
@@ -148,7 +148,6 @@ public class VistaModClient {
         ffmpegFuture = logFailure(CompletableFuture.supplyAsync(() -> FFmpegManager.verified(ffmpeg)));
     }
 
-    // Without this the setup failure is only visible as unexplained static on every TV.
     private static CompletableFuture<FFmpeg> logFailure(CompletableFuture<FFmpeg> future) {
         return future.whenComplete((ffmpeg, error) -> {
             if (error != null) {
@@ -157,8 +156,6 @@ public class VistaModClient {
         });
     }
 
-    // Tries to make FFmpeg ready without any download: existing downloaded binaries,
-    // or a system-wide install on the user's PATH. Returns true if FFmpeg is now ready.
     private static boolean tryReadyWithoutDownload() {
         if (FFmpegManager.hasManagedBinaries()) {
             instantiateFFmpeg(null);
@@ -276,7 +273,6 @@ public class VistaModClient {
 
     public static void onRenderTickEnd(Minecraft minecraft) {
         LiveFeedTexturesManager.onRenderTickEnd();
-        // No-op when MIRROR_UPDATE_MODE = TEXTURE_REFRESH (queue stays empty).
         MirrorTextureManager.processPending();
     }
 
@@ -301,14 +297,14 @@ public class VistaModClient {
         LiveFeedTexturesManager.clear();
 
         CLIENT_EXTRA_CHUNK_VIEW_DATA.clearZones();
-        PinnedChunks.clear();
+        ClientPinnedChunksManager.clear();
     }
 
     public static void onLevelLoaded(ClientLevel cl) {
         KNOWN_LEVELS_BY_DIMENSION.put(cl.dimension(), cl);
 
         if (Minecraft.getInstance().getConnection() != null) {
-            NetworkHelper.sendToServer(new ServerBoundWantsZoneChunksPacket(PinnedChunks.wantsZoneChunks()));
+            NetworkHelper.sendToServer(new ServerBoundWantsZoneChunksPacket(ClientPinnedChunksManager.clientWantsZoneChunksSent()));
         }
     }
 

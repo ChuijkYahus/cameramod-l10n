@@ -1,7 +1,6 @@
 package net.mehvahdjukaar.vista.common.view_finder;
 
 import com.mojang.math.Axis;
-import dev.ryanhcode.sable.companion.SableCompanion;
 import net.mehvahdjukaar.moonlight.api.block.IOneUserInteractable;
 import net.mehvahdjukaar.moonlight.api.block.ItemDisplayTile;
 import net.mehvahdjukaar.moonlight.api.misc.OrientationRig;
@@ -12,6 +11,8 @@ import net.mehvahdjukaar.vista.client.video_source.LiveFeedVideoSource;
 import net.mehvahdjukaar.vista.common.broadcast.LevelBEBroadcastLocation;
 import net.mehvahdjukaar.vista.common.cassette.IBroadcastSource;
 import net.mehvahdjukaar.vista.integration.CompatHandler;
+import net.mehvahdjukaar.vista.integration.sable.SableCompat;
+import net.mehvahdjukaar.vista.integration.sable.SubLevelReferenceFrame;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
@@ -88,7 +89,7 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
     @Override
     public void setLevel(Level level) {
         super.setLevel(level);
-        if (SableCompanion.INSTANCE.isInPlotGrid(level, this.worldPosition)) {
+        if (SableCompat.isOnSubLevel(level, this.worldPosition)) {
             this.referenceFrame = new SubLevelReferenceFrame(this);
         }
         this.ensureLinked(level, LevelBEBroadcastLocation.of(this));
@@ -213,11 +214,6 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
         return this.videoSource;
     }
 
-    public void setRestraint(YawPitchRestraint restraint) {
-        //this.restraint = restraint;
-        //TODO: this is bugged. Restraints dont work properly. Disabled for now.
-    }
-
     @VisibleForDebug
     @ApiStatus.Internal
     public ReferenceFrame getReferenceFrame() {
@@ -239,12 +235,6 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
     @Override
     public boolean stillValid(Player player) {
         return referenceFrame.isStillValid(player);
-    }
-
-    @Override
-    public void setChanged() {
-        super.setChanged();
-        //recomputes it
     }
 
     public boolean isInvisible() {
@@ -279,7 +269,7 @@ public class ViewFinderBlockEntity extends ItemDisplayTile implements IOneUserIn
 
     @Override
     public int[] getSlotsForFace(Direction side) {
-        return new int[]{0}; //only one slot, the lens
+        return new int[]{0};
     }
 
     @Nullable
