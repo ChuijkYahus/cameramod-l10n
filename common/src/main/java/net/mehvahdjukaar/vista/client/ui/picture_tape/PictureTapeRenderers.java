@@ -1,4 +1,4 @@
-package net.mehvahdjukaar.vista.client.ui;
+package net.mehvahdjukaar.vista.client.ui.picture_tape;
 
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.resources.ResourceLocation;
@@ -8,11 +8,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Client-side registry of TapeEntryRenderers, used both by the tape gallery and by TV playback.
- * The vanilla ones are built in; integrations register their own (gated behind their mod-compat check).
- * Renderers are tried in registration order and the first match wins.
- */
 public class PictureTapeRenderers {
 
     private static final List<TapeEntryRenderer> RENDERERS = new ArrayList<>();

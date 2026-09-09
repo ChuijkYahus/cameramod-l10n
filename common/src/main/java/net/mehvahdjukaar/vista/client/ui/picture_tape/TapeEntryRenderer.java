@@ -1,4 +1,4 @@
-package net.mehvahdjukaar.vista.client.ui;
+package net.mehvahdjukaar.vista.client.ui.picture_tape;
 
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.resources.ResourceLocation;

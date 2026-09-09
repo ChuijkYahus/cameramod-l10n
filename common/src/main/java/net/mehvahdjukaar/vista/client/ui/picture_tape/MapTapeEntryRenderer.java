@@ -1,4 +1,4 @@
-package net.mehvahdjukaar.vista.client.ui;
+package net.mehvahdjukaar.vista.client.ui.picture_tape;
 
 import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -19,11 +19,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Renders a filled map as its actual map image. The gallery goes through the vanilla map renderer,
- * while TV playback needs a flat texture, so the map colours get baked into a cached
- * DynamicTexture instead.
- */
 public class MapTapeEntryRenderer implements TapeEntryRenderer {
 
     private static final int MAP_SIZE = 128;

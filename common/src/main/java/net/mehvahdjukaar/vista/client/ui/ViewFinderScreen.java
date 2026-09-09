@@ -24,14 +24,6 @@ public class ViewFinderScreen extends VistaContainerScreen<ViewFinderMenu> {
     private static final ResourceLocation VIEW_DISABLED_SPRITE = VistaMod.res("viewfinder/view_disabled");
     private static final ResourceLocation ZOOM_HANDLE_SPRITE = VistaMod.res("viewfinder/zoom_scroller");
 
-    // horizontal zoom slider track drawn on the background (relative to leftPos/topPos)
-    private static final int ZOOM_X = 37;
-    private static final int ZOOM_Y = 55;
-    private static final int ZOOM_W = 67;
-    private static final int ZOOM_H = 14;
-    private static final int ZOOM_HANDLE_W = 14;
-    private static final int ZOOM_HANDLE_H = 14;
-
     private NumberEditBox pitchSelector;
     private NumberEditBox yawSelector;
     private ScrollBarWidget zoomBar;
@@ -51,10 +43,8 @@ public class ViewFinderScreen extends VistaContainerScreen<ViewFinderMenu> {
         int j = this.topPos;
         ViewFinderBlockEntity tile = this.menu.viewFinder;
 
-        //view button sits in the same spot the cannon's maneuver button does
         this.addRenderableWidget(new ViewButton(i + 154, j + 16, true));
 
-        //pitch / yaw angle boxes: copied from the cannon control panel
         Quaternionf rot = tile.getLocalOrientation(1);
         EntityAngles eulerAngles = EntityAngles.fromQuaternion(rot);
         this.pitchSelector = this.addRenderableWidget(new NumberEditBox(this.font, i + 144, j + 35, 18, 10));
@@ -65,14 +55,13 @@ public class ViewFinderScreen extends VistaContainerScreen<ViewFinderMenu> {
         //horizontal zoom slider along the gauge printed on the background
         this.lastZoomForSound = Mth.clamp(tile.getZoomLevel(), 1, ViewFinderBlockEntity.MAX_ZOOM);
         this.zoomBar = this.addRenderableWidget(new ScrollBarWidget(
-                ScrollBarWidget.Orientation.HORIZONTAL, i + ZOOM_X, j + ZOOM_Y, ZOOM_W, ZOOM_H,
-                ZOOM_HANDLE_SPRITE, ZOOM_HANDLE_W, ZOOM_HANDLE_H)
+                ScrollBarWidget.Orientation.HORIZONTAL, i + 37, j + 55, 67, 14,
+                ZOOM_HANDLE_SPRITE, 14, 14)
                 .showValue(1, ViewFinderBlockEntity.MAX_ZOOM)
                 .value(zoomToFraction(tile.getZoomLevel()))
                 .onChanged(f -> onZoomChanged()));
     }
 
-    // matches the overlay: a click every 4 zoom steps as the value passes them
     private void onZoomChanged() {
         int zoom = this.zoomBar.getMappedValue();
         if (zoom != lastZoomForSound) {
@@ -134,7 +123,6 @@ public class ViewFinderScreen extends VistaContainerScreen<ViewFinderMenu> {
         }
     }
 
-    // number field for an angle, copied from the cannon screen
     private static class NumberEditBox extends EditBox {
         public NumberEditBox(Font font, int x, int y, int width, int height) {
             super(font, x, y, width, height, Component.empty());

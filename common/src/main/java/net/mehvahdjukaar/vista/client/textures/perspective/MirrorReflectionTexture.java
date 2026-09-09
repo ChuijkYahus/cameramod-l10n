@@ -1,4 +1,4 @@
-package net.mehvahdjukaar.vista.client.textures;
+package net.mehvahdjukaar.vista.client.textures.perspective;
 
 import net.mehvahdjukaar.moonlight.api.util.math.Vec2i;
 import net.mehvahdjukaar.vista.client.MirrorReflection;

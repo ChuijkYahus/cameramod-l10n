@@ -1,6 +1,6 @@
 package net.mehvahdjukaar.vista.integration.watermedia;
 
-import net.mehvahdjukaar.vista.client.textures.IWebTexture;
+import net.mehvahdjukaar.vista.client.textures.web.IWebTexture;
 import net.mehvahdjukaar.vista.client.web.IMediaSession;
 import net.minecraft.resources.ResourceLocation;
 import org.watermedia.api.image.ImageAPI;
@@ -9,7 +9,6 @@ import org.watermedia.shaded.kiulian.downloader.downloader.client.DefaultClients
 
 import java.lang.reflect.Field;
 import java.net.URI;
-import java.nio.file.Paths;
 import java.util.concurrent.Executor;
 
 public class WatermediaSession implements IMediaSession {

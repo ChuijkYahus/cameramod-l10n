@@ -1,6 +1,6 @@
 package net.mehvahdjukaar.vista.integration.watermedia;
 
-import net.mehvahdjukaar.vista.client.textures.IWebTexture;
+import net.mehvahdjukaar.vista.client.textures.web.IWebTexture;
 import net.mehvahdjukaar.vista.client.web.MediaStatus;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.AbstractTexture;

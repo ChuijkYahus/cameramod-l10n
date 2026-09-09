@@ -7,7 +7,7 @@ import net.mehvahdjukaar.moonlight.api.client.texture_renderer.DynamicTextureRen
 import net.mehvahdjukaar.moonlight.api.util.math.Vec2i;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.VistaModClient;
-import net.mehvahdjukaar.vista.client.textures.MirrorReflectionTexture;
+import net.mehvahdjukaar.vista.client.textures.perspective.MirrorReflectionTexture;
 import net.mehvahdjukaar.vista.common.tv.IntAnimationState;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.minecraft.Util;
@@ -94,8 +94,6 @@ public class VistaRenderTypes extends RenderType {
     }
 
     public static RenderType mirrorMaterial(ResourceLocation reflectionTexture, int wTiles, int hTiles) {
-        // smoothing is part of the key because the blur flag bakes into the texture shard at build
-        // time, so toggling it has to land on a different cached render type
         return MIRROR_MATERIAL_RENDER_TYPE.apply(
                 new MirrorKey(reflectionTexture, wTiles, hTiles, ClientConfigs.MIRROR_SMOOTH.get()));
     }
@@ -112,8 +110,6 @@ public class VistaRenderTypes extends RenderType {
                 .setOverlayState(NO_OVERLAY)
                 .setLayeringState(POLYGON_OFFSET_LAYERING)
                 .setTextureState(textureState)
-                // Overlay goes straight to unit 3: the shard binds 0 and 1, LIGHTMAP takes 2, so
-                // adding it to MultiTextureStateShard would collide there.
                 .setTexturingState(new TexturingStateShard("set_mirror_uniforms",
                         () -> {
                             RenderSystem.setShaderTexture(3, VistaModClient.MIRROR_OVERLAY);

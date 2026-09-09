@@ -1,4 +1,4 @@
-package net.mehvahdjukaar.vista.client.ui;
+package net.mehvahdjukaar.vista.client.ui.picture_tape;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.Holder;
@@ -13,8 +13,6 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.CustomData;
 import org.jetbrains.annotations.Nullable;
 
-// paintings render as their variant art (from the item's entity nbt, or a stable fallback one when it
-// carries none), with the flat texture stretched to fill
 public class PaintingTapeEntryRenderer implements TapeEntryRenderer {
 
     private static final ResourceLocation FALLBACK_TEXTURE =
@@ -47,7 +45,6 @@ public class PaintingTapeEntryRenderer implements TapeEntryRenderer {
         if (mc.level == null) return null;
         Registry<PaintingVariant> registry = mc.level.registryAccess().registryOrThrow(Registries.PAINTING_VARIANT);
 
-        // use the variant baked into the painting's entity data, when it has one
         CustomData data = stack.get(DataComponents.ENTITY_DATA);
         if (data != null) {
             ResourceLocation id = ResourceLocation.tryParse(data.copyTag().getString("variant"));
@@ -56,7 +53,6 @@ public class PaintingTapeEntryRenderer implements TapeEntryRenderer {
                 if (stored != null) return stored;
             }
         }
-        // otherwise a stable pick, so gallery and tv always agree on the same art
         return registry.getRandom(RandomSource.create(ItemStack.hashItemAndComponents(stack)))
                 .map(Holder::value).orElse(null);
     }

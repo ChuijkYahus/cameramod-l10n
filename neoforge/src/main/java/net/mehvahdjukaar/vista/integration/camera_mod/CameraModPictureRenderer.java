@@ -3,7 +3,7 @@ package net.mehvahdjukaar.vista.integration.camera_mod;
 import com.mojang.blaze3d.platform.NativeImage;
 import de.maxhenkel.camera.ImageData;
 import de.maxhenkel.camera.TextureCache;
-import net.mehvahdjukaar.vista.client.ui.TapeEntryRenderer;
+import net.mehvahdjukaar.vista.client.ui.picture_tape.TapeEntryRenderer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
@@ -15,8 +15,6 @@ public class CameraModPictureRenderer implements TapeEntryRenderer {
         return CameraModCompat.isPicture(stack);
     }
 
-    // Camera images are files kept on the server, so the first call only asks for the image and comes
-    // back empty. Callers fall back to static/the item icon until it has finished downloading.
     @Override
     @Nullable
     public ResourceLocation getTexture(ItemStack stack) {

@@ -1,6 +1,6 @@
 package net.mehvahdjukaar.vista.integration.camera_mod;
 
-import net.mehvahdjukaar.vista.client.ui.PictureTapeRenderers;
+import net.mehvahdjukaar.vista.client.ui.picture_tape.PictureTapeRenderers;
 
 public class CameraModCompatClient {
 

@@ -6,32 +6,12 @@ import org.jetbrains.annotations.Nullable;
 
 
 public enum MediaError {
-    /**
-     * Failure with no specific category yet -> falls back to generic static noise.
-     */
     NONE,
-    /**
-     * Server refused the request (HTTP 403).
-     */
-    FORBIDDEN,
-    /**
-     * Resource is gone / not on the server (HTTP 404 / 410).
-     */
-    NOT_FOUND,
-    /**
-     * The link itself is unusable: malformed, unsupported scheme, or missing local file.
-     */
-    BAD_LINK,
-    /**
-     * FFmpeg is unavailable, so the media can never be decoded (our side, not the channel's).
-     */
-    NO_FFMPEG;
+    FORBIDDEN, //403
+    NOT_FOUND, //404, 410
+    BAD_LINK, //malformed
+    NO_FFMPEG; //unavailable
 
-    /**
-     * Classifies a download/decode failure by walking the exception cause chain. HTTP failures
-     * arrive as a typed HttpStatusException (status code), while bad inputs show up as
-     * "Unsupported protocol" / "Malformed URL" messages or URL exceptions.
-     */
     public static MediaError classify(@Nullable Throwable t) {
         for (Throwable e = t; e != null; e = e.getCause()) {
             if (e instanceof FileDownloadUtils.HttpStatusException http) {

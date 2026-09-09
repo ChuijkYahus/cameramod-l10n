@@ -85,8 +85,6 @@ public class TvScreenVertexConsumers {
         return createAnimatedStripVC(buffer, VistaModClient.BARS_SCREEN, scale, 0, CrtOverlay.NONE, switchAnim);
     }
 
-    // Draws a cassette asset by id with no tape entry behind it, for places with no level and so no
-    // access to the cassette_tape registry, like the config screen showcase.
     public static VertexConsumer getChannelVC(MultiBufferSource buffer, ResourceLocation assetId, Vec2i scale, int tickCount) {
         return createAnimatedStripVC(buffer, assetId, scale, tickCount, CrtOverlay.NONE, IntAnimationState.NO_ANIM);
     }

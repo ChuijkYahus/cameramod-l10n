@@ -1,4 +1,4 @@
-package net.mehvahdjukaar.vista.client.textures;
+package net.mehvahdjukaar.vista.client.textures.web;
 
 import net.mehvahdjukaar.vista.client.web.IMediaSession;
 import net.mehvahdjukaar.vista.client.web.MediaError;

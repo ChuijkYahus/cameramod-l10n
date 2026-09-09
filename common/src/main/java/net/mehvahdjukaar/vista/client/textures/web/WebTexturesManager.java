@@ -1,4 +1,4 @@
-package net.mehvahdjukaar.vista.client.textures;
+package net.mehvahdjukaar.vista.client.textures.web;
 
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;

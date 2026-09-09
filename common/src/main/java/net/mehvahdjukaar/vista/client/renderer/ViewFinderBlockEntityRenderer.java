@@ -87,7 +87,6 @@ public class ViewFinderBlockEntityRenderer implements BlockEntityRenderer<ViewFi
                         .getOpposite()
                         .getRotation();
 
-        // Head local rot
         Quaternionf cannonHeadRot = tile.getLocalOrientation(partialTick);
 
         // Move into base space

@@ -2,12 +2,11 @@ package net.mehvahdjukaar.vista.integration.supplementaries;
 
 import net.mehvahdjukaar.supplementaries.client.BlackboardTextureManager;
 import net.mehvahdjukaar.supplementaries.common.items.components.BlackboardData;
-import net.mehvahdjukaar.vista.client.ui.TapeEntryRenderer;
+import net.mehvahdjukaar.vista.client.ui.picture_tape.TapeEntryRenderer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
 
-// blackboards already keep a cached texture of their pixels for the block renderer, so we just borrow it
 public class BlackboardTapeEntryRenderer implements TapeEntryRenderer {
 
     @Override

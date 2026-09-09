@@ -1,4 +1,4 @@
-package net.mehvahdjukaar.vista.client.textures;
+package net.mehvahdjukaar.vista.client.textures.perspective;
 
 import com.google.common.base.Suppliers;
 import net.mehvahdjukaar.moonlight.api.client.texture_renderer.DynamicTextureRenderer;

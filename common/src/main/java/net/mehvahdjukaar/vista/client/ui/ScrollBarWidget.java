@@ -31,16 +31,12 @@ public class ScrollBarWidget extends AbstractWidget {
     private BooleanSupplier usableCheck;
     @Nullable
     private DoubleConsumer onChanged;
-
-    // when bound, the handle position lives outside this widget (e.g. a scrolling content view);
-    // otherwise it is kept in internalValue
     @Nullable
     private DoubleSupplier externalGetter;
     @Nullable
     private DoubleConsumer externalSetter;
-    private double internalValue;
 
-    // optional number drawn on the handle, mapped from the [0,1] position onto [minValue, maxValue]
+    private double internalValue;
     private boolean showValue;
     private int minValue;
     private int maxValue;
@@ -72,7 +68,6 @@ public class ScrollBarWidget extends AbstractWidget {
         return this;
     }
 
-    // back the handle position with an external offset instead of this widget's own field
     public ScrollBarWidget bind(DoubleSupplier getter, DoubleConsumer setter) {
         this.externalGetter = getter;
         this.externalSetter = setter;
@@ -197,7 +192,6 @@ public class ScrollBarWidget extends AbstractWidget {
 
     @Override
     public void onClick(double mouseX, double mouseY) {
-        // handled in mouseClicked so the seek runs with the real cursor position
     }
 
     @Override

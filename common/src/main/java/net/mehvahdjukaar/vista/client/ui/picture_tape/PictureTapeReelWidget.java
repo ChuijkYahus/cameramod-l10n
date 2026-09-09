@@ -1,4 +1,4 @@
-package net.mehvahdjukaar.vista.client.ui;
+package net.mehvahdjukaar.vista.client.ui.picture_tape;
 
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.common.picture_tape.PictureTapeMenu;
@@ -22,16 +22,8 @@ public class PictureTapeReelWidget extends AbstractWidget {
     private static final int REEL_W = 40;
     private static final int REEL_H = 52;
     // reels butt together into a continuous film strip; only the strip ends are padded
-    private static final int GAP = 0;
     private static final int PAD = 2;
     private static final int CAP_W = 2;                          // reel_left / reel_right end caps
-    private static final int CELL = REEL_W + GAP;                 // stride between reels
-    // transparent window inside the foreground where the map image shows through
-    private static final int IMG_X = 1;                          // x offset of the image inside a reel
-    private static final int IMG_Y = 7;                          // y offset of the image inside a reel
-    private static final int IMG_SIZE = 38;                      // image is drawn square, frame hides the horizontal bleed
-
-    private static final int HOVER_TINT = 0x33FFFFFF;
 
     // GuiGraphics.renderItem lifts item icons to z=150 and MapTapeEntryRenderer lifts the map to z=1;
     // in the GUI ortho higher z draws nearer, so the film frame has to sit above all of that or the
@@ -58,7 +50,7 @@ public class PictureTapeReelWidget extends AbstractWidget {
 
     private int contentWidth() {
         int cells = menu.getVisibleCells();
-        return PAD * 2 + cells * CELL - GAP;
+        return PAD * 2 + cells * REEL_W;
     }
 
     public int maxScroll() {
@@ -85,7 +77,7 @@ public class PictureTapeReelWidget extends AbstractWidget {
         if (!isMouseOver(mouseX, mouseY)) return -1;
         int cells = menu.getVisibleCells();
         for (int i = 0; i < cells; i++) {
-            int cx = getX() + PAD + i * CELL - (int) scrollOffset;
+            int cx = getX() + PAD + i * REEL_W - (int) scrollOffset;
             if (mouseX >= cx && mouseX < cx + REEL_W && mouseY >= getY() && mouseY < getY() + REEL_H) {
                 return i;
             }
@@ -102,12 +94,12 @@ public class PictureTapeReelWidget extends AbstractWidget {
         // pad the strip out with empty film so the viewport is never half-empty. these filler cells
         // past the real content are purely visual: cellAt only knows about realCells, so they can be
         // neither hovered, clicked, nor scrolled to (scrolling is still bounded by the real content).
-        int fillCells = Mth.ceil((width - PAD) / (float) CELL) + 1;
+        int fillCells = Mth.ceil((width - PAD) / (float) REEL_W) + 1;
         int cells = Math.max(realCells, fillCells);
 
         g.enableScissor(getX(), getY(), getX() + width, getY() + height);
         for (int i = 0; i < cells; i++) {
-            int cx = getX() + PAD + i * CELL - (int) scrollOffset;
+            int cx = getX() + PAD + i * REEL_W - (int) scrollOffset;
             int cy = getY();
             if (cx + REEL_W < getX() || cx > getX() + width) continue;
 
@@ -115,13 +107,13 @@ public class PictureTapeReelWidget extends AbstractWidget {
             ResourceLocation base = i == filled ? REEL_NEW : REEL_BACKGROUND;
             g.blitSprite(base, cx, cy, REEL_W, REEL_H);
             if (i < filled) {
-                PictureTapeRenderers.render(g, menu.getTapeContent().getItem(i), cx + IMG_X, cy + IMG_Y, IMG_SIZE);
+                PictureTapeRenderers.render(g, menu.getTapeContent().getItem(i), cx + 1, cy + 7, 38); //square, frame hides the horizontal bleed
             }
             //hover tint goes above the picture but under the frame, so only the picture window lights up
             if (i == hovered) {
                 g.pose().pushPose();
                 g.pose().translate(0, 0, HOVER_Z);
-                g.fill(cx, cy, cx + REEL_W, cy + REEL_H, HOVER_TINT);
+                g.fill(cx, cy, cx + REEL_W, cy + REEL_H, 0x33FFFFFF);
                 g.pose().popPose();
             }
             //film frame overlay sits on top of every cell so the strip reads as continuous
@@ -133,7 +125,7 @@ public class PictureTapeReelWidget extends AbstractWidget {
 
         //sprocketed end caps at the two extremes of the strip, part of the same frame layer
         int stripStart = getX() + PAD - (int) scrollOffset;
-        int stripEnd = stripStart + cells * CELL - GAP;
+        int stripEnd = stripStart + cells * REEL_W;
         g.pose().pushPose();
         g.pose().translate(0, 0, FRAME_Z);
         g.blitSprite(REEL_LEFT, stripStart - CAP_W, getY(), CAP_W, REEL_H);
@@ -146,7 +138,7 @@ public class PictureTapeReelWidget extends AbstractWidget {
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
         int max = maxScroll();
         if (max > 0) {
-            scrollOffset = Mth.clamp(scrollOffset - scrollY * (CELL / 2.0), 0, max);
+            scrollOffset = Mth.clamp(scrollOffset - scrollY * (REEL_W / 2.0), 0, max);
             return true;
         }
         return false;

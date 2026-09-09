@@ -2,18 +2,19 @@ package net.mehvahdjukaar.vista.client.ui;
 
 import net.mehvahdjukaar.moonlight.api.platform.network.NetworkHelper;
 import net.mehvahdjukaar.vista.VistaModClient;
-import net.mehvahdjukaar.vista.client.textures.WebTexturesManager;
+import net.mehvahdjukaar.vista.client.textures.web.WebTexturesManager;
 import net.mehvahdjukaar.vista.common.wave_gate.WaveGateBlockEntity;
 import net.mehvahdjukaar.vista.network.ServerBoundSyncWaveGatePacket;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.*;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.components.SpriteIconButton;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.gui.screens.options.AccessibilityOptionsScreen;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.resources.ResourceLocation;
 
 public class WaveGateScreen extends Screen {
     private static final Component EDIT = Component.translatable("gui.vista.wave_gate.edit");

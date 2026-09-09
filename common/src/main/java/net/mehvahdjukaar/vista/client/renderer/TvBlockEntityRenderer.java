@@ -8,8 +8,8 @@ import net.mehvahdjukaar.moonlight.api.client.util.LOD;
 import net.mehvahdjukaar.moonlight.api.misc.RollingBuffer;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.util.math.Vec2i;
-import net.mehvahdjukaar.vista.client.textures.LiveFeedTexturesManager;
 import net.mehvahdjukaar.vista.client.textures.ScreenFit;
+import net.mehvahdjukaar.vista.client.textures.perspective.LiveFeedTexturesManager;
 import net.mehvahdjukaar.vista.client.video_source.BroadcastVideoSource;
 import net.mehvahdjukaar.vista.client.video_source.IVideoSource;
 import net.mehvahdjukaar.vista.common.tv.IntAnimationState;
@@ -126,8 +126,6 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
         float quadW = screenSize.x() / 32f;
         float quadH = screenSize.y() / 32f;
 
-        // frames that aren't the screen's shape get barred or cropped instead of stretched. Bars are
-        // just a smaller quad: the block model's own screen face shows through behind it.
         ScreenFit.Bounds fit = videoSource.getScreenFit()
                 .computeBounds(screenSize.x() / (float) screenSize.y());
         float uInset = (1 - fit.uScale()) / 2f;

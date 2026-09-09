@@ -1,4 +1,4 @@
-package net.mehvahdjukaar.vista.client.textures;
+package net.mehvahdjukaar.vista.client.textures.perspective;
 
 import com.google.gson.JsonSyntaxException;
 import com.mojang.blaze3d.pipeline.RenderTarget;

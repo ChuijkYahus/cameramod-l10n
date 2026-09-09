@@ -5,7 +5,7 @@ import net.mehvahdjukaar.moonlight.api.util.math.Vec2i;
 import net.mehvahdjukaar.vista.client.CrtOverlay;
 import net.mehvahdjukaar.vista.client.textures.ScreenFit;
 import net.mehvahdjukaar.vista.client.textures.TvScreenVertexConsumers;
-import net.mehvahdjukaar.vista.client.ui.PictureTapeRenderers;
+import net.mehvahdjukaar.vista.client.ui.picture_tape.PictureTapeRenderers;
 import net.mehvahdjukaar.vista.common.picture_tape.PictureTapeContent;
 import net.mehvahdjukaar.vista.common.picture_tape.PictureTapeItem;
 import net.mehvahdjukaar.vista.common.tv.IntAnimationState;

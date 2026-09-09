@@ -14,7 +14,7 @@ import io.github.mortuusars.exposure.world.item.component.StackedPhotographs;
 import io.github.mortuusars.exposure.world.item.component.album.AlbumPage;
 import net.mehvahdjukaar.moonlight.api.misc.TField;
 import net.mehvahdjukaar.moonlight.api.misc.TMethod;
-import net.mehvahdjukaar.vista.client.ui.TapeEntryRenderer;
+import net.mehvahdjukaar.vista.client.ui.picture_tape.TapeEntryRenderer;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;

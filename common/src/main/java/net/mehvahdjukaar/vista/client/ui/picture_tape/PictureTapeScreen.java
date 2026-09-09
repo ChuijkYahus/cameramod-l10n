@@ -1,6 +1,8 @@
-package net.mehvahdjukaar.vista.client.ui;
+package net.mehvahdjukaar.vista.client.ui.picture_tape;
 
 import net.mehvahdjukaar.vista.VistaMod;
+import net.mehvahdjukaar.vista.client.ui.ScrollBarWidget;
+import net.mehvahdjukaar.vista.client.ui.VistaContainerScreen;
 import net.mehvahdjukaar.vista.common.picture_tape.PictureTapeMenu;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
@@ -10,38 +12,12 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.item.ItemStack;
 
-// scrolling film strip of maps with a horizontal scrollbar and a vertical playback-speed slider
 public class PictureTapeScreen extends VistaContainerScreen<PictureTapeMenu> {
 
     private static final ResourceLocation BACKGROUND = VistaMod.res("textures/gui/picture_tape.png");
     private static final ResourceLocation SCROLLER = VistaMod.res("picture_tape/scroller");
     private static final ResourceLocation SCROLLER_DISABLED = VistaMod.res("picture_tape/scroller_disabled");
     private static final ResourceLocation SPEED_HANDLE = VistaMod.res("picture_tape/scroller_speed");
-
-    private static final int IMAGE_W = 176;
-    private static final int IMAGE_H = 181;
-
-    // scrolling reel strip (relative to leftPos/topPos)
-    private static final int REEL_VIEW_X = 8;
-    private static final int REEL_VIEW_Y = 32;
-    private static final int REEL_VIEW_W = 135;
-    private static final int REEL_VIEW_H = 52;
-
-    // horizontal scrollbar track above the strip; handle is scroller.png (15x12)
-    private static final int HBAR_X = 8;
-    private static final int HBAR_Y = 17;
-    private static final int HBAR_W = 135;
-    private static final int HBAR_H = 12;
-    private static final int HBAR_HANDLE_W = 15;
-    private static final int HBAR_HANDLE_H = 12;
-
-    // vertical speed slider track on the right; handle is scroller_speed.png (19x12)
-    private static final int SPEED_X = 149;
-    private static final int SPEED_Y = 17;
-    private static final int SPEED_W = 19;
-    private static final int SPEED_H = 67;
-    private static final int SPEED_HANDLE_W = 19;
-    private static final int SPEED_HANDLE_H = 12;
 
     private PictureTapeReelWidget reelStrip;
     private ScrollBarWidget speedBar;
@@ -53,30 +29,29 @@ public class PictureTapeScreen extends VistaContainerScreen<PictureTapeMenu> {
 
     @Override
     protected void init() {
-        this.imageWidth = IMAGE_W;
-        this.imageHeight = IMAGE_H;
+        this.imageWidth = 176;
+        this.imageHeight = 181;
         super.init();
-        this.titleLabelX = REEL_VIEW_X;
+        this.titleLabelX = 8;
         this.titleLabelY = 6;
         this.inventoryLabelX = PictureTapeMenu.INV_X;
         this.inventoryLabelY = PictureTapeMenu.INV_TOP - 11;
 
         this.reelStrip = addRenderableWidget(new PictureTapeReelWidget(
-                leftPos + REEL_VIEW_X, topPos + REEL_VIEW_Y, REEL_VIEW_W, REEL_VIEW_H,
+                leftPos + 8, topPos + 32, 135, 52,
                 getMenu(), this::onCellClicked));
 
-        //reel scrollbar reads/writes the strip's own offset so it stays in sync with wheel scrolling
         addRenderableWidget(new ScrollBarWidget(
-                ScrollBarWidget.Orientation.HORIZONTAL, leftPos + HBAR_X, topPos + HBAR_Y, HBAR_W, HBAR_H,
-                SCROLLER, HBAR_HANDLE_W, HBAR_HANDLE_H)
+                ScrollBarWidget.Orientation.HORIZONTAL, leftPos + 8, topPos + 17, 135, 12,
+                SCROLLER, 15, 12)
                 .disabledSprite(SCROLLER_DISABLED)
                 .usableWhen(reelStrip::canScroll)
                 .bind(reelStrip::getScrollFraction, reelStrip::setScrollFraction));
 
         this.lastSentSpeed = getMenu().getPlaySpeed();
         this.speedBar = addRenderableWidget(new ScrollBarWidget(
-                ScrollBarWidget.Orientation.VERTICAL, leftPos + SPEED_X, topPos + SPEED_Y, SPEED_W, SPEED_H,
-                SPEED_HANDLE, SPEED_HANDLE_W, SPEED_HANDLE_H)
+                ScrollBarWidget.Orientation.VERTICAL, leftPos + 149, topPos + 17, 19, 67,
+                SPEED_HANDLE, 19, 12)
                 .showValue(PictureTapeMenu.MIN_SPEED, PictureTapeMenu.MAX_SPEED)
                 .value(speedToFraction(getMenu().getPlaySpeed()))
                 .onChanged(f -> onSpeedChanged()));
