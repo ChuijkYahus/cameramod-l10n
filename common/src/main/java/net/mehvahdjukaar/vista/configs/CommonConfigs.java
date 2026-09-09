@@ -72,9 +72,6 @@ public class CommonConfigs {
                 .define("max_entries", 32, 1, 256);
         builder.pop(); // picture_tape
 
-        // mirror is a feature-gated category: its "enabled" toggle gates every option under it in the config screen.
-        // Set the reload/pack flags after push so they land on the mainFeature() define, not on the push itself
-        // (NeoForge rejects a pending restart flag consumed by a push -> "Dangling restart value").
         builder.icon("mirror").push("mirror");
         builder.affectsDynamicPacks()
                 .worldReload()
@@ -92,8 +89,6 @@ public class CommonConfigs {
                 .define("placement", MirrorPlacement.BOTH);
         builder.pop(); // mirror
 
-        // wave gate: a feature "enabled" gate (was Mode.OFF) plus a 2-state "craftable" toggle (was CRAFTABLE vs
-        // CREATIVE_ONLY). Both gate the recipe/obtainability, so both are world-reload + dynamic-pack flagged.
         builder.icon("wave_gate").push("wave_gate");
         builder.affectsDynamicPacks()
                 .worldReload()
@@ -141,7 +136,6 @@ public class CommonConfigs {
         return CompatHandler.REFURBISHED_FURNITURE && TV_USE_FURNITURE_ELECTRICITY.get();
     }
 
-    // Refurbished Furniture's electricity wins over Forge energy when both are enabled
     public static boolean doesTvConsumeForgeEnergy() {
         return TV_CONSUME_ENERGY.get() && !isTvElectricityEnabled();
     }
@@ -184,7 +178,6 @@ public class CommonConfigs {
     }
 
     public enum ViewFinderInteraction {
-        // opens the container screen (lens slot + angle controls + view button)
         GUI,
         // old behavior: no screen, direct look-through and item-based lens insertion
         LEGACY

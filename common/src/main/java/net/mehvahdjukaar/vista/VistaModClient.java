@@ -24,7 +24,7 @@ import net.mehvahdjukaar.vista.common.chunk_tracking.ExtraChunkViewData;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.mehvahdjukaar.vista.configs.CommonConfigs;
 import net.mehvahdjukaar.vista.integration.CompatHandler;
-import net.mehvahdjukaar.vista.network.ServerBoundExtraChunksSupportPacket;
+import net.mehvahdjukaar.vista.network.ServerBoundWantsZoneChunksPacket;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
@@ -308,7 +308,7 @@ public class VistaModClient {
         KNOWN_LEVELS_BY_DIMENSION.put(cl.dimension(), cl);
 
         if (Minecraft.getInstance().getConnection() != null) {
-            NetworkHelper.sendToServer(new ServerBoundExtraChunksSupportPacket(PinnedChunks.isSupported()));
+            NetworkHelper.sendToServer(new ServerBoundWantsZoneChunksPacket(PinnedChunks.wantsZoneChunks()));
         }
     }
 

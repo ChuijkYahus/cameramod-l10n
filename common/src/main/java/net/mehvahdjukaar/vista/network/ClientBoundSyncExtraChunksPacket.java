@@ -11,7 +11,6 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.world.level.ChunkPos;
 
-import java.util.HashSet;
 import java.util.Set;
 
 /** Replaces the client's zone set with the server's and rebuilds the ViewArea. */
@@ -31,28 +30,22 @@ public record ClientBoundSyncExtraChunksPacket(ExtraChunkViewData data) implemen
 
     @Override
     public void handle(Context context) {
-        ExtraChunkViewData client = VistaModClient.CLIENT_EXTRA_CHUNK_VIEW_DATA;
+        ExtraChunkViewData clientData = VistaModClient.CLIENT_EXTRA_CHUNK_VIEW_DATA;
+        Set<ChunkPos> oldChunks = clientData.getAllChunks();
 
-        Set<ChunkPos> oldChunks = new HashSet<>(client.getAllChunks());
-
-        client.clearZones();
+        clientData.clearZones();
         for (ExtraChunkViewData.Zone zone : this.data.getZones()) {
-            client.addZone(zone.center(), zone.radius());
+            clientData.addZone(zone.center(), zone.radius());
         }
+        Set<ChunkPos> newChunks = clientData.getAllChunks();
+        // ViewArea already has the right sections
+        if (newChunks.equals(oldChunks)) return;
 
-        Set<ChunkPos> newChunks = client.getAllChunks();
-        VistaMod.LOGGER.debug("[Vista/Chunks] Client received zone sync: {} zones, {} total chunks",
-                client.getZones().size(), newChunks.size());
-
-        if (newChunks.equals(oldChunks)) return; // ViewArea already has the right sections
-
-        // chunks we were holding for a zone that no longer exists would keep ticking forever
         PinnedChunks.keepOnly(newChunks);
 
         Minecraft mc = Minecraft.getInstance();
-
         if (mc.levelRenderer instanceof ILevelRendererExt ext) {
-            // only recreates the pinned slots, keeping compiled geometry
+            //only recreates the pinned slots, keeping compiled geometry
             ext.vista$refreshPinnedSections();
         } else {
             mc.levelRenderer.allChanged();

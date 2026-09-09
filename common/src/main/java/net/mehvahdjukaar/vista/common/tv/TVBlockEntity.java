@@ -53,7 +53,6 @@ public class TVBlockEntity extends ItemDisplayTile {
     private boolean paused = false;
     private int videoPlaybackTicks = 0;
     private boolean showsTime = false;
-    // slideshow: last map frame index whose data we pushed to nearby players (-1 = none)
     private int lastSentMapFrame = -1;
 
     //client, I think
@@ -226,16 +225,11 @@ public class TVBlockEntity extends ItemDisplayTile {
         return videoPlaybackTicks;
     }
 
-    // No @Override: on NeoForge this satisfies IBlockEntityExtension and is called automatically
-    // for both chunk loading and block placement. On Fabric it is called explicitly from
-    // LevelChunkTVTrackingMixin so we get the same coverage on both platforms.
     @VirtualOverride("neoforge")
     public void onLoad() {
         ServerCameraChunkManager.trackTv(this);
     }
 
-    // Counterpart to onLoad(); on NeoForge called by LevelChunk.clearAllBlockEntities,
-    // on Fabric also called from LevelChunkTVTrackingMixin.
     @VirtualOverride("neoforge")
     public void onChunkUnloaded() {
         ServerCameraChunkManager.untrackTv(this);
@@ -393,8 +387,6 @@ public class TVBlockEntity extends ItemDisplayTile {
         return hasEnergy;
     }
 
-    // Set by whichever power system is in charge: CompatRefurbishedFurnitureSelfTvBlockEntityMixin
-    // when the electricity integration is on, TvEnergyHandler otherwise.
     public void setHasEnergy(boolean powered) {
         if (this.hasEnergy != powered) {
             this.hasEnergy = powered;
@@ -402,8 +394,6 @@ public class TVBlockEntity extends ItemDisplayTile {
         }
     }
 
-    // Maps stored on a picture tape aren't tracked by vanilla, so when one is playing we push the
-    // current (and next) frame's map data to nearby players as the slideshow advances.
     private void pushSlideshowMaps(Level level, BlockPos pos, boolean powered) {
         if (!powered || paused || !(level instanceof ServerLevel serverLevel)) {
             lastSentMapFrame = -1;

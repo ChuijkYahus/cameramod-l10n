@@ -135,14 +135,6 @@ public final class RectFinder {
             }
 
             if (!t.isSingle() || at.hasBe()) {
-                // Cell belongs to an existing connected group (non-SINGLE) or is a 1x1
-                // group of its own (SINGLE+BE). Accumulate every absorbed owner into
-                // `touched`, since the final `selection.contains(touched)` check at the
-                // validation step decides whether the selection has grown large enough
-                // to fully cover all absorbed groups. The old code bailed here on the
-                // second distinct owner, which blocked the 4-mirror 2x2 case (three
-                // separate SINGLE+BE neighbors collapsing into one group) while keeping
-                // the existing single-owner cases working.
                 Rect2D owner = findMaxRect(grid, p, false);
                 touched = touched == null ? owner : touched.containing(owner);
             }

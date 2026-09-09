@@ -20,9 +20,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Objects;
 import java.util.Optional;
 
-/**
- * Feed location backed by a block entity at a fixed position in a level.
- */
 public final class LevelBEBroadcastLocation implements IBroadcastLocation {
 
     public static final BroadcastLocationType TYPE = new BroadcastLocationType(
@@ -31,14 +28,10 @@ public final class LevelBEBroadcastLocation implements IBroadcastLocation {
                     BlockPos.CODEC.optionalFieldOf("sub_level_anchor")
                             .forGetter(l -> Optional.ofNullable(l.subLevelAnchor))
             ).apply(i, (pos, anchor) -> new LevelBEBroadcastLocation(pos, anchor.orElse(null)))),
-            // the anchor is server-side bookkeeping only; clients resolve the BE via globalPos
             GlobalPos.STREAM_CODEC.map(LevelBEBroadcastLocation::new, LevelBEBroadcastLocation::globalPos)
     );
 
     private final GlobalPos globalPos;
-    // chunk-snapped world position of the Sable sublevel this BE rides on, null for normal block
-    // entities. Kept out of equals on purpose: unlink-by-value and linkFeed's no-op check must
-    // match on globalPos alone.
     @Nullable
     private BlockPos subLevelAnchor;
 
@@ -100,9 +93,6 @@ public final class LevelBEBroadcastLocation implements IBroadcastLocation {
         }
     }
 
-    // inside a Sable plot grid globalPos is a plot-grid storage coord, which must never reach the
-    // vanilla chunk system: its tickets and holders fight Sable's injected PlotChunkHolders and you
-    // get shutdown hangs and chunks that never load. Always resolve the ship's world anchor instead.
     @Override
     public @Nullable GlobalPos getChunkSendPosition() {
         MinecraftServer server = PlatHelper.getCurrentServer();
@@ -112,23 +102,15 @@ public final class LevelBEBroadcastLocation implements IBroadcastLocation {
         }
         BlockPos anchor = projectToWorldAnchor(level, globalPos.pos());
         if (anchor != null) {
-            // sublevel currently resolvable: refresh the persisted anchor as the ship moves
             if (!anchor.equals(this.subLevelAnchor)) {
                 this.subLevelAnchor = anchor;
                 BroadcastManager.getInstance(level).setDirty();
             }
             return GlobalPos.of(globalPos.dimension(), anchor);
         }
-        // sublevel held/unloaded: fall back to the last known anchor (force-loading it makes Sable
-        // restore the held sublevel, after which live projection takes over again)
         return subLevelAnchor == null ? null : GlobalPos.of(globalPos.dimension(), subLevelAnchor);
     }
 
-    /**
-     * Projects a plot-grid position to the ship's world anchor, snapped to chunk granularity.
-     * Returns null when the projection no-ops (sublevel held or removed). The result must never be
-     * a plot-grid coordinate.
-     */
     @Nullable
     private static BlockPos projectToWorldAnchor(Level level, BlockPos plotPos) {
         Vec3 world = SableCompanion.INSTANCE.projectOutOfSubLevel(level, (Position) Vec3.atCenterOf(plotPos));

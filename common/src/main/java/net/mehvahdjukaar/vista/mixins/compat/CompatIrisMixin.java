@@ -1,4 +1,4 @@
-package net.mehvahdjukaar.vista.mixins;
+package net.mehvahdjukaar.vista.mixins.compat;
 
 import net.irisshaders.iris.pipeline.PipelineManager;
 import net.irisshaders.iris.pipeline.WorldRenderingPipeline;

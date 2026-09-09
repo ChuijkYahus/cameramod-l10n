@@ -1,4 +1,4 @@
-package net.mehvahdjukaar.vista.mixins;
+package net.mehvahdjukaar.vista.mixins.compat;
 
 import net.irisshaders.iris.uniforms.SystemTimeUniforms;
 import net.mehvahdjukaar.vista.integration.iris.IrisCompat;
@@ -8,9 +8,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-// Same reasoning as CompatIrisFrameCounterMixin, for packs that drive their per-frame offsets off
-// frameTimeCounter / frameTime instead. Those would see jumps of a whole feed interval (~100ms at
-// 10Hz), far too coarse for a temporal resolve.
+// Same reasoning as CompatIrisFrameCounterMixin
 @Pseudo
 @Mixin(value = SystemTimeUniforms.Timer.class, remap = false)
 public class CompatIrisTimerMixin {

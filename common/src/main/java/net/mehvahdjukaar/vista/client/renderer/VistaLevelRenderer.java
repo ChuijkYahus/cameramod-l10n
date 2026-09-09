@@ -47,32 +47,11 @@ public class VistaLevelRenderer {
 
     private static final Set<LevelRendererFrustumState> MANAGED_STATES = new WeakHashSet<>();
     private static final Object STATES_LOCK = new Object();
-    // MC's own occlusion graph, so async chunk/section callbacks can forward into it alongside the
-    // feed graphs. Only the outermost render sets it: nested renders see a feed graph as "current".
     private static final AtomicReference<SectionOcclusionGraph> MC_OWN_GRAPH = new AtomicReference<>(null);
-
-    // Re-entrancy stack for render(). Main render thread only, so no locking. Each depth gets its own
-    // dummy camera because vanilla aliases mainCamera into caches the outer call still needs.
     private static final Deque<RenderFrame> RENDER_STACK = new ArrayDeque<>();
     private static final List<DummyCamera> DUMMY_CAMERA_POOL = new ArrayList<>();
 
-    // textureRecursionDepth/textureParentChain describe the texture being rendered into, not the
-    // stack. A PENDING flush pushes one frame no matter how deep the texture really is, so children
-    // must derive their depth and chain from these or the recursion cap never fires.
-    private record RenderFrame(
-            Object token,
-            boolean hasOffAxisFrustum,
-            @Nullable Vec3 bfsStartOverride,
-            @Nullable UUID mirrorUuid,
-            int textureRecursionDepth,
-            List<UUID> textureParentChain
-    ) {}
-
     private static ResourceKey<Level> lastLevel = null;
-
-    // World-space eye displacement caused by view bob this frame. Bob is folded into the projection
-    // matrix here, so the modelview keeps the un-bobbed camera position. Mirrors have to reflect the
-    // bobbed eye or the reflected scene wobbles against the (bobbed) quad, worse the deeper it goes.
     private static Vec3 mainBobEyeOffset = Vec3.ZERO;
 
     public static boolean isRenderingLiveFeed() {
@@ -89,22 +68,11 @@ public class VistaLevelRenderer {
         return top != null && top.mirrorUuid == null;
     }
 
-    // Polygon offset layering doesn't take inside nested level renders, and z-fights under FAST
-    // graphics, so surface quads fall back to a manual forward offset in those cases.
     public static boolean needsManualSurfaceOffset() {
         if (isRenderingLiveFeed()) return true;
         return Minecraft.getInstance().options.graphicsMode().get() == GraphicsStatus.FAST;
     }
 
-    /**
-     * Records the eye displacement view bob introduced this pass, read off the bob pose matrix the
-     * game already built, so mods that alter bob and the bob-disabled case work too.
-     * Bob sits in view space between projection and modelview, so the effective eye solves
-     * B * R_w2v * (eye - camPos) = 0, i.e. the offset is R_v2w * translation(B^-1), and
-     * camera.rotation() is that R_v2w.
-     *
-     * @param bobPose pose after bobHurt + bobView, i.e. pure bob starting from identity
-     */
     public static void captureMainBobEyeOffset(Camera camera, Matrix4f bobPose) {
         Vector3f off = new Matrix4f(bobPose).invert().getTranslation(new Vector3f());
         camera.rotation().transform(off);
@@ -122,8 +90,6 @@ public class VistaLevelRenderer {
         return false;
     }
 
-    // Depth a child mirror found inside the current render should use, 0 if nothing is rendering.
-    // Derived from the frame rather than the stack size, see RenderFrame.
     public static int getCurrentDepth() {
         RenderFrame top = RENDER_STACK.peek();
         if (top == null) return 0;
@@ -131,7 +97,6 @@ public class VistaLevelRenderer {
         return top.textureRecursionDepth + 1;
     }
 
-    // Chain a child mirror found inside the current render should use. Empty outside a mirror render.
     public static List<UUID> getCurrentMirrorChain() {
         RenderFrame top = RENDER_STACK.peek();
         if (top == null || top.mirrorUuid == null) return List.of();
@@ -150,8 +115,6 @@ public class VistaLevelRenderer {
         RENDER_STACK.clear();
     }
 
-    // Forces every feed graph to redo its BFS. Call when zone data changes so freshly pinned
-    // sections get picked up.
     public static void invalidateManagedGraphs() {
         synchronized (STATES_LOCK) {
             for (LevelRendererFrustumState state : MANAGED_STATES) {
@@ -167,8 +130,6 @@ public class VistaLevelRenderer {
         }
     }
 
-    // allChanged() frees every section's VertexBuffer and swaps in a new ViewArea, leaving the cached
-    // feed states pointing at dead RenderSections. Wipe them and let the next feed render rebuild.
     public static void onLevelRendererAllChanged() {
         synchronized (STATES_LOCK) {
             for (LevelRendererFrustumState state : MANAGED_STATES) {
@@ -219,8 +180,6 @@ public class VistaLevelRenderer {
             return;
         }
 
-        // Every off-screen level render funnels through here, so compat wrappers go on this call and
-        // nowhere else. Each one saves and restores what it stomps, so nesting is fine.
         CompatHandler.decorateRenderer(() -> doRender(mc, text, renderingToken, cameraSetup, fov,
                 applyPostChain, customProjection, bfsStartOverride, renderDistanceOverride)).run();
     }
@@ -238,8 +197,6 @@ public class VistaLevelRenderer {
         RenderTarget canvas = text.getRenderTarget();
         mc.mainRenderTarget = canvas;
 
-        // A TV resize swaps in a whole new RenderTarget, which Iris's version-counter change detection
-        // misses, leaving its gbuffers attached to the old freed canvas. Nudge it manually.
         if (CompatHandler.IRIS) {
             IrisCompat.onFeedCanvasBound(canvas);
         }
@@ -259,8 +216,6 @@ public class VistaLevelRenderer {
 
         RenderSystemState oldRenderState = RenderSystemState.capture();
 
-        // Reproduce the Fabulous-off state so the world composes into our canvas instead of Fabulous's
-        // deferred targets. Kept in a local so re-entrant renders each restore their own values.
         FabulousDeferredState fabulousState = FabulousDeferredState.captureAndDisable(mc.levelRenderer);
 
         UUID mirrorUuid = renderingToken instanceof MirrorBlockEntity m ? m.getId() : null;
@@ -302,10 +257,8 @@ public class VistaLevelRenderer {
                 MC_OWN_GRAPH.set(oldCameraState.getOcclusionGraph());
             }
 
-            // already wrapped outside; don't double-wrap this or it fucks everything over omg.
             renderLevel(mc, canvas, camera, fov, customProjection);
 
-            // save updated feed camera state
             feedCameraState.copyFrom(mc.levelRenderer);
 
             if (mc.gameRenderer.postEffect != null && mc.gameRenderer.effectActive) {
@@ -331,8 +284,6 @@ public class VistaLevelRenderer {
             mc.mainRenderTarget = mainTarget;
             mc.gameRenderer.mainCamera = mainCamera;
 
-            // nested renders have to re-bind the outer canvas, or the rest of the outer pass keeps
-            // drawing into the inner one
             if (!isOutermost) {
                 mainTarget.bindWrite(true);
                 RenderSystem.viewport(0, 0, mainTarget.width, mainTarget.height);
@@ -364,9 +315,7 @@ public class VistaLevelRenderer {
 
         PoseStack poseStack = new PoseStack();
 
-        // Don't bake bobView/bobHurt in here. The mirror quad already bobs through the main pass, so
-        // bobbing the content too would double it up. Bob parallax is applied to the eye position
-        // instead, in MirrorBlockEntityRenderer, which is all reflection depends on.
+        // Don't bake bobView/bobHurt in here
         Quaternionf cameraRotation = camera.rotation().conjugate(new Quaternionf());
         Matrix4f cameraMatrix = (new Matrix4f()).rotation(cameraRotation);
         Vec3 cameraPos = camera.getPosition();
@@ -374,9 +323,6 @@ public class VistaLevelRenderer {
         gr.resetProjectionMatrix(projMatrix);
         lr.prepareCullFrustum(cameraPos, cameraMatrix, projMatrix);
 
-        // Iris tracks "inside renderLevel" with a plain boolean set on HEAD and cleared on RETURN, no
-        // nesting counter, so our nested call would leave it false for the rest of the main pass.
-        // Everything gated on it then takes the not-rendering path and block entities vanish.
         boolean irisWasRenderingLevel = CompatHandler.IRIS && IrisCompat.isIrisRenderingLevel();
         try {
             lr.renderLevel(deltaTracker, false, camera, gr,
@@ -483,7 +429,6 @@ public class VistaLevelRenderer {
 
         BlockPos cameraBlockPos = camera.getBlockPosition();
 
-        // occlusion checks work in 8-block units, off the render camera, not the player
         double cameraUnitX = Math.floor(cameraPosition.x / 8.0);
         double cameraUnitY = Math.floor(cameraPosition.y / 8.0);
         double cameraUnitZ = Math.floor(cameraPosition.z / 8.0);
@@ -515,9 +460,6 @@ public class VistaLevelRenderer {
 
             minecraft.getProfiler().push("section_occlusion_graph");
 
-            // Teleport the camera to the override point for the duration of graph.update only, so the
-            // BFS seeds from a visible chunk. The frustum is untouched and still does the real
-            // culling, we're only moving the seed.
             RenderFrame currentFrame = RENDER_STACK.peek();
             Vec3 bfsOverride = currentFrame != null ? currentFrame.bfsStartOverride : null;
             Vec3 actualCamPos = null;
@@ -536,8 +478,6 @@ public class VistaLevelRenderer {
             double cameraRotXHalf = Math.floor(camera.getXRot() / 2.0);
             double cameraRotYHalf = Math.floor(camera.getYRot() / 2.0);
 
-            // Off-axis frustums always need the update: their bounds shift as the viewer moves even
-            // though the camera rotation stays pinned to the mirror normal.
             boolean hasOffAxis = currentFrame != null && currentFrame.hasOffAxisFrustum;
             if (graph.consumeFrustumUpdate() ||
                     cameraRotXHalf != lr.prevCamRotX ||
@@ -612,5 +552,15 @@ public class VistaLevelRenderer {
         if (old != null && old != sectionOcclusionGraph) {
             old.onSectionCompiled(renderSection);
         }
+    }
+
+    private record RenderFrame(
+            Object token,
+            boolean hasOffAxisFrustum,
+            @Nullable Vec3 bfsStartOverride,
+            @Nullable UUID mirrorUuid,
+            int textureRecursionDepth,
+            List<UUID> textureParentChain
+    ) {
     }
 }

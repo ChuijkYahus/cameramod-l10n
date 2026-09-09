@@ -1,4 +1,4 @@
-package net.mehvahdjukaar.vista.mixins;
+package net.mehvahdjukaar.vista.mixins.compat;
 
 import com.mrcrayfish.furniture.refurbished.electricity.Connection;
 import com.mrcrayfish.furniture.refurbished.electricity.IModuleNode;
@@ -19,10 +19,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import java.util.HashSet;
 import java.util.Set;
 
-// Turns TVs into Refurbished Furniture electricity modules, wirable with the wrench.
-// RF finds nodes purely through getBlockEntity(pos) instanceof IElectricityNode, so implementing the
-// interface is all that's needed: its own BlockEntity mixin registers us with the electricity ticker,
-// and its LevelChunk mixin drops our links when the tv breaks.
 @OptionalMixin(value = "com.mrcrayfish.furniture.refurbished.electricity.IModuleNode")
 @Mixin(TVBlockEntity.class)
 public abstract class CompatRefurbishedFurnitureSelfTvBlockEntityMixin implements IModuleNode {
@@ -84,9 +80,6 @@ public abstract class CompatRefurbishedFurnitureSelfTvBlockEntityMixin implement
         this.vista$self().setHasEnergy(powered);
     }
 
-    // With the integration off the tv is still technically a node (the interface can't be removed at
-    // runtime), so make it uninteresting to the rest of the system: no links can be made to it and
-    // the "no power" hud indicator stays hidden.
     @Override
     public int getNodeMaximumConnections() {
         return CommonConfigs.isTvElectricityEnabled() ? IModuleNode.super.getNodeMaximumConnections() : 0;

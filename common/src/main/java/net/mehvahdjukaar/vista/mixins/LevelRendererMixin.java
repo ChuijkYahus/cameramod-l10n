@@ -43,8 +43,6 @@ public class LevelRendererMixin implements ILevelRendererExt {
     @Shadow @Nullable
     public ViewArea viewArea;
 
-    // Rebuilds just the pinned section slots, keeping compiled chunk geometry. Stands in for
-    // allChanged() on zone data changes, which would be far heavier.
     @Unique
     @Override
     public void vista$refreshPinnedSections() {
@@ -83,7 +81,6 @@ public class LevelRendererMixin implements ILevelRendererExt {
         return original;
     }
 
-    // Keeps vampires and friends off reflective and recorded surfaces. Main view is never affected.
     @Inject(method = "renderEntity", at = @At("HEAD"), cancellable = true)
     private void vista$hideMirrorInvisibleEntities(Entity entity, double camX, double camY, double camZ,
                                                    float partialTick, PoseStack poseStack,
@@ -120,9 +117,6 @@ public class LevelRendererMixin implements ILevelRendererExt {
         VistaLevelRenderer.onRecentlyCompiledSection(renderSection, this.sectionOcclusionGraph);
     }
 
-    // ViewArea.setDirty is floorMod-indexed into the normal torus and can never reach the appended
-    // pinned sections, so far zone chunks compile once and then their mesh freezes. Dirty the pinned
-    // section at the exact coordinates too.
     @Inject(method = "setSectionDirty(IIIZ)V", at = @At("HEAD"))
     private void vista$dirtyPinnedSection(int sectionX, int sectionY, int sectionZ, boolean reRenderOnMainThread, CallbackInfo ci) {
         if (viewArea instanceof IViewAreaExt va
@@ -131,8 +125,6 @@ public class LevelRendererMixin implements ILevelRendererExt {
         }
     }
 
-    // Same torus problem as above: vanilla skips entities whose section "isn't compiled", so far zone
-    // entities never draw despite existing on the client. Answer the gate from the pinned section.
     @ModifyReturnValue(method = "isSectionCompiled", at = @At("RETURN"))
     private boolean vista$pinnedSectionCompiled(boolean original, BlockPos pos) {
         if (original) return true;

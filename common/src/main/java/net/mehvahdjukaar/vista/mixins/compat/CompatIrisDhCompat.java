@@ -1,4 +1,4 @@
-package net.mehvahdjukaar.vista.mixins;
+package net.mehvahdjukaar.vista.mixins.compat;
 
 import net.irisshaders.iris.compat.dh.DHCompat;
 import net.mehvahdjukaar.vista.integration.iris.IrisCompat;

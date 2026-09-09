@@ -11,8 +11,6 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-// Resolves camera zone chunks that live outside the circular buffer. See PinnedChunks for why they
-// aren't in it; ClientChunkCacheStorageMixin is what keeps them out.
 @Mixin(ClientChunkCache.class)
 public class ClientChunkCacheMixin {
 
@@ -26,7 +24,6 @@ public class ClientChunkCacheMixin {
         }
     }
 
-    // vanilla resolves the chunk through the array and would just log "not present" for a pinned one
     @Inject(method = "replaceBiomes", at = @At("HEAD"), cancellable = true)
     private void vista$replacePinnedBiomes(int x, int z, FriendlyByteBuf buffer, CallbackInfo ci) {
         LevelChunk chunk = PinnedChunks.get(x, z);

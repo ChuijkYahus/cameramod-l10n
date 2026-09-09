@@ -1,4 +1,4 @@
-package net.mehvahdjukaar.vista.mixins;
+package net.mehvahdjukaar.vista.mixins.compat;
 
 import com.bawnorton.mixinsquared.TargetHandler;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
@@ -17,14 +17,6 @@ import org.spongepowered.asm.mixin.injection.At;
 @Mixin(value = LevelRenderer.class, priority = 1500)
 public abstract class CompatVeilMixin {
 
-    // Veil's deferred light pass binds its own framebuffers and wrecks the target feeds render into, so
-    // skip it like Veil does for its own nested perspectives. Returning false takes Veil's no-lights
-    // branch, which unbinds properly; suppressing the whole tail instead left Veil's framebuffer bound
-    // and terrain vanished from feeds.
-    //
-    // drawLights gained a renderInscattering param in Veil 4.4.0, and Sable still bundles 4.1.x, so both
-    // signatures are targeted. Only one descriptor exists per version, so both need require = 0 or the
-    // one that misses crashes the game (Supplementaries#2136).
     @TargetHandler(
             mixin = "foundry.veil.mixin.pipeline.client.PipelineLevelRendererMixin",
             name = "blit"

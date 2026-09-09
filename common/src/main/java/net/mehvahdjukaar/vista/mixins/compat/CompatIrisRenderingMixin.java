@@ -1,4 +1,4 @@
-package net.mehvahdjukaar.vista.mixins;
+package net.mehvahdjukaar.vista.mixins.compat;
 
 import com.llamalad7.mixinextras.injector.v2.WrapWithCondition;
 import net.irisshaders.iris.mixin.LevelRendererAccessor;
@@ -20,9 +20,6 @@ public class CompatIrisRenderingMixin {
         return !IrisCompat.shouldSkipShadows();
     }
 
-    // The first beginLevelRendering on a fresh pipeline calls allChanged(), releasing every section's
-    // VertexBuffer, which mid-feed tears down the geometry we're drawing. Skipping it just defers the
-    // feed pipeline's block ID init to the next call.
     @WrapWithCondition(method = "beginLevelRendering", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/LevelRenderer;allChanged()V"))
     private boolean vista$skipFirstFrameAllChanged(LevelRenderer instance) {
         return !IrisCompat.shouldSkipShadows();

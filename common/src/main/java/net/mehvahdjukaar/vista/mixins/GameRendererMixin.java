@@ -36,10 +36,6 @@ public class GameRendererMixin {
         }
     }
 
-    // Capture the view-bob displacement at the exact point vanilla folds the bob pose into the
-    // projection matrix (poseStack holds bobHurt + bobView, starting from identity). Mirrors read
-    // this offset to reflect the bobbed eye so the far reflected scene doesn't wobble. See
-    // VistaLevelRenderer#captureMainBobEyeOffset.
     @Inject(method = "renderLevel", at = @At(value = "INVOKE",
             target = "Lcom/mojang/blaze3d/vertex/PoseStack;last()Lcom/mojang/blaze3d/vertex/PoseStack$Pose;"))
     private void vista$captureBobEyeOffset(DeltaTracker deltaTracker, CallbackInfo ci,

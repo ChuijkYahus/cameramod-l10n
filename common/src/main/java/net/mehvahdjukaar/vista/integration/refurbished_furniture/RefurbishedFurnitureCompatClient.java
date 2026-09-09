@@ -11,8 +11,6 @@ import java.util.Optional;
 
 public class RefurbishedFurnitureCompatClient {
 
-    // Same "Requires power from an Electricity Generator" line Refurbished Furniture puts on its own
-    // powered blocks, wrapped the same way it wraps it (PoweredItem does this inline).
     public static void addRequiresPowerTooltip(List<Component> lines) {
         Minecraft.getInstance().font.getSplitter()
                 .splitLines(PoweredItem.POWER_TOOLTIP, 150, Style.EMPTY)

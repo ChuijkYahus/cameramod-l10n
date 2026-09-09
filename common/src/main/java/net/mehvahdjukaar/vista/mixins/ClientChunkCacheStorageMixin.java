@@ -15,11 +15,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.concurrent.atomic.AtomicReferenceArray;
 
-// Keeps far camera zone chunks out of the storage array. The array is indexed
-// floorMod(x/z, viewRange) and the in-range window is exactly viewRange wide, so every slot already
-// belongs to one of the player's own chunks. A far zone chunk stored here evicts the real chunk at
-// the same residue, unloading it and leaving a hole in the world until the server resends it. Those
-// chunks go to PinnedChunks instead.
 @Mixin(targets = "net.minecraft.client.multiplayer.ClientChunkCache$Storage")
 public class ClientChunkCacheStorageMixin {
 
@@ -34,8 +29,6 @@ public class ClientChunkCacheStorageMixin {
     @Shadow
     volatile int viewCenterZ;
 
-    // replaceWithPacketData bails out before building the chunk if this says no, so zone chunks still
-    // have to pass. The write is what gets stopped, in replace().
     @Inject(method = "inRange", at = @At("HEAD"), cancellable = true)
     private void vista$alwaysInRangeForPinnedZone(int x, int z, CallbackInfoReturnable<Boolean> cir) {
         if (VistaModClient.CLIENT_EXTRA_CHUNK_VIEW_DATA.containsChunk(x, z)) {
@@ -53,12 +46,9 @@ public class ClientChunkCacheStorageMixin {
                 ci.cancel();
                 return;
             }
-            // walked close enough that it is an ordinary chunk now, let the storage own it
             PinnedChunks.unpin(pos.x, pos.z);
         }
 
-        // The player walking away can push a zone chunk out of range and then hand its slot to a real
-        // chunk. Grab it before replace() unloads it or the feed loses that chunk for good.
         LevelChunk evicted = this.chunks.get(chunkIndex);
         if (evicted != null && evicted != chunk && vista$isFarZoneChunk(evicted.getPos())) {
             PinnedChunks.pin(evicted);
@@ -71,7 +61,6 @@ public class ClientChunkCacheStorageMixin {
                 && VistaModClient.CLIENT_EXTRA_CHUNK_VIEW_DATA.containsChunk(pos.x, pos.z);
     }
 
-    // what inRange would say without our own override
     @Unique
     private boolean vista$inNormalRange(int x, int z) {
         return Math.abs(x - this.viewCenterX) <= this.chunkRadius

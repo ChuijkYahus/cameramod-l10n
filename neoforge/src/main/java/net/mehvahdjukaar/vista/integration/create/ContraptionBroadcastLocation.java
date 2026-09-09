@@ -29,10 +29,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.UUID;
 
-// Points a broadcast feed at a view finder riding inside a Create contraption.
-// Client side get() returns the render-level block entity and installs the moving reference frame so the
-// feed tracks the structure. Server side there is no live block entity, so the link exists only for chunk
-// tracking + sync. Contraption access goes through CreateCompat to keep this file Create-free.
 public record ContraptionBroadcastLocation(ResourceKey<Level> dimension, UUID contraptionId, BlockPos localPos)
         implements IBroadcastLocation {
 
@@ -65,7 +61,6 @@ public record ContraptionBroadcastLocation(ResourceKey<Level> dimension, UUID co
         if (contraption == null) return TriResult.empty();
 
         if (!isClient) {
-            // server keeps blocks as NBT with no live view finder BE; nothing to hand back
             return TriResult.empty();
         }
 
@@ -96,7 +91,6 @@ public record ContraptionBroadcastLocation(ResourceKey<Level> dimension, UUID co
         return GlobalPos.of(dimension, contraption.blockPosition());
     }
 
-    // keep the view finder bound to the contraption so its global position/orientation track the movement
     private void ensureFrame(ViewFinderBlockEntity vf, Entity contraption) {
         ReferenceFrame current = vf.getReferenceFrame();
         if (!(current instanceof ContraptionReferenceFrame(Entity contraption1, BlockPos pos))

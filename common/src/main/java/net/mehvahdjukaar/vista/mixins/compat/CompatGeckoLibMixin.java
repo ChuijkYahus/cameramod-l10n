@@ -1,4 +1,4 @@
-package net.mehvahdjukaar.vista.mixins;
+package net.mehvahdjukaar.vista.mixins.compat;
 
 import net.mehvahdjukaar.vista.client.renderer.VistaLevelRenderer;
 import org.spongepowered.asm.mixin.Mixin;

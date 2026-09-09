@@ -10,9 +10,8 @@ public class ModNetwork {
 
     private static void registerMessages(NetworkHelper.RegisterMessagesEvent event) {
         event.registerBidirectional(SyncViewFinderPacket.CODEC);
-        // contraption view finder sync is registered from :neoforge only, see integration.create.CreateCompat
         event.registerServerBound(ServerBoundSyncWaveGatePacket.CODEC);
-        event.registerServerBound(ServerBoundExtraChunksSupportPacket.CODEC);
+        event.registerServerBound(ServerBoundWantsZoneChunksPacket.CODEC);
         event.registerClientBound(ClientBoundControlViewFinderPacket.CODEC);
         event.registerClientBound(ClientBoundSyncExtraChunksPacket.CODEC);
     }
