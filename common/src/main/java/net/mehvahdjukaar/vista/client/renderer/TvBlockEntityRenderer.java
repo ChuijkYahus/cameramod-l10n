@@ -108,7 +108,7 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
         boolean paused = blockEntity.isPaused();
         boolean shouldUpdate = !paused && lod.within(ClientConfigs.UPDATE_DISTANCE.get());
         IntAnimationState switchAnim = blockEntity.fadeAnimation;
-        IntAnimationState staticAnim = blockEntity.endermanAnimation;
+        IntAnimationState staticAnim = blockEntity.endermanLook.animation;
         int videoTicks = blockEntity.getPlaybackTicks();
         boolean showsTime = blockEntity.showsTime();
 
@@ -217,7 +217,7 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
         font.drawInBatch(String.format("up ms %.2f", updateMs), 0, y, -1, false, poseStack.last().pose(), buffer, Font.DisplayMode.NORMAL,
                 OverlayTexture.NO_OVERLAY, LightTexture.FULL_BRIGHT);
 
-        float endermanAnim = tile.endermanAnimation.getValue(partialTick);
+        float endermanAnim = tile.endermanLook.animation.getValue(partialTick);
         if (endermanAnim != 0) {
             y -= 9;
             font.drawInBatch("p " + endermanAnim, 0, y, -1, false, poseStack.last().pose(), buffer, Font.DisplayMode.NORMAL,

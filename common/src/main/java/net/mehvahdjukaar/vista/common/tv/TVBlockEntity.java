@@ -13,7 +13,7 @@ import net.mehvahdjukaar.vista.common.ScreenRect;
 import net.mehvahdjukaar.vista.common.cassette.IBroadcastSource;
 import net.mehvahdjukaar.vista.common.cassette.ITvCassette;
 import net.mehvahdjukaar.vista.common.chunk_tracking.ServerCameraChunkManager;
-import net.mehvahdjukaar.vista.common.enderman.TVEndermanObservationController;
+import net.mehvahdjukaar.vista.common.mob_gaze.TVEndermanLook;
 import net.mehvahdjukaar.vista.common.picture_tape.PictureTapeContent;
 import net.mehvahdjukaar.vista.common.picture_tape.PictureTapeItem;
 import net.mehvahdjukaar.vista.common.picture_tape.PictureTapeMaps;
@@ -47,9 +47,6 @@ import java.util.UUID;
 
 public class TVBlockEntity extends ItemDisplayTile {
 
-    @Nullable
-    private TVEndermanObservationController observationController = null;
-
     private boolean paused = false;
     private int videoPlaybackTicks = 0;
     private boolean showsTime = false;
@@ -62,8 +59,7 @@ public class TVBlockEntity extends ItemDisplayTile {
 
     private int soundLoopTicks = 0;
     public final IntAnimationState fadeAnimation = new IntAnimationState(3, 9);
-    public final IntAnimationState endermanAnimation = new IntAnimationState(20, 20, 0.6f);
-    private boolean isLookingAtEnderman = false;
+    public final TVEndermanLook endermanLook = new TVEndermanLook();
     private boolean wasScreenOn = false;
 
     private boolean hasEnergy = false;
@@ -101,7 +97,6 @@ public class TVBlockEntity extends ItemDisplayTile {
         // must not be guarded on the key being there: the tag is only written when powered, and the
         // client reuses the same tile across updates, so a missing key has to clear the flag
         this.hasEnergy = tag.getBoolean("HasEnergy");
-        updateObservationController();
     }
 
     public boolean showsTime() {
@@ -159,13 +154,6 @@ public class TVBlockEntity extends ItemDisplayTile {
             this.paused = false;
             this.videoPlaybackTicks = 0;
         }
-        updateObservationController();
-    }
-
-    private void updateObservationController() {
-        ItemStack displayedItem = this.getDisplayedItem();
-        var uuid = displayedItem.get(VistaMod.LINKED_FEED_COMPONENT.get());
-        this.observationController = uuid == null ? null : new TVEndermanObservationController(uuid, this);
     }
 
     @Override
@@ -273,8 +261,6 @@ public class TVBlockEntity extends ItemDisplayTile {
                 if (ClientConfigs.TURN_OFF_EFFECTS.get()) tv.fadeAnimation.increment();
                 if (!tv.hasEnergy()) return;
                 float duration = tv.videoSource.getVideoDuration();
-                // Play on the first tick (soundLoopTicks == 0) so the sound starts immediately
-                // when a cassette is inserted, then repeat every `duration` ticks.
                 if (tv.soundLoopTicks == 0) {
                     SoundEvent sound = tv.videoSource.getVideoSound();
                     if (sound != null) {
@@ -287,49 +273,21 @@ public class TVBlockEntity extends ItemDisplayTile {
             } else {
                 tv.soundLoopTicks = 0;
             }
-            if (tv.isLookingAtEnderman) {
-                tv.endermanAnimation.increment();
-            } else {
-                tv.endermanAnimation.decrement();
-            }
-
-
+            tv.endermanLook.clientTick();
         } else {
             if (!tv.hasEnergy()) return;
 
             tv.pushSlideshowMaps(world, pos, powered);
 
-            //enderman stuff
-            // Run once every TV_OBSERVATION_INTERVAL ticks, offset by pos so different TVs
-            // don't all fire on the same tick. Previous `% 27 == 0` skipped only 1/27 ticks
-            // (no real staggering).
-            if ((world.getGameTime() + pos.asLong()) % TV_OBSERVATION_INTERVAL != 0) {
-                return;
-            }
-            boolean hasAngeredEntity = false;
-            if (powered && tv.observationController != null) {
-                //server tick logic
-                hasAngeredEntity = tv.observationController.tick();
-            }
-            boolean couldSeeEnderman = tv.isLookingAtEnderman;
-            //if changed send block event
-            if (hasAngeredEntity != couldSeeEnderman) {
-                tv.isLookingAtEnderman = hasAngeredEntity;
-                world.blockEvent(pos, state.getBlock(), 1, hasAngeredEntity ? 1 : 0);
-            }
+            tv.endermanLook.serverTick(world, pos, state);
         }
     }
 
 
-    public void updateEndermanLookAnimation(int param) {
-        this.isLookingAtEnderman = param > 0;
-    }
 
     public boolean isScreenOn(float partialTicks) {
         return this.wasScreenOn || this.fadeAnimation.getValue(partialTicks) != 0;
     }
-
-    private static final int TV_OBSERVATION_INTERVAL = 10;
 
     private static final int EDGE_PIXEL_LEN = 4;
     public static final int MIN_SCREEN_PIXEL_SIZE = 16 - EDGE_PIXEL_LEN;

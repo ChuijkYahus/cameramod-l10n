@@ -13,16 +13,8 @@ public record ScreenRect(Vec3 center, Vec3 normal, float width, float height) {
 
     public static final Vec3 UP = new Vec3(0, 1, 0);
 
-    public static Vec3 rightOf(Vec3 normal) {
-        return UP.cross(normal);
-    }
-
     public Vec3 right() {
-        return rightOf(normal);
-    }
-
-    public Vec3 up() {
-        return UP;
+        return UP.cross(normal);
     }
 
     /**
@@ -35,9 +27,5 @@ public record ScreenRect(Vec3 center, Vec3 normal, float width, float height) {
         double y = local.dot(UP);
         if (Math.abs(x) > width / 2f || Math.abs(y) > height / 2f) return null;
         return new Vec2((float) (x / width), (float) (y / height));
-    }
-
-    public Vec3 localToWorld(Vec2 localHit) {
-        return center.add(right().scale(localHit.x * width)).add(UP.scale(localHit.y * height));
     }
 }

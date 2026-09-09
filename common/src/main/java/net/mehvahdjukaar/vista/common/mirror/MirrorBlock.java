@@ -2,11 +2,9 @@ package net.mehvahdjukaar.vista.common.mirror;
 
 import com.mojang.serialization.MapCodec;
 import net.mehvahdjukaar.moonlight.api.block.IOptionalEntityBlock;
-import net.mehvahdjukaar.moonlight.api.util.Utils;
 import net.mehvahdjukaar.moonlight.api.util.math.MthUtils;
 import net.mehvahdjukaar.moonlight.api.util.math.Rect2D;
 import net.mehvahdjukaar.moonlight.api.util.math.Vec2i;
-import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.common.connection.AbstractGridAccess;
 import net.mehvahdjukaar.vista.common.connection.ConnectionType;
 import net.mehvahdjukaar.vista.common.connection.GridTile;
@@ -26,8 +24,6 @@ import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.world.level.block.entity.BlockEntityTicker;
-import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
@@ -43,16 +39,10 @@ public class MirrorBlock extends HorizontalDirectionalBlock implements EntityBlo
 
     public static final MapCodec<MirrorBlock> CODEC = simpleCodec(MirrorBlock::new);
     public static final EnumProperty<ConnectionType> CONNECTION = ConnectionType.STATE_PROPERTY;
-    // false = mirror surface flush with the front (near) face of the block, toward the viewer.
-    // true  = surface recessed to the back of the block cell, set away from the viewer.
     public static final BooleanProperty FAR = BooleanProperty.create("far");
 
-    // Recession (in blocks) of the FAR model's mirror plane from the block's front face. The far
-    // model element runs z=14..16, so its mirror face sits 14px deeper than the near model's.
     public static final double FAR_RECESSION = 14.0 / 16.0;
 
-    // Shapes for the 2px-thick models, defined for NORTH and rotated for the other horizontals, the
-    // same convention the blockstate uses on the model.
     private static final Map<Direction, VoxelShape> NEAR_SHAPES =
             MthUtils.getAllRotatedVoxelShapesHorizontal(Block.box(0, 0, 0, 16, 16, 2));
     private static final Map<Direction, VoxelShape> FAR_SHAPES =
@@ -92,9 +82,6 @@ public class MirrorBlock extends HorizontalDirectionalBlock implements EntityBlo
         return CONNECTION;
     }
 
-    // Mirrors only connect to neighbors sharing both facing AND near/far surface, so a near and a
-    // far mirror sitting side by side stay separate grids (their reflection planes are at different
-    // depths, so merging them would be visually wrong).
     @Override
     public boolean connectionMatches(BlockState self, BlockState other) {
         return IConnectedBlock.super.connectionMatches(self, other) &&
@@ -126,7 +113,6 @@ public class MirrorBlock extends HorizontalDirectionalBlock implements EntityBlo
         return state.setValue(CONNECTION, type);
     }
 
-    // NEAR/FAR force a model, BOTH goes by where the player clicked
     private static boolean shouldPlaceFar(BlockPlaceContext context, Direction facing) {
         return switch (CommonConfigs.MIRROR_PLACEMENT.get()) {
             case NEAR -> false;
@@ -135,7 +121,6 @@ public class MirrorBlock extends HorizontalDirectionalBlock implements EntityBlo
         };
     }
 
-    // facing points back toward the viewer, so a hit in the near half places the near model
     private static boolean isFarHalf(BlockPlaceContext context, Direction facing) {
         Vec3 hit = context.getClickLocation();
         BlockPos pos = context.getClickedPos();
@@ -167,11 +152,6 @@ public class MirrorBlock extends HorizontalDirectionalBlock implements EntityBlo
     @Override
     public @Nullable BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return shouldHaveBlockEntity(state) ? new MirrorBlockEntity(pos, state) : null;
-    }
-
-    @Override
-    public @Nullable <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> blockEntityType) {
-        return Utils.getTicker(blockEntityType, VistaMod.MIRROR_TILE.get(), MirrorBlockEntity::onTick);
     }
 
     @Override
@@ -220,9 +200,6 @@ public class MirrorBlock extends HorizontalDirectionalBlock implements EntityBlo
         public void planBeMove(@Nullable Rect2D fromRec, Rect2D toRec) {
             super.planBeMove(fromRec, toRec);
             if (fromRec == null) return;
-            // Reset the old master's cached size before anything gets re-stated to SINGLE. If a grid
-            // shrinks past its master, that BE survives still reporting multi-block dimensions, and
-            // the renderer keeps asking for the wrong screen size instead of a fresh 1x1 texture.
             BlockPos target = targetPos(fromRec.bottomLeft());
             if (level.getBlockEntity(target) instanceof MirrorBlockEntity mirror) {
                 mirror.setConnectionSize(Vec2i.ONE);
@@ -234,7 +211,7 @@ public class MirrorBlock extends HorizontalDirectionalBlock implements EntityBlo
         protected void onMasterApplied(BlockPos target, Rect2D rect) {
             if (level.getBlockEntity(target) instanceof MirrorBlockEntity mirror) {
                 mirror.setConnectionSize(rect.getSize());
-                mirror.setChanged(); // pushes the size to clients so the reflection resizes
+                mirror.setChanged();
             }
         }
     }

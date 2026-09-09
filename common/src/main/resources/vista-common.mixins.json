@@ -12,6 +12,7 @@
     "compat.CompatGeckoLibMixin",
     "compat.CompatRefurbishedFurnitureSelfTvBlockEntityMixin",
     "compat.CompatSableTrackingMixin",
+    "compat.CompatVanillaBackportCreakingMixin",
     "compat.EndermanSkullBlockTileMixin"
   ],
   "client": [

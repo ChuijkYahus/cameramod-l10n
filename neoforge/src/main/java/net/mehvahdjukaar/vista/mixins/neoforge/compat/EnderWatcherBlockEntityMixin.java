@@ -3,7 +3,7 @@ package net.mehvahdjukaar.vista.mixins.neoforge.compat;
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.sugar.Local;
 import net.mehvahdjukaar.moonlight.api.misc.OptionalMixin;
-import net.mehvahdjukaar.vista.common.GazeRedirect;
+import net.mehvahdjukaar.vista.common.mob_gaze.GazeRedirect;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;

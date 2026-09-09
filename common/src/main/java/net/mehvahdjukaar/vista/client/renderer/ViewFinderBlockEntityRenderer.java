@@ -5,6 +5,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.mehvahdjukaar.moonlight.api.util.math.EntityAngles;
 import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.client.ViewFinderController;
+import net.mehvahdjukaar.vista.common.mob_gaze.GazeRedirect;
 import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlock;
 import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
@@ -21,12 +22,11 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.util.VisibleForDebug;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.Nullable;
 import org.joml.Quaternionf;
 
-import java.lang.ref.WeakReference;
 
 public class ViewFinderBlockEntityRenderer implements BlockEntityRenderer<ViewFinderBlockEntity> {
 
@@ -175,14 +175,15 @@ public class ViewFinderBlockEntityRenderer implements BlockEntityRenderer<ViewFi
     }
 
     @VisibleForDebug
-    public static WeakReference<Player> debugLastPlayer = new WeakReference<>(null);
+    @Nullable
+    public static GazeRedirect.Ray debugLastCameraRay = null;
 
     private static void renderDebug(ViewFinderBlockEntity tile, PoseStack poseStack, MultiBufferSource bufferSource) {
 
-        Player player = debugLastPlayer.get();
-        if (player != null) {
+        GazeRedirect.Ray ray = debugLastCameraRay;
+        if (ray != null) {
             poseStack.pushPose();
-            Vec3 pos = player.getEyePosition().subtract(Vec3.atLowerCornerOf(tile.getBlockPos()));
+            Vec3 pos = ray.origin().subtract(Vec3.atLowerCornerOf(tile.getBlockPos()));
             poseStack.translate(pos.x, pos.y, pos.z);
             PoseStack.Pose pose = poseStack.last();
             VertexConsumer vc = bufferSource.getBuffer(RenderType.lines());
@@ -204,9 +205,7 @@ public class ViewFinderBlockEntityRenderer implements BlockEntityRenderer<ViewFi
                     .setColor(30, 30, 255, 255)
                     .setNormal(pose, 0, 1, 0);
 
-            float headY = player.getYHeadRot();
-            float headX = player.getXRot();
-            var view = Vec3.directionFromRotation(headX, headY).normalize();
+            Vec3 view = ray.dir();
             vc.addVertex(pose, 0, 0, 0)
                     .setColor(30, 255, 30, 255)
                     .setNormal(pose, 0, 1, 0);

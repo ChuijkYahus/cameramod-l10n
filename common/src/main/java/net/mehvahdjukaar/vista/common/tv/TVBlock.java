@@ -112,7 +112,7 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
         if (id == 1) {
             if (level.isClientSide) {
                 if (level.getBlockEntity(pos) instanceof TVBlockEntity tile) {
-                    tile.updateEndermanLookAnimation(param);
+                    tile.endermanLook.onBlockEvent(param);
                     return true;
                 }
             } else return true;
