@@ -43,9 +43,7 @@ public abstract class EnderWatcherBlockEntityMixin {
                                                   EnderWatcherBlockEntity be,
                                                   @Local Player player) {
         if (original instanceof BlockHitResult bh && bh.getBlockPos().equals(pos)) return original;
-        BlockHitResult redirected = GazeRedirect.tryHitThroughScreens(
-                player, level, pos,
-                GazeRedirect.MAX_DISTANCE, GazeRedirect.MAX_BOUNCES);
+        BlockHitResult redirected = GazeRedirect.tryHitThroughScreens(player, level, pos);
         return redirected != null ? redirected : original;
     }
 }
