@@ -205,6 +205,7 @@ public class VistaMod {
     public static final RegSupplier<SoundEvent> CASSETTE_EJECT_SOUND = RegHelper.registerSound(res("block.television.eject"));
     public static final RegSupplier<SoundEvent> TV_STATIC_SOUND = RegHelper.registerSound(res("block.television.static"));
     public static final RegSupplier<SoundEvent> SOJOURN_DISC_SOUND = RegHelper.registerSound(res("music_disc.sojourn"));
+    public static final RegSupplier<SoundEvent> TV_SPEAKER_SOUND = RegHelper.registerSound(res("block.television.speaker"));
     public static final HolderRef<JukeboxSong> SOJOURN_DISC_SONG = HolderRef.of(
             res("sojourn"), Registries.JUKEBOX_SONG);
     public static final int STATIC_SOUND_DURATION = 4 * 20; //4 seconds
@@ -217,6 +218,8 @@ public class VistaMod {
 
     public static final TagKey<Item> GLASS_PANES_TAG = TagKey.create(
             Registries.ITEM, ResourceLocation.fromNamespaceAndPath("c", "glass_panes"));
+
+    public static final TagKey<Block> TV_SPEAKERS_TAG = TagKey.create(Registries.BLOCK, res("tv_speakers"));
 
     // Entities of these types are not drawn in mirror reflections (e.g. vampires).
     public static final TagKey<net.minecraft.world.entity.EntityType<?>> CANT_SEE_THROUGH_MIRROR = TagKey.create(

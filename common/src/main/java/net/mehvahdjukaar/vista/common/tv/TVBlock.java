@@ -171,6 +171,7 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
             gridAccess.transform(old, old, null);
             gridAccess.applyChanges();
         }
+        if (findMasterBlockEntity(level, pos, state) instanceof TVBlockEntity tv) tv.onNeighborChanged(neighborPos);
     }
 
     @Override
@@ -184,6 +185,7 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
     public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) {
         super.setPlacedBy(level, pos, state, placer, stack);
         if (!(placer instanceof Player p) || !p.isSecondaryUseActive()) enlargeConnection(state, level, pos);
+        else if (level.getBlockEntity(pos) instanceof TVBlockEntity tv) tv.refreshSpeaker();
     }
 
     //TODO: make blockstate?
@@ -245,6 +247,7 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
                 if (cassetteTransfer != null) tv.setDisplayedItem(cassetteTransfer);
                 tv.setChanged();
                 tv.setConnectionSize(rect.getSize());
+                tv.refreshSpeaker();
             }
         }
     }

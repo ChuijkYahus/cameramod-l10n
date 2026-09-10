@@ -1,0 +1,10 @@
+{
+  "replace": false,
+  "values": [
+    "minecraft:note_block",
+    {
+      "id": "supplementaries:speaker_block",
+      "required": false
+    }
+  ]
+}

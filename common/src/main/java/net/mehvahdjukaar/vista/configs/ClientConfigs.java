@@ -46,6 +46,7 @@ public class ClientConfigs {
     public static final Supplier<ScalingMode> PICTURE_TAPE_SCALING_MODE;
     public static final Supplier<Boolean> BILINEAR;
     public static final Supplier<EngineMode> VIDEO_ENGINE;
+    public static final Supplier<AudioMode> AUDIO_MODE;
     public static final Supplier<List<String>> SAFE_URLS;
     public static Pattern safeRegex;
 
@@ -165,6 +166,8 @@ public class ClientConfigs {
                 .define("scaling_mode", ScalingMode.COVER);
         BILINEAR = builder.comment("Enable bilinear sampling for rescaled images. Enable for a less pixelated look")
                 .define("bilinear_sampling", false);
+        AUDIO_MODE = builder.comment("When wave gates with TVs videos play their audio. Speaker mode means  you need a speaker block or noteblock next to the TV (or other tagged blocks)")
+                .define("audio_mode", AudioMode.REQUIRE_SPEAKER);
         SAFE_URLS = builder.comment("A list of regex which will filter out valid URLs. At least one of these must match for a URL video to work")
                 .define("safe_urls", List.of());
         builder.pop(); // wave_gate
@@ -208,6 +211,16 @@ public class ClientConfigs {
         TRY_FFMPEG_FIRST_THEN_VLC,
         USE_FFMPEG,
         USE_VLC
+    }
+
+    public enum AudioMode {
+        OFF,
+        REQUIRE_SPEAKER,
+        ON;
+
+        public boolean isOn(boolean hasSpeaker) {
+            return this == ON || (this == REQUIRE_SPEAKER && hasSpeaker);
+        }
     }
 
     public enum MirrorUpdateMode {

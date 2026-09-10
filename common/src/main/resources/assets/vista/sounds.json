@@ -22,6 +22,15 @@
     ],
     "subtitle": "subtitles.vista.television.insert"
   },
+  "block.television.speaker": {
+    "sounds": [
+      {
+        "name": "vista:block/television_static",
+        "stream": true,
+        "attenuation_distance": 32
+      }
+    ]
+  },
   "block.television.static": {
     "sounds": [
       {

@@ -2,10 +2,13 @@ package net.mehvahdjukaar.vista.integration.watermedia;
 
 import net.mehvahdjukaar.vista.client.textures.web.IWebTexture;
 import net.mehvahdjukaar.vista.client.web.MediaStatus;
+import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.Mth;
 import org.watermedia.api.player.videolan.VideoPlayer;
 import org.watermedia.videolan4j.factory.MediaPlayerFactory;
 
@@ -19,6 +22,7 @@ public class WatermediaVideoTexture extends AbstractTexture implements IWebTextu
     private final WatermediaSession session;
     private final VideoPlayer videoPlayer;
     private volatile boolean released = false;
+    private boolean audible = false;
 
     public WatermediaVideoTexture(ResourceLocation textureLocation, WatermediaSession session, URI uri,
                                   int width, int height, Executor executor) {
@@ -67,12 +71,26 @@ public class WatermediaVideoTexture extends AbstractTexture implements IWebTextu
 
     @Override
     public void releaseId() {
-        // no-op: the VideoPlayer / RenderAPI owns the GL texture lifetime, not Minecraft
+    }
+
+    @Override
+    public void updateAudio(TVBlockEntity tv, boolean playing) {
+        if (released) return;
+        if (playing) {
+            var options = Minecraft.getInstance().options;
+            double distance = IWebTexture.distanceToCamera(tv.getScreenRect().center());
+            float falloff = Mth.clamp(1 - (float) distance / SPEAKER_RANGE, 0, 1);
+            float volume = falloff * options.getSoundSourceVolume(SoundSource.MASTER) * options.getSoundSourceVolume(SoundSource.BLOCKS);
+            videoPlayer.setVolume((int) (volume * 100));
+        }
+        if (audible != playing) {
+            audible = playing;
+            videoPlayer.setMuteMode(!playing);
+        }
     }
 
     @Override
     public MediaStatus uploadFrameAtTime(int ticks, float deltaTime, boolean paused) {
-        videoPlayer.mute();
         if (videoPlayer.isPaused() != paused) {
             if (paused) videoPlayer.pause();
             else videoPlayer.resume();

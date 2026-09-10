@@ -9,6 +9,7 @@ import net.mehvahdjukaar.vista.client.textures.TvScreenVertexConsumers;
 import net.mehvahdjukaar.vista.common.cassette.CassetteItem;
 import net.mehvahdjukaar.vista.common.picture_tape.PictureTapeItem;
 import net.mehvahdjukaar.vista.common.tv.IntAnimationState;
+import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.item.ItemStack;
@@ -34,6 +35,9 @@ public interface IVideoSource {
 
     default int getVideoDuration() {
         return 0;
+    }
+
+    default void updateAudio(TVBlockEntity tv, boolean playing) {
     }
 
     default ScreenFit getScreenFit() {

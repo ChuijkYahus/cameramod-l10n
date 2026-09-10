@@ -23,6 +23,7 @@ import java.util.concurrent.Executor;
 
 public class FFmpegMediaSession implements IMediaSession {
     private final List<MediaFrame> frames = new ArrayList<>();
+    private final PcmAudioTrack audio = new PcmAudioTrack();
     private final CompletableFuture<Void> loadFuture;
 
     @Nullable
@@ -42,10 +43,10 @@ public class FFmpegMediaSession implements IMediaSession {
                               int targetWidth, int targetHeight) {
         this.targetWidth = targetWidth;
         this.targetHeight = targetHeight;
-        this.loadFuture = CompletableFuture.runAsync(() -> asyncThreadJob(uri, ffmpeg, cacheManager), executor);
+        this.loadFuture = CompletableFuture.runAsync(() -> asyncThreadJob(uri, ffmpeg, cacheManager, executor), executor);
     }
 
-    private void asyncThreadJob(URI uri, @Nullable FFmpeg ffmpeg, MediaCacheManager cacheManager) {
+    private void asyncThreadJob(URI uri, @Nullable FFmpeg ffmpeg, MediaCacheManager cacheManager, Executor executor) {
         try {
             Path videoPath = cacheManager.getOrDownload(uri,
                     percent -> this.downloadProgress = percent,
@@ -73,6 +74,8 @@ public class FFmpegMediaSession implements IMediaSession {
                 this.error = MediaError.NO_FFMPEG;
                 return;
             }
+
+            audio.decodeAsync(effectiveFfmpeg, videoPath, executor);
 
             FFmpegMediaDecoder newDecoder = new FFmpegMediaDecoder(effectiveFfmpeg, this, videoPath);
             this.decoder = newDecoder;
@@ -109,6 +112,10 @@ public class FFmpegMediaSession implements IMediaSession {
 
     public boolean isReady() {
         return size() > 0;
+    }
+
+    public PcmAudioTrack getAudio() {
+        return audio;
     }
 
     public boolean isFailed() {
@@ -192,6 +199,7 @@ public class FFmpegMediaSession implements IMediaSession {
         if (currentDecoder != null) {
             currentDecoder.stopDecoder();
         }
+        audio.stop();
         for (MediaFrame frame : frames) {
             try {
                 frame.close();

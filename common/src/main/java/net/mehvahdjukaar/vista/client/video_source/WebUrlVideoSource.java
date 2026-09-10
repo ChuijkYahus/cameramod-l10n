@@ -10,6 +10,7 @@ import net.mehvahdjukaar.vista.client.textures.web.WebTexturesManager;
 import net.mehvahdjukaar.vista.client.web.MediaError;
 import net.mehvahdjukaar.vista.client.web.MediaStatus;
 import net.mehvahdjukaar.vista.common.tv.IntAnimationState;
+import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
@@ -112,6 +113,13 @@ public class WebUrlVideoSource implements IVideoSource {
 
         return TvScreenVertexConsumers.getSingleTextureVC(buffer, textureId, overlay, pixelEffectRes, switchAnim, staticAnim);
 
+    }
+
+    @Override
+    public void updateAudio(TVBlockEntity tv, boolean playing) {
+        if (textureHandle != null) {
+            textureHandle.getTexture().updateAudio(tv, playing);
+        }
     }
 
     @Nullable

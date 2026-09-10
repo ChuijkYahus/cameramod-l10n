@@ -63,6 +63,7 @@ public class TVBlockEntity extends ItemDisplayTile {
     private boolean wasScreenOn = false;
 
     private boolean hasEnergy = false;
+    private boolean hasSpeaker = false;
 
     public Object energyCap = null;
 
@@ -79,6 +80,7 @@ public class TVBlockEntity extends ItemDisplayTile {
         compound.putInt("VideoPlaybackTicks", videoPlaybackTicks);
         compound.putBoolean("ShowsTime", showsTime);
         if (hasEnergy) compound.putBoolean("HasEnergy", hasEnergy);
+        if (hasSpeaker) compound.putBoolean("HasSpeaker", hasSpeaker);
     }
 
     @Override
@@ -97,6 +99,7 @@ public class TVBlockEntity extends ItemDisplayTile {
         // must not be guarded on the key being there: the tag is only written when powered, and the
         // client reuses the same tile across updates, so a missing key has to clear the flag
         this.hasEnergy = tag.getBoolean("HasEnergy");
+        this.hasSpeaker = tag.getBoolean("HasSpeaker");
     }
 
     public boolean showsTime() {
@@ -159,6 +162,7 @@ public class TVBlockEntity extends ItemDisplayTile {
     @Override
     public void clientSideUpdateWhenChanged(HolderLookup.Provider registries) {
         super.clientSideUpdateWhenChanged(registries);
+        this.videoSource.updateAudio(this, false);
         this.videoSource = IVideoSource.create(this.getDisplayedItem());
         this.videoPlaybackTicks = 0;
     }
@@ -237,6 +241,38 @@ public class TVBlockEntity extends ItemDisplayTile {
         if (PlatHelper.getPlatform().isFabric()) {
             ServerCameraChunkManager.untrackTv(this);
         }
+        if (level.isClientSide) {
+            this.videoSource.updateAudio(this, false);
+        }
+    }
+
+    public void onNeighborChanged(BlockPos neighborPos) {
+        if (level.getBlockState(neighborPos).is(VistaMod.TV_SPEAKERS_TAG)) setHasSpeaker(true);
+        else if (hasSpeaker) refreshSpeaker();
+    }
+
+    public void refreshSpeaker() {
+        setHasSpeaker(isNextToSpeaker());
+    }
+
+    private void setHasSpeaker(boolean hasSpeaker) {
+        if (this.hasSpeaker != hasSpeaker) {
+            this.hasSpeaker = hasSpeaker;
+            this.setChanged();
+        }
+    }
+
+    private boolean isNextToSpeaker() {
+        Direction facing = this.getBlockState().getValue(TVBlock.FACING);
+        for (int x = 0; x < connectedTvsAmount.x(); x++) {
+            for (int y = 0; y < connectedTvsAmount.y(); y++) {
+                BlockPos tile = MthUtils.relativePos(worldPosition, facing, x, y, 0);
+                for (Direction dir : Direction.values()) {
+                    if (level.getBlockState(tile.relative(dir)).is(VistaMod.TV_SPEAKERS_TAG)) return true;
+                }
+            }
+        }
+        return false;
     }
 
     public static void onTick(Level world, BlockPos pos, BlockState state, TVBlockEntity tv) {
@@ -256,6 +292,8 @@ public class TVBlockEntity extends ItemDisplayTile {
 
         tv.wasScreenOn = powered;
         if (world.isClientSide) {
+            boolean audible = powered && !tv.paused && tv.hasEnergy() && ClientConfigs.AUDIO_MODE.get().isOn(tv.hasSpeaker);
+            tv.videoSource.updateAudio(tv, audible);
 
             if (powered) {
                 if (ClientConfigs.TURN_OFF_EFFECTS.get()) tv.fadeAnimation.increment();

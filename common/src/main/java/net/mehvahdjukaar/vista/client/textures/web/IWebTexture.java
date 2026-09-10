@@ -3,12 +3,16 @@ package net.mehvahdjukaar.vista.client.textures.web;
 import net.mehvahdjukaar.vista.client.web.IMediaSession;
 import net.mehvahdjukaar.vista.client.web.MediaError;
 import net.mehvahdjukaar.vista.client.web.MediaStatus;
+import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.phys.Vec3;
 
 public interface IWebTexture extends AutoCloseable {
+
+    int SPEAKER_RANGE = 32;
 
     ResourceLocation getTextureLocation();
 
@@ -27,6 +31,13 @@ public interface IWebTexture extends AutoCloseable {
     IMediaSession getSession();
 
     MediaStatus uploadFrameAtTime(int ticks, float deltaTime, boolean paused);
+
+    default void updateAudio(TVBlockEntity tv, boolean playing) {
+    }
+
+    static double distanceToCamera(Vec3 pos) {
+        return Minecraft.getInstance().gameRenderer.getMainCamera().getPosition().distanceTo(pos);
+    }
 
     default int getDownloadProgress() {
         return getSession().getDownloadProgress();
