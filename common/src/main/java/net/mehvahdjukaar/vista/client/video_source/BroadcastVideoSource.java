@@ -15,7 +15,23 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.UUID;
 
-public record BroadcastVideoSource(UUID uuid) implements IVideoSource {
+public class BroadcastVideoSource implements IVideoSource {
+
+    private final UUID uuid;
+    //what the broadcaster hands out, only compared by identity to notice url or power changes
+    @Nullable
+    private IVideoSource broadcastSource;
+    //our own instance so each screen has its own texture, clock and speaker
+    @Nullable
+    private IVideoSource screenSource;
+
+    public BroadcastVideoSource(UUID uuid) {
+        this.uuid = uuid;
+    }
+
+    public UUID uuid() {
+        return uuid;
+    }
 
     @Override
     public @NotNull VertexConsumer getVideoFrameBuilder(float partialTick, MultiBufferSource buffer,
@@ -23,9 +39,8 @@ public record BroadcastVideoSource(UUID uuid) implements IVideoSource {
                                                         int videoAnimationTick, boolean paused,
                                                         IntAnimationState switchAnim, IntAnimationState staticAnim,
                                                         boolean showsTime) {
-        IVideoSource vfContent = getBroadcastContent();
-        if (vfContent != null) {
-            return vfContent.getVideoFrameBuilder(partialTick, buffer, shouldUpdate, screenSize, pixelEffectRes,
+        if (screenSource != null) {
+            return screenSource.getVideoFrameBuilder(partialTick, buffer, shouldUpdate, screenSize, pixelEffectRes,
                     videoAnimationTick, paused, switchAnim, staticAnim, showsTime);
         }
         return TvScreenVertexConsumers.getNoiseVC(buffer, pixelEffectRes, switchAnim);
@@ -33,8 +48,13 @@ public record BroadcastVideoSource(UUID uuid) implements IVideoSource {
 
     @Override
     public void updateAudio(TVBlockEntity tv, boolean playing) {
-        IVideoSource vfContent = getBroadcastContent();
-        if (vfContent != null) vfContent.updateAudio(tv, playing);
+        IVideoSource broadcast = getBroadcastContent();
+        if (broadcast != broadcastSource) {
+            if (screenSource != null) screenSource.updateAudio(tv, false);
+            this.broadcastSource = broadcast;
+            this.screenSource = broadcast == null ? null : broadcast.newInstance();
+        }
+        if (screenSource != null) screenSource.updateAudio(tv, playing);
     }
 
     @Nullable

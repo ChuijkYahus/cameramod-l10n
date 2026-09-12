@@ -94,7 +94,7 @@ public class WaveGateBlockEntity extends BlockEntity implements IScreenProvider,
 
         if (PlatHelper.getPhysicalSide().isClient()) {
             this.videoSource = (url.isBlank() || !ClientConfigs.isSafeUrl(url)) ? IVideoSource.EMPTY :
-                    new WebUrlVideoSource(url, myUUID);
+                    new WebUrlVideoSource(url);
         }
     }
 

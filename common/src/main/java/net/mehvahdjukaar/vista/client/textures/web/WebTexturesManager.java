@@ -8,6 +8,7 @@ import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.util.math.Vec2i;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.VistaModClient;
+import net.mehvahdjukaar.vista.client.video_source.WebUrlVideoSource;
 import net.mehvahdjukaar.vista.client.web.FFmpegMediaSession;
 import net.mehvahdjukaar.vista.client.web.IMediaSession;
 import net.mehvahdjukaar.vista.client.web.MediaCacheManager;
@@ -141,7 +142,9 @@ public class WebTexturesManager {
     }
 
     public static void invalidateUrl(String url) {
-        Set<String> sessionKeys = URL_TO_SESSIONS.remove(url);
+        URI uri = WebUrlVideoSource.createUri(url);
+        if (uri == null) return;
+        Set<String> sessionKeys = URL_TO_SESSIONS.remove(uri);
         if (sessionKeys != null) {
             for (String key : sessionKeys) {
                 SESSION_CACHE.invalidate(key);
@@ -149,7 +152,7 @@ public class WebTexturesManager {
         }
         SESSION_CACHE.cleanUp();
 
-        Set<ResourceLocation> textureKeys = URL_TO_TEXTURES.remove(url);
+        Set<ResourceLocation> textureKeys = URL_TO_TEXTURES.remove(uri);
         if (textureKeys != null) {
             for (ResourceLocation key : textureKeys) {
                 TEXTURE_CACHE.invalidate(key);

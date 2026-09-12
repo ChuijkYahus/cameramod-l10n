@@ -12,7 +12,8 @@ import net.minecraft.world.phys.Vec3;
 
 public interface IWebTexture extends AutoCloseable {
 
-    int SPEAKER_RANGE = 32;
+    //same curve as vanilla linear attenuation
+    int SPEAKER_RANGE = 16;
 
     ResourceLocation getTextureLocation();
 

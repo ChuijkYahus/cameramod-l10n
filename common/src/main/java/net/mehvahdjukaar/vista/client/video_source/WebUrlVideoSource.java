@@ -23,32 +23,38 @@ import java.util.UUID;
 public class WebUrlVideoSource implements IVideoSource {
     @Nullable
     private final URI uri;
-    private final UUID projectorID;
+    private final UUID screenId = UUID.randomUUID();
     private WebTexturesManager.Handle textureHandle;
     private Vec2i lastScreenSize = Vec2i.ZERO;
 
-    public WebUrlVideoSource(String url, UUID projectorID) {
-        this.projectorID = projectorID;
-        this.uri = createUri(url);
+    public WebUrlVideoSource(String url) {
+        this(createUri(url));
     }
-    private static URI createUri(String url) {
+
+    private WebUrlVideoSource(@Nullable URI uri) {
+        this.uri = uri;
+    }
+
+    @Override
+    public IVideoSource newInstance() {
+        return new WebUrlVideoSource(uri);
+    }
+
+    @Nullable
+    public static URI createUri(String url) {
         if (url == null || url.isBlank()) {
             return null;
         }
-
         String s = url.trim();
 
         try {
             URI parsed = URI.create(s);
-
             // Has a scheme like http:, https:, file:, ftp:, etc.
             if (parsed.getScheme() != null) {
                 return parsed;
             }
-
         } catch (Exception ignored) {
         }
-
         // No valid URI scheme -> treat as filesystem path
         try {
             return Paths.get(s).toUri();
@@ -70,7 +76,7 @@ public class WebUrlVideoSource implements IVideoSource {
         }
 
         if (textureHandle == null || !lastScreenSize.equals(screenSize)) {
-            this.textureHandle = WebTexturesManager.createHandle(uri, projectorID, screenSize);
+            this.textureHandle = WebTexturesManager.createHandle(uri, screenId, screenSize);
             this.lastScreenSize = screenSize;
         }
 

@@ -35,7 +35,7 @@ public class VistaPlatStuff {
 
     @Contract
     @PlatformImpl
-    public static TvSpeakerSound createTvSpeakerSound(PcmAudioTrack track, Vec3 pos, double startSeconds) {
+    public static TvSpeakerSound createTvSpeakerSound(PcmAudioTrack track, Vec3 pos, double startSeconds, double videoClockOffset) {
         throw new AssertionError();
     }
 }

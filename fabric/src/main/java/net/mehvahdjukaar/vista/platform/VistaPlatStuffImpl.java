@@ -27,8 +27,8 @@ public class VistaPlatStuffImpl {
     public static void invalidateBlockCapabilities(Level level, BlockPos pos) {
     }
 
-    public static TvSpeakerSound createTvSpeakerSound(PcmAudioTrack track, Vec3 pos, double startSeconds) {
-        return new TvSpeakerSound(track, pos, startSeconds) {
+    public static TvSpeakerSound createTvSpeakerSound(PcmAudioTrack track, Vec3 pos, double startSeconds, double videoClockOffset) {
+        return new TvSpeakerSound(track, pos, startSeconds, videoClockOffset) {
             @Override
             public CompletableFuture<AudioStream> getAudioStream(SoundBufferLibrary loader, ResourceLocation id, boolean repeatInstantly) {
                 return CompletableFuture.completedFuture(openStream());

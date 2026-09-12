@@ -3,6 +3,7 @@ package net.mehvahdjukaar.vista.integration.watermedia;
 import net.mehvahdjukaar.vista.client.textures.web.IWebTexture;
 import net.mehvahdjukaar.vista.client.web.MediaStatus;
 import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
+import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.resources.ResourceLocation;
@@ -80,7 +81,8 @@ public class WatermediaVideoTexture extends AbstractTexture implements IWebTextu
             var options = Minecraft.getInstance().options;
             double distance = IWebTexture.distanceToCamera(tv.getScreenRect().center());
             float falloff = Mth.clamp(1 - (float) distance / SPEAKER_RANGE, 0, 1);
-            float volume = falloff * options.getSoundSourceVolume(SoundSource.MASTER) * options.getSoundSourceVolume(SoundSource.BLOCKS);
+            float volume = falloff * ClientConfigs.AUDIO_VOLUME.get().floatValue()
+                    * options.getSoundSourceVolume(SoundSource.MASTER) * options.getSoundSourceVolume(SoundSource.BLOCKS);
             videoPlayer.setVolume((int) (volume * 100));
         }
         if (audible != playing) {

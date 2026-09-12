@@ -38,8 +38,8 @@ public class VistaPlatStuffImpl {
         level.invalidateCapabilities(pos);
     }
 
-    public static TvSpeakerSound createTvSpeakerSound(PcmAudioTrack track, Vec3 pos, double startSeconds) {
-        return new TvSpeakerSound(track, pos, startSeconds) {
+    public static TvSpeakerSound createTvSpeakerSound(PcmAudioTrack track, Vec3 pos, double startSeconds, double videoClockOffset) {
+        return new TvSpeakerSound(track, pos, startSeconds, videoClockOffset) {
             @Override
             public CompletableFuture<AudioStream> getStream(SoundBufferLibrary soundBuffers, Sound sound, boolean looping) {
                 return CompletableFuture.completedFuture(openStream());

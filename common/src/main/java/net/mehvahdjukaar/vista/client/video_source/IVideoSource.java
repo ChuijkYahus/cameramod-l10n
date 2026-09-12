@@ -40,6 +40,10 @@ public interface IVideoSource {
     default void updateAudio(TVBlockEntity tv, boolean playing) {
     }
 
+    default IVideoSource newInstance() {
+        return this;
+    }
+
     default ScreenFit getScreenFit() {
         return ScreenFit.FILL;
     }
