@@ -92,7 +92,8 @@ public class ScrollBarWidget extends AbstractWidget {
     }
 
     public double getValue() {
-        return externalGetter != null ? externalGetter.getAsDouble() : internalValue;
+        double v = externalGetter != null ? externalGetter.getAsDouble() : internalValue;
+        return Mth.clamp(v, 0, 1);
     }
 
     // programmatic update: moves the handle without firing onChanged

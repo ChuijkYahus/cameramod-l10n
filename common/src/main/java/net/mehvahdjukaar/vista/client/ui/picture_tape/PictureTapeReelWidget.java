@@ -63,7 +63,13 @@ public class PictureTapeReelWidget extends AbstractWidget {
 
     public double getScrollFraction() {
         int max = maxScroll();
-        return max <= 0 ? 0 : scrollOffset / max;
+        if (max <= 0) return 0;
+        clampScroll();
+        return scrollOffset / max;
+    }
+
+    private void clampScroll() {
+        scrollOffset = Mth.clamp(scrollOffset, 0, maxScroll());
     }
 
     public void setScrollFraction(double fraction) {
@@ -87,6 +93,7 @@ public class PictureTapeReelWidget extends AbstractWidget {
 
     @Override
     protected void renderWidget(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
+        clampScroll();
         int filled = menu.getFilledCount();
         int realCells = menu.getVisibleCells();
         int hovered = cellAt(mouseX, mouseY);
