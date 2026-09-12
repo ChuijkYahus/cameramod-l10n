@@ -14,7 +14,8 @@ public class PcmAudioStream implements AudioStream {
 
     public PcmAudioStream(PcmSource source, double startSeconds) {
         this.source = source;
-        this.cursor = (long) (startSeconds * PcmSource.BYTES_PER_SECOND);
+        //whole frames, an odd byte offset swaps every sample's bytes
+        this.cursor = (long) (startSeconds * PcmSource.SAMPLE_RATE) * PcmSource.FORMAT.getFrameSize();
     }
 
     @Override
