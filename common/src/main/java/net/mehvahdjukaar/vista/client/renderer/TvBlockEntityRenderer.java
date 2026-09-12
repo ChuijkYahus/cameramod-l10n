@@ -114,7 +114,7 @@ public class TvBlockEntityRenderer implements BlockEntityRenderer<TVBlockEntity>
 
         IVideoSource videoSource = blockEntity.getVideoSource();
         VertexConsumer vc = videoSource
-                .getVideoFrameBuilder(paused ? 1 : partialTick, buffer,
+                .getVideoFrameBuilder(blockEntity, paused ? 1 : partialTick, buffer,
                         shouldUpdate, screenSize, pixelEffectRes,
                         videoTicks, paused, switchAnim, staticAnim, showsTime);
 

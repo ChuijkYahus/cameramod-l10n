@@ -9,6 +9,7 @@ import net.mehvahdjukaar.vista.client.ui.picture_tape.PictureTapeRenderers;
 import net.mehvahdjukaar.vista.common.picture_tape.PictureTapeContent;
 import net.mehvahdjukaar.vista.common.picture_tape.PictureTapeItem;
 import net.mehvahdjukaar.vista.common.tv.IntAnimationState;
+import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.resources.ResourceLocation;
@@ -17,14 +18,10 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
-/**
- * Plays a picture tape on a TV as a slideshow, showing each picture for its stored play speed.
- */
 public class PictureTapeVideoSource implements IVideoSource {
 
     private final List<ItemStack> pictures;
     private final int playSpeed;
-    // picture the last built frame was for, so the screen fit can be asked for right after
     private ItemStack shownPicture = ItemStack.EMPTY;
 
     public PictureTapeVideoSource(ItemStack tape) {
@@ -40,7 +37,7 @@ public class PictureTapeVideoSource implements IVideoSource {
 
     @Override
     public @NotNull VertexConsumer getVideoFrameBuilder(
-            float partialTick, MultiBufferSource buffer, boolean shouldUpdate, Vec2i screenSize, Vec2i pixelEffectRes,
+            TVBlockEntity tv, float partialTick, MultiBufferSource buffer, boolean shouldUpdate, Vec2i screenSize, Vec2i pixelEffectRes,
             int videoAnimationTick, boolean paused,
             IntAnimationState switchAnim, IntAnimationState staticAnim, boolean showsTime) {
 

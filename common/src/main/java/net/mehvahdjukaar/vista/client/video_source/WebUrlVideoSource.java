@@ -18,26 +18,13 @@ import org.jetbrains.annotations.Nullable;
 
 import java.net.URI;
 import java.nio.file.Paths;
-import java.util.UUID;
 
 public class WebUrlVideoSource implements IVideoSource {
     @Nullable
     private final URI uri;
-    private final UUID screenId = UUID.randomUUID();
-    private WebTexturesManager.Handle textureHandle;
-    private Vec2i lastScreenSize = Vec2i.ZERO;
 
     public WebUrlVideoSource(String url) {
-        this(createUri(url));
-    }
-
-    private WebUrlVideoSource(@Nullable URI uri) {
-        this.uri = uri;
-    }
-
-    @Override
-    public IVideoSource newInstance() {
-        return new WebUrlVideoSource(uri);
+        this.uri = createUri(url);
     }
 
     @Nullable
@@ -64,7 +51,7 @@ public class WebUrlVideoSource implements IVideoSource {
     }
 
     @Override
-    public @NotNull VertexConsumer getVideoFrameBuilder(float partialTick, MultiBufferSource buffer,
+    public @NotNull VertexConsumer getVideoFrameBuilder(TVBlockEntity tv, float partialTick, MultiBufferSource buffer,
                                                         boolean shouldUpdate, Vec2i screenSize, Vec2i pixelEffectRes,
                                                         int videoAnimationTick, boolean paused,
                                                         IntAnimationState switchAnim, IntAnimationState staticAnim,
@@ -75,12 +62,7 @@ public class WebUrlVideoSource implements IVideoSource {
             return TvScreenVertexConsumers.getBarsVC(buffer, pixelEffectRes, switchAnim);
         }
 
-        if (textureHandle == null || !lastScreenSize.equals(screenSize)) {
-            this.textureHandle = WebTexturesManager.createHandle(uri, screenId, screenSize);
-            this.lastScreenSize = screenSize;
-        }
-
-        IWebTexture texture = textureHandle.getTexture();
+        IWebTexture texture = WebTexturesManager.getTexture(uri, tv.getBlockPos(), screenSize);
         MediaStatus state = texture.uploadFrameAtTime(videoAnimationTick, partialTick, paused);
         CrtOverlay overlay = CrtOverlay.NONE;
         if (state == MediaStatus.CLOSED) {
@@ -123,9 +105,10 @@ public class WebUrlVideoSource implements IVideoSource {
 
     @Override
     public void updateAudio(TVBlockEntity tv, boolean playing) {
-        if (textureHandle != null) {
-            textureHandle.getTexture().updateAudio(tv, playing);
-        }
+        if (uri == null) return;
+        //only what the renderer already made, a tv that never drew must not start a download from here
+        IWebTexture texture = WebTexturesManager.getTextureIfPresent(uri, tv.getBlockPos(), tv.getScreenPixelSize());
+        if (texture != null) texture.updateAudio(tv, playing);
     }
 
     @Nullable

@@ -29,6 +29,7 @@ public class FFmpegWebTexture extends DynamicTexture implements IWebTexture {
     @Nullable
     private TvSpeakerSound speakerSound;
     private double videoClockOffset = NOT_STARTED;
+    private double audioClockOffset;
 
     public FFmpegWebTexture(ResourceLocation textureLocation, FFmpegMediaSession session, int width, int height) {
         super(width, height, false);
@@ -63,12 +64,13 @@ public class FFmpegWebTexture extends DynamicTexture implements IWebTexture {
         }
         SoundManager soundManager = Minecraft.getInstance().getSoundManager();
         if (speakerSound != null && soundManager.isActive(speakerSound)) {
-            if (Math.abs(videoClockOffset - speakerSound.getVideoClockOffset()) < AUDIO_RESYNC_THRESHOLD) return;
+            if (Math.abs(videoClockOffset - audioClockOffset) < AUDIO_RESYNC_THRESHOLD) return;
             stopSpeaker();
         }
         if (!session.getAudio().hasSamples()) return;
         speakerSound = VistaPlatStuff.createTvSpeakerSound(session.getAudio(), center,
-                playbackSeconds(tv.getPlaybackTicks() / 20.0), videoClockOffset);
+                playbackSeconds(tv.getPlaybackTicks() / 20.0));
+        audioClockOffset = videoClockOffset;
         soundManager.play(speakerSound);
     }
 

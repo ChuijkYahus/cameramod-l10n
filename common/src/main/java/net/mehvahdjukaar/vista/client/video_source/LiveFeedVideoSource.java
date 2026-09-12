@@ -9,6 +9,7 @@ import net.mehvahdjukaar.vista.client.textures.TvScreenVertexConsumers;
 import net.mehvahdjukaar.vista.client.textures.perspective.LiveFeedTexture;
 import net.mehvahdjukaar.vista.client.textures.perspective.LiveFeedTexturesManager;
 import net.mehvahdjukaar.vista.common.tv.IntAnimationState;
+import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
 import net.mehvahdjukaar.vista.common.view_finder.ViewFinderBlockEntity;
 import net.mehvahdjukaar.vista.integration.CompatHandler;
 import net.mehvahdjukaar.vista.integration.supplementaries.SuppCompat;
@@ -53,7 +54,7 @@ public class LiveFeedVideoSource implements IVideoSource {
 
     @Override
     public @NotNull VertexConsumer getVideoFrameBuilder(
-            float partialTick, MultiBufferSource buffer, boolean shouldUpdate,
+            TVBlockEntity tv, float partialTick, MultiBufferSource buffer, boolean shouldUpdate,
             Vec2i screenSize, Vec2i pixelEffectRes,
             int videoAnimationTick, boolean paused,
             IntAnimationState switchAnim, IntAnimationState staticAnim,

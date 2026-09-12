@@ -23,7 +23,7 @@ public interface IVideoSource {
 
     @NotNull
     VertexConsumer getVideoFrameBuilder(
-            float partialTick, MultiBufferSource buffer,
+            TVBlockEntity tv, float partialTick, MultiBufferSource buffer,
             boolean shouldUpdate, Vec2i screenSize, Vec2i pixelEffectRes,
             int videoAnimationTick, boolean paused,
             IntAnimationState switchAnim, IntAnimationState staticAnim, boolean showsTime);
@@ -38,10 +38,6 @@ public interface IVideoSource {
     }
 
     default void updateAudio(TVBlockEntity tv, boolean playing) {
-    }
-
-    default IVideoSource newInstance() {
-        return this;
     }
 
     default ScreenFit getScreenFit() {
@@ -65,7 +61,7 @@ public interface IVideoSource {
 
         @Override
         public @NotNull VertexConsumer getVideoFrameBuilder(
-                float partialTick, MultiBufferSource buffer,
+                TVBlockEntity tv, float partialTick, MultiBufferSource buffer,
                 boolean shouldUpdate, Vec2i screenSize, Vec2i pixelEffectRes,
             int videoAnimationTick, boolean paused,
             IntAnimationState switchAnim, IntAnimationState staticAnim, boolean showsTime) {
@@ -84,7 +80,7 @@ public interface IVideoSource {
 
         @Override
         public @NotNull VertexConsumer getVideoFrameBuilder(
-                float partialTick, MultiBufferSource buffer,
+                TVBlockEntity tv, float partialTick, MultiBufferSource buffer,
                 boolean shouldUpdate, Vec2i screenSize, Vec2i pixelEffectRes,
                 int videoAnimationTick, boolean paused,
                 IntAnimationState switchAnim, IntAnimationState staticAnim, boolean showsTime) {

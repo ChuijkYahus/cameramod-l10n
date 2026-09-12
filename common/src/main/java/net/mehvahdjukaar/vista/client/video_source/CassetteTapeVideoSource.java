@@ -7,10 +7,10 @@ import net.mehvahdjukaar.vista.client.CrtOverlay;
 import net.mehvahdjukaar.vista.client.textures.TvScreenVertexConsumers;
 import net.mehvahdjukaar.vista.common.cassette.CassetteTape;
 import net.mehvahdjukaar.vista.common.tv.IntAnimationState;
+import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.core.Holder;
 import net.minecraft.sounds.SoundEvent;
-import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
 public class CassetteTapeVideoSource implements IVideoSource {
@@ -35,7 +35,7 @@ public class CassetteTapeVideoSource implements IVideoSource {
 
     @Override
     public @NotNull VertexConsumer getVideoFrameBuilder(
-            float partialTick, MultiBufferSource buffer, boolean shouldUpdate, Vec2i screenSize, Vec2i pixelEffectRes,
+            TVBlockEntity tv, float partialTick, MultiBufferSource buffer, boolean shouldUpdate, Vec2i screenSize, Vec2i pixelEffectRes,
             int animationTick, boolean paused,
             IntAnimationState switchAnim, IntAnimationState staticAnim, boolean showsTime) {
         CrtOverlay overlay = paused ? CrtOverlay.PAUSE : CrtOverlay.NONE;

@@ -16,13 +16,14 @@ import net.mehvahdjukaar.vista.client.web.ffmpeg.FFmpeg;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.mehvahdjukaar.vista.integration.CompatHandler;
 import net.mehvahdjukaar.vista.integration.watermedia.WatermediaSession;
+import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.net.URI;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -80,54 +81,34 @@ public class WebTexturesManager {
                 }
             });
 
-    public static class Handle {
+    //one texture per screen
+    public static IWebTexture getTexture(URI uri, BlockPos tvPos, Vec2i screenSize) {
+        IMediaSession session = SESSION_CACHE.asMap()
+                .computeIfAbsent(makeUniqueSessionLoc(uri, screenSize), sessionId -> {
+                    URL_TO_SESSIONS.computeIfAbsent(uri, k -> ConcurrentHashMap.newKeySet()).add(sessionId);
+                    int imageW = ClientConfigs.WEB_RESOLUTION_SCALE.get() * screenSize.x();
+                    int imageH = ClientConfigs.WEB_RESOLUTION_SCALE.get() * screenSize.y();
+                    return createMediaSession(uri, imageW, imageH);
+                });
 
-        private final ResourceLocation textureId;
-        private final String sessionId;
-        private final URI uri;
-        private final Vec2i screenSize;
-
-        public Handle(URI uri, UUID id, Vec2i screenSize) {
-            this.textureId = makeUniqueTextureLoc(uri, id, screenSize);
-            this.sessionId = makeUniqueSessionLoc(uri, screenSize);
-            this.uri = uri;
-            this.screenSize = screenSize;
-
-            URL_TO_TEXTURES.computeIfAbsent(uri, k -> ConcurrentHashMap.newKeySet()).add(this.textureId);
-            URL_TO_SESSIONS.computeIfAbsent(uri, k -> ConcurrentHashMap.newKeySet()).add(this.sessionId);
+        ResourceLocation textureId = makeUniqueTextureLoc(uri, tvPos, screenSize);
+        IWebTexture wt = TEXTURE_CACHE.asMap()
+                .computeIfAbsent(textureId, resourceLocation -> {
+                    URL_TO_TEXTURES.computeIfAbsent(uri, k -> ConcurrentHashMap.newKeySet()).add(resourceLocation);
+                    IWebTexture texture = session.createTextureView(resourceLocation);
+                    texture.register();
+                    return texture;
+                });
+        if (session.shouldRefreshTexture(wt)) {
+            TEXTURE_CACHE.invalidate(textureId);
         }
-
-        public IWebTexture getTexture() {
-            //refresh sessions first for loading cache.
-
-            IMediaSession session = getSession();
-
-            IWebTexture wt = TEXTURE_CACHE.asMap()
-                    .computeIfAbsent(textureId,
-                            resourceLocation -> {
-                                IWebTexture texture = session.createTextureView(resourceLocation);
-                                texture.register();
-                                return texture;
-                            });
-            if (session.shouldRefreshTexture(wt)) {
-                TEXTURE_CACHE.invalidate(textureId);
-            }
-            return wt;
-        }
-
-        private IMediaSession getSession() {
-            return SESSION_CACHE.asMap()
-                    .computeIfAbsent(sessionId, res -> {
-                        int imageW = ClientConfigs.WEB_RESOLUTION_SCALE.get() * screenSize.x();
-                        int imageH = ClientConfigs.WEB_RESOLUTION_SCALE.get() * screenSize.y();
-                        return createMediaSession(uri, imageW, imageH);
-                    });
-        }
+        return wt;
     }
 
-
-    public static Handle createHandle(URI url, UUID projectorUUID, Vec2i screenSize) {
-        return new Handle(url, projectorUUID, screenSize);
+    @Nullable
+    public static IWebTexture getTextureIfPresent(URI uri, BlockPos tvPos, Vec2i screenSize) {
+        SESSION_CACHE.getIfPresent(makeUniqueSessionLoc(uri, screenSize));
+        return TEXTURE_CACHE.getIfPresent(makeUniqueTextureLoc(uri, tvPos, screenSize));
     }
 
     public static void clear() {
@@ -165,8 +146,8 @@ public class WebTexturesManager {
         return url.toString() + "@" + screenSize.x() + "x" + screenSize.y();
     }
 
-    private static ResourceLocation makeUniqueTextureLoc(URI url, UUID uuid, Vec2i screenSize) {
-        String uniqueTextureKey = url.toString() + "@" + uuid + "@" + screenSize.x() + "x" + screenSize.y();
+    private static ResourceLocation makeUniqueTextureLoc(URI url, BlockPos tvPos, Vec2i screenSize) {
+        String uniqueTextureKey = url.toString() + "@" + tvPos.getX() + "_" + tvPos.getY() + "_" + tvPos.getZ() + "@" + screenSize.x() + "x" + screenSize.y();
         return VistaMod.res("web_feed/" + sanitizePath(uniqueTextureKey));
     }
 

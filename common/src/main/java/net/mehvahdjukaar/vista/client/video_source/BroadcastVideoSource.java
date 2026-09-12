@@ -18,12 +18,9 @@ import java.util.UUID;
 public class BroadcastVideoSource implements IVideoSource {
 
     private final UUID uuid;
-    //what the broadcaster hands out, only compared by identity to notice url or power changes
+    //remembered so a feed that went away or got swapped still gets its audio stopped
     @Nullable
-    private IVideoSource broadcastSource;
-    //our own instance so each screen has its own texture, clock and speaker
-    @Nullable
-    private IVideoSource screenSource;
+    private IVideoSource lastSource;
 
     public BroadcastVideoSource(UUID uuid) {
         this.uuid = uuid;
@@ -34,13 +31,14 @@ public class BroadcastVideoSource implements IVideoSource {
     }
 
     @Override
-    public @NotNull VertexConsumer getVideoFrameBuilder(float partialTick, MultiBufferSource buffer,
+    public @NotNull VertexConsumer getVideoFrameBuilder(TVBlockEntity tv, float partialTick, MultiBufferSource buffer,
                                                         boolean shouldUpdate, Vec2i screenSize, Vec2i pixelEffectRes,
                                                         int videoAnimationTick, boolean paused,
                                                         IntAnimationState switchAnim, IntAnimationState staticAnim,
                                                         boolean showsTime) {
-        if (screenSource != null) {
-            return screenSource.getVideoFrameBuilder(partialTick, buffer, shouldUpdate, screenSize, pixelEffectRes,
+        IVideoSource source = getBroadcastContent();
+        if (source != null) {
+            return source.getVideoFrameBuilder(tv, partialTick, buffer, shouldUpdate, screenSize, pixelEffectRes,
                     videoAnimationTick, paused, switchAnim, staticAnim, showsTime);
         }
         return TvScreenVertexConsumers.getNoiseVC(buffer, pixelEffectRes, switchAnim);
@@ -48,13 +46,10 @@ public class BroadcastVideoSource implements IVideoSource {
 
     @Override
     public void updateAudio(TVBlockEntity tv, boolean playing) {
-        IVideoSource broadcast = getBroadcastContent();
-        if (broadcast != broadcastSource) {
-            if (screenSource != null) screenSource.updateAudio(tv, false);
-            this.broadcastSource = broadcast;
-            this.screenSource = broadcast == null ? null : broadcast.newInstance();
-        }
-        if (screenSource != null) screenSource.updateAudio(tv, playing);
+        IVideoSource source = getBroadcastContent();
+        if (lastSource != null && lastSource != source) lastSource.updateAudio(tv, false);
+        this.lastSource = source;
+        if (source != null) source.updateAudio(tv, playing);
     }
 
     @Nullable
