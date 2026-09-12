@@ -230,7 +230,7 @@ public class VistaLevelRenderer {
                 mirrorUuid, textureRecursionDepth, textureParentChain));
 
         try {
-            float partialTicks = mc.getTimer().getGameTimeDeltaTicks();
+            float partialTicks = mc.getTimer().getGameTimeDeltaPartialTick(true);
             cameraSetup.setup(camera, partialTicks);
 
             canvas.bindWrite(true);

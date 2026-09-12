@@ -33,8 +33,6 @@ import java.util.function.Supplier;
 
 public class CreateCompat {
 
-    // registered unconditionally (like VistaMod's other registry entries) so the type/packet exist regardless
-    // of whether Create is actually installed; only CreateCompat#setup is gated behind CompatHandler.CREATE.
     public static final Supplier<BroadcastLocationType> CONTRAPTION_BROADCAST =
             RegHelper.register(VistaMod.res("contraption_location"),
                     () -> ContraptionBroadcastLocation.TYPE, VistaMod.BROADCAST_LOCATION_REGISTRY.key());
@@ -48,7 +46,6 @@ public class CreateCompat {
         registerViewFinderBehaviours(VistaMod.VIEWFINDER.get());
     }
 
-    // called from the contraption interaction behaviour; returns whether the interaction was handled
     public static boolean onContraptionInteractClient(@Nullable BlockEntity be, Entity contraption, BlockPos localPos) {
         if (be instanceof ViewFinderBlockEntity vf) {
             CreateClientCompat.startControlling(vf, contraption, localPos);
@@ -57,21 +54,17 @@ public class CreateCompat {
         return false;
     }
 
-    // called from the movement behaviour every tick while the contraption moves
     public static void linkContraptionFeed(Level world, Entity contraption, BlockPos localPos,
                                            @Nullable CompoundTag blockEntityData) {
         if (world.isClientSide()) return;
         if (blockEntityData == null || !blockEntityData.hasUUID("UUID")) return;
         UUID feedId = blockEntityData.getUUID("UUID");
-        // linkFeed is a no-op when unchanged, so calling it every tick is cheap
         BroadcastManager.getInstance(world).linkFeed(feedId,
                 new ContraptionBroadcastLocation(world.dimension(), contraption.getUUID(), localPos));
     }
 
-    // called from the movement behaviour when the contraption stops moving
     public static void unlinkContraptionFeed(Level world, Entity contraption, BlockPos localPos) {
         if (world.isClientSide()) return;
-        // remove by value: if the block already re-registered a world location on disassembly, this is a no-op
         BroadcastManager.getInstance(world).unlinkFeed(
                 new ContraptionBroadcastLocation(world.dimension(), contraption.getUUID(), localPos));
     }
@@ -81,7 +74,6 @@ public class CreateCompat {
             @Override
             public boolean handlePlayerInteraction(Player player, InteractionHand activeHand, BlockPos localPos,
                                                    AbstractContraptionEntity contraptionEntity) {
-                // Create fires this on both sides; camera control is entered on the client only
                 if (contraptionEntity.level().isClientSide) {
                     BlockEntity be = contraptionEntity.getContraption().getBlockEntityClientSide(localPos);
                     return onContraptionInteractClient(be, contraptionEntity, localPos);
@@ -97,7 +89,6 @@ public class CreateCompat {
 
             @Override
             public void tick(MovementContext ctx) {
-                // idempotent: also covers contraptions loaded from disk mid-journey
                 link(ctx);
             }
 
@@ -115,13 +106,15 @@ public class CreateCompat {
     }
 
     public static Vec3 contraptionPosToGlobalPos(Entity contraption, Vec3 localVec, float partialTicks) {
-        return ((AbstractContraptionEntity) contraption).toGlobalVector(localVec, partialTicks);
+        AbstractContraptionEntity c = (AbstractContraptionEntity) contraption;
+        Vec3 prevAnchored = c.toGlobalVector(localVec, partialTicks, true);
+        Vec3 anchored = c.toGlobalVector(localVec, partialTicks, false);
+        return prevAnchored.lerp(anchored, partialTicks);
     }
 
     public static Quaternionf getContraptionRotation(Entity contraption, float partialTicks) {
         AbstractContraptionEntity c = (AbstractContraptionEntity) contraption;
-        // derive the contraption's world rotation by transforming the three basis vectors.
-        // convention-agnostic: works for any contraption type without matching Create's euler order.
+        //why create doesnt have a helper for this?
         Vec3 x = c.applyRotation(new Vec3(1, 0, 0), partialTicks);
         Vec3 y = c.applyRotation(new Vec3(0, 1, 0), partialTicks);
         Vec3 z = c.applyRotation(new Vec3(0, 0, 1), partialTicks);
@@ -156,7 +149,6 @@ public class CreateCompat {
         return null;
     }
 
-    // bakes the aim into the contraption's stored block NBT so it outlives the live render
     public static void persistViewFinderAim(Entity contraption, BlockPos localPos, Quaternionf localRot,
                                             int zoom, boolean locked) {
         Contraption c = ((AbstractContraptionEntity) contraption).getContraption();
