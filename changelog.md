@@ -1,1 +1,2 @@
-experimental tv audio support
+- fixed an issue with audio
+- video playback will not be speedup in the first initial frames
