@@ -17,13 +17,19 @@ import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
 public class FFmpegWebTexture extends DynamicTexture implements IWebTexture {
+    private static final double NOT_STARTED = -1;
+    private static final double AUDIO_RESYNC_THRESHOLD = 0.3;
+
     private final FFmpegMediaSession session;
     private final ResourceLocation textureLocation;
     @Nullable
     private MediaFrame lastOriginalFrame;
     private boolean wasFirstUploaded = false;
+    private MediaStatus lastLookupState = MediaStatus.LOADING;
     @Nullable
     private TvSpeakerSound speakerSound;
+    private double videoClockOffset = NOT_STARTED;
+    private double soundClockOffset;
 
     public FFmpegWebTexture(ResourceLocation textureLocation, FFmpegMediaSession session, int width, int height) {
         super(width, height, false);
@@ -51,14 +57,20 @@ public class FFmpegWebTexture extends DynamicTexture implements IWebTexture {
     @Override
     public void updateAudio(TVBlockEntity tv, boolean playing) {
         Vec3 center = tv.getScreenRect().center();
-        if (!playing || IWebTexture.distanceToCamera(center) > SPEAKER_RANGE) {
+        boolean canHear = playing && videoClockOffset != NOT_STARTED && lastLookupState != MediaStatus.BUFFERING;
+        if (!canHear || IWebTexture.distanceToCamera(center) > SPEAKER_RANGE) {
             stopSpeaker();
             return;
         }
         SoundManager soundManager = Minecraft.getInstance().getSoundManager();
-        if (speakerSound != null && soundManager.isActive(speakerSound)) return;
+        if (speakerSound != null && soundManager.isActive(speakerSound)) {
+            if (Math.abs(videoClockOffset - soundClockOffset) < AUDIO_RESYNC_THRESHOLD) return;
+            stopSpeaker();
+        }
         if (!session.getAudio().hasSamples()) return;
-        speakerSound = VistaPlatStuff.createTvSpeakerSound(session.getAudio(), center, tv.getPlaybackTicks() / 20.0);
+        speakerSound = VistaPlatStuff.createTvSpeakerSound(session.getAudio(), center,
+                playbackSeconds(tv.getPlaybackTicks() / 20.0));
+        soundClockOffset = videoClockOffset;
         soundManager.play(speakerSound);
     }
 
@@ -70,9 +82,19 @@ public class FFmpegWebTexture extends DynamicTexture implements IWebTexture {
 
     @Override
     public MediaStatus uploadFrameAtTime(int ticks, float deltaTime, boolean paused) {
-        double seconds = (ticks + deltaTime) / 20.0;
+        double tvClock = (ticks + deltaTime) / 20.0;
+        if (!session.isReady()) {
+            videoClockOffset = NOT_STARTED;
+        } else if (videoClockOffset == NOT_STARTED || tvClock < videoClockOffset) {
+            videoClockOffset = tvClock;
+        }
+        double seconds = playbackSeconds(tvClock);
 
         var lookup = session.lookupFrame(seconds);
+        this.lastLookupState = lookup.state();
+        if (lookup.state() == MediaStatus.BUFFERING) {
+            videoClockOffset = tvClock - session.getBufferedSeconds();
+        }
         MediaFrame frame = lookup.frame();
         if (frame != null && frame != this.lastOriginalFrame) {
             uploadOnRenderThread(frame.image());
@@ -82,6 +104,11 @@ public class FFmpegWebTexture extends DynamicTexture implements IWebTexture {
             return MediaStatus.LOADING;
         }
         return lookup.state();
+    }
+
+    private double playbackSeconds(double tvClock) {
+        if (videoClockOffset == NOT_STARTED) return 0;
+        return tvClock - videoClockOffset;
     }
 
     private void uploadOnRenderThread(NativeImage newPixels) {

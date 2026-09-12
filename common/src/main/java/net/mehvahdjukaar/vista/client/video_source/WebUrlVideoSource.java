@@ -96,7 +96,7 @@ public class WebUrlVideoSource implements IVideoSource {
             }
             int progress = texture.getDownloadProgress();
             if (progress >= 0) {
-                //return TvScreenVertexConsumers.getDownloadingVc(buffer, pixelEffectRes, progress, switchAnim);
+                return TvScreenVertexConsumers.getDownloadingVc(buffer, pixelEffectRes, progress, switchAnim);
             }
             if (texture.isRetrying()) {
                 return TvScreenVertexConsumers.getRetryingVc(buffer, pixelEffectRes, videoAnimationTick, switchAnim);

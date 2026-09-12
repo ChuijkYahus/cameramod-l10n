@@ -33,7 +33,7 @@ public class FFmpegMediaSession implements IMediaSession {
     private volatile boolean retrying;
     private volatile MediaError error = MediaError.NONE;
     private volatile boolean closed;
-    private volatile int downloadProgress = 0;
+    private volatile int downloadProgress = -1;
 
     private final int targetWidth;
     private final int targetHeight;
@@ -52,6 +52,7 @@ public class FFmpegMediaSession implements IMediaSession {
                     percent -> this.downloadProgress = percent,
                     (attempt, max, cause) -> this.retrying = true);
             this.retrying = false; // download resolved, stop showing the retry state
+            this.downloadProgress = -1;
             if (closed) return;
 
             FFmpeg effectiveFfmpeg = ffmpeg;
@@ -163,6 +164,10 @@ public class FFmpegMediaSession implements IMediaSession {
 
             return MediaStatus.pair(state, getFrameAtTimeLocked(queryTime));
         }
+    }
+
+    public synchronized double getBufferedSeconds() {
+        return getLastFrameTimeLocked();
     }
 
     private double getLastFrameTimeLocked() {
