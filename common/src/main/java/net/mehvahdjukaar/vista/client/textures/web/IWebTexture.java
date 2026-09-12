@@ -51,4 +51,8 @@ public interface IWebTexture extends AutoCloseable {
     default boolean isRetrying() {
         return getSession().isRetrying();
     }
+
+    default boolean isAudioOnly() {
+        return getSession().isAudioOnly();
+    }
 }

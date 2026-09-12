@@ -30,4 +30,8 @@ public interface IMediaSession extends AutoCloseable {
     default int getDownloadProgress() {
         return -1;
     }
+
+    default boolean isAudioOnly() {
+        return false;
+    }
 }

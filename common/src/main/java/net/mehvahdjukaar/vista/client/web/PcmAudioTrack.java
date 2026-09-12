@@ -3,7 +3,6 @@ package net.mehvahdjukaar.vista.client.web;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.client.web.ffmpeg.FFmpeg;
 
-import javax.sound.sampled.AudioFormat;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.file.Path;
@@ -11,12 +10,7 @@ import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
-public class PcmAudioTrack {
-
-    //probably enough
-    public static final int SAMPLE_RATE = 24000;
-    public static final int BYTES_PER_SECOND = SAMPLE_RATE * 2;
-    public static final AudioFormat FORMAT = new AudioFormat(SAMPLE_RATE, 16, 1, true, false);
+public class PcmAudioTrack implements PcmSource {
 
     private byte[] samples = new byte[BYTES_PER_SECOND * 8];
     private int length = 0;
@@ -52,11 +46,13 @@ public class PcmAudioTrack {
         length += count;
     }
 
+    @Override
     public synchronized boolean hasSamples() {
         return length > 0;
     }
 
-    public synchronized long fill(long cursor, ByteBuffer dst) {
+    @Override
+    public synchronized long readInto(long cursor, ByteBuffer dst) {
         int size = dst.remaining();
         int written = 0;
         while (written < size) {

@@ -76,6 +76,10 @@ public class TvScreenVertexConsumers {
         return createAnimatedStripVC(buffer, screen, scale, 0, CrtOverlay.NONE, switchAnim);
     }
 
+    public static VertexConsumer getAudioOnlyVc(MultiBufferSource buffer, Vec2i scale, int tickCount,
+                                                CrtOverlay overlay, IntAnimationState switchAnim) {
+        return createAnimatedStripVC(buffer, VistaModClient.AUDIO_ONLY_SCREEN, scale, tickCount, overlay, switchAnim);
+    }
 
     public static VertexConsumer getNoEnergyVC(MultiBufferSource buffer, Vec2i scale, IntAnimationState switchAnim) {
         return createAnimatedStripVC(buffer, VistaModClient.NO_ENERGY_SCREEN, scale, 0, CrtOverlay.NONE, switchAnim);

@@ -100,7 +100,7 @@ public class FFmpegWebTexture extends DynamicTexture implements IWebTexture {
             uploadOnRenderThread(frame.image());
             this.lastOriginalFrame = frame;
         }
-        if (!wasFirstUploaded && lookup.state().isGood()) {
+        if (!wasFirstUploaded && !session.isAudioOnly() && lookup.state().isGood()) {
             return MediaStatus.LOADING;
         }
         return lookup.state();

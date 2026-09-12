@@ -10,12 +10,12 @@ import net.minecraft.world.phys.Vec3;
 
 public class TvSpeakerSound extends AbstractSoundInstance {
 
-    private final PcmAudioTrack track;
+    private final PcmSource source;
     private final double startSeconds;
 
-    protected TvSpeakerSound(PcmAudioTrack track, Vec3 pos, double startSeconds) {
+    protected TvSpeakerSound(PcmSource source, Vec3 pos, double startSeconds) {
         super(VistaMod.TV_SPEAKER_SOUND.get(), SoundSource.BLOCKS, SoundInstance.createUnseededRandom());
-        this.track = track;
+        this.source = source;
         this.startSeconds = startSeconds;
         this.volume = ClientConfigs.AUDIO_VOLUME.get().floatValue();
         this.x = pos.x;
@@ -29,6 +29,6 @@ public class TvSpeakerSound extends AbstractSoundInstance {
     }
 
     public AudioStream openStream() {
-        return new PcmAudioStream(track, startSeconds);
+        return new PcmAudioStream(source, startSeconds);
     }
 }

@@ -30,12 +30,9 @@ public class WatermediaSession implements IMediaSession {
     //one vlc player for every screen showing this url
     @Nullable
     private VideoPlayer videoPlayer;
-    private boolean audible;
-    private int appliedVolume;
+    private final VlcAudioSink audio = new VlcAudioSink();
     private int framesDrawn;
     private int framesPaused;
-    private boolean anyPlaying;
-    private float loudest;
 
     public WatermediaSession(URI uri, Executor executor,
                              int targetWidth, int targetHeight) {
@@ -74,10 +71,10 @@ public class WatermediaSession implements IMediaSession {
         if (videoPlayer == null) {
             //TODO: figure out width and height
             videoPlayer = new VideoPlayer(new MediaPlayerFactory(), Minecraft.getInstance());
+            audio.attach(videoPlayer);
             videoPlayer.start(imageCache.uri);
-            videoPlayer.mute();
             videoPlayer.setRepeatMode(true);
-            videoPlayer.setVolume(0);
+            videoPlayer.setVolume(100);
         }
         return videoPlayer;
     }
@@ -87,37 +84,20 @@ public class WatermediaSession implements IMediaSession {
         if (paused) framesPaused++;
     }
 
-    public void requestAudio(boolean playing, float volume) {
-        if (!playing) return;
-        anyPlaying = true;
-        loudest = Math.max(loudest, volume);
+    public VlcAudioSink getAudio() {
+        return audio;
     }
 
     private void applyRequests() {
-        if (videoPlayer != null) {
-            //nobody drew this tick, leave pause alone
-            if (framesDrawn > 0) {
-                boolean paused = framesPaused == framesDrawn;
-                if (videoPlayer.isPaused() != paused) {
-                    if (paused) videoPlayer.pause();
-                    else videoPlayer.resume();
-                }
-            }
-            //vlc volume shenanigans
-            int volume = (int) (loudest * 100);
-            if (anyPlaying && volume != appliedVolume) {
-                videoPlayer.setVolume(volume);
-                appliedVolume = volume;
-            }
-            if (audible != anyPlaying) {
-                audible = anyPlaying;
-                videoPlayer.setMuteMode(!anyPlaying);
+        if (videoPlayer != null && framesDrawn > 0) {
+            boolean paused = framesPaused == framesDrawn;
+            if (videoPlayer.isPaused() != paused) {
+                if (paused) videoPlayer.pause();
+                else videoPlayer.resume();
             }
         }
         framesDrawn = 0;
         framesPaused = 0;
-        anyPlaying = false;
-        loudest = 0;
     }
 
     @Override

@@ -95,10 +95,14 @@ public class WebUrlVideoSource implements IVideoSource {
         if (state == MediaStatus.BUFFERING) {
             overlay = CrtOverlay.LOADING;
         }
-        ResourceLocation textureId = texture.getTextureLocation();
         if (paused) {
             overlay = CrtOverlay.PAUSE;
         }
+        if (texture.isAudioOnly()) {
+            return TvScreenVertexConsumers.getAudioOnlyVc(buffer, pixelEffectRes, videoAnimationTick, overlay, switchAnim);
+        }
+
+        ResourceLocation textureId = texture.getTextureLocation();
 
         return TvScreenVertexConsumers.getSingleTextureVC(buffer, textureId, overlay, pixelEffectRes, switchAnim, staticAnim);
 

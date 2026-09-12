@@ -1,15 +1,17 @@
 package net.mehvahdjukaar.vista.integration.watermedia;
 
+import net.mehvahdjukaar.vista.VistaPlatStuff;
 import net.mehvahdjukaar.vista.client.textures.web.IWebTexture;
 import net.mehvahdjukaar.vista.client.web.MediaStatus;
+import net.mehvahdjukaar.vista.client.web.TvSpeakerSound;
 import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
-import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.AbstractTexture;
+import net.minecraft.client.sounds.SoundManager;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
-import net.minecraft.sounds.SoundSource;
-import net.minecraft.util.Mth;
+import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.Nullable;
 import org.watermedia.api.player.videolan.VideoPlayer;
 
 import java.io.IOException;
@@ -17,9 +19,15 @@ import java.io.IOException;
 //a view on the session's player. many screens can share one
 public class WatermediaVideoTexture extends AbstractTexture implements IWebTexture {
 
+    //vlc sets up the video surface right as it starts, give it some frames before calling it audio only
+    private static final int NO_VIDEO_GRACE = 20;
+
     private final ResourceLocation textureLocation;
     private final WatermediaSession session;
     private final VideoPlayer videoPlayer;
+    private int readyFrames;
+    @Nullable
+    private TvSpeakerSound speakerSound;
 
     public WatermediaVideoTexture(ResourceLocation textureLocation, WatermediaSession session, VideoPlayer videoPlayer) {
         this.session = session;
@@ -50,6 +58,7 @@ public class WatermediaVideoTexture extends AbstractTexture implements IWebTextu
 
     @Override
     public void close() {
+        stopSpeaker();
     }
 
     @Override
@@ -58,15 +67,27 @@ public class WatermediaVideoTexture extends AbstractTexture implements IWebTextu
 
     @Override
     public void updateAudio(TVBlockEntity tv, boolean playing) {
-        float volume = 0;
-        if (playing) {
-            var options = Minecraft.getInstance().options;
-            double distance = IWebTexture.distanceToCamera(tv.getScreenRect().center());
-            float falloff = Mth.clamp(1 - (float) distance / SPEAKER_RANGE, 0, 1);
-            volume = falloff * ClientConfigs.AUDIO_VOLUME.get().floatValue()
-                    * options.getSoundSourceVolume(SoundSource.MASTER) * options.getSoundSourceVolume(SoundSource.BLOCKS);
+        Vec3 center = tv.getScreenRect().center();
+        if (!playing || IWebTexture.distanceToCamera(center) > SPEAKER_RANGE) {
+            stopSpeaker();
+            return;
         }
-        session.requestAudio(playing, volume);
+        SoundManager soundManager = Minecraft.getInstance().getSoundManager();
+        if (speakerSound != null && soundManager.isActive(speakerSound)) return;
+        if (!session.getAudio().hasSamples()) return;
+        speakerSound = VistaPlatStuff.createTvSpeakerSound(session.getAudio(), center, 0);
+        soundManager.play(speakerSound);
+    }
+
+    private void stopSpeaker() {
+        if (speakerSound == null) return;
+        Minecraft.getInstance().getSoundManager().stop(speakerSound);
+        speakerSound = null;
+    }
+
+    @Override
+    public boolean isAudioOnly() {
+        return readyFrames > NO_VIDEO_GRACE && videoPlayer.width() <= 1;
     }
 
     @Override
@@ -76,7 +97,10 @@ public class WatermediaVideoTexture extends AbstractTexture implements IWebTextu
         if (videoPlayer.isBroken()) return MediaStatus.FAILED;
         if (videoPlayer.isEnded()) return MediaStatus.CLOSED;
         if (videoPlayer.isBuffering()) return MediaStatus.BUFFERING;
-        if (videoPlayer.isReady()) return MediaStatus.READY;
+        if (videoPlayer.isReady()) {
+            readyFrames++;
+            return MediaStatus.READY;
+        }
         return MediaStatus.LOADING;
     }
 

@@ -33,6 +33,7 @@ public class FFmpegMediaSession implements IMediaSession {
     private volatile boolean retrying;
     private volatile MediaError error = MediaError.NONE;
     private volatile boolean closed;
+    private volatile boolean audioOnly;
     private volatile int downloadProgress = -1;
 
     private final int targetWidth;
@@ -51,7 +52,7 @@ public class FFmpegMediaSession implements IMediaSession {
             Path videoPath = cacheManager.getOrDownload(uri,
                     percent -> this.downloadProgress = percent,
                     (attempt, max, cause) -> this.retrying = true);
-            this.retrying = false; // download resolved, stop showing the retry state
+            this.retrying = false;
             this.downloadProgress = -1;
             if (closed) return;
 
@@ -62,7 +63,6 @@ public class FFmpegMediaSession implements IMediaSession {
                     try {
                         effectiveFfmpeg = ffmpegFuture.join();
                     } catch (CompletionException e) {
-                        // setup already logged the real cause, don't repeat it once per TV
                         this.failed = true;
                         this.error = MediaError.NO_FFMPEG;
                         return;
@@ -99,6 +99,15 @@ public class FFmpegMediaSession implements IMediaSession {
         frames.add(new MediaFrame(scaledImg, frame.pts()));
     }
 
+    public void setAudioOnly() {
+        this.audioOnly = true;
+    }
+
+    @Override
+    public boolean isAudioOnly() {
+        return audioOnly;
+    }
+
     public synchronized void setCompleted(boolean completed) {
         this.completed = completed;
     }
@@ -112,7 +121,7 @@ public class FFmpegMediaSession implements IMediaSession {
     }
 
     public boolean isReady() {
-        return size() > 0;
+        return audioOnly || size() > 0;
     }
 
     public PcmAudioTrack getAudio() {
@@ -140,6 +149,11 @@ public class FFmpegMediaSession implements IMediaSession {
 
     public MediaStatus.Pair lookupFrame(double seconds) {
         synchronized (this) {
+            if (audioOnly) {
+                if (failed) return MediaStatus.pair(MediaStatus.FAILED, null);
+                if (closed) return MediaStatus.pair(MediaStatus.CLOSED, null);
+                return MediaStatus.pair(MediaStatus.READY, null);
+            }
             if (frames.isEmpty()) {
                 if (failed) return MediaStatus.pair(MediaStatus.FAILED, null);
                 return MediaStatus.loading();

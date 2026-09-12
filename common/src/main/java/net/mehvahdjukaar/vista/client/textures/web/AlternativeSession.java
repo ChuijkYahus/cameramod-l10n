@@ -55,6 +55,11 @@ public class AlternativeSession implements IMediaSession {
     }
 
     @Override
+    public boolean isAudioOnly() {
+        return getActiveSession().isAudioOnly();
+    }
+
+    @Override
     public void close() throws Exception {
         if (primary != null) primary.close();
         if (fallback != null) fallback.close();

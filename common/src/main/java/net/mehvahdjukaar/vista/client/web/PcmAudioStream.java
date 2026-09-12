@@ -9,23 +9,23 @@ import java.nio.ByteBuffer;
 //pulse code modulation stream
 public class PcmAudioStream implements AudioStream {
 
-    private final PcmAudioTrack track;
+    private final PcmSource source;
     private long cursor;
 
-    public PcmAudioStream(PcmAudioTrack track, double startSeconds) {
-        this.track = track;
-        this.cursor = (long) (startSeconds * PcmAudioTrack.SAMPLE_RATE) * 2;
+    public PcmAudioStream(PcmSource source, double startSeconds) {
+        this.source = source;
+        this.cursor = (long) (startSeconds * PcmSource.BYTES_PER_SECOND);
     }
 
     @Override
     public AudioFormat getFormat() {
-        return PcmAudioTrack.FORMAT;
+        return PcmSource.FORMAT;
     }
 
     @Override
     public ByteBuffer read(int size) {
         ByteBuffer buffer = BufferUtils.createByteBuffer(size);
-        cursor = track.fill(cursor, buffer);
+        cursor = source.readInto(cursor, buffer);
         return buffer;
     }
 

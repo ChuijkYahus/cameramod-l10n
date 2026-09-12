@@ -3,17 +3,13 @@ package net.mehvahdjukaar.vista.client.web;
 import com.mojang.blaze3d.platform.NativeImage;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.client.web.ffmpeg.FFmpeg;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.*;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Decodes a local video file into a FrameBuffer (one frame at a time).
- * Supports pausing and seeking (by restarting FFmpeg at a new timestamp).
- * Runs in its own thread.
- */
 public class FFmpegMediaDecoder {
 
     private final FFmpeg ffmpeg;
@@ -30,9 +26,6 @@ public class FFmpegMediaDecoder {
         this.videoPath = videoPath;
     }
 
-    /**
-     * Pause decoding (stops reading new frames).
-     */
     public void pause() {
         paused = true;
         VistaMod.LOGGER.info("Paused");
@@ -49,13 +42,8 @@ public class FFmpegMediaDecoder {
         VistaMod.LOGGER.info("Resumed");
     }
 
-    /**
-     * Seek to a specific time (seconds). The decoder will restart at that timestamp.
-     */
     public void seek(double seconds) {
         this.seekToSeconds = seconds;
-        // Interrupt the current FFmpeg process gently
-        // The main loop will detect seekToSeconds != -1 and restart
         VistaMod.LOGGER.info("Seek requested to {}s", seconds);
     }
 
@@ -72,8 +60,12 @@ public class FFmpegMediaDecoder {
         while (running) {
             Process ffmpegProcess = null;
             try {
-                // Probe video metadata (size, framerate, total frames)
                 int[] size = probeVideoSize(videoPath.toString());
+                if (size == null) {
+                    VistaMod.LOGGER.info("No video stream in {}, playing audio only", videoPath);
+                    buffer.setAudioOnly();
+                    return;
+                }
                 int width = size[0], height = size[1];
                 int frameSize = width * height * 3;
                 double framerate = probeFrameRate(videoPath.toString());
@@ -207,13 +199,14 @@ public class FFmpegMediaDecoder {
         return -1;
     }
 
+    @Nullable
     private int[] probeVideoSize(String path) throws IOException {
         Process p = ffmpeg.runFFprobe("-v", "error", "-select_streams", "v:0",
                 "-show_entries", "stream=width,height", "-of", "csv=s=x:p=0", path);
         try (BufferedReader r = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
             String line = r.readLine();
             if (line == null || line.trim().isEmpty()) {
-                throw new IOException("Empty ffprobe output for " + path);
+                return null;
             }
             String[] parts = line.trim().split("x");
             return new int[]{Integer.parseInt(parts[0]), Integer.parseInt(parts[1])};
