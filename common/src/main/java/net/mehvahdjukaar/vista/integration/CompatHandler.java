@@ -86,6 +86,10 @@ public class CompatHandler {
         if (IRIS) IrisCompat.addConfigs(builder);
     }
 
+    public static void onClientTick() {
+        if (WATERMEDIA) WatermediaSession.onClientTick();
+    }
+
     public static void onClientDisconnect() {
         if (DISTANT_HORIZONS) DistantHorizonsCompat.releaseConfigOverrides();
     }

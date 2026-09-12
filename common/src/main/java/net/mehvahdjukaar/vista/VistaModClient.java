@@ -267,6 +267,7 @@ public class VistaModClient {
     }
 
     public static void onClientTick(Minecraft minecraft) {
+        CompatHandler.onClientTick();
         if (minecraft.isPaused() || minecraft.level == null) return;
 
         Player p = minecraft.player;
