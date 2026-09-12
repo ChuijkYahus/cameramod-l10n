@@ -51,6 +51,7 @@ public class TVBlockEntity extends ItemDisplayTile {
     private int videoPlaybackTicks = 0;
     private boolean showsTime = false;
     private int lastSentMapFrame = -1;
+    private ItemStack playingCassette = ItemStack.EMPTY;
 
     //client, I think
     private IVideoSource videoSource = IVideoSource.EMPTY;
@@ -145,11 +146,13 @@ public class TVBlockEntity extends ItemDisplayTile {
         return stack.getItem() instanceof ITvCassette;
     }
 
+
     @Override
     public void serverSideUpdateWhenChanged(HolderLookup.Provider registries) {
         super.serverSideUpdateWhenChanged(registries);
         ItemStack displayedItem = this.getDisplayedItem();
-        if (displayedItem.isEmpty()) {
+        if (!ItemStack.matches(displayedItem, this.playingCassette)) {
+            this.playingCassette = displayedItem.copy();
             this.paused = false;
             this.videoPlaybackTicks = 0;
         }

@@ -62,6 +62,11 @@ public class FFmpegMediaDecoder {
             try {
                 int[] size = probeVideoSize(videoPath.toString());
                 if (size == null) {
+                    if (!hasAudioStream(videoPath.toString())) {
+                        VistaMod.LOGGER.warn("No video or audio stream in {}, not playable media", videoPath);
+                        buffer.setFailed(MediaError.BAD_LINK);
+                        return;
+                    }
                     VistaMod.LOGGER.info("No video stream in {}, playing audio only", videoPath);
                     buffer.setAudioOnly();
                     return;
@@ -197,6 +202,15 @@ public class FFmpegMediaDecoder {
             }
         }
         return -1;
+    }
+
+    private boolean hasAudioStream(String path) throws IOException {
+        Process p = ffmpeg.runFFprobe("-v", "error", "-select_streams", "a:0",
+                "-show_entries", "stream=codec_type", "-of", "csv=p=0", path);
+        try (BufferedReader r = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
+            String line = r.readLine();
+            return line != null && !line.trim().isEmpty();
+        }
     }
 
     @Nullable

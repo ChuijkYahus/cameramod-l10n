@@ -39,7 +39,7 @@ public class WebUrlVideoSource implements IVideoSource {
             URI parsed = URI.create(s);
             // Has a scheme like http:, https:, file:, ftp:, etc.
             if (parsed.getScheme() != null) {
-                return parsed;
+                return fixArchiveOrgLink(parsed);
             }
         } catch (Exception ignored) {
         }
@@ -49,6 +49,17 @@ public class WebUrlVideoSource implements IVideoSource {
         } catch (Exception ignored) {
             return null;
         }
+    }
+
+    //since i stumbled across this issue
+    private static URI fixArchiveOrgLink(URI uri) {
+        String host = uri.getHost();
+        if (host == null || !(host.equals("archive.org") || host.equals("www.archive.org"))) return uri;
+        String path = uri.getRawPath();
+        if (path == null || !path.startsWith("/details/")) return uri;
+        String itemAndFile = path.substring("/details/".length());
+        if (!itemAndFile.contains("/")) return uri;
+        return URI.create(uri.getScheme() + "://" + host + "/download/" + itemAndFile.replace("+", "%20"));
     }
 
     @Override

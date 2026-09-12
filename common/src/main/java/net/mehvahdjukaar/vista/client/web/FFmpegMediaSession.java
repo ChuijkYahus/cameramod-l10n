@@ -103,6 +103,11 @@ public class FFmpegMediaSession implements IMediaSession {
         this.audioOnly = true;
     }
 
+    public void setFailed(MediaError error) {
+        this.error = error;
+        this.failed = true;
+    }
+
     @Override
     public boolean isAudioOnly() {
         return audioOnly;
