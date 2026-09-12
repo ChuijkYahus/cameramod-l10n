@@ -3,7 +3,7 @@ package net.mehvahdjukaar.vista.client.textures.web;
 import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.platform.TextureUtil;
 import com.mojang.blaze3d.systems.RenderSystem;
-import net.mehvahdjukaar.vista.VistaPlatStuff;
+import net.mehvahdjukaar.vista.client.VistaClientPlatStuff;
 import net.mehvahdjukaar.vista.client.web.FFmpegMediaSession;
 import net.mehvahdjukaar.vista.client.web.MediaFrame;
 import net.mehvahdjukaar.vista.client.web.MediaStatus;
@@ -68,7 +68,7 @@ public class FFmpegWebTexture extends DynamicTexture implements IWebTexture {
             stopSpeaker();
         }
         if (!session.getAudio().hasSamples()) return;
-        speakerSound = VistaPlatStuff.createTvSpeakerSound(session.getAudio(), center,
+        speakerSound = VistaClientPlatStuff.createTvSpeakerSound(session.getAudio(), center,
                 playbackSeconds(tv.getPlaybackTicks() / 20.0));
         audioClockOffset = videoClockOffset;
         soundManager.play(speakerSound);

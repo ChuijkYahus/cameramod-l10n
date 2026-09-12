@@ -1,6 +1,6 @@
 package net.mehvahdjukaar.vista.integration.watermedia;
 
-import net.mehvahdjukaar.vista.VistaPlatStuff;
+import net.mehvahdjukaar.vista.client.VistaClientPlatStuff;
 import net.mehvahdjukaar.vista.client.textures.web.IWebTexture;
 import net.mehvahdjukaar.vista.client.web.MediaStatus;
 import net.mehvahdjukaar.vista.client.web.TvSpeakerSound;
@@ -75,7 +75,7 @@ public class WatermediaVideoTexture extends AbstractTexture implements IWebTextu
         SoundManager soundManager = Minecraft.getInstance().getSoundManager();
         if (speakerSound != null && soundManager.isActive(speakerSound)) return;
         if (!session.getAudio().hasSamples()) return;
-        speakerSound = VistaPlatStuff.createTvSpeakerSound(session.getAudio(), center, 0);
+        speakerSound = VistaClientPlatStuff.createTvSpeakerSound(session.getAudio(), center, 0);
         soundManager.play(speakerSound);
     }
 

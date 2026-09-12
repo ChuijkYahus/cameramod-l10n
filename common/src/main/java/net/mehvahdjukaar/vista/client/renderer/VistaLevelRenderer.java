@@ -6,7 +6,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import net.mehvahdjukaar.moonlight.api.misc.WeakHashSet;
 import net.mehvahdjukaar.moonlight.api.util.math.EntityAngles;
 import net.mehvahdjukaar.moonlight.core.client.DummyCamera;
-import net.mehvahdjukaar.vista.VistaPlatStuff;
+import net.mehvahdjukaar.vista.client.VistaClientPlatStuff;
 import net.mehvahdjukaar.vista.client.textures.perspective.MirrorReflectionTexture;
 import net.mehvahdjukaar.vista.client.textures.perspective.PerspectiveTexture;
 import net.mehvahdjukaar.vista.common.mirror.MirrorBlockEntity;
@@ -333,7 +333,7 @@ public class VistaLevelRenderer {
 
         Matrix4f modelViewMatrix = RenderSystem.getModelViewMatrix();
 
-        VistaPlatStuff.dispatchRenderStageAfterLevel(mc, poseStack, camera, modelViewMatrix, projMatrix);
+        VistaClientPlatStuff.dispatchRenderStageAfterLevel(mc, poseStack, camera, modelViewMatrix, projMatrix);
         gr.resetProjectionMatrix(oldProjectionMatrix);
     }
 
