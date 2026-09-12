@@ -57,11 +57,9 @@ public class TVBlockEntity extends ItemDisplayTile {
 
     private Vec2i connectedTvsAmount = Vec2i.ONE;
 
-    private int soundLoopTicks = 0;
     public final IntAnimationState fadeAnimation = new IntAnimationState(3, 9);
     public final TVEndermanLook endermanLook = new TVEndermanLook();
     private boolean wasScreenOn = false;
-
     private boolean hasEnergy = false;
     private boolean hasSpeaker = false;
 
@@ -79,8 +77,8 @@ public class TVBlockEntity extends ItemDisplayTile {
         compound.putBoolean("Paused", paused);
         compound.putInt("VideoPlaybackTicks", videoPlaybackTicks);
         compound.putBoolean("ShowsTime", showsTime);
-        if (hasEnergy) compound.putBoolean("HasEnergy", hasEnergy);
-        if (hasSpeaker) compound.putBoolean("HasSpeaker", hasSpeaker);
+        compound.putBoolean("HasEnergy", hasEnergy);
+        compound.putBoolean("HasSpeaker", hasSpeaker);
     }
 
     @Override
@@ -96,8 +94,6 @@ public class TVBlockEntity extends ItemDisplayTile {
         this.paused = tag.getBoolean("Paused");
         this.videoPlaybackTicks = tag.getInt("VideoPlaybackTicks");
         this.showsTime = tag.getBoolean("ShowsTime");
-        // must not be guarded on the key being there: the tag is only written when powered, and the
-        // client reuses the same tile across updates, so a missing key has to clear the flag
         this.hasEnergy = tag.getBoolean("HasEnergy");
         this.hasSpeaker = tag.getBoolean("HasSpeaker");
     }
@@ -251,6 +247,10 @@ public class TVBlockEntity extends ItemDisplayTile {
         else if (hasSpeaker) refreshSpeaker();
     }
 
+    public boolean hasSpeaker() {
+        return hasSpeaker;
+    }
+
     public void refreshSpeaker() {
         setHasSpeaker(isNextToSpeaker());
     }
@@ -292,24 +292,12 @@ public class TVBlockEntity extends ItemDisplayTile {
 
         tv.wasScreenOn = powered;
         if (world.isClientSide) {
-            boolean audible = powered && !tv.paused && tv.hasEnergy() && ClientConfigs.AUDIO_MODE.get().isOn(tv.hasSpeaker);
-            tv.videoSource.updateAudio(tv, audible);
+            boolean playing = powered && !tv.paused && tv.hasEnergy();
+            tv.videoSource.updateAudio(tv, playing);
 
             if (powered) {
                 if (ClientConfigs.TURN_OFF_EFFECTS.get()) tv.fadeAnimation.increment();
                 if (!tv.hasEnergy()) return;
-                float duration = tv.videoSource.getVideoDuration();
-                if (tv.soundLoopTicks == 0) {
-                    SoundEvent sound = tv.videoSource.getVideoSound();
-                    if (sound != null) {
-                        world.playLocalSound(pos, sound, SoundSource.BLOCKS, 1, 1.0f, false);
-                    }
-                }
-                if (++tv.soundLoopTicks >= (duration)) {
-                    tv.soundLoopTicks = 0;
-                }
-            } else {
-                tv.soundLoopTicks = 0;
             }
             tv.endermanLook.clientTick();
         } else {

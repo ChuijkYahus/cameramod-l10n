@@ -31,11 +31,6 @@ public class PictureTapeVideoSource implements IVideoSource {
     }
 
     @Override
-    public int getVideoDuration() {
-        return Math.max(1, pictures.size()) * playSpeed;
-    }
-
-    @Override
     public @NotNull VertexConsumer getVideoFrameBuilder(
             TVBlockEntity tv, float partialTick, MultiBufferSource buffer, boolean shouldUpdate, Vec2i screenSize, Vec2i pixelEffectRes,
             int videoAnimationTick, boolean paused,

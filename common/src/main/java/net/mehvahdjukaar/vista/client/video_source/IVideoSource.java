@@ -11,10 +11,8 @@ import net.mehvahdjukaar.vista.common.picture_tape.PictureTapeItem;
 import net.mehvahdjukaar.vista.common.tv.IntAnimationState;
 import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 public interface IVideoSource {
 
@@ -27,15 +25,6 @@ public interface IVideoSource {
             boolean shouldUpdate, Vec2i screenSize, Vec2i pixelEffectRes,
             int videoAnimationTick, boolean paused,
             IntAnimationState switchAnim, IntAnimationState staticAnim, boolean showsTime);
-
-    @Nullable
-    default SoundEvent getVideoSound() {
-        return null;
-    }
-
-    default int getVideoDuration() {
-        return 0;
-    }
 
     default void updateAudio(TVBlockEntity tv, boolean playing) {
     }

@@ -27,11 +27,11 @@ public class WatermediaSession implements IMediaSession {
     private final int targetWidth;
     private final int targetHeight;
 
-    //one vlc player for every screen showing this url. screens dont touch it directly, they leave requests
-    //here and the loudest wins once per tick so they dont fight over volume or pause
+    //one vlc player for every screen showing this url
     @Nullable
     private VideoPlayer videoPlayer;
     private boolean audible;
+    private int appliedVolume;
     private int framesDrawn;
     private int framesPaused;
     private boolean anyPlaying;
@@ -103,7 +103,12 @@ public class WatermediaSession implements IMediaSession {
                     else videoPlayer.resume();
                 }
             }
-            if (anyPlaying) videoPlayer.setVolume((int) (loudest * 100));
+            //vlc volume shenanigans
+            int volume = (int) (loudest * 100);
+            if (anyPlaying && volume != appliedVolume) {
+                videoPlayer.setVolume(volume);
+                appliedVolume = volume;
+            }
             if (audible != anyPlaying) {
                 audible = anyPlaying;
                 videoPlayer.setMuteMode(!anyPlaying);

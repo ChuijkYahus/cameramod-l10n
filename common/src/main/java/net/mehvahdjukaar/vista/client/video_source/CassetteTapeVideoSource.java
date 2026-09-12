@@ -11,11 +11,14 @@ import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.core.Holder;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
 import org.jetbrains.annotations.NotNull;
 
 public class CassetteTapeVideoSource implements IVideoSource {
 
     private final @NotNull Holder<CassetteTape> tape;
+
+    private int lastSoundLoop = -1;
 
     public CassetteTapeVideoSource(Holder<CassetteTape> cassette) {
         this.tape = cassette;
@@ -23,14 +26,17 @@ public class CassetteTapeVideoSource implements IVideoSource {
     }
 
     @Override
-    public SoundEvent getVideoSound() {
-        var s = tape.value().soundEvent();
-        return s.map(Holder::value).orElseGet(VistaMod.TV_STATIC_SOUND);
-    }
-
-    @Override
-    public int getVideoDuration() {
-        return tape.value().soundDuration().orElse(VistaMod.STATIC_SOUND_DURATION);
+    public void updateAudio(TVBlockEntity tv, boolean playing) {
+        if (!playing) {
+            lastSoundLoop = -1;
+            return;
+        }
+        int duration = Math.max(1, tape.value().soundDuration().orElse(VistaMod.STATIC_SOUND_DURATION));
+        int loop = tv.getPlaybackTicks() / duration;
+        if (loop == lastSoundLoop) return;
+        lastSoundLoop = loop;
+        SoundEvent sound = tape.value().soundEvent().map(Holder::value).orElseGet(VistaMod.TV_STATIC_SOUND);
+        tv.getLevel().playLocalSound(tv.getBlockPos(), sound, SoundSource.BLOCKS, 1, 1, false);
     }
 
     @Override

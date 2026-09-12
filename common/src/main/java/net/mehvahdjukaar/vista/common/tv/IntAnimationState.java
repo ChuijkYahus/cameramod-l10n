@@ -88,25 +88,16 @@ public class IntAnimationState {
         return currentTick > prevTick;
     }
 
-    /**
-     * Call each tick while turning on
-     */
     public void increment() {
         prevTick = currentTick;
         currentTick = Math.min(maxTick, currentTick + forwardStep);
     }
 
-    /**
-     * Call each tick while turning off
-     */
     public void decrement() {
         prevTick = currentTick;
         currentTick = Math.max(0, currentTick - backwardStep);
     }
 
-    /**
-     * Normalized animation value in [0,1]
-     */
     public float getValue(float partialTick) {
         float interpolated = prevTick + (currentTick - prevTick) * partialTick;
         return (interpolated / maxTick) * valueScale;

@@ -11,6 +11,7 @@ import net.mehvahdjukaar.vista.client.web.MediaError;
 import net.mehvahdjukaar.vista.client.web.MediaStatus;
 import net.mehvahdjukaar.vista.common.tv.IntAnimationState;
 import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
+import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
@@ -108,7 +109,8 @@ public class WebUrlVideoSource implements IVideoSource {
         if (uri == null) return;
         //only what the renderer already made, a tv that never drew must not start a download from here
         IWebTexture texture = WebTexturesManager.getTextureIfPresent(uri, tv.getBlockPos(), tv.getScreenPixelSize());
-        if (texture != null) texture.updateAudio(tv, playing);
+        boolean audible = playing && ClientConfigs.AUDIO_MODE.get().isOn(tv.hasSpeaker());
+        if (texture != null) texture.updateAudio(tv, audible);
     }
 
     @Nullable
