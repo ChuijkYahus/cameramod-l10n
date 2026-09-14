@@ -9,10 +9,13 @@ import net.neoforged.neoforge.energy.IEnergyStorage;
 
 public class TvEnergyHandler implements IEnergyStorage {
 
-    private static final int CAPACITY = 1600;
+    private static final int MIN_CAPACITY = 1600;
+    private static final int BUFFER_TICKS = 40;
+    private static final int TURN_ON_TICKS = 20;
 
     private final TVBlockEntity tv;
     private int stored = 0;
+    private boolean running = false;
 
     public static TvEnergyHandler getOrCreate(TVBlockEntity tv) {
         if (tv.energyCap == null){
@@ -25,24 +28,29 @@ public class TvEnergyHandler implements IEnergyStorage {
         this.tv = tv;
     }
 
-    public void tick() {
+    private int getConsumptionRate() {
         Vec2i v = tv.getConnectedCount();
-        int cost = CommonConfigs.TV_ENERGY_CONSUMPTION_RATE.get() * v.x() * v.y();
-        // draining below one tick's worth counts as unpowered, so a tv fed exactly at its
-        // consumption rate stays on instead of flickering between the two states
-        boolean canRun = stored >= cost;
+        return CommonConfigs.TV_ENERGY_CONSUMPTION_RATE.get() * Math.max(1, v.x()) * Math.max(1, v.y());
+    }
+
+    public void tick() {
+        int cost = getConsumptionRate();
+        stored = Math.min(stored, getMaxEnergyStored()); //tv could have shrunk
+        if (running) running = stored >= cost;
+        else running = stored >= cost * TURN_ON_TICKS;
 
         boolean hasCassette = !tv.getDisplayedItem().isEmpty() &&
                 tv.getDisplayedItem().getItem() instanceof ITvCassette;
         boolean isPowered = tv.getBlockState().getValue(TVBlock.POWER_STATE).isOn();
-        if (canRun && hasCassette && isPowered) stored -= cost;
+        if (running && hasCassette && isPowered) stored -= cost;
 
-        tv.setHasEnergy(canRun);
+        tv.setHasEnergy(running);
     }
 
     @Override
     public int receiveEnergy(int maxReceive, boolean simulate) {
-        int accepted = Math.min(maxReceive, CAPACITY - stored);
+        int accepted = Math.min(maxReceive, getMaxEnergyStored() - stored);
+        if (accepted <= 0) return 0;
         if (!simulate) stored += accepted;
         return accepted;
     }
@@ -59,7 +67,7 @@ public class TvEnergyHandler implements IEnergyStorage {
 
     @Override
     public int getMaxEnergyStored() {
-        return CAPACITY;
+        return Math.max(MIN_CAPACITY, getConsumptionRate() * BUFFER_TICKS);
     }
 
     @Override
@@ -69,6 +77,6 @@ public class TvEnergyHandler implements IEnergyStorage {
 
     @Override
     public boolean canReceive() {
-        return stored < CAPACITY;
+        return true;
     }
 }

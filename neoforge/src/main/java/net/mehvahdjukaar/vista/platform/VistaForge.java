@@ -39,12 +39,12 @@ public class VistaForge {
     }
 
     private void registerCapabilities(RegisterCapabilitiesEvent event) {
-        if (!CommonConfigs.TV_CONSUME_ENERGY.get()) return;
         // bound to the block and not to the block entity because only the master tv of a connected
         // setup has one. This way energy can be fed to any of the connected tvs and ends up on the master
         event.registerBlock(
                 Capabilities.EnergyStorage.BLOCK,
                 (level, pos, state, blockEntity, side) -> {
+                    if (!CommonConfigs.doesTvConsumeForgeEnergy()) return null;
                     if (!(state.getBlock() instanceof TVBlock tvBlock)) return null;
                     if (tvBlock.findMasterBlockEntity(level, pos, state) instanceof TVBlockEntity master) {
                         return TvEnergyHandler.getOrCreate(master);
