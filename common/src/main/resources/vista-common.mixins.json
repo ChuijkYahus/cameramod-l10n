@@ -42,6 +42,7 @@
     "compat.CompatIrisTimerMixin",
     "compat.CompatSimpleCloudsMixin",
     "compat.CompatVeilMixin",
+    "compat.HackFixSableCameraAnglesMixin",
     "compat.HackVeilFramebufferStackMixin"
   ],
   "plugin": "net.mehvahdjukaar.vista.mixins.VistaMixinPlugin",

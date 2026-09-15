@@ -7,6 +7,7 @@ import net.minecraft.client.renderer.ShaderInstance;
 import org.joml.Matrix4f;
 import org.joml.Matrix4fStack;
 import org.joml.Vector3f;
+import org.lwjgl.opengl.GL11C;
 
 public record RenderSystemState(
         Matrix4f projMatrix,
@@ -26,6 +27,7 @@ public record RenderSystemState(
         Vector3f[] lights,
         float shaderGameTime,
         float lineWidth,
+        float[] clearColor,
         ShaderInstance shader) {
 
     public static RenderSystemState capture() {
@@ -51,10 +53,12 @@ public record RenderSystemState(
         Vector3f[] lights = RenderSystem.shaderLightDirections.clone();
         float gameTime = RenderSystem.getShaderGameTime();
         float lineWidth = RenderSystem.getShaderLineWidth();
+        float[] clearColor = new float[4];
+        GL11C.glGetFloatv(GL11C.GL_COLOR_CLEAR_VALUE, clearColor);
         ShaderInstance shader = RenderSystem.getShader();
         return new RenderSystemState(proj, model, texture, lastSavedProj, lastVertexSorting, lastSavedVertexSorting,
                 modelViewStack, textures, shaderColor, glintAlpha, shaderFogStart, shaderFogEnd, shaderFogColor,
-                shaderFogShape, lights, gameTime, lineWidth, shader);
+                shaderFogShape, lights, gameTime, lineWidth, clearColor, shader);
     }
 
     public void apply() {
@@ -74,6 +78,7 @@ public record RenderSystemState(
         System.arraycopy(lights, 0, RenderSystem.shaderLightDirections, 0, lights.length);
         RenderSystem.shaderGameTime = shaderGameTime;
         RenderSystem.lineWidth(lineWidth);
+        RenderSystem.clearColor(clearColor[0], clearColor[1], clearColor[2], clearColor[3]);
         RenderSystem.setShader(() -> shader);
     }
 }
