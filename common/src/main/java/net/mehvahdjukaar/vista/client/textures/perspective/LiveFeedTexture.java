@@ -55,6 +55,7 @@ public class LiveFeedTexture extends PerspectiveTexture {
     private PostChain postChain;
     private boolean disconnected = false;
     private boolean showsTime = false;
+    private boolean hasRendered = false;
 
     private enum RefType {
         LIVE, PAUSED
@@ -91,6 +92,7 @@ public class LiveFeedTexture extends PerspectiveTexture {
             setDisconnected(false);
 
             VistaLevelRenderer.render(this, vf);
+            hasRendered = true;
 
             if (showsTime() || VistaMod.isFunny()) {
                 LocalDateTime now = LocalDateTime.now();
@@ -134,6 +136,10 @@ public class LiveFeedTexture extends PerspectiveTexture {
 
     public boolean isDisconnected() {
         return disconnected;
+    }
+
+    public boolean hasRendered() {
+        return hasRendered;
     }
 
     public void setDisconnected(boolean inactive) {

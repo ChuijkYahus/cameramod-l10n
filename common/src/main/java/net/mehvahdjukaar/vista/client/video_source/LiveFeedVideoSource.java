@@ -68,7 +68,7 @@ public class LiveFeedVideoSource implements IVideoSource {
         LiveFeedTexture tex = textureHandle.getTexture(postShader, shouldUpdate, showsTime);
 
         VertexConsumer vc = null;
-        if (tex != null) {
+        if (tex != null && tex.hasRendered()) {
             CrtOverlay overlay = tex.getOverlay(paused);
             ResourceLocation textureLocation = tex.getTextureLocation();
             vc = TvScreenVertexConsumers.getSingleTextureVC(buffer, textureLocation,

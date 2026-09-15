@@ -1,1 +1,1 @@
-- fixed a crash on servers
+- fixed an issue with tv energy config

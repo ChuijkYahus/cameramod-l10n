@@ -66,14 +66,28 @@ public class LiveFeedTexturesManager {
             if (texture.setPostChain(postShader)) {
                 requiresUpdate = true;
             }
-            if (VistaLevelRenderer.isRenderingLiveFeed()) {
-                requiresUpdate = false; //suppress recursive updates
+            if (requiresUpdate && !canUpdateFromCurrentPass(uuid)) {
+                requiresUpdate = false;
             }
             texture.setShowsTime(showsTime);
             if (requiresUpdate) {
                 texture.setUpdateNextTick(true);
             }
             return texture;
+        }
+    }
+
+    private static boolean canUpdateFromCurrentPass(UUID uuid) {
+        if (VistaLevelRenderer.isRenderingLiveFeed()) {
+            if (VistaLevelRenderer.isFeedOnRenderStack(uuid)) {
+                return false;
+            }
+            if (ClientConfigs.MIRROR_RECURSION_MODE.get() == ClientConfigs.MirrorRecursionMode.OFF) {
+                return false;
+            }
+            return VistaLevelRenderer.getCurrentDepth() <= ClientConfigs.MIRROR_MAX_RECURSION_DEPTH.get();
+        } else {
+            return true;
         }
     }
 

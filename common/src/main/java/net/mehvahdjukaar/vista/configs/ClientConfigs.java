@@ -71,7 +71,7 @@ public class ClientConfigs {
 
         builder.push("recursion");
         MIRROR_RECURSION_MODE = builder
-                .comment("How mirrors inside mirrors are handled. OFF: nested mirrors don't render at all, you just see the frame. SHARED (cheap): each mirror reuses its own reflection texture when seen inside another. Fine at a glance, but the deeper reflections won't slide correctly as you move. RECURSIVE (expensive): every chain gets its own render with correct parallax, up to max_depth. Past the cap the nested mirror isn't drawn.")
+                .comment("How mirrors inside mirrors are handled. OFF: nested mirrors don't render at all.. SHARED (cheap): each mirror reuses its own reflection texture when seen inside another. Fine at a glance, but the deeper reflections won't slide correctly as you move. RECURSIVE (expensive): every chain gets its own render with correct parallax, up to max_depth. Past the cap the nested mirror isn't drawn. Also applies to tvs seen in mirrors.")
                 .define("mode", MirrorRecursionMode.RECURSIVE);
         MIRROR_MAX_RECURSION_DEPTH = builder
                 .comment("Max nesting depth in RECURSIVE recursion mode. 0 = no recursion (equivalent to OFF). 1 = one level of correct nested reflection. Each extra level multiplies cost, but resolution_divider and distance_divider attenuate per-level cost.")

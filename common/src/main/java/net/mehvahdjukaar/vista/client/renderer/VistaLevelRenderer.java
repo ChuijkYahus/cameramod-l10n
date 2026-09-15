@@ -31,6 +31,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
@@ -60,12 +61,12 @@ public class VistaLevelRenderer {
 
     public static boolean isRenderingMirrorReflection() {
         RenderFrame top = RENDER_STACK.peek();
-        return top != null && top.mirrorUuid != null;
+        return top != null && top.isMirror();
     }
 
     public static boolean isRenderingCameraFeed() {
         RenderFrame top = RENDER_STACK.peek();
-        return top != null && top.mirrorUuid == null;
+        return top != null && !top.isMirror();
     }
 
     public static boolean needsManualSurfaceOffset() {
@@ -85,7 +86,16 @@ public class VistaLevelRenderer {
 
     public static boolean isViewFinderRenderingLiveFeed(ViewFinderBlockEntity vf) {
         for (RenderFrame f : RENDER_STACK) {
-            if (f.token == vf) return true;
+            if (f.owner == vf) return true;
+        }
+        return false;
+    }
+
+    public static boolean isFeedOnRenderStack(UUID broadcastUuid) {
+        for (RenderFrame f : RENDER_STACK) {
+            if (f.owner instanceof ViewFinderBlockEntity vf && broadcastUuid.equals(vf.getBroadcastUUID())) {
+                return true;
+            }
         }
         return false;
     }
@@ -93,16 +103,16 @@ public class VistaLevelRenderer {
     public static int getCurrentDepth() {
         RenderFrame top = RENDER_STACK.peek();
         if (top == null) return 0;
-        if (top.mirrorUuid == null) return 1;
+        if (!top.isMirror()) return 1;
         return top.textureRecursionDepth + 1;
     }
 
     public static List<UUID> getCurrentMirrorChain() {
         RenderFrame top = RENDER_STACK.peek();
-        if (top == null || top.mirrorUuid == null) return List.of();
+        if (top == null || !(top.owner instanceof MirrorBlockEntity mirror)) return List.of();
         List<UUID> chain = new ArrayList<>(top.textureParentChain.size() + 1);
         chain.addAll(top.textureParentChain);
-        chain.add(top.mirrorUuid);
+        chain.add(mirror.getId());
         return chain;
     }
 
@@ -160,16 +170,16 @@ public class VistaLevelRenderer {
      * @param customProjection       used as-is instead of a symmetric perspective. Mirrors pass an
      *                               off-axis frustum shaped to their frame, so the near plane is the
      *                               mirror itself
-     * @param bfsStartOverride       world position the camera is moved to just for the occlusion BFS.
+     * @param cameraBfsPosOverride       world position the camera is moved to just for the occlusion BFS.
      *                               Mirrors on walls need it: the reflected eye sits inside the wall
      *                               block, so smart culling would propagate "blocked" everywhere
      * @param renderDistanceOverride per-pass chunk render distance, used to attenuate mirror nesting
      */
-    public static void render(PerspectiveTexture text, Object renderingToken,
+    public static void render(PerspectiveTexture text, BlockEntity owner,
                               SceneCameraSetup cameraSetup, float fov,
                               boolean applyPostChain,
                               @Nullable Matrix4f customProjection,
-                              @Nullable Vec3 bfsStartOverride,
+                              @Nullable Vec3 cameraBfsPosOverride,
                               @Nullable Integer renderDistanceOverride) {
         Minecraft mc = Minecraft.getInstance();
 
@@ -180,15 +190,15 @@ public class VistaLevelRenderer {
             return;
         }
 
-        CompatHandler.decorateRenderer(() -> doRender(mc, text, renderingToken, cameraSetup, fov,
-                applyPostChain, customProjection, bfsStartOverride, renderDistanceOverride)).run();
+        CompatHandler.decorateRenderer(() -> doRender(mc, text, owner, cameraSetup, fov,
+                applyPostChain, customProjection, cameraBfsPosOverride, renderDistanceOverride)).run();
     }
 
-    private static void doRender(Minecraft mc, PerspectiveTexture text, Object renderingToken,
+    private static void doRender(Minecraft mc, PerspectiveTexture text, BlockEntity owner,
                                  SceneCameraSetup cameraSetup, float fov,
                                  boolean applyPostChain,
                                  @Nullable Matrix4f customProjection,
-                                 @Nullable Vec3 bfsStartOverride,
+                                 @Nullable Vec3 cameraBfsPosOverride,
                                  @Nullable Integer renderDistanceOverride) {
         int depth = RENDER_STACK.size();
         boolean isOutermost = depth == 0;
@@ -218,7 +228,6 @@ public class VistaLevelRenderer {
 
         FabulousDeferredState fabulousState = FabulousDeferredState.captureAndDisable(mc.levelRenderer);
 
-        UUID mirrorUuid = renderingToken instanceof MirrorBlockEntity m ? m.getId() : null;
         int textureRecursionDepth = 0;
         List<UUID> textureParentChain = List.of();
         if (text instanceof MirrorReflectionTexture mrt) {
@@ -226,8 +235,8 @@ public class VistaLevelRenderer {
             textureParentChain = mrt.getParentChain();
         }
         RENDER_STACK.push(new RenderFrame(
-                renderingToken, customProjection != null, bfsStartOverride,
-                mirrorUuid, textureRecursionDepth, textureParentChain));
+                owner, customProjection != null, cameraBfsPosOverride,
+                textureRecursionDepth, textureParentChain));
 
         try {
             float partialTicks = mc.getTimer().getGameTimeDeltaPartialTick(true);
@@ -461,7 +470,7 @@ public class VistaLevelRenderer {
             minecraft.getProfiler().push("section_occlusion_graph");
 
             RenderFrame currentFrame = RENDER_STACK.peek();
-            Vec3 bfsOverride = currentFrame != null ? currentFrame.bfsStartOverride : null;
+            Vec3 bfsOverride = currentFrame != null ? currentFrame.cameraBfsPosOverride : null;
             Vec3 actualCamPos = null;
             if (bfsOverride != null) {
                 actualCamPos = camera.getPosition();
@@ -555,12 +564,14 @@ public class VistaLevelRenderer {
     }
 
     private record RenderFrame(
-            Object token,
+            BlockEntity owner,
             boolean hasOffAxisFrustum,
-            @Nullable Vec3 bfsStartOverride,
-            @Nullable UUID mirrorUuid,
+            @Nullable Vec3 cameraBfsPosOverride,
             int textureRecursionDepth,
             List<UUID> textureParentChain
     ) {
+        boolean isMirror() {
+            return owner instanceof MirrorBlockEntity;
+        }
     }
 }
