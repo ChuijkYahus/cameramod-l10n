@@ -12,8 +12,8 @@ import java.nio.ShortBuffer;
 //pulse code modulation stream
 public class PcmAudioStream implements AudioStream {
 
-    //about -40 dBFS, quiet but not a pause
-    private static final double LOUD_RMS = 328;
+    //about -36 dBFS, quiet but not a pause
+    private static final double LOUD_RMS = 520;
     //the engine reads roughly a second at a time so this has to outlast one read
     private static final long LOUD_HOLD_MILLIS = 3000;
 
