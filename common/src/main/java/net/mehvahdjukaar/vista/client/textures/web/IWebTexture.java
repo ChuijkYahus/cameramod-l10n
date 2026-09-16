@@ -36,7 +36,7 @@ public interface IWebTexture extends AutoCloseable {
     default void updateAudio(TVBlockEntity tv, boolean playing) {
     }
 
-    default boolean isSpeakerOn() {
+    default boolean isSpeakerLoud() {
         return false;
     }
 

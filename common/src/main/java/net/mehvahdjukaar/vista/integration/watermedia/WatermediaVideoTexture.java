@@ -86,8 +86,8 @@ public class WatermediaVideoTexture extends AbstractTexture implements IWebTextu
     }
 
     @Override
-    public boolean isSpeakerOn() {
-        return speakerSound != null;
+    public boolean isSpeakerLoud() {
+        return speakerSound != null && speakerSound.isLoud();
     }
 
     @Override

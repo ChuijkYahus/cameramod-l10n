@@ -7,11 +7,14 @@ import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.client.sounds.AudioStream;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.Nullable;
 
 public class TvSpeakerSound extends AbstractSoundInstance {
 
     private final PcmSource source;
     private final double startSeconds;
+    @Nullable
+    private volatile PcmAudioStream stream;
 
     protected TvSpeakerSound(PcmSource source, Vec3 pos, double startSeconds) {
         super(VistaMod.TV_SPEAKER_SOUND.get(), SoundSource.BLOCKS, SoundInstance.createUnseededRandom());
@@ -29,6 +32,13 @@ public class TvSpeakerSound extends AbstractSoundInstance {
     }
 
     public AudioStream openStream() {
-        return new PcmAudioStream(source, startSeconds);
+        PcmAudioStream opened = new PcmAudioStream(source, startSeconds);
+        this.stream = opened;
+        return opened;
+    }
+
+    public boolean isLoud() {
+        PcmAudioStream opened = this.stream;
+        return opened != null && opened.wasLoudRecently();
     }
 }

@@ -81,8 +81,8 @@ public class FFmpegWebTexture extends DynamicTexture implements IWebTexture {
     }
 
     @Override
-    public boolean isSpeakerOn() {
-        return speakerSound != null;
+    public boolean isSpeakerLoud() {
+        return speakerSound != null && speakerSound.isLoud();
     }
 
     @Override
