@@ -104,6 +104,7 @@ public class CommonConfigs {
                 .comment("How right-clicking a view finder behaves. GUI: opens a screen with the lens slot, pitch/yaw angle controls and a 'view' button (sneak to jump straight into viewing). LEGACY: no screen at all - click to look through it directly, and use items on it to insert/remove the lens.")
                 .define("interaction", ViewFinderInteraction.GUI);
         SEND_CHUNKS_VIEWED_BY_VIEW_FINDER = builder
+                .worldReload()
                 .comment("Radius (in chunks) of the extra chunk zone sent to clients for each far-away view finder linked to a nearby TV. Set to 0 to disable client chunk sending.")
                 .define("send_viewed_chunks", 4, 0, 16);
         LOAD_CHUNKS_VIEWED_BY_VIEW_FINDER = builder

@@ -277,9 +277,21 @@ public class VistaModClient {
         ViewFinderController.onClientTick(minecraft);
     }
 
+    private static boolean soundsPausedByUs = false;
+
     public static void onRenderTickEnd(Minecraft minecraft) {
         LiveFeedTexturesManager.onRenderTickEnd();
         MirrorTextureManager.processPending();
+        syncSoundPause(minecraft);
+    }
+
+    //sort of does this for all pause screens... can be consider a feature... i guess. since vanilla for some reason doesnt
+    private static void syncSoundPause(Minecraft minecraft) {
+        boolean paused = minecraft.isPaused() && minecraft.screen != null;
+        if (paused == soundsPausedByUs) return;
+        soundsPausedByUs = paused;
+        if (paused) minecraft.getSoundManager().pause();
+        else minecraft.getSoundManager().resume();
     }
 
 

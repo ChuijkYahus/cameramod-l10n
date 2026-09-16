@@ -127,6 +127,7 @@ public class ClientConfigs {
                 .define("update_distance", 24, 1, 512d);
 
         LIVE_FEED_RESOLUTION_SCALE = builder
+                .worldReload()
                 .comment("Scale factor for live feed resolution. A tv screen is 12x12 pixels, this number multiplies that area")
                 .define("resolution_scale", 8, 1, 32);
 
@@ -153,13 +154,15 @@ public class ClientConfigs {
         builder.pop(); // picture_tape
 
         builder.icon("wave_gate").push("wave_gate");
-        VIDEO_ENGINE = CompatHandler.WATERMEDIA ? builder.comment("Toggle between local FFmpeg driven video loading and WaterMedia (VLC) mod usage. Requires Watermedia mod. FFmpeg mode has improved visuals and functionality, and likely supports more media types. Watermedia on the other hand supports youtube links. The first mode uses both, prioritizing our local FFmpeg impl and falling back to watermedia on media player links.")
+        VIDEO_ENGINE = CompatHandler.WATERMEDIA ? builder.worldReload().comment("Toggle between local FFmpeg driven video loading and WaterMedia (VLC) mod usage. Requires Watermedia mod. FFmpeg mode has improved visuals and functionality, and likely supports more media types. Watermedia on the other hand supports youtube links. The first mode uses both, prioritizing our local FFmpeg impl and falling back to watermedia on media player links.")
                                                   .define("media_engine", EngineMode.TRY_FFMPEG_FIRST_THEN_VLC) : () -> EngineMode.TRY_FFMPEG_FIRST_THEN_VLC;
         ENABLE_FFMPEG = builder
                 .icon("wave_gate")
+                .gameRestart()
                 .comment("Enable FFmpeg use. This is needed if you want to use the Wave Gate")
                 .define("ffmpeg_enabled", true);
         WEB_RESOLUTION_SCALE = builder
+                .worldReload()
                 .comment("Scale factor for web images resolution")
                 .define("resolution_scale", 8, 1, 32);
         SCALING_MODE = builder
@@ -171,7 +174,7 @@ public class ClientConfigs {
                 .define("audio_mode", AudioMode.REQUIRE_SPEAKER);
         AUDIO_VOLUME = builder.comment("Volume scale for videos audio. Applied on top of the Blocks sound slider")
                 .define("audio_volume", 1.0, 0.0, 1.0);
-        SAFE_URLS = builder.comment("A list of regex which will filter out valid URLs. At least one of these must match for a URL video to work")
+        SAFE_URLS = builder.worldReload().comment("A list of regex which will filter out valid URLs. At least one of these must match for a URL video to work")
                 .define("safe_urls", List.of());
         builder.pop(); // wave_gate
 
