@@ -39,6 +39,12 @@ public class CassetteTapeVideoSource implements IVideoSource {
         tv.getLevel().playLocalSound(tv.getBlockPos(), sound, SoundSource.BLOCKS, 1, 1, false);
     }
 
+    //static noise isnt music
+    @Override
+    public boolean isPlayingMusic(TVBlockEntity tv) {
+        return tape.value().soundEvent().filter(sound -> sound.value() != VistaMod.TV_STATIC_SOUND.get()).isPresent();
+    }
+
     @Override
     public @NotNull VertexConsumer getVideoFrameBuilder(
             TVBlockEntity tv, float partialTick, MultiBufferSource buffer, boolean shouldUpdate, Vec2i screenSize, Vec2i pixelEffectRes,

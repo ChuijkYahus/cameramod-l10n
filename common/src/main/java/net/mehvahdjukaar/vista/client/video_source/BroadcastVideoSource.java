@@ -52,6 +52,11 @@ public class BroadcastVideoSource implements IVideoSource {
         if (source != null) source.updateAudio(tv, playing);
     }
 
+    @Override
+    public boolean isPlayingMusic(TVBlockEntity tv) {
+        return lastSource != null && lastSource.isPlayingMusic(tv);
+    }
+
     @Nullable
     private IVideoSource getBroadcastContent() {
         Level level = Minecraft.getInstance().level;

@@ -10,6 +10,7 @@ import net.mehvahdjukaar.vista.common.cassette.CassetteItem;
 import net.mehvahdjukaar.vista.common.picture_tape.PictureTapeItem;
 import net.mehvahdjukaar.vista.common.tv.IntAnimationState;
 import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
@@ -27,6 +28,16 @@ public interface IVideoSource {
             IntAnimationState switchAnim, IntAnimationState staticAnim, boolean showsTime);
 
     default void updateAudio(TVBlockEntity tv, boolean playing) {
+    }
+
+    default boolean isPlayingMusic(TVBlockEntity tv) {
+        return false;
+    }
+
+    //same call a jukebox makes, so parrots and owls dance to it
+    static void notifyNearbyDancers(TVBlockEntity tv, boolean playing) {
+        Minecraft mc = Minecraft.getInstance();
+        mc.levelRenderer.notifyNearbyEntities(tv.getLevel(), tv.getBlockPos(), playing);
     }
 
     default ScreenFit getScreenFit() {

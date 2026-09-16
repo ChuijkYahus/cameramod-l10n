@@ -7,7 +7,6 @@ import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.sounds.AudioStream;
 import net.minecraft.client.sounds.SoundBufferLibrary;
-import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
@@ -20,8 +19,8 @@ public class VistaClientPlatStuffImpl {
                                                      Matrix4f modelViewMatrix, Matrix4f projMatrix) {
     }
 
-    public static TvSpeakerSound createTvSpeakerSound(PcmSource source, Vec3 pos, BlockPos tvPos, double startSeconds) {
-        return new TvSpeakerSound(source, pos, tvPos, startSeconds) {
+    public static TvSpeakerSound createTvSpeakerSound(PcmSource source, Vec3 pos, double startSeconds) {
+        return new TvSpeakerSound(source, pos, startSeconds) {
             @Override
             public CompletableFuture<AudioStream> getAudioStream(SoundBufferLibrary loader, ResourceLocation id, boolean repeatInstantly) {
                 return CompletableFuture.completedFuture(openStream());

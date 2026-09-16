@@ -12,6 +12,7 @@ val supplementaries_version: String by extra
 val mixin_squared_version: String by extra
 val sable_companion_version: String by extra
 val codecui_version: String by extra
+val courier_owls_version: String by extra
 
 dependencies {
 
@@ -35,7 +36,7 @@ dependencies {
     modCompileOnly("curse.maven:cc-tweaked-282001:5714512")
     modCompileOnly("curse.maven:jei-238222:7420587")
     modRuntimeOnly("maven.modrinth:jade:15.10.5+neoforge")
-    modRuntimeOnly("curse.maven:courier-owls-1675546:8852305") // 1.21.1-1.0.1
+    modRuntimeOnly("net.mehvahdjukaar:courier_owls-neoforge:${courier_owls_version}")
     modImplementation("curse.maven:sodium-394468:8382328")
     modCompileOnly("curse.maven:irisshaders-455508:6213635")
     modCompileOnly("curse.maven:distant-horizons-508933:8287411")

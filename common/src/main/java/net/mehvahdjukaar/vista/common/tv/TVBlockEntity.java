@@ -61,6 +61,7 @@ public class TVBlockEntity extends ItemDisplayTile {
     public final IntAnimationState fadeAnimation = new IntAnimationState(3, 9);
     public final TVEndermanLook endermanLook = new TVEndermanLook();
     private boolean wasScreenOn = false;
+    private boolean wasPlayingMusic = false;
     private boolean hasEnergy = false;
     private boolean hasSpeaker = false;
 
@@ -119,6 +120,14 @@ public class TVBlockEntity extends ItemDisplayTile {
 
     public boolean isPaused() {
         return paused;
+    }
+
+    private void tickNearbyDancers(boolean playing) {
+        boolean playingMusic = playing && this.videoSource.isPlayingMusic(this);
+        if (playingMusic != this.wasPlayingMusic || (playingMusic && level.getGameTime() % 20 == 0)) {
+            IVideoSource.notifyNearbyDancers(this, playingMusic);
+        }
+        this.wasPlayingMusic = playingMusic;
     }
 
     public boolean isPlaying() {
@@ -246,6 +255,7 @@ public class TVBlockEntity extends ItemDisplayTile {
         }
         if (level.isClientSide) {
             this.videoSource.updateAudio(this, false);
+            this.tickNearbyDancers(false);
         }
     }
 
@@ -301,6 +311,7 @@ public class TVBlockEntity extends ItemDisplayTile {
         if (world.isClientSide) {
             boolean playing = tv.isPlaying();
             tv.videoSource.updateAudio(tv, playing);
+            tv.tickNearbyDancers(playing);
 
             if (powered) {
                 if (ClientConfigs.TURN_OFF_EFFECTS.get()) tv.fadeAnimation.increment();

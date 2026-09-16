@@ -128,6 +128,13 @@ public class WebUrlVideoSource implements IVideoSource {
         if (texture != null) texture.updateAudio(tv, audible);
     }
 
+    @Override
+    public boolean isPlayingMusic(TVBlockEntity tv) {
+        if (uri == null) return false;
+        IWebTexture texture = WebTexturesManager.getTextureIfPresent(uri, tv.getBlockPos(), tv.getScreenPixelSize());
+        return texture != null && texture.isSpeakerOn();
+    }
+
     @Nullable
     private static ResourceLocation errorScreen(MediaError error) {
         return switch (error) {

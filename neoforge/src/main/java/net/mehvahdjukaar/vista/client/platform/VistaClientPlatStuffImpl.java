@@ -8,7 +8,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.Sound;
 import net.minecraft.client.sounds.AudioStream;
 import net.minecraft.client.sounds.SoundBufferLibrary;
-import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.client.ClientHooks;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
@@ -28,8 +27,8 @@ public class VistaClientPlatStuffImpl {
         mc.getProfiler().pop();
     }
 
-    public static TvSpeakerSound createTvSpeakerSound(PcmSource source, Vec3 pos, BlockPos tvPos, double startSeconds) {
-        return new TvSpeakerSound(source, pos, tvPos, startSeconds) {
+    public static TvSpeakerSound createTvSpeakerSound(PcmSource source, Vec3 pos, double startSeconds) {
+        return new TvSpeakerSound(source, pos, startSeconds) {
             @Override
             public CompletableFuture<AudioStream> getStream(SoundBufferLibrary soundBuffers, Sound sound, boolean looping) {
                 return CompletableFuture.completedFuture(openStream());

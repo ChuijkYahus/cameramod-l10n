@@ -36,6 +36,10 @@ public interface IWebTexture extends AutoCloseable {
     default void updateAudio(TVBlockEntity tv, boolean playing) {
     }
 
+    default boolean isSpeakerOn() {
+        return false;
+    }
+
     static double distanceToCamera(Vec3 pos) {
         return Minecraft.getInstance().gameRenderer.getMainCamera().getPosition().distanceTo(pos);
     }

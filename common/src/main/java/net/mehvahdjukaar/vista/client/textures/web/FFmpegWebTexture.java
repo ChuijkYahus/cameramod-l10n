@@ -68,18 +68,21 @@ public class FFmpegWebTexture extends DynamicTexture implements IWebTexture {
             stopSpeaker();
         }
         if (!session.getAudio().hasSamples()) return;
-        speakerSound = VistaClientPlatStuff.createTvSpeakerSound(session.getAudio(), center, tv.getBlockPos(),
+        speakerSound = VistaClientPlatStuff.createTvSpeakerSound(session.getAudio(), center,
                 playbackSeconds(tv.getPlaybackTicks() / 20.0));
         audioClockOffset = videoClockOffset;
         soundManager.play(speakerSound);
-        speakerSound.notifyNearbyDancers(true);
     }
 
     private void stopSpeaker() {
         if (speakerSound == null) return;
         Minecraft.getInstance().getSoundManager().stop(speakerSound);
-        speakerSound.notifyNearbyDancers(false);
         speakerSound = null;
+    }
+
+    @Override
+    public boolean isSpeakerOn() {
+        return speakerSound != null;
     }
 
     @Override
