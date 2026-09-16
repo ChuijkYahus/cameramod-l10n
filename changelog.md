@@ -1,1 +1,2 @@
-- fixed an issue with tv energy config
+- improved tv recursion in mirrors
+- tv renders will also set back the gl clear color how it was.

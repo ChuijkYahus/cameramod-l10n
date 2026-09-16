@@ -56,9 +56,7 @@ public class CommonConfigs {
                 .comment("Energy consumption rate per tick when TV is powered and has a cassette.")
                 .define("energy_consumption_rate", 20, 1, 10000);
         TV_USE_FURNITURE_ELECTRICITY = builder
-                .comment("Whether TVs act as Refurbished Furniture electricity modules. When on they can be " +
-                        "wired up with the wrench and only display something while their network powers them. " +
-                        "Takes priority over consume_energy. Requires Refurbished Furniture to be installed.")
+                .comment("Makes TVs consume energy from the Refurbished Furnitures mod")
                 .define("use_furniture_electricity", false);
         builder.pop(); // television
 

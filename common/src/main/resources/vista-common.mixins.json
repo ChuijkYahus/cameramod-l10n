@@ -9,6 +9,7 @@
     "ChunkMapTrackedEntityMixin",
     "ChunkTrackingViewMixin",
     "EndermanMixin",
+    "ParrotMixin",
     "compat.CompatRefurbishedFurnitureSelfTvBlockEntityMixin",
     "compat.CompatSableTrackingMixin",
     "compat.CompatVanillaBackportCreakingMixin",

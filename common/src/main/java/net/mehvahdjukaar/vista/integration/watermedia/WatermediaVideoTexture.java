@@ -75,13 +75,15 @@ public class WatermediaVideoTexture extends AbstractTexture implements IWebTextu
         SoundManager soundManager = Minecraft.getInstance().getSoundManager();
         if (speakerSound != null && soundManager.isActive(speakerSound)) return;
         if (!session.getAudio().hasSamples()) return;
-        speakerSound = VistaClientPlatStuff.createTvSpeakerSound(session.getAudio(), center, 0);
+        speakerSound = VistaClientPlatStuff.createTvSpeakerSound(session.getAudio(), center, tv.getBlockPos(), 0);
         soundManager.play(speakerSound);
+        speakerSound.notifyNearbyDancers(true);
     }
 
     private void stopSpeaker() {
         if (speakerSound == null) return;
         Minecraft.getInstance().getSoundManager().stop(speakerSound);
+        speakerSound.notifyNearbyDancers(false);
         speakerSound = null;
     }
 

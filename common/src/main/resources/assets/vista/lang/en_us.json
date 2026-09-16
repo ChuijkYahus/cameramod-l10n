@@ -58,7 +58,6 @@
   "vista.configuration.television.square_aspect_ratio": "Square Aspect Ratio",
   "vista.configuration.television.square_aspect_ratio.description": "Makes connected tvs just have a square aspect ratio. If you set to false cassettes will be stretched and will look worse as a result",
   "vista.configuration.television.use_furniture_electricity": "Use Furniture Electricity",
-  "vista.configuration.television.use_furniture_electricity.description": "Whether TVs act as Refurbished Furniture electricity modules. When on they can be wired up with the wrench and only display something while their network powers them. Takes priority over consume_energy. Requires Refurbished Furniture to be installed.",
   "vista.configuration.picture_tape": "Picture Tape",
   "vista.configuration.picture_tape.enabled.description": "Whether the picture tape (and its recipe) is enabled. Disabling hides it from the creative tab and disables its recipe.",
   "vista.configuration.picture_tape.max_entries": "Max Entries",

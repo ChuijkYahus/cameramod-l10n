@@ -6,6 +6,7 @@ import net.mehvahdjukaar.vista.client.web.PcmSource;
 import net.mehvahdjukaar.vista.client.web.TvSpeakerSound;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
+import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Contract;
 import org.joml.Matrix4f;
@@ -20,7 +21,7 @@ public class VistaClientPlatStuff {
 
     @Contract
     @PlatformImpl
-    public static TvSpeakerSound createTvSpeakerSound(PcmSource source, Vec3 pos, double startSeconds) {
+    public static TvSpeakerSound createTvSpeakerSound(PcmSource source, Vec3 pos, BlockPos tvPos, double startSeconds) {
         throw new AssertionError();
     }
 }

@@ -121,6 +121,10 @@ public class TVBlockEntity extends ItemDisplayTile {
         return paused;
     }
 
+    public boolean isPlaying() {
+        return getBlockState().getValue(TVBlock.POWER_STATE).isOn() && !paused && hasEnergy();
+    }
+
     @Override
     public SoundEvent getAddItemSound() {
         return VistaMod.CASSETTE_INSERT_SOUND.get();
@@ -295,7 +299,7 @@ public class TVBlockEntity extends ItemDisplayTile {
 
         tv.wasScreenOn = powered;
         if (world.isClientSide) {
-            boolean playing = powered && !tv.paused && tv.hasEnergy();
+            boolean playing = tv.isPlaying();
             tv.videoSource.updateAudio(tv, playing);
 
             if (powered) {

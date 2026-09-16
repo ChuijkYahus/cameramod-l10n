@@ -62,6 +62,7 @@ accessible field net/minecraft/client/renderer/LevelRenderer prevCamY D
 accessible field net/minecraft/client/renderer/LevelRenderer prevCamZ D
 accessible field net/minecraft/client/renderer/LevelRenderer sectionOcclusionGraph Lnet/minecraft/client/renderer/SectionOcclusionGraph;
 mutable field net/minecraft/client/renderer/LevelRenderer sectionOcclusionGraph Lnet/minecraft/client/renderer/SectionOcclusionGraph;
+accessible method net/minecraft/client/renderer/LevelRenderer notifyNearbyEntities (Lnet/minecraft/world/level/Level;Lnet/minecraft/core/BlockPos;Z)V
 accessible method net/minecraft/client/renderer/LevelRenderer applyFrustum (Lnet/minecraft/client/renderer/culling/Frustum;)V
 accessible field net/minecraft/client/renderer/LevelRenderer prevCamRotX D
 accessible field net/minecraft/client/renderer/LevelRenderer prevCamRotY D
