@@ -12,8 +12,11 @@ import net.mehvahdjukaar.vista.client.web.MediaStatus;
 import net.mehvahdjukaar.vista.common.tv.IntAnimationState;
 import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.Options;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundSource;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -124,8 +127,13 @@ public class WebUrlVideoSource implements IVideoSource {
         if (uri == null) return;
         //only what the renderer already made, a tv that never drew must not start a download from here
         IWebTexture texture = WebTexturesManager.getTextureIfPresent(uri, tv.getBlockPos(), tv.getScreenPixelSize());
-        boolean audible = playing && ClientConfigs.AUDIO_MODE.get().isOn(tv.hasSpeaker());
+        boolean audible = playing && ClientConfigs.AUDIO_MODE.get().isOn(tv.hasSpeaker()) && !isSoundMuted();
         if (texture != null) texture.updateAudio(tv, audible);
+    }
+
+    private static boolean isSoundMuted() {
+        Options options = Minecraft.getInstance().options;
+        return options.getSoundSourceVolume(SoundSource.MASTER) <= 0 || options.getSoundSourceVolume(SoundSource.BLOCKS) <= 0;
     }
 
     @Override

@@ -57,6 +57,8 @@ public class FFmpegWebTexture extends DynamicTexture implements IWebTexture {
     @Override
     public void updateAudio(TVBlockEntity tv, boolean playing) {
         Vec3 center = tv.getScreenRect().center();
+        double tvClock = tv.getPlaybackTicks() / 20.0;
+        syncVideoClock(tvClock);
         boolean canHear = playing && videoClockOffset != NOT_STARTED && lastLookupState != MediaStatus.BUFFERING;
         if (!canHear || IWebTexture.distanceToCamera(center) > SPEAKER_RANGE) {
             stopSpeaker();
@@ -69,7 +71,7 @@ public class FFmpegWebTexture extends DynamicTexture implements IWebTexture {
         }
         if (!session.getAudio().hasSamples()) return;
         speakerSound = VistaClientPlatStuff.createTvSpeakerSound(session.getAudio(), center,
-                playbackSeconds(tv.getPlaybackTicks() / 20.0));
+                playbackSeconds(tvClock));
         audioClockOffset = videoClockOffset;
         soundManager.play(speakerSound);
     }
@@ -88,11 +90,7 @@ public class FFmpegWebTexture extends DynamicTexture implements IWebTexture {
     @Override
     public MediaStatus uploadFrameAtTime(int ticks, float deltaTime, boolean paused) {
         double tvClock = (ticks + deltaTime) / 20.0;
-        if (!session.isReady()) {
-            videoClockOffset = NOT_STARTED;
-        } else if (videoClockOffset == NOT_STARTED || tvClock < videoClockOffset) {
-            videoClockOffset = tvClock;
-        }
+        syncVideoClock(tvClock);
         double seconds = playbackSeconds(tvClock);
 
         var lookup = session.lookupFrame(seconds);
@@ -109,6 +107,14 @@ public class FFmpegWebTexture extends DynamicTexture implements IWebTexture {
             return MediaStatus.LOADING;
         }
         return lookup.state();
+    }
+
+    private void syncVideoClock(double tvClock) {
+        if (!session.isReady()) {
+            videoClockOffset = NOT_STARTED;
+        } else if (videoClockOffset == NOT_STARTED || tvClock < videoClockOffset) {
+            videoClockOffset = tvClock;
+        }
     }
 
     private double playbackSeconds(double tvClock) {
