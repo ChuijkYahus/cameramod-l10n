@@ -36,6 +36,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
@@ -277,6 +278,29 @@ public class TVBlockEntity extends ItemDisplayTile {
             this.hasSpeaker = hasSpeaker;
             this.setChanged();
         }
+    }
+
+    public AABB getScreenBlocksBox() {
+        Direction facing = this.getBlockState().getValue(TVBlock.FACING);
+        BlockPos farCorner = MthUtils.relativePos(worldPosition, facing, connectedTvsAmount.x() - 1, connectedTvsAmount.y() - 1, 0);
+        return new AABB(worldPosition).minmax(new AABB(farCorner));
+    }
+
+    public BlockPos getNearestScreenTile(Vec3 pos) {
+        Direction facing = this.getBlockState().getValue(TVBlock.FACING);
+        BlockPos nearest = worldPosition;
+        double nearestDist = Double.MAX_VALUE;
+        for (int x = 0; x < connectedTvsAmount.x(); x++) {
+            for (int y = 0; y < connectedTvsAmount.y(); y++) {
+                BlockPos tile = MthUtils.relativePos(worldPosition, facing, x, y, 0);
+                double dist = tile.distToCenterSqr(pos);
+                if (dist < nearestDist) {
+                    nearestDist = dist;
+                    nearest = tile;
+                }
+            }
+        }
+        return nearest;
     }
 
     private boolean isNextToSpeaker() {

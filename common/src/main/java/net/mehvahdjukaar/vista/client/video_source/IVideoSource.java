@@ -12,7 +12,11 @@ import net.mehvahdjukaar.vista.common.tv.IntAnimationState;
 import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.AABB;
 import org.jetbrains.annotations.NotNull;
 
 public interface IVideoSource {
@@ -34,10 +38,17 @@ public interface IVideoSource {
         return false;
     }
 
-    //same call a jukebox makes, so parrots and owls dance to it
     static void notifyNearbyDancers(TVBlockEntity tv, boolean playing) {
         Minecraft mc = Minecraft.getInstance();
-        mc.levelRenderer.notifyNearbyEntities(tv.getLevel(), tv.getBlockPos(), playing);
+        Level level = tv.getLevel();
+        AABB hearingArea = tv.getScreenBlocksBox().inflate(3);
+        //shoulder birds only hear it through LevelRenderer
+        for (Player player : level.getEntitiesOfClass(Player.class, hearingArea)) {
+            mc.levelRenderer.notifyNearbyEntities(level, tv.getNearestScreenTile(player.position()), playing);
+        }
+        for (LivingEntity mob : level.getEntitiesOfClass(LivingEntity.class, hearingArea)) {
+            mob.setRecordPlayingNearby(tv.getNearestScreenTile(mob.position()), playing);
+        }
     }
 
     default ScreenFit getScreenFit() {
