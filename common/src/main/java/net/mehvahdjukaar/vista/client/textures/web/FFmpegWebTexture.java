@@ -9,6 +9,7 @@ import net.mehvahdjukaar.vista.client.web.MediaFrame;
 import net.mehvahdjukaar.vista.client.web.MediaStatus;
 import net.mehvahdjukaar.vista.client.web.TvSpeakerSound;
 import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
+import net.mehvahdjukaar.vista.integration.sable.SableCompatClient;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.client.sounds.SoundManager;
@@ -56,7 +57,7 @@ public class FFmpegWebTexture extends DynamicTexture implements IWebTexture {
 
     @Override
     public void updateAudio(TVBlockEntity tv, boolean playing) {
-        Vec3 center = tv.getScreenRect().center();
+        Vec3 center = SableCompatClient.projectOutOfSubLevel(tv, tv.getScreenRect().center());
         double tvClock = tv.getPlaybackTicks() / 20.0;
         syncVideoClock(tvClock);
         boolean canHear = playing && videoClockOffset != NOT_STARTED && lastLookupState != MediaStatus.BUFFERING;
@@ -66,6 +67,7 @@ public class FFmpegWebTexture extends DynamicTexture implements IWebTexture {
         }
         SoundManager soundManager = Minecraft.getInstance().getSoundManager();
         if (speakerSound != null && soundManager.isActive(speakerSound)) {
+            speakerSound.moveTo(center);
             if (Math.abs(videoClockOffset - audioClockOffset) < AUDIO_RESYNC_THRESHOLD) return;
             stopSpeaker();
         }

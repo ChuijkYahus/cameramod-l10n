@@ -2,14 +2,14 @@ package net.mehvahdjukaar.vista.client.web;
 
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
-import net.minecraft.client.resources.sounds.AbstractSoundInstance;
+import net.minecraft.client.resources.sounds.AbstractTickableSoundInstance;
 import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.client.sounds.AudioStream;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
-public class TvSpeakerSound extends AbstractSoundInstance {
+public class TvSpeakerSound extends AbstractTickableSoundInstance {
 
     private final PcmSource source;
     private final double startSeconds;
@@ -24,6 +24,16 @@ public class TvSpeakerSound extends AbstractSoundInstance {
         this.x = pos.x;
         this.y = pos.y;
         this.z = pos.z;
+    }
+
+    public void moveTo(Vec3 pos) {
+        this.x = pos.x;
+        this.y = pos.y;
+        this.z = pos.z;
+    }
+
+    @Override
+    public void tick() {
     }
 
     @Override

@@ -20,4 +20,9 @@ public class SableCompatClient {
         ClientSubLevelAccess subLevel = SableCompanion.INSTANCE.getContainingClient(be);
         return subLevel == null ? worldPos : subLevel.renderPose().transformPositionInverse(worldPos);
     }
+
+    public static Vec3 projectOutOfSubLevel(BlockEntity be, Vec3 plotPos) {
+        ClientSubLevelAccess subLevel = SableCompanion.INSTANCE.getContainingClient(be);
+        return subLevel == null ? plotPos : subLevel.renderPose().transformPosition(plotPos);
+    }
 }
