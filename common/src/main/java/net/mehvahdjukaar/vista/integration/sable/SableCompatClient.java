@@ -11,6 +11,11 @@ public class SableCompatClient {
         return SableCompanion.INSTANCE.getContainingClient(be) != null;
     }
 
+    public static Vec3 projectOutOfSubLevel(BlockEntity be, Vec3 pos) {
+        ClientSubLevelAccess subLevel = SableCompanion.INSTANCE.getContainingClient(be);
+        return subLevel == null ? pos : subLevel.renderPose().transformPosition(pos);
+    }
+
     public static Vec3 projectIntoSubLevel(BlockEntity be, Vec3 worldPos, float partialTicks) {
         ClientSubLevelAccess subLevel = SableCompanion.INSTANCE.getContainingClient(be);
         return subLevel == null ? worldPos : subLevel.renderPose(partialTicks).transformPositionInverse(worldPos);
@@ -19,10 +24,5 @@ public class SableCompatClient {
     public static Vec3 projectIntoSubLevel(BlockEntity be, Vec3 worldPos) {
         ClientSubLevelAccess subLevel = SableCompanion.INSTANCE.getContainingClient(be);
         return subLevel == null ? worldPos : subLevel.renderPose().transformPositionInverse(worldPos);
-    }
-
-    public static Vec3 projectOutOfSubLevel(BlockEntity be, Vec3 plotPos) {
-        ClientSubLevelAccess subLevel = SableCompanion.INSTANCE.getContainingClient(be);
-        return subLevel == null ? plotPos : subLevel.renderPose().transformPosition(plotPos);
     }
 }

@@ -8,6 +8,7 @@ import net.mehvahdjukaar.moonlight.api.util.ArchiveUtils;
 import net.mehvahdjukaar.moonlight.api.util.FileDownloadUtils;
 import net.mehvahdjukaar.moonlight.api.util.OsType;
 import net.mehvahdjukaar.vista.VistaMod;
+import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
@@ -28,9 +29,10 @@ public final class FFmpegManager {
     private static final Path SOURCES_CONFIG_PATH = Paths.get("vista_ffmpeg_sources.json");
     private static final String SOURCES_RESOURCE_PATH = "/vista_ffmpeg_sources.json";
     // Bump when the bundled sources file changes in a way that must reach users who already have one on disk.
-    private static final int SOURCES_CONFIG_VERSION = 2;
+    private static final int SOURCES_CONFIG_VERSION = 3;
 
     private static final Path PROGRAM_FOLDER = Paths.get("vista_ffmpeg_bin");
+    private static final Path STAGING_FOLDER = PROGRAM_FOLDER.resolve("staging");
     private static final OsType OS_TYPE = OsType.current();
     private static final String FFMPEG_FILE_NAME = OS_TYPE.executableName("ffmpeg");
     private static final String FFPROBE_FILE_NAME = OS_TYPE.executableName("ffprobe");
@@ -59,7 +61,13 @@ public final class FFmpegManager {
         } finally {
             downloadProgress = -1;
         }
-        return verified(ffmpeg);
+        try {
+            return verified(ffmpeg);
+        } catch (BrokenBinaryException e) {
+            FFMPEG_PATH.toFile().delete();
+            FFPROBE_PATH.toFile().delete();
+            throw e;
+        }
     }
 
     private static FFmpeg findOrDownload(@Nullable String customUrl) throws IOException, InterruptedException {
@@ -88,7 +96,7 @@ public final class FFmpegManager {
         try {
             process = launcher.launch("-version");
         } catch (IOException e) {
-            throw new UnusableFFmpegException(name + " is present but will not start: " + e.getMessage()
+            throw new BrokenBinaryException(name + " is present but will not start: " + e.getMessage()
                     + architectureHint(e), e);
         }
         try {
@@ -98,7 +106,7 @@ public final class FFmpegManager {
                         + VERSION_CHECK_TIMEOUT_SECONDS + "s", null);
             }
             if (process.exitValue() != 0) {
-                throw new UnusableFFmpegException(name + " exited with code " + process.exitValue()
+                throw new BrokenBinaryException(name + " exited with code " + process.exitValue()
                         + " on -version", null);
             }
         } catch (InterruptedException e) {
@@ -107,7 +115,6 @@ public final class FFmpegManager {
         }
     }
 
-    // The mac sources only publish x86_64 builds, so an Apple Silicon machine without Rosetta 2 fails here.
     private static String architectureHint(IOException e) {
         String msg = e.getMessage();
         boolean wrongArchitecture = msg != null && msg.contains("Bad CPU type");
@@ -124,6 +131,12 @@ public final class FFmpegManager {
 
     public static class UnusableFFmpegException extends RuntimeException {
         public UnusableFFmpegException(String message, @Nullable Throwable cause) {
+            super(message, cause);
+        }
+    }
+
+    private static class BrokenBinaryException extends UnusableFFmpegException {
+        BrokenBinaryException(String message, @Nullable Throwable cause) {
             super(message, cause);
         }
     }
@@ -146,6 +159,9 @@ public final class FFmpegManager {
 
         JsonObject root = readSourcesConfig();
         String key = OS_TYPE.key();
+        String arch = System.getProperty("os.arch");
+        boolean isArm = arch.equals("aarch64") || arch.equals("arm64");
+        if (isArm && root.has(key + "-arm64")) key += "-arm64";
         JsonElement value = root.get(key);
         if (value == null) {
             throw new IOException("Missing key '" + key + "' in " + SOURCES_CONFIG_PATH);
@@ -210,29 +226,24 @@ public final class FFmpegManager {
     }
 
     private static void downloadAndInstall(List<String> urls) throws IOException, InterruptedException {
-        List<Path> archives = new ArrayList<>();
+        FileUtils.deleteQuietly(STAGING_FOLDER.toFile());
+        Files.createDirectories(STAGING_FOLDER);
         try {
             for (int i = 0; i < urls.size(); i++) {
-                archives.add(downloadArchive(urls.get(i), i, urls.size()));
-            }
-            for (Path archive : archives) {
-                ArchiveUtils.extract(archive, PROGRAM_FOLDER);
+                Path archive = downloadArchive(urls.get(i), i, urls.size());
+                ArchiveUtils.extract(archive, STAGING_FOLDER);
             }
             moveExtractedBinariesIntoPlace();
             if (OS_TYPE.requiresExecutableBit()) {
                 markExecutables();
             }
         } finally {
-            for (Path archive : archives) {
-                Files.deleteIfExists(archive);
-            }
+            FileUtils.deleteQuietly(STAGING_FOLDER.toFile());
         }
     }
 
     private static Path downloadArchive(String url, int index, int total) throws IOException {
-        Path raw = PROGRAM_FOLDER.resolve("download-" + index + ".bin");
-        Files.deleteIfExists(raw);
-        Files.deleteIfExists(raw.resolveSibling(raw.getFileName() + ".part"));
+        Path raw = STAGING_FOLDER.resolve("download-" + index + ".bin");
 
         int completedBefore = index * 100;
         FileDownloadUtils.download(url, raw, null,
@@ -260,7 +271,7 @@ public final class FFmpegManager {
 
     @Nullable
     private static Path findExtractedFile(String fileName) throws IOException {
-        try (Stream<Path> files = Files.walk(PROGRAM_FOLDER)) {
+        try (Stream<Path> files = Files.walk(STAGING_FOLDER)) {
             return files.filter(Files::isRegularFile)
                     .filter(p -> p.getFileName().toString().equals(fileName))
                     .findFirst()
