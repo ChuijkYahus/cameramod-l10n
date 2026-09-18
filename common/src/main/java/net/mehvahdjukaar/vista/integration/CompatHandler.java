@@ -6,7 +6,6 @@ import net.mehvahdjukaar.moonlight.api.platform.RegHelper;
 import net.mehvahdjukaar.moonlight.api.platform.configs.ConfigBuilder;
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.integration.computer_craft.CCCompat;
-import net.mehvahdjukaar.vista.integration.distant_horizons.DistantHorizonsCompat;
 import net.mehvahdjukaar.vista.integration.entity_culling.EntityCullingCompat;
 import net.mehvahdjukaar.vista.integration.exposure.ExposureCompat;
 import net.mehvahdjukaar.vista.integration.flashback.FlashbackCompat;
@@ -63,7 +62,6 @@ public class CompatHandler {
         PlatHelper.addCommonSetup(() -> {
             if (COMPUTER_CRAFT) CCCompat.setup();
             if (PlatHelper.getPhysicalSide().isClient() && WATERMEDIA) WatermediaSession.initHack();
-            if (PlatHelper.getPhysicalSide().isClient() && DISTANT_HORIZONS) DistantHorizonsCompat.setup();
             setupPlat();
         });
     }
@@ -82,7 +80,6 @@ public class CompatHandler {
     }
 
     public static void addConfigs(ConfigBuilder builder) {
-        if (DISTANT_HORIZONS) DistantHorizonsCompat.addConfigs(builder);
         if (IRIS) IrisCompat.addConfigs(builder);
     }
 
@@ -90,14 +87,7 @@ public class CompatHandler {
         if (WATERMEDIA) WatermediaSession.onClientTick();
     }
 
-    public static void onClientDisconnect() {
-        if (DISTANT_HORIZONS) DistantHorizonsCompat.releaseConfigOverrides();
-    }
-
     public static Runnable decorateRenderer(Runnable runTask) {
-        if (DISTANT_HORIZONS) {
-            runTask = DistantHorizonsCompat.decorateRenderWithoutLOD(runTask);
-        }
         if (IRIS) {
             runTask = IrisCompat.decorateRendererWithoutShaderPacks(runTask);
         }

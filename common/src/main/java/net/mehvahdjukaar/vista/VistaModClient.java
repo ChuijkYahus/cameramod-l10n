@@ -264,7 +264,6 @@ public class VistaModClient {
         MirrorTextureManager.clear();
         VistaLevelRenderer.clear();
         MapTapeEntryRenderer.clear();
-        CompatHandler.onClientDisconnect();
     }
 
     public static void onClientTick(Minecraft minecraft) {

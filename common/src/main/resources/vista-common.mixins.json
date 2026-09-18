@@ -43,8 +43,10 @@
     "compat.CompatIrisTimerMixin",
     "compat.CompatSimpleCloudsMixin",
     "compat.CompatVeilMixin",
-    "compat.HackFixSableCameraAnglesMixin",
-    "compat.HackVeilFramebufferStackMixin"
+    "compat.HackFixSable1563CameraAnglesMixin",
+    "compat.HackFixVeil188FramebufferStackMixin",
+    "compat.HackShushDistantHorizonsFogMixin",
+    "compat.HackShushDistantHorizonsMixin"
   ],
   "plugin": "net.mehvahdjukaar.vista.mixins.VistaMixinPlugin",
   "injectors": {

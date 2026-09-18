@@ -51,7 +51,7 @@ modUrl = "${mod_homepage}"
 [[dependencies.${ mod_id }]]
     modId = "distanthorizons"
     type = "optional"
-    versionRange = "[3.1.2-b,)"
+versionRange = "[3.3.1,)"
     ordering = "NONE"
     side = "CLIENT"
 

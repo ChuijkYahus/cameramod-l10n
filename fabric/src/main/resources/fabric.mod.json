@@ -40,7 +40,7 @@
   },
   "breaks": {
     "vistafix": "<=1.0.1",
-    "distanthorizons": "<3.1.2-b",
+    "distanthorizons": "<3.3.1",
     "veil": "<4.1.2"
   }
 }
