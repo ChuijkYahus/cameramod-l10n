@@ -350,7 +350,6 @@ public class VistaLevelRenderer {
     private static void setupSceneCamera(ViewFinderBlockEntity tile, Camera camera, float partialTicks) {
         Level level = tile.getLevel();
         Quaternionf viewFinderRot = tile.getWorldOrientation(partialTicks);
-        //TODO: add Z for when looking up
         EntityAngles entityAngles = EntityAngles.fromQuaternion(viewFinderRot);
         float yaw = entityAngles.yaw();
         float pitch = entityAngles.pitch();
@@ -368,6 +367,11 @@ public class VistaLevelRenderer {
 
         camera.setPosition(pos);
         camera.setRotation(yaw, pitch);
+        // yaw/pitch lose roll (sublevels)
+        Quaternionf cameraRot = camera.rotation().set(viewFinderRot).rotateY(Mth.PI);
+        camera.getLookVector().set(0, 0, -1).rotate(cameraRot);
+        camera.getUpVector().set(0, 1, 0).rotate(cameraRot);
+        camera.getLeftVector().set(-1, 0, 0).rotate(cameraRot);
     }
 
     //Same as GameRenderer getProjectionMatrix but with custom fov and aspect ratio based on target size, and no zoom support (for now)
