@@ -81,7 +81,7 @@
   "vista.configuration.view_finder.send_viewed_chunks.description": "远处取景器与近处电视相链接时，向客户端所发送额外区块的半径（以区块计）。设为0以禁用客户端区块发送。",
   "vista.configuration.view_finder.load_viewed_chunks": "加载取景区块",
   "vista.configuration.view_finder.load_viewed_chunks.description": "与远处取景器相链接的电视旁至少有1名玩家时，服务端会加载取景器附近的区块。会增大服务端的压力",
-  "vista.configuration.drops": "Drops",
+  "vista.configuration.drops": "掉落物与战利品",
   "vista.configuration.drops.creeper_drop": "苦力怕掉落",
   "vista.configuration.drops.creeper_drop.description": "苦力怕被掠夺者击杀时是否掉落磁带盒。",
   "vista.configuration.drops.chest_drop": "箱子战利品",
