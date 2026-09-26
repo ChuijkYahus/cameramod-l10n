@@ -4,10 +4,9 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public final class SlidingWindowCounter<K> {
+public class SlidingWindowCounter<K> {
 
     private final int bucketCount;
     private final long bucketDurationNanos;
@@ -17,30 +16,14 @@ public final class SlidingWindowCounter<K> {
 
     private volatile long lastTick;
 
-    public SlidingWindowCounter(Duration expireWindow, Duration resolution) {
-        this(expireWindow.toNanos(), TimeUnit.NANOSECONDS,
-                (int) resolution.toMillis());
-    }
-
     @SuppressWarnings("unchecked")
-    public SlidingWindowCounter(long expireWindow, TimeUnit unit, int resolutionMillis) {
-
-        long windowNanos = unit.toNanos(expireWindow);
-        this.bucketDurationNanos =
-                TimeUnit.MILLISECONDS.toNanos(resolutionMillis);
-
-        if (windowNanos <= 0 || resolutionMillis <= 0)
-            throw new IllegalArgumentException();
-
-        this.bucketCount = (int) (windowNanos / bucketDurationNanos);
-        if (bucketCount <= 0) {
-            throw new IllegalArgumentException("Resolution too large for window");
-        }
+    public SlidingWindowCounter(Duration expireWindow, Duration resolution) {
+        this.bucketDurationNanos = resolution.toNanos();
+        this.bucketCount = (int) (expireWindow.toNanos() / bucketDurationNanos);
         this.buckets = new Map[bucketCount];
         for (int i = 0; i < bucketCount; i++) {
             buckets[i] = new HashMap<>();
         }
-
         this.lastTick = currentTick();
     }
 
@@ -49,8 +32,7 @@ public final class SlidingWindowCounter<K> {
 
         int index = (int) (currentTick() % bucketCount);
         buckets[index].merge(key, 1, Integer::sum);
-        totals.computeIfAbsent(key, k -> new AtomicInteger())
-                .incrementAndGet();
+        totals.computeIfAbsent(key, k -> new AtomicInteger()).incrementAndGet();
     }
 
     public int getCount(K key) {

@@ -9,12 +9,7 @@ import net.minecraft.world.item.MapItem;
 import net.minecraft.world.level.saveddata.maps.MapId;
 import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
 
-/**
- * Helper for pushing a filled map's pixel data to a specific player. Maps sitting inside a tape (in
- * the gallery or playing on a TV) aren't tracked/ticked by vanilla, so the client would otherwise
- * have no image to draw. We send the full colour patch with no decorations, so no player markers
- * get attached.
- */
+//maps in tapes arent ticked by vanilla so the client never gets their data
 public class PictureTapeMaps {
 
     public static void sendMapData(ServerPlayer player, ItemStack mapStack) {

@@ -51,6 +51,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.monster.EnderMan;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.*;
@@ -97,8 +98,6 @@ public class VistaMod {
             RegHelper.register(res("level_be_location"),
                     () -> LevelBEBroadcastLocation.TYPE, BROADCAST_LOCATION_REGISTRY.key());
 
-    // view finders broadcasting from inside a Create contraption: registered from :neoforge only, since Create
-    // has no Fabric build for this Minecraft version (see integration.create.CreateCompat there)
 
     public static final WorldSavedDataType<BroadcastManager> VIEWFINDER_CONNECTION =
             RegHelper.registerWorldSavedData(res("viewfinder_connection"), BroadcastManager::create,
@@ -204,6 +203,8 @@ public class VistaMod {
     public static final RegSupplier<SoundEvent> CASSETTE_INSERT_SOUND = RegHelper.registerSound(res("block.television.insert"));
     public static final RegSupplier<SoundEvent> CASSETTE_EJECT_SOUND = RegHelper.registerSound(res("block.television.eject"));
     public static final RegSupplier<SoundEvent> TV_STATIC_SOUND = RegHelper.registerSound(res("block.television.static"));
+    public static final RegSupplier<SoundEvent> TV_TURN_ON_SOUND = RegHelper.registerSound(res("block.television.turn_on"));
+    public static final RegSupplier<SoundEvent> TV_TURN_OFF_SOUND = RegHelper.registerSound(res("block.television.turn_off"));
     public static final RegSupplier<SoundEvent> SOJOURN_DISC_SOUND = RegHelper.registerSound(res("music_disc.sojourn"));
     public static final RegSupplier<SoundEvent> TV_SPEAKER_SOUND = RegHelper.registerSound(res("block.television.speaker"));
     public static final HolderRef<JukeboxSong> SOJOURN_DISC_SONG = HolderRef.of(
@@ -221,12 +222,10 @@ public class VistaMod {
 
     public static final TagKey<Block> TV_SPEAKERS_TAG = TagKey.create(Registries.BLOCK, res("tv_speakers"));
 
-    // Entities of these types are not drawn in mirror reflections (e.g. vampires).
-    public static final TagKey<net.minecraft.world.entity.EntityType<?>> CANT_SEE_THROUGH_MIRROR = TagKey.create(
+    public static final TagKey<EntityType<?>> CANT_SEE_THROUGH_MIRROR = TagKey.create(
             Registries.ENTITY_TYPE, res("cant_see_through_mirror"));
 
-    // Entities of these types are not drawn in camera/TV feeds (e.g. vampires).
-    public static final TagKey<net.minecraft.world.entity.EntityType<?>> CANT_SEE_THROUGH_TV = TagKey.create(
+    public static final TagKey<EntityType<?>> CANT_SEE_THROUGH_TV = TagKey.create(
             Registries.ENTITY_TYPE, res("cant_see_through_tv"));
 
     public static final Supplier<Item> SOJOURN_MUSIC_DISC = RegHelper.registerItem(res("music_disc_sojourn"),
@@ -339,9 +338,8 @@ public class VistaMod {
         return (CompatHandler.SUPPLEMENTARIES && SuppCompat.isFunny());
     }
 
+    //TODO: move logic out of here
     public static void onPlayerLoggedIn(ServerPlayer sp) {
-        // Zones are populated server-side by ServerCameraChunkManager on the first tick.
-        // Send an empty sync now so the client starts with a clean slate.
         NetworkHelper.sendToClientPlayer(sp, new ClientBoundSyncExtraChunksPacket(new ExtraChunkViewData()));
     }
 

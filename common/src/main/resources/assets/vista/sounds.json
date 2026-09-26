@@ -31,6 +31,24 @@
       }
     ]
   },
+  "block.television.turn_on": {
+    "sounds": [
+      "vista:block/television_turn_on_0",
+      "vista:block/television_turn_on_1",
+      "vista:block/television_turn_on_2",
+      "vista:block/television_turn_on_3"
+    ],
+    "subtitle": "subtitles.vista.television.turn_on"
+  },
+  "block.television.turn_off": {
+    "sounds": [
+      "vista:block/television_turn_off_0",
+      "vista:block/television_turn_off_1",
+      "vista:block/television_turn_off_2",
+      "vista:block/television_turn_off_3"
+    ],
+    "subtitle": "subtitles.vista.television.turn_off"
+  },
   "block.television.static": {
     "sounds": [
       {

@@ -21,8 +21,8 @@ public class CompatIrisMixin  {
     @Nullable
     private WorldRenderingPipeline pipeline;
 
-    // iris_off_hack=true: hand back a no-op VanillaRenderingPipeline so Iris stays
-    // out of the feed pass entirely.
+    //kills iris pipeline. Why is this so hard
+    //iris will actually shit itself if you dont do heavy mixins as its missing a lot of null checks
     @Inject(method = "preparePipeline", remap = false, at = @At("HEAD"), cancellable = true)
     private void vista$swapToVanillaPipeline(NamespacedId currentDimension,
                                              CallbackInfoReturnable<WorldRenderingPipeline> cir) {
@@ -33,11 +33,7 @@ public class CompatIrisMixin  {
         }
     }
 
-    // iris_off_hack=false: force PipelineManager to keep a separate IrisRenderingPipeline
-    // entry for the feed by rewriting the dimension namespace. Without this the single
-    // shared per-dim pipeline gets its RenderTargets resized back to the feed canvas
-    // size and then back to the main framebuffer size every frame, which reallocates
-    // every gbuffer and is what produces the flicker + perf cliff.
+    //unique pipeline for the feed. otherwise the shared one resizes all its gbuffers twice a frame, flicker and lag
     @ModifyVariable(method = "preparePipeline", at = @At("HEAD"), argsOnly = true, remap = false)
     private NamespacedId vista$rewriteDimensionForFeed(NamespacedId value) {
         if (IrisCompat.shouldSwapDimensionForFeed()) {

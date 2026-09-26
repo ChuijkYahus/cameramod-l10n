@@ -72,8 +72,8 @@ public class WebUrlVideoSource implements IVideoSource {
                                                         IntAnimationState switchAnim, IntAnimationState staticAnim,
                                                         boolean showsTime) {
 
-        if (uri == null) {
-            // No link configured (blank/unset url) -> show a benign test card, not "broken" static.
+        boolean noLinkSet = uri == null;
+        if (noLinkSet) {
             return TvScreenVertexConsumers.getBarsVC(buffer, pixelEffectRes, switchAnim);
         }
 
@@ -149,7 +149,6 @@ public class WebUrlVideoSource implements IVideoSource {
             case FORBIDDEN -> VistaModClient.FORBIDDEN_SCREEN;
             case NOT_FOUND -> VistaModClient.NOT_FOUND_SCREEN;
             case BAD_LINK -> VistaModClient.BAD_LINK_SCREEN;
-            // no backend available -> plain static noise instead of a dedicated card
             case NO_FFMPEG, NONE -> null;
         };
     }

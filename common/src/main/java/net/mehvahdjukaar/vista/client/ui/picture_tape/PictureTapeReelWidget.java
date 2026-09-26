@@ -5,6 +5,7 @@ import net.mehvahdjukaar.vista.common.picture_tape.PictureTapeMenu;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
@@ -18,22 +19,14 @@ public class PictureTapeReelWidget extends AbstractWidget {
     private static final ResourceLocation REEL_LEFT = VistaMod.res("picture_tape/reel_left");
     private static final ResourceLocation REEL_RIGHT = VistaMod.res("picture_tape/reel_right");
 
-    // reel sprite size
     private static final int REEL_W = 40;
     private static final int REEL_H = 52;
-    // reels butt together into a continuous film strip; only the strip ends are padded
     private static final int PAD = 2;
-    private static final int CAP_W = 2;                          // reel_left / reel_right end caps
+    private static final int CAP_W = 2;
 
-    // GuiGraphics.renderItem lifts item icons to z=150 and MapTapeEntryRenderer lifts the map to z=1;
-    // in the GUI ortho higher z draws nearer, so the film frame has to sit above all of that or the
-    // picture (and placeholder icons) would poke through it instead of showing only inside the window.
     private static final int FRAME_Z = 200;
-    private static final int HOVER_Z = FRAME_Z - 10;             // tints the picture window, still under the frame
+    private static final int HOVER_Z = FRAME_Z - 10;
 
-    /**
-     * Routes a click on a reel back to the screen (which forwards it to the menu).
-     */
     public interface CellClickHandler {
         void onCellClicked(int cell, int button, boolean shift);
     }
@@ -76,9 +69,6 @@ public class PictureTapeReelWidget extends AbstractWidget {
         scrollOffset = Mth.clamp(fraction, 0, 1) * maxScroll();
     }
 
-    /**
-     * Reel (== map slot index) under the mouse, or -1.
-     */
     public int cellAt(double mouseX, double mouseY) {
         if (!isMouseOver(mouseX, mouseY)) return -1;
         int cells = menu.getVisibleCells();
@@ -98,9 +88,6 @@ public class PictureTapeReelWidget extends AbstractWidget {
         int realCells = menu.getVisibleCells();
         int hovered = cellAt(mouseX, mouseY);
 
-        // pad the strip out with empty film so the viewport is never half-empty. these filler cells
-        // past the real content are purely visual: cellAt only knows about realCells, so they can be
-        // neither hovered, clicked, nor scrolled to (scrolling is still bounded by the real content).
         int fillCells = Mth.ceil((width - PAD) / (float) REEL_W) + 1;
         int cells = Math.max(realCells, fillCells);
 
@@ -110,27 +97,23 @@ public class PictureTapeReelWidget extends AbstractWidget {
             int cy = getY();
             if (cx + REEL_W < getX() || cx > getX() + width) continue;
 
-            //base plate: the first empty cell (the one you drop into) shows the "add" reel instead
             ResourceLocation base = i == filled ? REEL_NEW : REEL_BACKGROUND;
             g.blitSprite(base, cx, cy, REEL_W, REEL_H);
             if (i < filled) {
-                PictureTapeRenderers.render(g, menu.getTapeContent().getItem(i), cx + 1, cy + 7, 38); //square, frame hides the horizontal bleed
+                PictureTapeRenderers.render(g, menu.getTapeContent().getItem(i), cx + 1, cy + 7, 38); //frame hides the bleed
             }
-            //hover tint goes above the picture but under the frame, so only the picture window lights up
             if (i == hovered) {
                 g.pose().pushPose();
                 g.pose().translate(0, 0, HOVER_Z);
                 g.fill(cx, cy, cx + REEL_W, cy + REEL_H, 0x33FFFFFF);
                 g.pose().popPose();
             }
-            //film frame overlay sits on top of every cell so the strip reads as continuous
             g.pose().pushPose();
             g.pose().translate(0, 0, FRAME_Z);
             g.blitSprite(REEL_FOREGROUND, cx, cy, REEL_W, REEL_H);
             g.pose().popPose();
         }
 
-        //sprocketed end caps at the two extremes of the strip, part of the same frame layer
         int stripStart = getX() + PAD - (int) scrollOffset;
         int stripEnd = stripStart + cells * REEL_W;
         g.pose().pushPose();
@@ -153,7 +136,6 @@ public class PictureTapeReelWidget extends AbstractWidget {
 
     @Override
     public void onClick(double mouseX, double mouseY) {
-        // handled in mouseClicked so we get the button
     }
 
     @Override
@@ -168,7 +150,7 @@ public class PictureTapeReelWidget extends AbstractWidget {
     }
 
     private static boolean hasShiftDown() {
-        return net.minecraft.client.gui.screens.Screen.hasShiftDown();
+        return Screen.hasShiftDown();
     }
 
     @Override

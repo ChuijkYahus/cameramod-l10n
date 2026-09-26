@@ -61,7 +61,6 @@ public class TvShowcaseWidget extends AbstractWidget {
     private static final float TILT = 15f;
     private static final float YAW = 198f;
     private static final float BLOCK_FILL = 0.72f;
-    private static final float SCREEN_NUDGE = 0.005f;
     private static final float SCREEN_HALF_SIZE = TVBlockEntity.MIN_SCREEN_PIXEL_SIZE / 32f;
     private static final float SECONDS_PER_TICK = 0.05f;
     private static final float STATIC_VOLUME = 50f;
@@ -105,7 +104,7 @@ public class TvShowcaseWidget extends AbstractWidget {
         Minecraft.getInstance().getBlockRenderer().renderSingleBlock(VistaMod.TV.get().defaultBlockState(),
                 pose, buffer, LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
 
-        pose.translate(0.5f, 0.5f, -SCREEN_NUDGE);
+        pose.translate(0.5f, 0.5f, -0.005f);
         TvBlockEntityRenderer.addQuad(this.currentFrame(buffer), pose,
                 -SCREEN_HALF_SIZE, -SCREEN_HALF_SIZE, SCREEN_HALF_SIZE, SCREEN_HALF_SIZE, LightTexture.FULL_BRIGHT);
 

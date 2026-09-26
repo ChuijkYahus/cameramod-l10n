@@ -11,6 +11,8 @@ import net.mehvahdjukaar.vista.common.connection.*;
 import net.mehvahdjukaar.vista.configs.CommonConfigs;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.*;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
@@ -170,6 +172,13 @@ public class TVBlock extends HorizontalDirectionalBlock implements EntityBlock, 
             Rect2D old = RectFinder.findMaxRect(gridAccess, Vec2i.ZERO, false);
             gridAccess.transform(old, old, null);
             gridAccess.applyChanges();
+            //grid can still power it from another tv
+            boolean isOnNow = level.getBlockState(pos).getValue(POWER_STATE).isOn();
+            if (isOnNow != oldPower.isOn()) {
+                SoundEvent sound = VistaMod.TV_TURN_OFF_SOUND.get();
+                if (isOnNow) sound = VistaMod.TV_TURN_ON_SOUND.get();
+                level.playSound(null, pos, sound, SoundSource.BLOCKS, 1, 1);
+            }
         }
         if (findMasterBlockEntity(level, pos, state) instanceof TVBlockEntity tv) tv.onNeighborChanged(neighborPos);
     }
