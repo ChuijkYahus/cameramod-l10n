@@ -42,7 +42,6 @@ public class WatermediaImageTexture extends AbstractTexture implements IWebTextu
 
     @Override
     public void releaseId() {
-        // no-op: the ImageRenderer / ImageCache owns the GL texture lifetime, not Minecraft
     }
 
     @Override
@@ -51,8 +50,6 @@ public class WatermediaImageTexture extends AbstractTexture implements IWebTextu
 
     @Override
     public void close() {
-        // Image lifetime is managed by WatermediaSession / ImageCache.
-        // We intentionally do not call releaseId() here.
         super.close();
     }
 

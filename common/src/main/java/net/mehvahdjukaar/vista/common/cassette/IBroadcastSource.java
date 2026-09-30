@@ -27,11 +27,7 @@ public interface IBroadcastSource {
         }
     }
 
-    // Broadcast links live in overworld saved data, but block entities can be loaded before the
-    // overworld itself exists: Sable restores its force loaded sub levels from inside the ServerLevel
-    // constructor, while MinecraftServer is still building its level map. Run those links next tick.
-    // Has to be tell() and not execute(): we are already on the server thread and outside a TickTask,
-    // so execute() would just run the task inline and hit the same null overworld.
+    //sable loads sub levels inside the ServerLevel constructor, before the overworld exists. tell() not execute(), that one would just run it inline
     private static void whenBroadcastDataAvailable(ServerLevel level, Runnable task) {
         MinecraftServer server = level.getServer();
         if (server.overworld() == null) {

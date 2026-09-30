@@ -12,7 +12,7 @@ import net.minecraft.network.chat.Component;
 
 import java.util.function.Consumer;
 
-public final class VistaWelcomeScreen extends Screen {
+public class VistaWelcomeScreen extends Screen {
 
     private final Screen lastScreen;
     private final Consumer<String> onCustom;
@@ -34,7 +34,7 @@ public final class VistaWelcomeScreen extends Screen {
 
     private MultiLineLabel messageLabel;
 
-    public VistaWelcomeScreen(final Screen lastScreen,
+    public VistaWelcomeScreen(Screen lastScreen,
                               Consumer<String> callback,
                               Runnable onDefault, Runnable onDisable) {
         super(Component.translatable("gui.vista.welcome.title").withStyle(ChatFormatting.LIGHT_PURPLE, ChatFormatting.BOLD));
@@ -56,9 +56,9 @@ public final class VistaWelcomeScreen extends Screen {
     @Override
     protected void init() {
         super.init();
-        final int buttonWidth = 150;
-        final int buttonHeight = 20;
-        final int centerX = this.width / 2;
+        int buttonWidth = 150;
+        int buttonHeight = 20;
+        int centerX = this.width / 2;
         int bottomY = this.height * 3 / 6;
 
 
@@ -93,13 +93,13 @@ public final class VistaWelcomeScreen extends Screen {
         );
 
 
-        final int fieldWidth = 200;
-        final int fieldHeight = 20;
-        final int customY = this.height * 3 / 6 - 11;  // slightly above the normal button area
+        int fieldWidth = 200;
+        int fieldHeight = 20;
+        int customY = this.height * 3 / 6 - 11;
 
         this.confirmCustomButton = this.addRenderableWidget(
                 Button.builder(Component.translatable("gui.ok"), btn -> {
-                            final String url = urlField.getValue().trim();
+                            String url = urlField.getValue().trim();
                             if (!url.isEmpty()) {
                                 onCustom.accept(url);
                                 Minecraft.getInstance().setScreen(lastScreen);
@@ -131,32 +131,25 @@ public final class VistaWelcomeScreen extends Screen {
                 fieldHeight,
                 Component.empty()
         );
-        this.urlField.setResponder(s -> {
-            this.confirmCustomButton.active = !s.isBlank();
-        });
+        this.urlField.setResponder(s -> this.confirmCustomButton.active = !s.isBlank());
         this.urlField.setMaxLength(300);
         this.urlField.setVisible(false);
-        this.addRenderableWidget(this.urlField);   // manually added because it's not a button
+        this.addRenderableWidget(this.urlField);
 
 
-        // Message label (always visible)
         this.messageLabel = MultiLineLabel.create(this.font, this.messageText, this.width - 50);
 
         activateIfReady();
     }
 
     @Override
-    public void render(final GuiGraphics graphics, final int mouseX, final int mouseY, final float partialTicks) {
+    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
         super.render(graphics, mouseX, mouseY, partialTicks);
 
-        // Title
         graphics.drawCenteredString(this.font, this.title, this.width / 2, 30, 0xFFFFFF);
-
-        // Main message
         this.messageLabel.renderCentered(graphics, this.width / 2, 55);
 
         if (this.showingCustom) {
-            // Hint and URL field
             this.customHintLabel.renderCentered(graphics, this.width / 2, this.urlField.getY() - 12);
         }
     }

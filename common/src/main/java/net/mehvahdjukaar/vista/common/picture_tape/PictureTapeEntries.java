@@ -15,7 +15,7 @@ public class PictureTapeEntries {
     private static final List<Unpacker> UNPACKERS = new ArrayList<>();
 
     static {
-        // any filled map, including other mods' maps (they all carry the vanilla map id component)
+        //also catches other mods maps
         register(stack -> stack.has(DataComponents.MAP_ID));
         register(stack -> stack.is(Items.PAINTING));
     }
