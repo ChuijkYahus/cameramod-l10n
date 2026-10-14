@@ -14,6 +14,9 @@ import net.mehvahdjukaar.vista.integration.supplementaries.SuppCompat;
 import net.mehvahdjukaar.vista.integration.veil.VeilCompat;
 import net.mehvahdjukaar.vista.integration.watermedia.WatermediaSession;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 public class CompatHandler {
 
     public static final boolean EXPOSURE = PlatHelper.isModLoaded("exposure");
@@ -37,7 +40,7 @@ public class CompatHandler {
     private static boolean isWatermediaCompatible() {
         if (!PlatHelper.isModLoaded("watermedia")) return false;
         String version = PlatHelper.getModVersion("watermedia");
-        // WaterMedia 3.0.0+ reworked its API in a way incompatible with our compat. Disable it gracefully.
+        //only works with watermedia below 3
         if (isVersionAtLeast3(version)) {
             VistaMod.LOGGER.warn("Detected WaterMedia {} (3.0.0 or greater). Vista's WaterMedia compatibility is " +
                     "incompatible with this version and has been disabled. Video and web textures will be unavailable. " +
@@ -49,8 +52,7 @@ public class CompatHandler {
 
     private static boolean isVersionAtLeast3(String version) {
         if (version == null) return false;
-        // strip any leading non-digit prefix and read the major version number
-        java.util.regex.Matcher m = java.util.regex.Pattern.compile("(\\d+)").matcher(version);
+        Matcher m = Pattern.compile("(\\d+)").matcher(version);
         return m.find() && Integer.parseInt(m.group(1)) >= 3;
     }
 
@@ -97,7 +99,7 @@ public class CompatHandler {
         if (FLASHBACK) {
             runTask = FlashbackCompat.decorateRenderRestoringMatrices(runTask);
         }
-        if(VEIL) {
+        if (VEIL) {
             runTask = VeilCompat.decorateWithSameDarnHacksVeilUses(runTask);
         }
         return runTask;
