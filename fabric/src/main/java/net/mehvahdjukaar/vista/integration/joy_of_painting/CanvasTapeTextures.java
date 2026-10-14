@@ -14,8 +14,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-// Canvas pixels as a DynamicTexture, so tapes can draw them in the reel gallery and across a TV screen.
-// Keyed by canvas id + version so an edited canvas rebuilds instead of showing a stale image.
 public class CanvasTapeTextures {
 
     private static final Map<String, ResourceLocation> CACHE = new HashMap<>();
@@ -29,7 +27,9 @@ public class CanvasTapeTextures {
 
         int width = canvas.getWidth();
         int height = canvas.getHeight();
-        if (pixels.size() < width * height) return null;
+        if (pixels.size() < width * height) {
+            return null;
+        }
 
         int version = stack.getOrDefault(Items.CANVAS_VERSION, 1);
         String key = canvasId + "_" + version;
@@ -38,6 +38,7 @@ public class CanvasTapeTextures {
 
         ResourceLocation created = build(key, pixels, width, height);
         CACHE.put(key, created);
+
         return created;
     }
 
@@ -49,11 +50,12 @@ public class CanvasTapeTextures {
                 image.setPixelRGBA(x, y, toAbgr(pixels.get(x + y * width)));
             }
         }
+
         texture.upload();
         return Minecraft.getInstance().getTextureManager().register("vista_tape_canvas/" + key, texture);
     }
 
-    // canvas pixels are stored as 0xAARRGGBB; NativeImage wants 0xAABBGGRR (red and blue swapped)
+    //dindt we have a helper for thsis?
     private static int toAbgr(int argb) {
         return FastColor.ARGB32.color(
                 FastColor.ARGB32.alpha(argb),
