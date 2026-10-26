@@ -20,19 +20,12 @@ public interface ReferenceFrame {
 
     boolean isStillValid(Player player);
 
-    /**
-     * Send a locally-made aim change to the server. Default routes through SyncViewFinderPacket, which
-     * locates the view finder by makeNetworkTarget(); frames whose view finder has no addressable
-     * server-side block entity (e.g. inside a Create contraption) override this with their own packet.
-     */
+    //override when theres no block entity to target, like on create contraptions
     default void syncToServer(Quaternionf localRot, int zoom, boolean locked, boolean removeOwner, Player player) {
         NetworkHelper.sendToServer(new SyncViewFinderPacket(
                 localRot, zoom, locked, removeOwner, makeNetworkTarget(), player.getUUID()));
     }
 
-    /**
-     * Broadcast an authoritative aim to tracking clients. Default routes through SyncViewFinderPacket.
-     */
     default void syncToCLients(ServerLevel level, Quaternionf localRot, int zoom, boolean locked) {
         NetworkHelper.sendToAllClientPlayersInDefaultRange(level, BlockPos.containing(position(1)),
                 new SyncViewFinderPacket(localRot, zoom, locked, false, makeNetworkTarget(), null));

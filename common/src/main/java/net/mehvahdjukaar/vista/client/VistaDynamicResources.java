@@ -43,21 +43,18 @@ public class VistaDynamicResources extends DynamicClientResourceProvider {
                 float hue = hsv.hue(); //0-1, not degrees
                 float sat = hsv.saturation();
 
-                // everything below is hand tuned to stay subtle
-                final float TINT_STRENGTH = 0.70f;
+                //all hand tuned
+                float tintStrength = 0.70f;
 
-                // per-channel multiplier biasing toward the tint while preserving highlights
-                float mulR = 1f - (1f - lr) * TINT_STRENGTH;
-                float mulG = 1f - (1f - lg) * TINT_STRENGTH;
-                float mulB = 1f - (1f - lb) * TINT_STRENGTH;
+                float mulR = 1f - (1f - lr) * tintStrength;
+                float mulG = 1f - (1f - lg) * tintStrength;
+                float mulB = 1f - (1f - lb) * tintStrength;
 
-                // mild gamma lift, keeps low channels from crushing and midtones nicer
-                final float MUL_SMOOTH = 0.98f;
-                mulR = (float) Math.pow(mulR, MUL_SMOOTH);
-                mulG = (float) Math.pow(mulG, MUL_SMOOTH);
-                mulB = (float) Math.pow(mulB, MUL_SMOOTH);
+                mulR = (float) Math.pow(mulR, 0.98f);
+                mulG = (float) Math.pow(mulG, 0.98f);
+                mulB = (float) Math.pow(mulB, 0.98f);
 
-                // Tiny shadow lift so darks pick up the tint instead of going flat black.
+                // lift darks a bit so they get tinted too
                 float addBase = 0.008f;
                 float addStrength = 0.045f;
                 float addScale = addBase + addStrength * (1f - lum);
@@ -70,18 +67,16 @@ public class VistaDynamicResources extends DynamicClientResourceProvider {
                 addG = Math.clamp(addG, 0f, 0.12f);
                 addB = Math.clamp(addB, 0f, 0.12f);
 
-                // slightly desaturate by default, walking back up for already saturated dyes
                 float saturation = 0.90f + 0.15f * sat;
 
-                // dark dyes want a bit more contrast, light ones a bit less
                 float contrast = 1.00f + 0.30f * (0.5f - lum);
                 contrast = Math.clamp(contrast, 0.85f, 1.25f);
 
-                if (hue >= 0.444f && hue <= 0.556f) { // cyan and teal read better punchier and less saturated
+                if (hue >= 0.444f && hue <= 0.556f) { //cyan
                     contrast = Math.min(contrast + 0.05f, 1.30f);
                     saturation -= 0.03f;
                 }
-                if (hue >= 0.083f && hue <= 0.167f) { // warm yellows and oranges want more red in the lift
+                if (hue >= 0.083f && hue <= 0.167f) { //orange-yellow
                     addR += 0.005f;
                 }
 

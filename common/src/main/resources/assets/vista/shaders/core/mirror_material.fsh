@@ -34,7 +34,7 @@ in vec2 texCoord0;
 out vec4 fragColor;
 
 // ---------- PARAMETERS ----------
-const float DISTORTION   = 0.17;
+uniform float Distortion;
 const float EDGE_WEAR    = 0.2;
 const float SCRATCH      = 0.02;
 const float ROUGHNESS    = 0.5;
@@ -47,7 +47,7 @@ const vec3  SHADOW_COLOR = vec3(35.0, 44.0, 40.0) / 255.0;
 // ---------- PER-BLOCK TILING ----------
 // Tile one full 16px copy of a per-block texture across the connected grid, but trim 1px off
 // the whole group's OUTER edge only. The visible surface is (16*Tiles - 2) px wide (the frame
-// covers the outer ring — see MirrorBlockEntity.FRAME_PIXELS and the quad inset in
+// covers the outer ring -see MirrorBlockEntity.FRAME_PIXELS and the quad inset in
 // MirrorBlockEntityRenderer), so mapping uv[0,1] onto the full 16*Tiles texel space and
 // trimming the first/last texel lines the texture up pixel-perfect with the framebuffer.
 // For a 1x1 mirror this samples the inner 14x14 of the 16x16 texture (outer pixel dropped);
@@ -117,7 +117,7 @@ void main() {
     warp.x = fbm(p * 3.0);
     warp.y = fbm(p * 3.0 + 17.3);
 
-    vec2 duv = uv + (warp - 0.5) * DISTORTION * 0.05;
+    vec2 duv = uv + (warp - 0.5) * Distortion * 0.05;
 
     // ---------- REFLECTION BLUR ----------
     vec3 refl = vec3(0.0);

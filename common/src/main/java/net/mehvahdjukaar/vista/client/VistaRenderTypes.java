@@ -10,6 +10,8 @@ import net.mehvahdjukaar.vista.VistaModClient;
 import net.mehvahdjukaar.vista.client.textures.perspective.MirrorReflectionTexture;
 import net.mehvahdjukaar.vista.common.tv.IntAnimationState;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
+import net.mehvahdjukaar.vista.integration.CompatHandler;
+import net.mehvahdjukaar.vista.integration.supplementaries.SuppCompat;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderStateShard;
@@ -120,6 +122,8 @@ public class VistaRenderTypes extends RenderType {
                             var t = DynamicTextureRenderer.getTextureIfPresent(k.reflectionTexture);
                             if (t instanceof MirrorReflectionTexture mrt) fade = mrt.getFadeProgress();
                             setFloat(shader, "Fade", fade);
+                            float distortion = (CompatHandler.SUPPLEMENTARIES && SuppCompat.isFunny()) ? 3.5f : 0.17f;
+                            setFloat(shader, "Distortion", distortion);
                         },
                         () -> {}))
                 .createCompositeState(false);

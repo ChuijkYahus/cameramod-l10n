@@ -149,7 +149,6 @@ public class VistaModClient {
     }
 
     private static void useFFmpeg(FFmpeg ffmpeg) {
-        // Verification spawns processes, so keep it off the main thread.
         ffmpegFuture = logFailure(CompletableFuture.supplyAsync(() -> FFmpegManager.verified(ffmpeg)));
     }
 
