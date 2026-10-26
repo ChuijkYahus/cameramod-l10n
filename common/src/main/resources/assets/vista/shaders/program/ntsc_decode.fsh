@@ -66,7 +66,6 @@ void main() {
     vec4 CoordY = vec4(texCoord.y);
 
     vec4 BaseTexel = texture(DiffuseSampler, texCoord);
-    // 83 composite samples wide, 4 composite pixels per texel
     for (float n = -41.0; n < 42.0; n += 4.0)
     {
         vec4 n4 = n + NotchOffset;

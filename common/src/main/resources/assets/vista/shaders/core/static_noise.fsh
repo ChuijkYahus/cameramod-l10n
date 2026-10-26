@@ -25,24 +25,14 @@ in vec4 normal;
 out vec4 fragColor;
 
 
-// ------------------------------------------------------------------
-
 void main() {
-    // Base texture
-
-    // Get procedural noise
     vec4 noise = crt_noise(texCoord0, GameTime);
-
-    // Blend texture with noise
-
-    // Lighting / material tinting
     vec4 tint = vertexColor * ColorModulator * lightMapColor;
     vec4 shaded = NoiseIntensity * noise * tint;
 
     float vignette = mix(1.0, crt_vignette(texCoord0), clamp(VignetteIntensity, 0.0, 1.0));
     shaded.rgb *= vignette;
 
-    // Fog
     vec4 fogged = linear_fog(shaded, vertexDistance, FogStart, FogEnd, FogColor);
 
 
