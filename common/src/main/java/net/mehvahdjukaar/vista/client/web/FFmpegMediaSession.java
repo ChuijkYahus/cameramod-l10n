@@ -50,7 +50,7 @@ public class FFmpegMediaSession implements IMediaSession {
         this.cacheManager = cacheManager;
         this.targetWidth = targetWidth;
         this.targetHeight = targetHeight;
-        this.loadFuture = CompletableFuture.runAsync(() -> downloadAndDecode(uri, ffmpeg, cacheManager, executor), executor);
+        this.loadFuture = CompletableFuture.runAsync(() -> downloadAndDecode(uri, ffmpeg, executor), executor);
     }
 
     private void downloadAndDecode(URI uri, @Nullable FFmpeg ffmpeg, Executor executor) {
