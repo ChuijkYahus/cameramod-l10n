@@ -1,7 +1,7 @@
 package net.mehvahdjukaar.vista.client.platform;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import net.mehvahdjukaar.vista.client.web.audio.PcmAudioSource;
+import net.mehvahdjukaar.vista.client.web.audio.FFmpegAudioTrack;
 import net.mehvahdjukaar.vista.client.web.audio.TvSpeakerSoundInstance;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
@@ -19,11 +19,11 @@ public class VistaClientPlatStuffImpl {
                                                      Matrix4f modelViewMatrix, Matrix4f projMatrix) {
     }
 
-    public static TvSpeakerSoundInstance createTvSpeakerSound(PcmAudioSource source, Vec3 pos, double startSeconds) {
-        return new TvSpeakerSoundInstance(source, pos, startSeconds) {
+    public static TvSpeakerSoundInstance createTvSpeakerSound(FFmpegAudioTrack track, Vec3 pos, double startSeconds) {
+        return new TvSpeakerSoundInstance(track, pos, startSeconds) {
             @Override
             public CompletableFuture<AudioStream> getAudioStream(SoundBufferLibrary loader, ResourceLocation id, boolean repeatInstantly) {
-                return CompletableFuture.completedFuture(openStream());
+                return CompletableFuture.completedFuture(this);
             }
         };
     }

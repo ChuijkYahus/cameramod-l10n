@@ -19,6 +19,7 @@ import net.mehvahdjukaar.vista.common.picture_tape.PictureTapeItem;
 import net.mehvahdjukaar.vista.common.picture_tape.PictureTapeMaps;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.mehvahdjukaar.vista.configs.CommonConfigs;
+import net.mehvahdjukaar.vista.integration.sable.SableCompatClient;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
@@ -352,7 +353,6 @@ public class TVBlockEntity extends ItemDisplayTile {
     }
 
 
-
     public boolean isScreenOn(float partialTicks) {
         return this.wasScreenOn || this.fadeAnimation.getValue(partialTicks) != 0;
     }
@@ -446,5 +446,9 @@ public class TVBlockEntity extends ItemDisplayTile {
             PictureTapeMaps.sendMapData(sp, current);
             if (next != current) PictureTapeMaps.sendMapData(sp, next);
         }
+    }
+
+    public Vec3 getSpeakerSourcePos() {
+        return SableCompatClient.projectOutOfSubLevel(this, this.getScreenRect().center());
     }
 }

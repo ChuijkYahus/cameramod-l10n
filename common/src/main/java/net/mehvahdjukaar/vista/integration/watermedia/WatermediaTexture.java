@@ -3,7 +3,6 @@ package net.mehvahdjukaar.vista.integration.watermedia;
 import net.mehvahdjukaar.vista.client.textures.web.IWebTexture;
 import net.mehvahdjukaar.vista.client.web.MediaStatus;
 import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
-import net.mehvahdjukaar.vista.integration.sable.SableCompatClient;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
@@ -50,7 +49,9 @@ public class WatermediaTexture extends AbstractTexture implements IWebTexture {
 
     @Override
     public void updateAudio(TVBlockEntity tv, boolean playing) {
-        if (playing) session.requestSpeaker(SableCompatClient.projectOutOfSubLevel(tv, tv.getScreenRect().center()));
+        if (playing) {
+            session.requestSpeaker(tv.getSpeakerSourcePos());
+        }
     }
 
     @Override

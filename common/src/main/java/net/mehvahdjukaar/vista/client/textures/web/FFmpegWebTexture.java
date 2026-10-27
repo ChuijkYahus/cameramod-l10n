@@ -9,7 +9,6 @@ import net.mehvahdjukaar.vista.client.web.MediaFrame;
 import net.mehvahdjukaar.vista.client.web.MediaStatus;
 import net.mehvahdjukaar.vista.client.web.audio.TvSpeakerSoundInstance;
 import net.mehvahdjukaar.vista.common.tv.TVBlockEntity;
-import net.mehvahdjukaar.vista.integration.sable.SableCompatClient;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.client.sounds.SoundManager;
@@ -57,24 +56,34 @@ public class FFmpegWebTexture extends DynamicTexture implements IWebTexture {
 
     @Override
     public void updateAudio(TVBlockEntity tv, boolean playing) {
-        Vec3 center = SableCompatClient.projectOutOfSubLevel(tv, tv.getScreenRect().center());
+        Vec3 centerPos = tv.getSpeakerSourcePos();
         double tvClock = tv.getPlaybackTicks() / 20.0;
         syncVideoClock(tvClock);
         boolean canHear = playing && videoClockOffset != NOT_STARTED && lastLookupState != MediaStatus.BUFFERING;
-        if (!canHear || IWebTexture.distanceToCamera(center) > SPEAKER_RANGE) {
+        if (!canHear || IWebTexture.distanceToCamera(centerPos) > SPEAKER_RANGE) {
             stopSpeaker();
             return;
         }
+
+        double loopSeconds = session.getLoopSeconds();
+        double audioSeconds = getPlaybackSeconds(tvClock);
+        if (loopSeconds > 0) {
+            audioSeconds %= loopSeconds;
+        }
+
         SoundManager soundManager = Minecraft.getInstance().getSoundManager();
         if (speakerSound != null && soundManager.isActive(speakerSound)) {
-            speakerSound.moveTo(center);
-            if (Math.abs(videoClockOffset - audioClockOffset) < AUDIO_RESYNC_THRESHOLD) return;
+            speakerSound.moveTo(centerPos);
+            boolean isInSync = Math.abs(tvClock - audioClockOffset - audioSeconds) < AUDIO_RESYNC_THRESHOLD;
+            if (isInSync) return;
             stopSpeaker();
         }
-        var audioSource = session.getAudioSource();
-        if (audioSource.isEmpty()) return;
-        speakerSound = VistaClientPlatStuff.createTvSpeakerSound(audioSource, center, getPlaybackSeconds(tvClock));
-        audioClockOffset = videoClockOffset;
+
+
+        var track = session.getAudioTrack();
+        if (track.isEmpty()) return;
+        speakerSound = VistaClientPlatStuff.createTvSpeakerSound(track, centerPos, audioSeconds);
+        audioClockOffset = tvClock - audioSeconds;
         soundManager.play(speakerSound);
     }
 
@@ -128,9 +137,11 @@ public class FFmpegWebTexture extends DynamicTexture implements IWebTexture {
         Runnable upload = () -> {
             NativeImage oldPixels = this.pixels;
             this.pixels = newPixels;
+
             if (oldPixels == null) {
                 TextureUtil.prepareImage(this.getId(), newPixels.getWidth(), newPixels.getHeight());
             }
+
             this.upload();
             wasFirstUploaded = true;
         };

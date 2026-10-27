@@ -2,25 +2,34 @@ package net.mehvahdjukaar.vista.client.web.audio;
 
 import net.mehvahdjukaar.vista.VistaMod;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
+import net.minecraft.Util;
 import net.minecraft.client.resources.sounds.AbstractTickableSoundInstance;
 import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.client.sounds.AudioStream;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.phys.Vec3;
-import org.jetbrains.annotations.Nullable;
+import org.lwjgl.BufferUtils;
 
-public class TvSpeakerSoundInstance extends AbstractTickableSoundInstance {
+import javax.sound.sampled.AudioFormat;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.ShortBuffer;
 
-    private final PcmAudioSource source;
-    private final double startSeconds;
-    //lazy
-    @Nullable
-    private volatile PcmAudioStream stream;
+public class TvSpeakerSoundInstance extends AbstractTickableSoundInstance implements AudioStream {
 
-    protected TvSpeakerSoundInstance(PcmAudioSource source, Vec3 pos, double startSeconds) {
+    //sort of arbitrary
+    private static final double LOUD_RMS = 500;
+    //engine reads roughly a second at a time so this has to outlast one read
+    private static final long LOUD_HOLD_MILLIS = 3000;
+
+    private final FFmpegAudioTrack track;
+    private long cursor;
+    private volatile long lastLoudMillis = -LOUD_HOLD_MILLIS;
+
+    protected TvSpeakerSoundInstance(FFmpegAudioTrack track, Vec3 pos, double startSeconds) {
         super(VistaMod.TV_SPEAKER_SOUND.get(), SoundSource.BLOCKS, SoundInstance.createUnseededRandom());
-        this.source = source;
-        this.startSeconds = startSeconds;
+        this.track = track;
+        cursor = track.secondsToBytes(startSeconds);
         this.volume = ClientConfigs.AUDIO_VOLUME.get().floatValue();
         this.x = pos.x;
         this.y = pos.y;
@@ -35,6 +44,7 @@ public class TvSpeakerSoundInstance extends AbstractTickableSoundInstance {
 
     @Override
     public void tick() {
+        this.volume = ClientConfigs.AUDIO_VOLUME.get().floatValue();
     }
 
     @Override
@@ -42,14 +52,38 @@ public class TvSpeakerSoundInstance extends AbstractTickableSoundInstance {
         return true;
     }
 
-    public AudioStream openStream() {
-        PcmAudioStream opened = new PcmAudioStream(source, startSeconds);
-        this.stream = opened;
-        return opened;
+    public boolean isLoud() {
+        return Util.getMillis() - lastLoudMillis < LOUD_HOLD_MILLIS;
     }
 
-    public boolean isLoud() {
-        PcmAudioStream opened = this.stream;
-        return opened != null && opened.wasLoudRecently();
+    @Override
+    public AudioFormat getFormat() {
+        return track.getFormat();
+    }
+
+    @Override
+    public ByteBuffer read(int size) {
+        ByteBuffer buffer = BufferUtils.createByteBuffer(size);
+        cursor = track.readInto(cursor, buffer);
+        if (rootMeanSquared(buffer) > LOUD_RMS) {
+            lastLoudMillis = Util.getMillis();
+        }
+        return buffer;
+    }
+
+    private static double rootMeanSquared(ByteBuffer buffer) {
+        ShortBuffer samples = buffer.duplicate().order(ByteOrder.LITTLE_ENDIAN).asShortBuffer();
+        int count = samples.remaining();
+        if (count == 0) return 0;
+        double sum = 0;
+        for (int i = 0; i < count; i++) {
+            short s = samples.get(i);
+            sum += s * s;
+        }
+        return Math.sqrt(sum / count);
+    }
+
+    @Override
+    public void close() {
     }
 }

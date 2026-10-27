@@ -96,7 +96,9 @@ public class FFmpegMediaSession implements IMediaSession {
         NativeImage originalImg = frame.image();
         NativeImage scaledImg = ImageRescaler.resize(originalImg, targetWidth, targetHeight,
                 ClientConfigs.SCALING_MODE.get(), ClientConfigs.BILINEAR.get());
-        if (originalImg != scaledImg) originalImg.close();
+        if (originalImg != scaledImg) {
+            originalImg.close();
+        }
         frames.add(new MediaFrame(scaledImg, frame.pts()));
     }
 
@@ -130,8 +132,13 @@ public class FFmpegMediaSession implements IMediaSession {
         return audioOnly || size() > 0;
     }
 
-    public FFmpegAudioTrack getAudioSource() {
+    public FFmpegAudioTrack getAudioTrack() {
         return audio;
+    }
+
+    public synchronized double getLoopSeconds() {
+        if (audioOnly) return audio.getDurationSeconds();
+        return completed ? getDurationSecondsLocked() : 0;
     }
 
     public boolean isFailed() {
