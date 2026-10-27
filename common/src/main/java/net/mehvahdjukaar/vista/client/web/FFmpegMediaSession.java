@@ -33,29 +33,40 @@ public class FFmpegMediaSession implements IMediaSession {
     private volatile boolean failed;
     private volatile boolean retrying;
     private volatile MediaError error = MediaError.NONE;
-    private volatile boolean closed;
+    private volatile boolean isClosed;
     private volatile boolean audioOnly;
     private volatile int downloadProgress = -1;
+    private boolean holdsCachedFile;
 
+    private final URI uri;
+    private final MediaCacheManager cacheManager;
     private final int targetWidth;
     private final int targetHeight;
 
     public FFmpegMediaSession(URI uri, @Nullable FFmpeg ffmpeg, MediaCacheManager cacheManager,
                               Executor executor,
                               int targetWidth, int targetHeight) {
+        this.uri = uri;
+        this.cacheManager = cacheManager;
         this.targetWidth = targetWidth;
         this.targetHeight = targetHeight;
-        this.loadFuture = CompletableFuture.runAsync(() -> asyncThreadJob(uri, ffmpeg, cacheManager, executor), executor);
+        this.loadFuture = CompletableFuture.runAsync(() -> downloadAndDecode(uri, ffmpeg, cacheManager, executor), executor);
     }
 
-    private void asyncThreadJob(URI uri, @Nullable FFmpeg ffmpeg, MediaCacheManager cacheManager, Executor executor) {
+    private void downloadAndDecode(URI uri, @Nullable FFmpeg ffmpeg, Executor executor) {
         try {
             Path videoPath = cacheManager.getOrDownload(uri,
                     percent -> this.downloadProgress = percent,
                     (attempt, max, cause) -> this.retrying = true);
             this.retrying = false;
             this.downloadProgress = -1;
-            if (closed) return;
+            synchronized (this) {
+                if (isClosed) {
+                    cacheManager.release(uri);
+                    return;
+                }
+                holdsCachedFile = true;
+            }
 
             FFmpeg effectiveFfmpeg = ffmpeg;
             if (effectiveFfmpeg == null && VistaModClient.isFFmpegDownloading()) {
@@ -94,6 +105,10 @@ public class FFmpegMediaSession implements IMediaSession {
 
     public synchronized void add(MediaFrame frame) {
         NativeImage originalImg = frame.image();
+        if (isClosed) {
+            originalImg.close();
+            return;
+        }
         NativeImage scaledImg = ImageRescaler.resize(originalImg, targetWidth, targetHeight,
                 ClientConfigs.SCALING_MODE.get(), ClientConfigs.BILINEAR.get());
         if (originalImg != scaledImg) {
@@ -164,7 +179,7 @@ public class FFmpegMediaSession implements IMediaSession {
         synchronized (this) {
             if (audioOnly) {
                 if (failed) return MediaStatus.pair(MediaStatus.FAILED, null);
-                if (closed) return MediaStatus.pair(MediaStatus.CLOSED, null);
+                if (isClosed) return MediaStatus.pair(MediaStatus.CLOSED, null);
                 return MediaStatus.pair(MediaStatus.READY, null);
             }
             if (frames.isEmpty()) {
@@ -174,7 +189,7 @@ public class FFmpegMediaSession implements IMediaSession {
             MediaStatus state = MediaStatus.READY;
             if (isFailed()) {
                 state = MediaStatus.FAILED;
-            } else if (closed) {
+            } else if (isClosed) {
                 state = MediaStatus.CLOSED;
             }
 
@@ -212,12 +227,12 @@ public class FFmpegMediaSession implements IMediaSession {
     @Nullable
     private MediaFrame getFrameAtTimeLocked(double time) {
         if (frames.isEmpty()) return null;
-        int idx = Collections.binarySearch(frames, new MediaFrame(null, time),
+        int found = Collections.binarySearch(frames, new MediaFrame(null, time),
                 Comparator.comparingDouble(MediaFrame::pts));
-        if (idx >= 0) {
-            return frames.get(idx);
+        if (found >= 0) {
+            return frames.get(found);
         }
-        int insertionPoint = -idx - 1;
+        int insertionPoint = -found - 1;
         if (insertionPoint == 0) {
             return frames.getFirst();
         }
@@ -226,7 +241,11 @@ public class FFmpegMediaSession implements IMediaSession {
 
     @Override
     public synchronized void close() {
-        closed = true;
+        isClosed = true;
+        if (holdsCachedFile) {
+            cacheManager.release(uri);
+            holdsCachedFile = false;
+        }
         FFmpegMediaDecoder currentDecoder = decoder;
         if (currentDecoder != null) {
             currentDecoder.stopDecoder();
