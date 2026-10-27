@@ -25,7 +25,9 @@ public final class FFmpeg {
         String[] cmd = new String[args.length + 1];
         cmd[0] = bin.toString();
         System.arraycopy(args, 0, cmd, 1, args.length);
-        return new ProcessBuilder(cmd).start();
+        return new ProcessBuilder(cmd)
+                .redirectError(ProcessBuilder.Redirect.INHERIT)
+                .start();
     }
 
 }

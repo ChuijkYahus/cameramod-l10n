@@ -7,7 +7,7 @@ import java.util.Objects;
  * Valid only when one duration is an exact multiple of the other.
  */
 public class IntAnimationState {
-    // unmodifiable instance
+
     public static final IntAnimationState NO_ANIM = new IntAnimationState(1, 1) {
         @Override
         public void increment() {

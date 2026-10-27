@@ -10,6 +10,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.Item;
@@ -40,6 +41,7 @@ public class HollowCassetteItem extends Item implements  ITvCassette {
 
                 ItemStack stack = context.getItemInHand();
                 stack.set(VistaMod.LINKED_FEED_COMPONENT.get(), feed.getBroadcastUUID());
+                level.playSound(null, context.getClickedPos(), VistaMod.CASSETTE_LINK_SOUND.get(), SoundSource.PLAYERS, 1, 1);
             }
             return InteractionResult.sidedSuccess(level.isClientSide);
         }
