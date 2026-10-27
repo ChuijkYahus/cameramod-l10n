@@ -40,11 +40,8 @@ public class CompatHandler {
     private static boolean isWatermediaCompatible() {
         if (!PlatHelper.isModLoaded("watermedia")) return false;
         String version = PlatHelper.getModVersion("watermedia");
-        //only works with watermedia below 3
-        if (isVersionAtLeast3(version)) {
-            VistaMod.LOGGER.warn("Detected WaterMedia {} (3.0.0 or greater). Vista's WaterMedia compatibility is " +
-                    "incompatible with this version and has been disabled. Video and web textures will be unavailable. " +
-                    "Use WaterMedia below 3.0.0 to restore them.", version);
+        if (!isVersionAtLeast3(version)) {
+            VistaMod.LOGGER.warn("Detected WaterMedia {}. Vista needs WaterMedia 3.0.0 or newer, its compatibility has been disabled", version);
             return false;
         }
         return true;
@@ -63,7 +60,6 @@ public class CompatHandler {
         if (COMPUTER_CRAFT) CCCompat.init();
         PlatHelper.addCommonSetup(() -> {
             if (COMPUTER_CRAFT) CCCompat.setup();
-            if (PlatHelper.getPhysicalSide().isClient() && WATERMEDIA) WatermediaSession.initHack();
             setupPlat();
         });
     }

@@ -43,7 +43,7 @@ dependencies {
     modCompileOnly("maven.modrinth:iris:1.8.8+1.21.1-neoforge")
 
     modImplementation("curse.maven:geckolib-388172:7707149")
-    modCompileOnly("curse.maven:watermedia-869524:7072353")
+    modCompileOnly("maven.modrinth:watermedia:3.0.0.23")
 
     modImplementation("curse.maven:vampirism-become-a-vampire-233029:8105838")
     modImplementation("curse.maven:supernatural-610880:8275088")
@@ -56,6 +56,10 @@ dependencies {
 
     modImplementation("curse.maven:refurbished-furniture-897116:7473565")
     modImplementation("curse.maven:framework-549225:7462477")
+
+    modImplementation("curse.maven:lets-do-furniture-1062363:8932148")
+    modImplementation("curse.maven:architectury-api-419699:5553800")
+    modImplementation("curse.maven:cloth-config-348521:5729127")
 
     // henkelmax's Camera Mod: NeoForge only on 1.21.1, so the picture tape integration lives here.
     // It shadows corelib into its own package, so no extra dependency is needed.

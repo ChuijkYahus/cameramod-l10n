@@ -32,11 +32,12 @@ dependencies {
 
     modCompileOnly("curse.maven:supplementaries-412082:8044264")
             //modImplementation("net.mehvahdjukaar:supplementaries-fabric:${supplementaries_version}")
-    modCompileOnly("curse.maven:watermedia-869524:7072353")
+    modCompileOnly("maven.modrinth:watermedia:3.0.0.23")
 
     modCompileOnly("curse.maven:irisshaders-455508:6213635")
     modCompileOnly("curse.maven:exposure-871755:8223556")
     modImplementation("maven.modrinth:joy-of-painting:1.21.1-2.0.1")
+    modImplementation("maven.modrinth:freeze-frame:2.2-1.21")
     modCompileOnly("curse.maven:distant-horizons-508933:8908517")
     modCompileOnly("curse.maven:sodium-394468:8382327")
     modCompileOnly("curse.maven:cc-tweaked-282001:5714511")
@@ -48,6 +49,10 @@ dependencies {
 
     modCompileOnly("curse.maven:refurbished-furniture-897116:7473562")
     modCompileOnly("curse.maven:framework-549225:7462474")
+
+    modImplementation("curse.maven:lets-do-furniture-1062363:8932153")
+    modImplementation("curse.maven:architectury-api-419699:5786326")
+    modImplementation("curse.maven:cloth-config-348521:5623418")
 
     modCompileOnly("curse.maven:origins-391943:7365871")
 

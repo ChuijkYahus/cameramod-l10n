@@ -18,7 +18,6 @@ import net.mehvahdjukaar.vista.integration.CompatHandler;
 import net.mehvahdjukaar.vista.integration.watermedia.WatermediaSession;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.net.URI;
@@ -175,11 +174,11 @@ public class WebTexturesManager {
         }
     }
 
-    private static @NotNull WatermediaSession createWatermediaSession(URI uri, int width, int height) {
-        return new WatermediaSession(uri, SESSION_LOADER_EXECUTOR, width, height);
+    private static WatermediaSession createWatermediaSession(URI uri, int width, int height) {
+        return new WatermediaSession(uri, width, height);
     }
 
-    private static @NotNull FFmpegMediaSession createFFmpegSession(URI uri, int width, int height, FFmpeg fFmpeg) {
+    private static FFmpegMediaSession createFFmpegSession(URI uri, int width, int height, FFmpeg fFmpeg) {
         return new FFmpegMediaSession(uri, fFmpeg, MEDIA_CACHE_MANAGER, SESSION_LOADER_EXECUTOR, width, height);
     }
 

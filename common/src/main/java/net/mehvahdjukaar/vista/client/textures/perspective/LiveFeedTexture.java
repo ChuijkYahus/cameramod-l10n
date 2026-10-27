@@ -34,10 +34,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.Objects;
 import java.util.UUID;
 
-/**
- * Texture backing a camera feed on a TV or view finder. Owns its post chain and overlay state, plus
- * the AdaptiveUpdateScheduler shared by every feed to throttle refreshes.
- */
 public class LiveFeedTexture extends PerspectiveTexture {
 
     private static final PostShadersHelper.Group POSTERIZE_GROUP = new PostShadersHelper.Group(

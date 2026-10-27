@@ -154,7 +154,7 @@ public class ClientConfigs {
         builder.pop(); // picture_tape
 
         builder.icon("wave_gate").push("wave_gate");
-        VIDEO_ENGINE = CompatHandler.WATERMEDIA ? builder.worldReload().comment("Toggle between local FFmpeg driven video loading and WaterMedia (VLC) mod usage. Requires Watermedia mod. FFmpeg mode has improved visuals and functionality, and likely supports more media types. Watermedia on the other hand supports youtube links. The first mode uses both, prioritizing our local FFmpeg impl and falling back to watermedia on media player links.")
+        VIDEO_ENGINE = CompatHandler.WATERMEDIA ? builder.worldReload().comment("Toggle between local FFmpeg driven video loading and WaterMedia mod usage. Requires Watermedia 3 mod. FFmpeg mode has improved visuals and functionality, and likely supports more media types. Watermedia on the other hand supports youtube links. The first mode uses both, prioritizing our local FFmpeg impl and falling back to watermedia on media player links.")
                                                   .define("media_engine", EngineMode.TRY_FFMPEG_FIRST_THEN_VLC) : () -> EngineMode.TRY_FFMPEG_FIRST_THEN_VLC;
         ENABLE_FFMPEG = builder
                 .icon("wave_gate")

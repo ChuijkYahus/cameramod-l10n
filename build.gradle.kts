@@ -53,6 +53,7 @@ subprojects {
                 optional("simple-clouds")
                 optional("veil-lib")
                 optional("refurbished-furniture")
+                optional("lets-do-furniture")
                 optional("supernatural")
                 optional("jei")
 
@@ -86,6 +87,7 @@ subprojects {
                 optional("jei")
                 optional("flashback")
                 // Refurbished Furniture is CurseForge only
+                optional("lets-do-furniture")
 
                 if (modLoader == "neoforge") {
                     optional("oculus")
