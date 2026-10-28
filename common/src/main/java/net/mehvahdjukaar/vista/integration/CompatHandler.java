@@ -12,7 +12,6 @@ import net.mehvahdjukaar.vista.integration.flashback.FlashbackCompat;
 import net.mehvahdjukaar.vista.integration.iris.IrisCompat;
 import net.mehvahdjukaar.vista.integration.supplementaries.SuppCompat;
 import net.mehvahdjukaar.vista.integration.veil.VeilCompat;
-import net.mehvahdjukaar.vista.integration.watermedia.WatermediaSession;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -79,10 +78,6 @@ public class CompatHandler {
 
     public static void addConfigs(ConfigBuilder builder) {
         if (IRIS) IrisCompat.addConfigs(builder);
-    }
-
-    public static void onClientTick() {
-        if (WATERMEDIA) WatermediaSession.tickAll();
     }
 
     public static Runnable decorateRenderer(Runnable runTask) {

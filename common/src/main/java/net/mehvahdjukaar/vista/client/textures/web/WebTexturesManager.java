@@ -93,6 +93,12 @@ public class WebTexturesManager {
         return TEXTURE_CACHE.getIfPresent(new TextureKey(uri, tvPos, screenSize.x(), screenSize.y()));
     }
 
+    public static void tick() {
+        for (IWebTexture texture : TEXTURE_CACHE.asMap().values()) {
+            texture.tick();
+        }
+    }
+
     public static void clear() {
         TEXTURE_CACHE.invalidateAll();
         TEXTURE_CACHE.cleanUp();
@@ -129,7 +135,7 @@ public class WebTexturesManager {
     }
 
     private static WatermediaSession createWatermediaSession(URI uri, int width, int height) {
-        return WatermediaSession.acquire(uri, width, height);
+        return new WatermediaSession(uri, width, height);
     }
 
     private static FFmpegMediaSession createFFmpegSession(URI uri, int width, int height, FFmpeg ffmpeg) {

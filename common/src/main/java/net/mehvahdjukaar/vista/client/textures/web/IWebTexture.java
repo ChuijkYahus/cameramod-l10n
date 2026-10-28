@@ -33,6 +33,9 @@ public interface IWebTexture extends AutoCloseable {
 
     MediaStatus uploadFrameAtTime(int ticks, float deltaTime, boolean paused);
 
+    default void tick() {
+    }
+
     default void updateAudio(TVBlockEntity tv, boolean playing) {
     }
 

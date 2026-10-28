@@ -27,7 +27,6 @@ import net.mehvahdjukaar.vista.client.web.ffmpeg.FFmpegManager;
 import net.mehvahdjukaar.vista.common.chunk_tracking.ExtraChunkViewData;
 import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.mehvahdjukaar.vista.configs.CommonConfigs;
-import net.mehvahdjukaar.vista.integration.CompatHandler;
 import net.mehvahdjukaar.vista.network.ServerBoundWantsZoneChunksPacket;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
@@ -264,7 +263,7 @@ public class VistaModClient {
     }
 
     public static void onClientTick(Minecraft minecraft) {
-        CompatHandler.onClientTick();
+        WebTexturesManager.tick();
         if (minecraft.isPaused() || minecraft.level == null) return;
 
         Player p = minecraft.player;
