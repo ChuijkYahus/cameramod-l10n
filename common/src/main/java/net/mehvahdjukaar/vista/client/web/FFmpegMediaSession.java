@@ -103,7 +103,7 @@ public class FFmpegMediaSession implements IMediaSession {
         }
     }
 
-    public synchronized void add(MediaFrame frame) {
+    public synchronized void addFrame(MediaFrame frame) {
         NativeImage originalImg = frame.image();
         if (isClosed) {
             originalImg.close();
@@ -131,8 +131,8 @@ public class FFmpegMediaSession implements IMediaSession {
         return audioOnly;
     }
 
-    public synchronized void setCompleted(boolean completed) {
-        this.completed = completed;
+    public synchronized void markCompleted() {
+        this.completed = true;
     }
 
     public synchronized boolean isCompleted() {
@@ -248,7 +248,7 @@ public class FFmpegMediaSession implements IMediaSession {
         }
         FFmpegMediaDecoder currentDecoder = decoder;
         if (currentDecoder != null) {
-            currentDecoder.stopDecoder();
+            currentDecoder.stop();
         }
         audio.stopDecoding();
         for (MediaFrame frame : frames) {

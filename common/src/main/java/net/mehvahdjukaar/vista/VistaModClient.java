@@ -149,7 +149,7 @@ public class VistaModClient {
     }
 
     private static void useFFmpeg(FFmpeg ffmpeg) {
-        ffmpegFuture = logFailure(CompletableFuture.supplyAsync(() -> FFmpegManager.verified(ffmpeg)));
+        ffmpegFuture = logFailure(CompletableFuture.supplyAsync(() -> FFmpegManager.verifyValid(ffmpeg)));
     }
 
     private static CompletableFuture<FFmpeg> logFailure(CompletableFuture<FFmpeg> future) {

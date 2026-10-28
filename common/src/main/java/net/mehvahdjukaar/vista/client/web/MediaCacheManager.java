@@ -5,26 +5,23 @@ import net.mehvahdjukaar.vista.VistaMod;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
-import java.util.ArrayList;
-import java.util.HexFormat;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.*;
 
 public class MediaCacheManager {
     private static final String CACHE_SUBDIR = "vista_web_content_cache";
+    private static final String CACHED_FILE_EXT = ".video";
+    private static final String PARTIAL_FILE_EXT = ".part";
+
     private final Path cacheDir;
     private final long maxSizeBytes;
-    private final Map<String, CachedEntry> urlToEntry = new ConcurrentHashMap<>();
-    private final Map<Path, Integer> refCounts = new ConcurrentHashMap<>();
-    private final Map<Path, Long> lastAccess = new ConcurrentHashMap<>();
-    private final Map<String, CompletableFuture<Path>> pendingDownloads = new ConcurrentHashMap<>();
+    private final Map<String, CachedFile> filesByUrlHash = new HashMap<>();
     private final Object downloadLock = new Object();
 
     public MediaCacheManager(Path baseDir, long maxSizeBytes) {
@@ -39,160 +36,123 @@ public class MediaCacheManager {
         }
     }
 
-    public Path getOrDownload(URI uri) throws Exception {
-        return getOrDownload(uri, null, null);
-    }
-
-    public Path getOrDownload(URI uri, @Nullable FileDownloadUtils.ProgressCallback progressCallback) throws Exception {
-        return getOrDownload(uri, progressCallback, null);
-    }
-
     public Path getOrDownload(URI uri, @Nullable FileDownloadUtils.ProgressCallback progressCallback,
                               @Nullable FileDownloadUtils.RetryCallback retryCallback) throws Exception {
-        try {
-            String scheme = uri.getScheme();
-            boolean isLocalFileSoNoCaching = scheme == null || scheme.equalsIgnoreCase("file");
-            if (isLocalFileSoNoCaching) {
-                Path localPath = (scheme == null) ? Path.of(uri.toString()) : Path.of(uri);
-                if (!Files.exists(localPath)) {
-                    throw new IOException("Local media file does not exist: " + localPath);
-                }
-                VistaMod.LOGGER.info("Using local media file {} for URL {}", localPath, uri.toString());
-                return localPath;
+        Path localPath = asLocalFile(uri);
+        if (localPath != null) {
+            if (!Files.exists(localPath)) {
+                throw new IOException("Local media file does not exist: " + localPath);
             }
-        } catch (IllegalArgumentException ignored) {
+            VistaMod.LOGGER.info("Using local media file {} for URL {}", localPath, uri);
+            return localPath;
         }
 
         String key = hashUrl(uri.toString());
-        CachedEntry existing = urlToEntry.get(key);
-        if (existing != null && Files.exists(existing.path)) {
-            synchronized (this) {
-                refCounts.merge(existing.path, 1, Integer::sum);
-                touch(existing.path);
-            }
-            VistaMod.LOGGER.info("Cache HIT for {} -> {} (refCount={})", uri.toString(), existing.path, refCounts.get(existing.path));
-            return existing.path;
-        }
-
-        CompletableFuture<Path> future = pendingDownloads.get(key);
-        if (future != null && !future.isDone()) {
-            VistaMod.LOGGER.info("Waiting for ongoing download of {}", uri.toString());
-            return holdDownloaded(future.get());
+        Path cached = acquireIfCached(key);
+        if (cached != null) {
+            VistaMod.LOGGER.info("Cache HIT for {} -> {}", uri, cached);
+            return cached;
         }
 
         //one download at a time
         synchronized (downloadLock) {
             //might have finished while we waited
-            existing = urlToEntry.get(key);
-            if (existing != null && Files.exists(existing.path)) {
-                synchronized (this) {
-                    refCounts.merge(existing.path, 1, Integer::sum);
-                    touch(existing.path);
-                }
-                return existing.path;
-            }
-            future = pendingDownloads.get(key);
-            if (future != null && !future.isDone()) {
-                return holdDownloaded(future.get());
-            }
+            cached = acquireIfCached(key);
+            if (cached != null) return cached;
 
-            CompletableFuture<Path> downloadFuture = new CompletableFuture<>();
-            pendingDownloads.put(key, downloadFuture);
+            Path downloaded = downloadToCache(uri.toString(), key, progressCallback, retryCallback);
 
-            try {
-                Path cachedPath = downloadAndCache(uri.toString(), key, progressCallback, retryCallback);
-                downloadFuture.complete(cachedPath);
-                synchronized (this) {
-                    urlToEntry.put(key, new CachedEntry(cachedPath));
-                    refCounts.put(cachedPath, 1);
-                    touch(cachedPath);
-                    enforceQuota();
-                }
-                VistaMod.LOGGER.info("Download & cache completed for {} -> {}", uri.toString(), cachedPath);
-                return cachedPath;
-            } catch (Exception e) {
-                downloadFuture.completeExceptionally(e);
-                throw e;
-            } finally {
-                pendingDownloads.remove(key);
+            synchronized (this) {
+                CachedFile file = new CachedFile(downloaded, System.currentTimeMillis());
+                file.users = 1;
+                filesByUrlHash.put(key, file);
+                enforceQuota();
             }
+            VistaMod.LOGGER.info("Download & cache completed for {} -> {}", uri, downloaded);
+            return downloaded;
         }
     }
 
-    private synchronized Path holdDownloaded(Path path) {
-        refCounts.merge(path, 1, Integer::sum);
-        return path;
+    @Nullable
+    private static Path asLocalFile(URI uri) throws MalformedURLException {
+        String scheme = uri.getScheme();
+        try {
+            if (scheme == null) return Path.of(uri.toString());
+            if (scheme.equalsIgnoreCase("file")) return Path.of(uri);
+            return null;
+        } catch (IllegalArgumentException e) {
+            throw new MalformedURLException("Bad local media path: " + uri);
+        }
+    }
+
+    @Nullable
+    private synchronized Path acquireIfCached(String key) {
+        CachedFile file = filesByUrlHash.get(key);
+        if (file == null || !Files.exists(file.path)) return null;
+        file.users++;
+        file.lastAccess = System.currentTimeMillis();
+        return file.path;
     }
 
     public synchronized void release(URI uri) {
-        CachedEntry entry = urlToEntry.get(hashUrl(uri.toString()));
-        if (entry == null) return;
-        refCounts.computeIfPresent(entry.path, (p, count) -> Math.max(0, count - 1));
+        CachedFile file = filesByUrlHash.get(hashUrl(uri.toString()));
+        if (file != null && file.users > 0) file.users--;
     }
 
-    private Path downloadAndCache(String urlStr, String key, @Nullable FileDownloadUtils.ProgressCallback progressCallback,
-                                  @Nullable FileDownloadUtils.RetryCallback retryCallback) throws Exception {
-        Path cachedPath = cacheDir.resolve(key + ".video");
-        FileDownloadUtils.download(urlStr, cachedPath, "Mozilla/5.0", progressCallback, retryCallback);
-        return cachedPath;
+    private Path downloadToCache(String url, String key, @Nullable FileDownloadUtils.ProgressCallback progressCallback,
+                                 @Nullable FileDownloadUtils.RetryCallback retryCallback) throws Exception {
+        Path partial = cacheDir.resolve(key + PARTIAL_FILE_EXT);
+        Path target = cacheDir.resolve(key + CACHED_FILE_EXT);
+        FileDownloadUtils.download(url, partial, "Mozilla/5.0", progressCallback, retryCallback);
+        Files.move(partial, target, StandardCopyOption.REPLACE_EXISTING);
+        return target;
     }
 
     private void restoreFromDisk() throws IOException {
         try (var stream = Files.list(cacheDir)) {
-            List<Path> files = stream.toList();
-            for (Path p : files) {
-                if (Files.isRegularFile(p) && p.toString().endsWith(".video")) {
-                    String key = p.getFileName().toString().replace(".video", "");
-                    urlToEntry.put(key, new CachedEntry(p));
-                    refCounts.put(p, 0);
-                    lastAccess.put(p, Files.getLastModifiedTime(p).toMillis());
+            for (Path p : stream.toList()) {
+                if (!Files.isRegularFile(p)) continue;
+                String name = p.getFileName().toString();
+
+                if (name.endsWith(PARTIAL_FILE_EXT)) {
+                    Files.deleteIfExists(p);
+                } else if (name.endsWith(CACHED_FILE_EXT)) {
+                    String key = name.substring(0, name.length() - CACHED_FILE_EXT.length());
+                    filesByUrlHash.put(key, new CachedFile(p, Files.getLastModifiedTime(p).toMillis()));
                 }
             }
         }
-        VistaMod.LOGGER.info("Restored {} cached videos from disk", urlToEntry.size());
+        VistaMod.LOGGER.info("Restored {} cached videos from disk", this.filesByUrlHash.size());
         enforceQuota();
     }
 
     private void enforceQuota() {
         long total = 0;
-        for (Path p : refCounts.keySet()) {
+        for (CachedFile file : filesByUrlHash.values()) {
             try {
-                total += Files.size(p);
+                total += Files.size(file.path);
             } catch (IOException ignored) {
             }
         }
         if (total <= maxSizeBytes) return;
 
         VistaMod.LOGGER.info("Cache size {} MB exceeds limit {} MB. Evicting...", total / (1024 * 1024), maxSizeBytes / (1024 * 1024));
-        List<Map.Entry<Path, Long>> entries = new ArrayList<>(lastAccess.entrySet());
-        entries.sort(Map.Entry.comparingByValue());
-        for (var e : entries) {
-            Path p = e.getKey();
-            if (refCounts.getOrDefault(p, 0) == 0) {
-                try {
-                    long size = Files.size(p);
-                    Files.deleteIfExists(p);
-                    total -= size;
-                    String keyToRemove = null;
-                    for (var entry : urlToEntry.entrySet()) {
-                        if (entry.getValue().path.equals(p)) {
-                            keyToRemove = entry.getKey();
-                            break;
-                        }
-                    }
-                    if (keyToRemove != null) urlToEntry.remove(keyToRemove);
-                    refCounts.remove(p);
-                    lastAccess.remove(p);
-                    VistaMod.LOGGER.info("Evicted {} (size {} KB)", p, size / (1024));
-                    if (total <= maxSizeBytes) break;
-                } catch (IOException ignored) {
-                }
+        List<Map.Entry<String, CachedFile>> oldestFirst = new ArrayList<>(filesByUrlHash.entrySet());
+        oldestFirst.sort(Comparator.comparingLong(a -> a.getValue().lastAccess));
+        for (var e : oldestFirst) {
+            CachedFile file = e.getValue();
+            if (file.users > 0) continue;
+            try {
+                long size = Files.size(file.path);
+                Files.deleteIfExists(file.path);
+
+                total -= size;
+                filesByUrlHash.remove(e.getKey());
+                VistaMod.LOGGER.info("Evicted {} (size {} KB)", file.path, size / (1024));
+                if (total <= maxSizeBytes) break;
+            } catch (IOException ignored) {
             }
         }
-    }
-
-    private void touch(Path p) {
-        lastAccess.put(p, System.currentTimeMillis());
     }
 
     private String hashUrl(String url) {
@@ -204,6 +164,14 @@ public class MediaCacheManager {
         }
     }
 
-    private record CachedEntry(Path path) {
+    private static class CachedFile {
+        private final Path path;
+        private int users;
+        private long lastAccess;
+
+        private CachedFile(Path path, long lastAccess) {
+            this.path = path;
+            this.lastAccess = lastAccess;
+        }
     }
 }

@@ -1,8 +1,7 @@
 package net.mehvahdjukaar.vista.client.textures.web;
 
+import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.util.math.Vec2i;
@@ -17,16 +16,13 @@ import net.mehvahdjukaar.vista.configs.ClientConfigs;
 import net.mehvahdjukaar.vista.integration.CompatHandler;
 import net.mehvahdjukaar.vista.integration.watermedia.WatermediaSession;
 import net.minecraft.core.BlockPos;
-import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.Nullable;
 
 import java.net.URI;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
 public class WebTexturesManager {
@@ -43,7 +39,7 @@ public class WebTexturesManager {
     private static final MediaCacheManager MEDIA_CACHE_MANAGER = new MediaCacheManager(
             PlatHelper.getGamePath(), DEFAULT_CACHE_SIZE_BYTES);
 
-    private static final LoadingCache<String, IMediaSession> SESSION_CACHE = CacheBuilder.newBuilder()
+    private static final Cache<SessionKey, IMediaSession> SESSION_CACHE = CacheBuilder.newBuilder()
             .expireAfterAccess(CACHE_EXPIRY_MINUTES, TimeUnit.MINUTES)
             .removalListener(notification -> {
                 IMediaSession session = (IMediaSession) notification.getValue();
@@ -51,21 +47,13 @@ public class WebTexturesManager {
                     try {
                         session.close();
                     } catch (Exception e) {
-                        throw new RuntimeException(e);
+                        VistaMod.LOGGER.error("Failed to close media session", e);
                     }
                 }
             })
-            .build(new CacheLoader<>() {
-                @Override
-                public IMediaSession load(String key) {
-                    throw new IllegalStateException("not supported!");
-                }
-            });
+            .build();
 
-    private static final Map<URI, Set<String>> URL_TO_SESSIONS = new ConcurrentHashMap<>();
-    private static final Map<URI, Set<ResourceLocation>> URL_TO_TEXTURES = new ConcurrentHashMap<>();
-
-    private static final LoadingCache<ResourceLocation, IWebTexture> TEXTURE_CACHE = CacheBuilder.newBuilder()
+    private static final Cache<TextureKey, IWebTexture> TEXTURE_CACHE = CacheBuilder.newBuilder()
             .expireAfterAccess(CACHE_EXPIRY_MINUTES, TimeUnit.MINUTES)
             .removalListener(notification -> {
                 IWebTexture texture = (IWebTexture) notification.getValue();
@@ -73,41 +61,36 @@ public class WebTexturesManager {
                     RenderSystem.recordRenderCall(texture::unregister);
                 }
             })
-            .build(new CacheLoader<>() {
-                @Override
-                public IWebTexture load(ResourceLocation key) {
-                    throw new IllegalStateException("not supported!");
-                }
-            });
+            .build();
+
+    private static final AtomicInteger TEXTURE_ID_COUNTER = new AtomicInteger();
 
     //one texture per screen
     public static IWebTexture getTexture(URI uri, BlockPos tvPos, Vec2i screenSize) {
         IMediaSession session = SESSION_CACHE.asMap()
-                .computeIfAbsent(makeUniqueSessionLoc(uri, screenSize), sessionId -> {
-                    URL_TO_SESSIONS.computeIfAbsent(uri, k -> ConcurrentHashMap.newKeySet()).add(sessionId);
+                .computeIfAbsent(new SessionKey(uri, screenSize.x(), screenSize.y()), key -> {
                     int imageW = ClientConfigs.WEB_RESOLUTION_SCALE.get() * screenSize.x();
                     int imageH = ClientConfigs.WEB_RESOLUTION_SCALE.get() * screenSize.y();
                     return createMediaSession(uri, imageW, imageH);
                 });
 
-        ResourceLocation textureId = makeUniqueTextureLoc(uri, tvPos, screenSize);
+        TextureKey textureKey = new TextureKey(uri, tvPos.immutable(), screenSize.x(), screenSize.y());
         IWebTexture wt = TEXTURE_CACHE.asMap()
-                .computeIfAbsent(textureId, resourceLocation -> {
-                    URL_TO_TEXTURES.computeIfAbsent(uri, k -> ConcurrentHashMap.newKeySet()).add(resourceLocation);
-                    IWebTexture texture = session.createTextureView(resourceLocation);
+                .computeIfAbsent(textureKey, key -> {
+                    IWebTexture texture = session.createTextureView(VistaMod.res("web_feed/" + TEXTURE_ID_COUNTER.incrementAndGet()));
                     texture.register();
                     return texture;
                 });
         if (session.shouldRefreshTexture(wt)) {
-            TEXTURE_CACHE.invalidate(textureId);
+            TEXTURE_CACHE.invalidate(textureKey);
         }
         return wt;
     }
 
     @Nullable
     public static IWebTexture getTextureIfPresent(URI uri, BlockPos tvPos, Vec2i screenSize) {
-        SESSION_CACHE.getIfPresent(makeUniqueSessionLoc(uri, screenSize));
-        return TEXTURE_CACHE.getIfPresent(makeUniqueTextureLoc(uri, tvPos, screenSize));
+        SESSION_CACHE.getIfPresent(new SessionKey(uri, screenSize.x(), screenSize.y())); //keeps session from expiring
+        return TEXTURE_CACHE.getIfPresent(new TextureKey(uri, tvPos, screenSize.x(), screenSize.y()));
     }
 
     public static void clear() {
@@ -116,61 +99,32 @@ public class WebTexturesManager {
 
         SESSION_CACHE.invalidateAll();
         SESSION_CACHE.cleanUp();
-
-        URL_TO_SESSIONS.clear();
-        URL_TO_TEXTURES.clear();
     }
 
     public static void invalidateUrl(String url) {
         URI uri = WebUrlVideoSource.createUri(url);
         if (uri == null) return;
-        Set<String> sessionKeys = URL_TO_SESSIONS.remove(uri);
-        if (sessionKeys != null) {
-            for (String key : sessionKeys) {
-                SESSION_CACHE.invalidate(key);
-            }
-        }
+        SESSION_CACHE.asMap().keySet().removeIf(k -> k.uri().equals(uri));
         SESSION_CACHE.cleanUp();
 
-        Set<ResourceLocation> textureKeys = URL_TO_TEXTURES.remove(uri);
-        if (textureKeys != null) {
-            for (ResourceLocation key : textureKeys) {
-                TEXTURE_CACHE.invalidate(key);
-            }
-        }
+        TEXTURE_CACHE.asMap().keySet().removeIf(k -> k.uri().equals(uri));
         TEXTURE_CACHE.cleanUp();
     }
 
-    private static String makeUniqueSessionLoc(URI url, Vec2i screenSize) {
-        return url.toString() + "@" + screenSize.x() + "x" + screenSize.y();
-    }
-
-    private static ResourceLocation makeUniqueTextureLoc(URI url, BlockPos tvPos, Vec2i screenSize) {
-        String uniqueTextureKey = url.toString() + "@" + tvPos.getX() + "_" + tvPos.getY() + "_" + tvPos.getZ() + "@" + screenSize.x() + "x" + screenSize.y();
-        return VistaMod.res("web_feed/" + sanitizePath(uniqueTextureKey));
-    }
-
-    private static String sanitizePath(String key) {
-        String sanitized = key.toLowerCase().replaceAll("[^a-z0-9/._-]", "_");
-
-        return sanitized.isBlank() ? "unnamed" : sanitized;
-    }
-
-
     public static IMediaSession createMediaSession(URI url, int width, int height) {
         ClientConfigs.EngineMode engine = ClientConfigs.VIDEO_ENGINE.get();
-        FFmpeg fFmpeg = VistaModClient.getFFmpeg();
+        FFmpeg ffmpeg = VistaModClient.getFFmpeg();
         if (CompatHandler.WATERMEDIA && engine != ClientConfigs.EngineMode.USE_FFMPEG) {
-            if (engine == ClientConfigs.EngineMode.USE_VLC || !looksLikeMedia(url)) {
+            if (engine == ClientConfigs.EngineMode.USE_VLC || !hasFileExtension(url)) {
                 return createWatermediaSession(url, width, height);
             } else {
                 return new AlternativeSession(
-                        () -> createFFmpegSession(url, width, height, fFmpeg),
+                        () -> createFFmpegSession(url, width, height, ffmpeg),
                         () -> createWatermediaSession(url, width, height)
                 );
             }
         } else {
-            return createFFmpegSession(url, width, height, fFmpeg);
+            return createFFmpegSession(url, width, height, ffmpeg);
         }
     }
 
@@ -178,13 +132,19 @@ public class WebTexturesManager {
         return WatermediaSession.acquire(uri, width, height);
     }
 
-    private static FFmpegMediaSession createFFmpegSession(URI uri, int width, int height, FFmpeg fFmpeg) {
-        return new FFmpegMediaSession(uri, fFmpeg, MEDIA_CACHE_MANAGER, SESSION_LOADER_EXECUTOR, width, height);
+    private static FFmpegMediaSession createFFmpegSession(URI uri, int width, int height, FFmpeg ffmpeg) {
+        return new FFmpegMediaSession(uri, ffmpeg, MEDIA_CACHE_MANAGER, SESSION_LOADER_EXECUTOR, width, height);
     }
 
-    private static final Pattern MEDIA_EXT = Pattern.compile("\\.[a-zA-Z0-9]+(?:\\?.*)?$");
+    private static final Pattern FILE_EXTENSION = Pattern.compile("\\.[a-zA-Z0-9]+(?:\\?.*)?$");
 
-    public static boolean looksLikeMedia(URI url) {
-        return MEDIA_EXT.matcher(url.toString()).find();
+    public static boolean hasFileExtension(URI url) {
+        return FILE_EXTENSION.matcher(url.toString()).find();
+    }
+
+    private record SessionKey(URI uri, int width, int height) {
+    }
+
+    private record TextureKey(URI uri, BlockPos tvPos, int width, int height) {
     }
 }

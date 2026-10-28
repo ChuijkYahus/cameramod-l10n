@@ -22,14 +22,14 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class WatermediaSession implements IMediaSession {
 
-    private static final Map<URI, WatermediaSession> OPEN = new ConcurrentHashMap<>();
+    private static final Map<URI, WatermediaSession> SESSIONS_BY_URI = new ConcurrentHashMap<>();
     private static final int UNSEEN_PAUSE_TICKS = 20;
 
     private final URI uri;
     private final MRL mrl;
     private int targetWidth;
     private int targetHeight;
-    private volatile int users;
+    private volatile int refCount;
 
     //one player for every screen showing this url
     @Nullable
@@ -50,8 +50,8 @@ public class WatermediaSession implements IMediaSession {
     }
 
     public static synchronized WatermediaSession acquire(URI uri, int width, int height) {
-        WatermediaSession session = OPEN.computeIfAbsent(uri, WatermediaSession::new);
-        session.users++;
+        WatermediaSession session = SESSIONS_BY_URI.computeIfAbsent(uri, WatermediaSession::new);
+        session.refCount++;
         if (width > session.targetWidth || height > session.targetHeight) {
             session.targetWidth = Math.max(width, session.targetWidth);
             session.targetHeight = Math.max(height, session.targetHeight);
@@ -60,8 +60,10 @@ public class WatermediaSession implements IMediaSession {
         return session;
     }
 
-    public static void onClientTick() {
-        for (WatermediaSession session : OPEN.values()) session.applyRequests();
+    public static void tickAll() {
+        for (WatermediaSession session : SESSIONS_BY_URI.values()) {
+            session.tick();
+        }
     }
 
     @Override
@@ -91,7 +93,7 @@ public class WatermediaSession implements IMediaSession {
         return mediaPlayer;
     }
 
-    public void requestPlayback(boolean paused) {
+    public void onFrameDrawn(boolean paused) {
         framesDrawn++;
         if (paused) framesPaused++;
     }
@@ -109,7 +111,7 @@ public class WatermediaSession implements IMediaSession {
         return speakerOn;
     }
 
-    private void applyRequests() {
+    private void tick() {
         ticksUnseen = framesDrawn > 0 ? 0 : ticksUnseen + 1;
         if (mediaPlayer != null) {
             //tick without frames is normal at low fps, only stop once its been gone a while
@@ -164,15 +166,15 @@ public class WatermediaSession implements IMediaSession {
     }
 
     public boolean isClosed() {
-        return users <= 0;
+        return refCount <= 0;
     }
 
     // last one to close frees player
     @Override
     public void close() {
         synchronized (WatermediaSession.class) {
-            if (--users > 0) return;
-            OPEN.remove(uri, this);
+            if (--refCount > 0) return;
+            SESSIONS_BY_URI.remove(uri, this);
         }
         if (mediaPlayer != null) {
             mediaPlayer.release();

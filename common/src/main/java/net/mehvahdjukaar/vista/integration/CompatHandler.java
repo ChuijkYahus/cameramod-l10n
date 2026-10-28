@@ -82,7 +82,7 @@ public class CompatHandler {
     }
 
     public static void onClientTick() {
-        if (WATERMEDIA) WatermediaSession.onClientTick();
+        if (WATERMEDIA) WatermediaSession.tickAll();
     }
 
     public static Runnable decorateRenderer(Runnable runTask) {

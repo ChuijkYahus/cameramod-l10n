@@ -32,30 +32,30 @@ public class FFmpegManager {
     //bump every major change
     private static final int SOURCES_CONFIG_VERSION = 3;
 
-    private static final Path PROGRAM_FOLDER = Paths.get("vista_ffmpeg_bin");
-    private static final Path STAGING_FOLDER = PROGRAM_FOLDER.resolve("staging");
+    private static final Path BIN_FOLDER = Paths.get("vista_ffmpeg_bin");
+    private static final Path STAGING_FOLDER = BIN_FOLDER.resolve("staging");
     private static final OsType OS_TYPE = OsType.current();
     private static final String FFMPEG_FILE_NAME = OS_TYPE.executableName("ffmpeg");
     private static final String FFPROBE_FILE_NAME = OS_TYPE.executableName("ffprobe");
-    private static final Path FFMPEG_PATH = PROGRAM_FOLDER.resolve(FFMPEG_FILE_NAME);
-    private static final Path FFPROBE_PATH = PROGRAM_FOLDER.resolve(FFPROBE_FILE_NAME);
+    private static final Path FFMPEG_PATH = BIN_FOLDER.resolve(FFMPEG_FILE_NAME);
+    private static final Path FFPROBE_PATH = BIN_FOLDER.resolve(FFPROBE_FILE_NAME);
 
     private static final long VERSION_CHECK_TIMEOUT_SECONDS = 20;
 
     private static volatile int downloadProgress = -1;
 
     public static CompletableFuture<FFmpeg> getOrDownload(@Nullable String customUrl) {
-        return CompletableFuture.supplyAsync(() -> initialize(customUrl));
+        return CompletableFuture.supplyAsync(() -> setup(customUrl));
     }
 
     public static int getDownloadProgress() {
         return downloadProgress;
     }
 
-    private static FFmpeg initialize(@Nullable String customUrl) {
+    private static FFmpeg setup(@Nullable String customUrl) {
         FFmpeg ffmpeg;
         try {
-            Files.createDirectories(PROGRAM_FOLDER);
+            Files.createDirectories(BIN_FOLDER);
             ffmpeg = findOrDownload(customUrl);
         } catch (Exception e) {
             throw new RuntimeException("FFmpeg setup failed. Aborting.", e);
@@ -63,7 +63,7 @@ public class FFmpegManager {
             downloadProgress = -1;
         }
         try {
-            return verified(ffmpeg);
+            return verifyValid(ffmpeg);
         } catch (BrokenBinaryException e) {
             FFMPEG_PATH.toFile().delete();
             FFPROBE_PATH.toFile().delete();
@@ -85,13 +85,13 @@ public class FFmpegManager {
     }
 
     // catches wrong cpu builds and broken downloads early
-    public static FFmpeg verified(FFmpeg ffmpeg) {
-        checkIfCanRun("ffmpeg", ffmpeg::runFFmpeg);
-        checkIfCanRun("ffprobe", ffmpeg::runFFprobe);
+    public static FFmpeg verifyValid(FFmpeg ffmpeg) {
+        checkIfCanStart("ffmpeg", ffmpeg::runFFmpeg);
+        checkIfCanStart("ffprobe", ffmpeg::runFFprobe);
         return ffmpeg;
     }
 
-    private static void checkIfCanRun(String name, ProcessLauncher launcher) {
+    private static void checkIfCanStart(String name, ProcessLauncher launcher) {
         Process process;
         try {
             process = launcher.launch("-version");

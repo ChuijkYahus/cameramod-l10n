@@ -61,7 +61,7 @@ public class WatermediaTexture extends AbstractTexture implements IWebTexture {
 
     @Override
     public MediaStatus uploadFrameAtTime(int ticks, float deltaTime, boolean paused) {
-        session.requestPlayback(paused);
+        session.onFrameDrawn(paused);
         MediaPlayer player = session.getOrCreatePlayer();
         if (player == null) return session.isFailed() ? MediaStatus.FAILED : MediaStatus.LOADING;
         if (player.texture() == MediaPlayer.NO_TEXTURE && !session.isAudioOnly()) return MediaStatus.LOADING;
