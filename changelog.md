@@ -1,1 +1,3 @@
-- fixed a bug with spectral arrows
+- updated to watermedia 3
+- still quite experimental, video playback might have issues
+- hollow cassettes play a sound

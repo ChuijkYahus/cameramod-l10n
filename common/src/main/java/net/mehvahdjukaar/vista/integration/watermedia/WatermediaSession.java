@@ -17,16 +17,19 @@ import org.watermedia.api.media.players.MediaPlayer;
 import org.watermedia.api.util.MediaType;
 
 import java.net.URI;
-import java.util.Set;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class WatermediaSession implements IMediaSession {
 
-    private static final Set<WatermediaSession> OPEN = ConcurrentHashMap.newKeySet();
+    private static final Map<URI, WatermediaSession> OPEN = new ConcurrentHashMap<>();
+    private static final int UNSEEN_PAUSE_TICKS = 20;
 
+    private final URI uri;
     private final MRL mrl;
-    private final int targetWidth;
-    private final int targetHeight;
+    private int targetWidth;
+    private int targetHeight;
+    private volatile int users;
 
     //one player for every screen showing this url
     @Nullable
@@ -34,21 +37,31 @@ public class WatermediaSession implements IMediaSession {
     private boolean isFailed;
     private int framesDrawn;
     private int framesPaused;
+    private int ticksUnseen;
 
     @Nullable
     private Vec3 closestSpeakerPos;
     private double closestSpeakerDistance = Double.MAX_VALUE;
     private boolean speakerOn;
 
-    public WatermediaSession(URI uri, int targetWidth, int targetHeight) {
+    private WatermediaSession(URI uri) {
+        this.uri = uri;
         this.mrl = MediaAPI.mrl(uri);
-        this.targetWidth = targetWidth;
-        this.targetHeight = targetHeight;
-        OPEN.add(this);
+    }
+
+    public static synchronized WatermediaSession acquire(URI uri, int width, int height) {
+        WatermediaSession session = OPEN.computeIfAbsent(uri, WatermediaSession::new);
+        session.users++;
+        if (width > session.targetWidth || height > session.targetHeight) {
+            session.targetWidth = Math.max(width, session.targetWidth);
+            session.targetHeight = Math.max(height, session.targetHeight);
+            if (session.mediaPlayer != null) session.mediaPlayer.maxSize(session.targetWidth, session.targetHeight);
+        }
+        return session;
     }
 
     public static void onClientTick() {
-        for (WatermediaSession session : OPEN) session.applyRequests();
+        for (WatermediaSession session : OPEN.values()) session.applyRequests();
     }
 
     @Override
@@ -97,9 +110,12 @@ public class WatermediaSession implements IMediaSession {
     }
 
     private void applyRequests() {
+        ticksUnseen = framesDrawn > 0 ? 0 : ticksUnseen + 1;
         if (mediaPlayer != null) {
-            if (framesDrawn > 0) {
-                boolean paused = framesPaused == framesDrawn || Minecraft.getInstance().isPaused();
+            //tick without frames is normal at low fps, only stop once its been gone a while
+            boolean unseen = ticksUnseen > UNSEEN_PAUSE_TICKS;
+            if (framesDrawn > 0 || unseen) {
+                boolean paused = unseen || framesPaused == framesDrawn || Minecraft.getInstance().isPaused();
                 if (mediaPlayer.paused() != paused) mediaPlayer.pause(paused);
             }
             updateSpeaker(mediaPlayer);
@@ -148,12 +164,16 @@ public class WatermediaSession implements IMediaSession {
     }
 
     public boolean isClosed() {
-        return !OPEN.contains(this);
+        return users <= 0;
     }
 
+    // last one to close frees player
     @Override
     public void close() {
-        OPEN.remove(this);
+        synchronized (WatermediaSession.class) {
+            if (--users > 0) return;
+            OPEN.remove(uri, this);
+        }
         if (mediaPlayer != null) {
             mediaPlayer.release();
             mediaPlayer = null;

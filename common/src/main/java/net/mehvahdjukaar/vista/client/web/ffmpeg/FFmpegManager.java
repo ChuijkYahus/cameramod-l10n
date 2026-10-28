@@ -24,11 +24,12 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
-public final class FFmpegManager {
+public class FFmpegManager {
 
     private static final Path SOURCES_CONFIG_PATH = Paths.get("vista_ffmpeg_sources.json");
     private static final String SOURCES_RESOURCE_PATH = "/vista_ffmpeg_sources.json";
-    // Bump when the bundled sources file changes in a way that must reach users who already have one on disk.
+
+    //bump every major change
     private static final int SOURCES_CONFIG_VERSION = 3;
 
     private static final Path PROGRAM_FOLDER = Paths.get("vista_ffmpeg_bin");
@@ -83,15 +84,14 @@ public final class FFmpegManager {
         return new FFmpeg(FFMPEG_PATH, FFPROBE_PATH);
     }
 
-    // Runs both binaries once so a wrong-CPU build or a truncated archive fails here with a clear
-    // message instead of much later as a decode error.
+    // catches wrong cpu builds and broken downloads early
     public static FFmpeg verified(FFmpeg ffmpeg) {
-        checkRuns("ffmpeg", ffmpeg::runFFmpeg);
-        checkRuns("ffprobe", ffmpeg::runFFprobe);
+        checkIfCanRun("ffmpeg", ffmpeg::runFFmpeg);
+        checkIfCanRun("ffprobe", ffmpeg::runFFprobe);
         return ffmpeg;
     }
 
-    private static void checkRuns(String name, ProcessLauncher launcher) {
+    private static void checkIfCanRun(String name, ProcessLauncher launcher) {
         Process process;
         try {
             process = launcher.launch("-version");
@@ -202,7 +202,6 @@ public final class FFmpegManager {
     private static void ensureSourcesConfigUpToDate() throws IOException {
         if (Files.exists(SOURCES_CONFIG_PATH)) {
             if (readSourcesConfigVersion() >= SOURCES_CONFIG_VERSION) return;
-            // Old file has sources we know to be broken. Keep the user's copy around, but stop using it.
             Path backup = SOURCES_CONFIG_PATH.resolveSibling(SOURCES_CONFIG_PATH.getFileName() + ".old");
             Files.move(SOURCES_CONFIG_PATH, backup, StandardCopyOption.REPLACE_EXISTING);
             VistaMod.LOGGER.info("Replaced outdated {} with the current defaults. Old file kept as {}",

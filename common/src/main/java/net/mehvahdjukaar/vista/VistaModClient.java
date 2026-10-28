@@ -160,17 +160,15 @@ public class VistaModClient {
         });
     }
 
-    private static boolean tryReadyWithoutDownload() {
+    private static void tryReadyWithoutDownload() {
         if (FFmpegManager.hasManagedBinaries()) {
             instantiateFFmpeg(null);
-            return true;
+            return;
         }
         FFmpeg system = FFmpegManager.detectSystemFFmpeg();
         if (system != null) {
             useFFmpeg(system);
-            return true;
         }
-        return false;
     }
 
     private static ModelLayerLocation loc(String name) {

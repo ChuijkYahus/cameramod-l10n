@@ -43,12 +43,13 @@ dependencies {
     modCompileOnly("maven.modrinth:iris:1.8.8+1.21.1-neoforge")
 
     modImplementation("curse.maven:geckolib-388172:7707149")
-    modCompileOnly("maven.modrinth:watermedia:3.0.0.23")
+    modImplementation("maven.modrinth:watermedia:3.0.0.23")
+    modRuntimeOnly("maven.modrinth:watermedia-binaries:3.0.0.6")
 
     modImplementation("curse.maven:vampirism-become-a-vampire-233029:8105838")
     modImplementation("curse.maven:supernatural-610880:8275088")
     modImplementation("curse.maven:origins-neoforge-1375372:8179055")
-    modImplementation("curse.maven:jupiter-1072905:7738312") // required by Origins (NeoForge)
+    modImplementation("curse.maven:jupiter-1072905:7738312") // required by Origins
 
     //  modImplementation("cc.tweaked:cc-tweaked-1.21.1-forge:1.117.0")
     modCompileOnly("curse.maven:quark-243121:7640331")
@@ -57,28 +58,22 @@ dependencies {
     modImplementation("curse.maven:refurbished-furniture-897116:7473565")
     modImplementation("curse.maven:framework-549225:7462477")
 
-    modImplementation("curse.maven:lets-do-furniture-1062363:8932148")
-    modImplementation("curse.maven:architectury-api-419699:5553800")
+    modImplementation("curse.maven:lets-do-furniture-1062363:9203784")
+    modImplementation("curse.maven:architectury-api-419699:8492726")
     modImplementation("curse.maven:cloth-config-348521:5729127")
 
-    // henkelmax's Camera Mod: NeoForge only on 1.21.1, so the picture tape integration lives here.
-    // It shadows corelib into its own package, so no extra dependency is needed.
     modImplementation("curse.maven:camera-mod-289310:6715623")
 
     modImplementation("foundry.veil:veil-neoforge-1.21.1:4.4.1")
     modImplementation("curse.maven:fsable-1312371:8673825")
 
-    // Light-beam mods to check against sublevel view finder feeds: one of them makes chunks seen
-    // through a view finder on a sublevel render entities and block entities but no terrain.
-    modImplementation("curse.maven:spotlights-or-something-1565038:8429512") // searchlights 1.3.1, Veil cone spotlights
+    modImplementation("curse.maven:spotlights-or-something-1565038:8429512")
     modImplementation("curse.maven:headlight-1190219:6282140") // 2.0.1
-    // Needs Create + Architectury at runtime, and Create is compileOnly here, so this one stays off
-    // the dev runtime until Create's runtime stack (flywheel/ponder/registrate) is declared too.
     modCompileOnly("curse.maven:create-train-lights-1318080:7761822") // v1.1.1
     modImplementation("maven.modrinth:flare-guns:1.0.0")
-    // Create contraption view-finder integration (platform impl: CreatePlatStuffImpl)
     modCompileOnly("curse.maven:create-328085:7963363")
-    modCompileOnly("curse.maven:create-aeronautics-676721:8240058") // 1.3.0, the newest 1.21.1 build
+    modCompileOnly("curse.maven:create-aeronautics-676721:8240058")
+
     api("dev.ryanhcode.sable-companion:sable-companion-common-1.21.1:[${sable_companion_version},)")
     jarJar("dev.ryanhcode.sable-companion:sable-companion-common-1.21.1:[${sable_companion_version},)")
 

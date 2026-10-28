@@ -27,7 +27,6 @@ public final class GazeRedirect {
 
     public static final double MAX_DISTANCE = 64.0;
     public static final int MAX_BOUNCES = 2;
-    private static final double EPSILON = 1.0e-3;
     private static final double LENS_EXIT_OFFSET = 0.8;
 
     public record Ray(Vec3 origin, Vec3 dir, @Nullable TVBlockEntity fromTv) {
@@ -135,7 +134,7 @@ public final class GazeRedirect {
 
             Vec3 normal = Vec3.atLowerCornerOf(facing.getNormal());
             Vec3 reflectedDir = dir.subtract(normal.scale(2 * dir.dot(normal))).normalize();
-            return new Ray(hit.getLocation().add(reflectedDir.scale(EPSILON)), reflectedDir, null);
+            return new Ray(hit.getLocation().add(reflectedDir.scale(1.0e-3)), reflectedDir, null);
         }
         if (state.getBlock() instanceof TVBlock tvBlock) {
             if (hit.getDirection() != state.getValue(TVBlock.FACING)) return null;
@@ -153,7 +152,8 @@ public final class GazeRedirect {
                 instanceof ViewFinderBlockEntity camera)) {
             return null;
         }
-        Vec2 uv = tv.getScreenRect().projectLocal(screenHit);
+
+        Vec2 uv = tv.getScreenRect().projectToLocal(screenHit);
         if (uv == null) return null;
 
         Vec3 dir = camera.getPixelRayDirection(uv.x, uv.y);

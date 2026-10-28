@@ -3,7 +3,6 @@ plugins {
 }
 
 common {
-    //pinned so the build doesn't need to hit maven.neoforged.net to list versions
     neoformVersion = "1.21.1-20240808.144430"
     accessWidener()
 }
@@ -41,10 +40,8 @@ dependencies {
     modCompileOnly("maven.modrinth:jade:15.10.5+neoforge")
     //modCompileOnly("curse.maven:irisshaders-455508:6213635")
     modCompileOnly("curse.maven:sodium-394468:6382651")
-    //due to geckolib state machine nonsense
     modCompileOnly("curse.maven:geckolib-388172:7707149")
 
-    // Refurbished Furniture electricity system (TVs can be wired into it). Framework is its hard dep.
     modCompileOnly("curse.maven:refurbished-furniture-897116:7473565")
     modCompileOnly("curse.maven:framework-549225:7462477")
 
@@ -53,13 +50,9 @@ dependencies {
 
     modCompileOnly("foundry.veil:veil-neoforge-1.21.1:4.4.1")
 
-    // issue #184: flare entities + mirrors render wrong with veil
     modImplementation("maven.modrinth:flare-guns:1.0.0")
 
-    // disables its global cloud renderer during nested TV/mirror feed renders (CompatSimpleCloudsMixin)
     modCompileOnly("curse.maven:simple-clouds-1121215:6928979")
 
-    // Create integration is common but Create-free (delegates to CreatePlatStuff); the platform impls hold
-    // the actual Create references, so the dependency lives in :neoforge and :fabric.
 
 }

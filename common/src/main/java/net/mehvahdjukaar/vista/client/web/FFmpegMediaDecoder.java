@@ -11,150 +11,90 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class FFmpegMediaDecoder {
+    private static final double FALLBACK_FPS = 20;
+    private static final int BYTES_PER_PIXEL = 3;
 
     private final FFmpeg ffmpeg;
-    private final FFmpegMediaSession buffer;
+    private final FFmpegMediaSession session;
     private final Path videoPath;
     private volatile boolean running = true;
-    private volatile boolean paused = false;
-    private volatile double seekToSeconds = -1.0; // -1 means no seek requested
+    @Nullable
+    private volatile Process ffmpegProcess;
 
-
-    public FFmpegMediaDecoder(FFmpeg ffmpeg, FFmpegMediaSession buffer, Path videoPath) {
+    public FFmpegMediaDecoder(FFmpeg ffmpeg, FFmpegMediaSession session, Path videoPath) {
         this.ffmpeg = ffmpeg;
-        this.buffer = buffer;
+        this.session = session;
         this.videoPath = videoPath;
-    }
-
-    public void pause() {
-        paused = true;
-        VistaMod.LOGGER.info("Paused");
-    }
-
-    /**
-     * Resume decoding.
-     */
-    public void resumePlay() {
-        paused = false;
-        synchronized (this) {
-            notifyAll(); // wake up waiting thread
-        }
-        VistaMod.LOGGER.info("Resumed");
-    }
-
-    public void seek(double seconds) {
-        this.seekToSeconds = seconds;
-        VistaMod.LOGGER.info("Seek requested to {}s", seconds);
     }
 
     public void stopDecoder() {
         running = false;
-        resumePlay(); // wake up if paused
-        VistaMod.LOGGER.info("Stopping decoder");
+        Process p = ffmpegProcess;
+        if (p != null) p.destroyForcibly();
     }
 
     public void run() {
-        while (running) {
-            Process ffmpegProcess = null;
-            try {
-                int[] size = probeVideoSize(videoPath.toString());
-                if (size == null) {
-                    if (!hasAudioStream(videoPath.toString())) {
-                        VistaMod.LOGGER.warn("No video or audio stream in {}, not playable media", videoPath);
-                        buffer.setFailed(MediaError.BAD_LINK);
-                        return;
-                    }
-                    VistaMod.LOGGER.info("No video stream in {}, playing audio only", videoPath);
-                    buffer.setAudioOnly();
+        try {
+            int[] size = probeVideoSize(videoPath.toString());
+            if (size == null) {
+                if (!hasAudioStream(videoPath.toString())) {
+                    VistaMod.LOGGER.warn("No video or audio stream in {}, not playable media", videoPath);
+                    session.setFailed(MediaError.BAD_LINK);
                     return;
                 }
-                int width = size[0], height = size[1];
-                int frameSize = width * height * 3;
-                double framerate = probeFrameRate(videoPath.toString());
-                if (!Double.isFinite(framerate) || framerate <= 0) {
-                    VistaMod.LOGGER.warn("Invalid probed framerate {}, defaulting to 20 fps", framerate);
-                    framerate = 20.0;
-                }
-                int totalFrames = probeTotalFrames(videoPath.toString()); // may be -1
-                VistaMod.LOGGER.info("Video: {}x{}, {} fps, {} frames", width, height, framerate, totalFrames);
-
-                // Build FFmpeg command, with seek if requested
-                String[] cmd = buildFFmpegCommand(seekToSeconds);
-                ffmpegProcess = ffmpeg.runFFmpeg(cmd);
-                if (seekToSeconds >= 0) {
-                    VistaMod.LOGGER.info("Seeked to {}s, restarting FFmpeg", seekToSeconds);
-                    seekToSeconds = -1.0; // reset
-                }
-
-                int frameCount = 0;
-                try (InputStream in = new BufferedInputStream(ffmpegProcess.getInputStream(), 1024 * 1024)) {
-                    while (running && !Thread.interrupted()) {
-                        // Pause handling
-                        synchronized (this) {
-                            while (paused && running) {
-                                VistaMod.LOGGER.info("Decoder waiting (paused)");
-                                wait();
-                            }
-                        }
-                        if (!running) break;
-
-                        if (seekToSeconds >= 0) {
-                            VistaMod.LOGGER.info("Seek request detected, restarting FFmpeg");
-                            ffmpegProcess.destroyForcibly();
-                            ffmpegProcess.waitFor();
-                            break; // break out of inner loop, outer loop will restart with new seek
-                        }
-
-                        byte[] data = in.readNBytes(frameSize);
-                        if (data.length < frameSize) {
-                            //end of data
-                            break;
-                        }
-
-                        double pts = frameCount / framerate;
-                        NativeImage rawImg = rgbBytesToNativeImage(width, height, data);
-
-                        buffer.add(new MediaFrame(rawImg, pts));
-                        frameCount++;
-
-                        if (frameCount % 100 == 0) {
-                            VistaMod.LOGGER.info("Decoded {} frames, PTS={}", frameCount, String.format("%.2f", pts));
-                        }
-                    }
-                }
-
-                int exitCode = ffmpegProcess.waitFor();
-                if (exitCode != 0 && running) {
-                    VistaMod.LOGGER.warn("FFmpeg exited with code {}", exitCode);
-                }
-                if (frameCount > 0 && seekToSeconds < 0) {
-                    // natural end of file
-                    VistaMod.LOGGER.info("Finished decoding, total frames: {}", frameCount);
-                    buffer.setCompleted(true);
-                    break;
-                }
-            } catch (InterruptedException e) {
-                VistaMod.LOGGER.info("Decoder interrupted");
-                break;
-            } catch (Exception e) {
-                VistaMod.LOGGER.error("Decoder crash: {}", e.getMessage(), e);
-                break;
-            } finally {
-                if (ffmpegProcess != null) ffmpegProcess.destroyForcibly();
+                VistaMod.LOGGER.info("No video stream in {}, playing audio only", videoPath);
+                session.setAudioOnly();
+                return;
             }
+            int width = size[0], height = size[1];
+            int frameSize = width * height * BYTES_PER_PIXEL;
+            double framerate = probeFrameRate(videoPath.toString());
+            if (!Double.isFinite(framerate) || framerate <= 0) {
+                VistaMod.LOGGER.warn("Invalid probed framerate {}, defaulting to {} fps", framerate, FALLBACK_FPS);
+                framerate = FALLBACK_FPS;
+            }
+            VistaMod.LOGGER.info("Video: {}x{}, {} fps", width, height, framerate);
+
+            Process process = ffmpeg.runFFmpeg(buildFFmpegCommand());
+            ffmpegProcess = process;
+            if (!running) process.destroyForcibly();
+
+            int frameCount = 0;
+            try (InputStream in = new BufferedInputStream(process.getInputStream(), 1024 * 1024)) {
+                while (running) {
+                    byte[] data = in.readNBytes(frameSize);
+                    if (data.length < frameSize) break;
+
+                    session.add(new MediaFrame(rgbBytesToNativeImage(width, height, data), frameCount / framerate));
+                    frameCount++;
+                }
+            }
+
+            int exitCode = process.waitFor();
+            if (!running) return;
+            if (exitCode != 0) VistaMod.LOGGER.warn("FFmpeg exited with code {} on {}", exitCode, videoPath);
+            if (frameCount == 0) {
+                session.setFailed(MediaError.NONE);
+                return;
+            }
+            VistaMod.LOGGER.info("Finished decoding {}, total frames: {}", videoPath, frameCount);
+            session.setCompleted(true);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } catch (Exception e) {
+            VistaMod.LOGGER.error("Failed to decode {}", videoPath, e);
+        } finally {
+            Process p = ffmpegProcess;
+            if (p != null) p.destroyForcibly();
         }
-        VistaMod.LOGGER.info("Decoder thread terminated");
     }
 
-    private String[] buildFFmpegCommand(double seekSec) {
+
+    private String[] buildFFmpegCommand() {
         List<String> args = new ArrayList<>();
         args.add("-hide_banner");
         args.add("-loglevel");
         args.add("error");
-        if (seekSec >= 0) {
-            args.add("-ss");
-            args.add(String.valueOf(seekSec));
-        }
         args.add("-i");
         args.add(videoPath.toString());
         args.add("-f");
@@ -177,27 +117,15 @@ public class FFmpegMediaDecoder {
                 double num = Double.parseDouble(parts[0]);
                 double den = Double.parseDouble(parts[1]);
                 if (den == 0) {
-                    return 20.0;
+                    return FALLBACK_FPS;
                 }
                 return num / den;
             } else if (line != null && !line.isEmpty()) {
                 return Double.parseDouble(line);
             }
         }
-        VistaMod.LOGGER.warn("Could not probe framerate, defaulting to 30 fps");
-        return 30.0;
-    }
-
-    private int probeTotalFrames(String path) throws IOException {
-        Process p = ffmpeg.runFFprobe("-v", "error", "-select_streams", "v:0",
-                "-count_frames", "-show_entries", "stream=nb_read_frames", "-of", "csv=p=0", path);
-        try (BufferedReader r = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
-            String line = r.readLine();
-            if (line != null && !line.isEmpty()) {
-                return Integer.parseInt(line.trim());
-            }
-        }
-        return -1;
+        VistaMod.LOGGER.warn("Could not probe framerate, defaulting to {} fps", FALLBACK_FPS);
+        return FALLBACK_FPS;
     }
 
     private boolean hasAudioStream(String path) throws IOException {
@@ -226,7 +154,7 @@ public class FFmpegMediaDecoder {
     private NativeImage rgbBytesToNativeImage(int width, int height, byte[] data) {
         NativeImage img = new NativeImage(NativeImage.Format.RGBA, width, height, true);
         for (int y = 0, p = 0; y < height; y++) {
-            for (int x = 0; x < width; x++, p += 3) {
+            for (int x = 0; x < width; x++, p += BYTES_PER_PIXEL) {
                 int r = data[p] & 0xFF;
                 int g = data[p + 1] & 0xFF;
                 int b = data[p + 2] & 0xFF;

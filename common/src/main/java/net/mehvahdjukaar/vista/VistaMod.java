@@ -202,6 +202,7 @@ public class VistaMod {
 
     public static final RegSupplier<SoundEvent> CASSETTE_INSERT_SOUND = RegHelper.registerSound(res("block.television.insert"));
     public static final RegSupplier<SoundEvent> CASSETTE_EJECT_SOUND = RegHelper.registerSound(res("block.television.eject"));
+    public static final RegSupplier<SoundEvent> CASSETTE_LINK_SOUND = RegHelper.registerSound(res("item.hollow_cassette.link"));
     public static final RegSupplier<SoundEvent> TV_STATIC_SOUND = RegHelper.registerSound(res("block.television.static"));
     public static final RegSupplier<SoundEvent> TV_TURN_ON_SOUND = RegHelper.registerSound(res("block.television.turn_on"));
     public static final RegSupplier<SoundEvent> TV_TURN_OFF_SOUND = RegHelper.registerSound(res("block.television.turn_off"));

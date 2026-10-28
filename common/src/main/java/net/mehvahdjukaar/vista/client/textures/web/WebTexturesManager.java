@@ -175,7 +175,7 @@ public class WebTexturesManager {
     }
 
     private static WatermediaSession createWatermediaSession(URI uri, int width, int height) {
-        return new WatermediaSession(uri, width, height);
+        return WatermediaSession.acquire(uri, width, height);
     }
 
     private static FFmpegMediaSession createFFmpegSession(URI uri, int width, int height, FFmpeg fFmpeg) {
